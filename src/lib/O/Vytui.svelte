@@ -4613,6 +4613,9 @@
     }
     function vines_of(w: TheC, cells: PaintCell[], excludeKey?: string | null): { d: string, sw: number, say: string, mx: number, my: number }[] {
         if (fo(w, 'grid')) return []   // under the grid the ALIGNMENT is the tie — no lines careening over it
+        // …and under the SPINE the fused bone is the tie (2026-10-08, the owner of the cave: "far too many svg squiggly lines
+        //  (which mean nothing right?)") — a directory's files share a `stem`, so the kin weave drew a lattice over every run
+        if (fo(w, 'spine')) return []
         const rel: any = (w.c as any).relations
         if (!rel) return []
         const at = new Map<string, PaintCell>()

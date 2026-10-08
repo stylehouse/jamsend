@@ -10,6 +10,206 @@ The "shakeout" is the settle from an edit (or any event) until the C tree, the
 
 Paths below are `.svelte`/`.svelte.ts` as they resolve on disk.
 
+## 0. What to get on with next
+
+- **§7 (2026-10-08) — the serving box.** The jamserve daemon was paying 60–80% of a core to sit idle. Four cuts took it to
+   ~12% idle and 7–11% while serving one listener. §7 names the shared cause: **we re-derive state by re-running "the
+    function" when we could ask whether anything changed.** It ranks what's left. Next rungs, safest first: **R1b** (the daemon's own think, only where something moved), **R4a** (stop
+     acking untracked data frames, about half the inbound), **R6a** (index `o()`'s second key). R3 turned out NOT cheap; see §7.3.
+- The older Lies/Lang shakeout map (§1–6 below) is the same disease seen from the editor. Its scorecard is still the reference.
+
+## 7. The serving box — "throwing lots of extra goes at the function" (2026-10-08)
+
+> 👤 **For people.** The owner, watching `top` on the box that serves music to friends: *"that's way too much cpu"*, then
+> *"it seems a fundamental weakness of our programming — throwing lots of extra goes at 'the function' to refresh state that
+> may not need it."* That's the right diagnosis. Our whole machine keeps itself correct by **re-running everything, often**,
+> instead of **noticing what changed**. In a browser tab a person makes the changes and the re-running keeps up with them. On
+> a server that never sleeps, the re-running IS the workload. It runs whether or not anything happened.
+
+### 7.1 What we measured (daemon `/status` cpu + `/profile`, node process only)
+
+`process.cpuUsage()` counts **only the node process**. ffmpeg runs as spawned children, so the encoding (probe, measure,
+ opus encode) is **on top** of every number here.
+
+| state | CPU (one core) | what the profiler said |
+|---|---|---|
+| before, idle 2.6 days | **60–80%** | heap 1.5 of 1.65 GB, GC thrash, ~6.7 belief passes/s with nothing queued, 1,160 encodes for no audience |
+| + tour rests with no audience | 44% | still ~6.7 passes/s |
+| + 400 ms idle floor (wake on queued work) | 20% | 78% idle; top real cost = stack capture per `replace()` (~8%) |
+| + no stack capture on the daemon | **12%** idle | bursts are `readdir` (37% of one sample): every radiostock lookup re-listed the folder |
+| serving ONE listener, steady | **7–11%** | 92% idle; 12,928 frame wakes + 4,918 bare `think` posts since boot |
+| a listener connecting (catalog + first pulls) | 28–36% burst | inbound frames ~5/s, share beats, folder listings |
+
+The four cuts, each the same disease in a different organ:
+- **Rotation for nobody.** `Stoker_tour` re-dug and re-encoded every 90 s with no listener. Now it rests (`Stoker_has_audience`).
+- **Passes for nothing.** The daemon loop thought every House about 7 times a second, queue empty. Now it naps a floor
+   (`IDLE_MS`, `/tune`) and wakes within 20 ms when anything is queued. (`scripts/daemon/main.ts`)
+- **A debug instrument on the hot path.** `replace()` built `new Error().stack` every call, "in case" two replaces nested
+   (`OPTIMISE_FOR_DX`). On the daemon it's off.
+- **Re-deriving a listing.** `Ra_stock_find` re-read and re-parsed the whole radiostock folder per lookup. The nav now caches
+   each folder against its mtime (`list_dir`, `scripts/NodeWormholeNav.ts`), pending a restart.
+
+### 7.2 The theory — why "the function" gets so many goes
+
+The belief loop is **immediate-mode**. A pass re-reads the world and re-decides everything: `organise()` walks the C tree,
+ `attend()` dispatches every world's handlers, `reqdo_sweep` runs every req level (§3 above has the file:lines). Correctness
+  comes from **re-derivation**. Nothing has to remember what depended on what, because everything is recomputed. That's the
+   bet's great strength: state is legible, any pass can be snapped, Books are deterministic.
+
+The cost is **(size of the world) × (how often we pass)**, and **not (how much changed)**. Three things make the pass rate
+ high and unrelated to change:
+1. **Wakes are cheap and anonymous.** `i_elvisto(w,'think')`, `feebly_ponder()`, `bump_version()` all mean "run the loop
+    again soon". Each caller wakes the WHOLE House for its own small reason. The daemon's `woke` tally: 4,918 bare
+     `think` posts on top of 12,928 real frames.
+2. **Every frame is a full pass.** One friend's pulse, one `ive_got`, one chunk ack, each `handle_inbound` drains as its own
+    item and its belief pass walks ~9k particles. The cost is per frame × world size, never per frame × what the frame touched.
+3. **Waiting is done by polling.** A req that waits on something asynchronous re-checks on a trickle (§2) instead of being
+    resumed by the thing it waits for. A waiting req therefore costs a pass per trickle forever (the "🔥 burning CPU on stuck
+     pending" warnings are this, self-diagnosed).
+
+The same reflex shows up outside the loop: **re-derive from the source each time** instead of keeping an index and
+ invalidating it on write. The radiostock listing per lookup, the stack per replace, the dig per 90 s are all this shape.
+
+### 7.3 The remedies, ranked — rewritten from the four surveys (2026-10-08)
+
+Four read-only surveys went over the machinery: the belief pass, the wake sources, the inbound-frame path, and re-derivation.
+ Their findings, with file:line, are in §7.6. They re-ranked the list and **corrected R3**, so read §7.6 before building any rung.
+
+**Daemon-only cuts. Books never see these, so they're the safest first.**
+- **R1 ✅ Demand-driven ticks.** No tick without queued work or a due ttlilt, beyond a 1 s floor (`IDLE_MS`, `/tune`).
+- **R1b The daemon's own think is the biggest anonymous wake.** `main.ts` posts `think` to EVERY House on every loop iteration,
+   including iterations started by a share beat `fn` that changed nothing. Post it only to a House whose global bump counter
+    moved, or that holds an unfinished req or due ttlilt. First tag the post (`see:'daemon_tick'`) so the `woke` tally can prove
+     whose thinks they are.
+- **R1c Adaptive share beat.** `Swarm_share_loop` ticks every 600 ms forever. Make it 600 ms while a pull, serve, keep or
+   playback is live, otherwise 3–5 s.
+- **R1d Strip dev probes from a server.** `Creduler_reswap` does a fetch or 35 HEADs every 2 s, but a daemon has no HMR. Remove
+   the duplicate `Ra_pcm_sweep` (it runs on an interval AND per pump). Latch `Sounditron_trickle` so a pass can't re-era it.
+
+**Wire cuts. Halve the frames.**
+- **R4a Don't ack what nobody tracks.** `repli_lines`, `repli_page` and `ive_got` are sent fire-and-forget but booked and
+   ACKED on receive (`Peeroleum.g` req_unemit). Every chunk served comes back as an ack that wakes a full tick. That's about half
+    the inbound frames.
+- **R4b One pass per burst.** Hold ~50–100 ms after the first inbound before draining, and drop `feebly_ponder`'s trailing
+   200 ms think when a tick think is queued. Then N frames cost one pass, not N to 2N.
+- **R4c Don't re-send the unchanged.** `ive_got` re-sends every 30 s, the whole catalog every 60 s, and pulses every ~5 s even
+   after the era is confirmed. Stretch the floors once the peer confirms our era. Send the catalog as a diff.
+
+**Machinery cuts. These help every tab, and need Book sweeps.**
+- **R6a Index the second key.** `o()` only indexes the FIRST key, usually a mainkey wildcard (`{Record:1,id}`), so every lookup
+   by id scans the bucket, while `i()` already builds per-key buckets nobody reads. Seed from the narrowest indexed key, falling
+    back on coercion misses. ~15 lines in `Stuff.svelte.ts` `o_query`. It fixes chunk lookups per serve, Card lookups, awaitbuf
+     lookups per page, and `{Record:1,id}` everywhere at once.
+- **R6b Memoise `Ra_recs` per shelf** (id / re / artist+title maps, validated by summed serials). `Ra_rec_find` becomes O(1), and
+   that removes record × record loops in Heist_keep_pull/step, Heist_beat, Heard_landed and Repli_merge.
+- **R6c `rm()` → `drop()` on hot paths.** `rm()` is a `replace()`: it empties the container and re-adds every survivor
+   (`Repli.g` parked-want serve, `Ra.g` transcode pump, `Heist_beat`).
+- **R6d Cache per record what's re-walked per tick:** chunk presence (`Ra_chunk_have`, `Radio_map`), `Heard_set` (the union of every
+   Mag key, rebuilt per pump tick), and the Heists Berth waft (re-read from disk on every 1.5 s persist).
+- **R8 Bump only on real change.** `Repli_merge`, the `IveGot` fact, `Presence_take` and the sibling `heard` stamp all bump with
+   identical values, and the sibling stamp writes wall clock into `sc`. Cheap, and **a prerequisite** for any skip-unchanged gate.
+- **R2 Answer a bare think without a pass when nothing changed.** Global bump counter in `TheX.bump_version`. MEASURE FIRST: log
+   how many bare thinks find it unmoved. Gate in `_really_answer_calls`, but never for a House with a ttlilt (they're only marked
+    timed out during officing) or a needs-work req. *(Owner: "if we have no other %elvis between those mindless ones I guess
+     that's what we change.")*
+- **R3 Dirty-scoped passes. NOT cheap, corrected.** `version` is per particle and **nothing carries it upward**. Plain
+   `sc.x =` and `.c` writes bump nothing. Every pass bumps every A itself (`self_timekeeping` round, `A.replace({w:1})` in
+    officing), and eternal reqs look like work every pass. It needs an up-propagated dirty bit (REACTAP's per-host tap is the
+     base), the pass's own bumps excluded, and a `wants_clock` opt-in for handlers that do time-based work without a change
+      (Lies_heartbeat, rungo/compile timeouts, mirror nudge, round-driven worlds; list in §7.6). Do it after R8 and R2.
+- **R5 Resume, don't poll.** Unchanged: a waiting req registers a resume instead of a trickle.
+- **R7 Instruments off the server hot path.** `OPTIMISE_FOR_DX` landed. Also: the `◈ pull` console line per record per beat, and
+   `Heist_keep_persist`'s JSON-stringify-to-compare.
+
+### 7.4 The laws a remedy must keep
+
+- **A skipped pass must be provably a no-op.** Books snap at quiescence (Coding_guide "Wake ≠ Hold"). R2/R3 may skip work,
+   never a HOLD: an unfinished req or a live ttlilt always earns its world a pass.
+- **Verify by re-running Books** (Coding_guide "verify a timing fix by re-running"), on the live runner, through a subagent,
+   5×. A remedy that turns one fixture red has found a hidden dependency on an anonymous wake. Name it and give it a real
+    wake; don't widen the gate.
+- **Measure the same thing twice.** `/status` `cpu` is a 30 s window of the node process alone. Quote it with `ticks_per_s`
+   and the `woke` tally, and say whether a listener was connected. `/profile?ms=` for where it goes, `/census` for memory.
+
+### 7.5 Is 7–11% for one listener fair?
+
+Not yet. One listener means ~5 frames/s and a 600 ms share beat. The 92%-idle profile spreads what's left thin, across
+ `o_query`, Svelte `get` and walks. That's the signature of many passes over a big world, not of one hot function. The surveys
+  say where the passes come from. Each frame wakes a tick, and the tick thinks every House (R1b, R4b). Half the frames are acks
+   nobody needed (R4a). Inside each pass, id lookups scan buckets (R6a), and the shelf is re-collected per lookup (R6b). Do those
+    four, then measure one listener again with the same three numbers (`cpu`, `ticks_per_s`, `woke`).
+
+### 7.6 Survey evidence (2026-10-08, four read-only explorers)
+
+**The pass** (Housing.svelte.ts):
+- `organise()` (1329) walks H/A/w plus lematched subtrees, not the whole particle tree (`V.req_legs` is parked at 0).
+- `attend()` (1388) is O(worlds + A×T): it re-scans the T list per A at 1416.
+- Officing (Hovercraft 466–542) marks ttlilts and `A.replace({w:1})`es every A.
+- `reqdo_sweep` clears every req's `%ok` (Stuff 770), so eternals re-run every pass.
+- None of the four has a change gate.
+
+**Version** (Stuff.svelte.ts):
+- `serial_i` is per particle (256). `oai` and `maybe_mutate_sc` bump the found particle, not its parent.
+- Nothing propagates upward. Plain `sc` and `.c` writes bump nothing.
+- The only per-C "last seen" stores are `watched` (Housing 1785) and the Stuffing matrix (1961).
+
+**Handlers that do clock work without a change** (would stop under R3 without `wants_clock`):
+- Lies_heartbeat → keepalive / watch_sync / drain_rungo (Lies.svelte 879, LiesLies 893)
+- req_rungo's 20 s timeout (LiesLies 1687)
+- LiesStore's complaint timers (981)
+- Lang compile-settle expiry (LangCompiling 330)
+- storytimes fail (LiesFunk 4143)
+- Clustation_mirror_nudge (Auto 647)
+- `w_ambiently_sleeping` round throttle (Hovercraft 91)
+- The Swarm/Radio/Heist/Pool throttles mostly ride their OWN timers (the share loop, Radio's pump), so they're not on this list.
+
+**The frame path:**
+- Tribunal `on_message` → `Lies_deliver_soon` batches onto `inbound_batch` (LiesLies 1592–1606) → `Lies_drain_inbound`
+   (1617: express first, then repli_page slices of 24).
+- Peeroleum deliver branches call `feebly_ponder`, which only works under Story's `c.runtime` (Housing 931).
+- So on the daemon, passes come from the tick loop. Frames more than 20 ms apart wake separate ticks.
+
+**Steady frame kinds:**
+- pulse ~5 s (Sounditron 2268/2337)
+- swarm_hi backstop 5→60 s (Swarm 4928)
+- ive_got 5 s census, 30 s re-send (5042)
+- offer on mark change or every 60 s (5855)
+- repli_want re-ask 4 s (Pool 1687), parked reply 2 s (Repli 658)
+- chunks + an ack each (Peeroleum 1184–1189)
+- presence `who` on pulse_all (Swarm 4831)
+
+**Bumps with no change:**
+- Repli.g 433 (bumps even when every prop compare matched)
+- Swarm.g 5086–5088 (IveGot)
+- Swarm.g 1841–1843 (sibling `sc.heard` = wall clock + bump, every pulse)
+- Presence.g 109
+
+**Periodic drivers on the daemon:**
+- daemon tick think (main.ts, every House, every iteration)
+- share loop 600 ms (Swarm 5674)
+- watch loop 2 s (5546)
+- Supervisor_beat 2 s (Supervisor 138)
+- Sounditron trickle 2.5 s (2222/2337), its dog 10 s
+- Ra_pcm_sweep 5 s AND per pump (Ra 2576, 3285)
+- Stuffing heartbeat 3 s (Housing 587)
+- Census 5 s, signature-gated
+- **Creduler_reswap 2 s fetch/HEADs, with no daemon gate**
+- persist_account fingerprint every 20 s
+- Clustation_mirror_account per Auto pass
+
+**Re-derivation:**
+- `o_kv` indexes only the first key (Stuff 196–221, 464–486). The rest is a linear filter (502); `i()` already builds every
+   key's bucket (327–335).
+- `Ra_recs`/`Ra_rec_find` copy every level per call (Ra 1152–1210), from Repli_merge per page, Heist_keep_pull/step per pick,
+   Heist_beat per mirror record, Ra_mag_warm / Ra_restock_beat per friend, Radio_head_ahead per pump tick, Radio_lineup_fill
+    every 3 s.
+- `Heard_shelf_index` re-runs `Ra_recs` to check its own key (Heard 907).
+- `rm()` = replace = empty + re-add (Stuff 1074–1085) at Repli 829, Ra 3343, Heist_beat.
+- `Heist_body_at` scans `{Original:1,seq}` linearly, twice per serve (Heist 48, Repli 1148).
+- The Heists Berth is re-read on every persist (Heist 3334, 4910). `Ra_card` unpacks a whole stock file for its header (Ra 2350).
+- Per-tick rebuilds: `Ra_chunk_have` ×2 per pulled record (Ra 3512, 3681, 3878), `Radio_map` per pump tick (Radio 4473),
+   `Heard_set` per pump tick (Heard 817).
+
 ## The shape of it: a slow serial spine, taxed per-pass
 
 Sluggishness isn't one bug. It's a slow serial settling spine with several

@@ -20,6 +20,23 @@ import { createHash } from 'node:crypto'
 import path from 'node:path'
 
 const isDirAt = (p: string | Buffer) => existsSync(p) && statSync(p).isDirectory()
+
+// list_dir — readdir, CACHED AGAINST THE DIRECTORY'S mtime (2026-10-07 daemon /profile: readdirSync was 37% of a 20s sample).
+//  Every Ra_stock_find re-lists the whole radiostock folder, per record, per serve.  A directory's mtime moves exactly when an
+//   entry is added, removed or renamed in it, so one statSync stands in for the readdir until something really changed.
+//    (Same-millisecond churn could in theory hide behind an equal mtime; mtimeMs is sub-ms on ext4/overlayfs, and the cost of
+//     that miss is one stale listing, never a wrong file read — reads go by path.)
+const dir_cache = new Map<string, { mt: number, ents: [string, boolean][] }>()
+const list_dir = (d: string): [string, boolean][] => {
+    let mt = 0
+    try { mt = statSync(d).mtimeMs } catch { dir_cache.delete(d); return [] }
+    const hit = dir_cache.get(d)
+    if (hit && hit.mt === mt) return hit.ents
+    const ents = readdirSync(d, { withFileTypes: true }).map((e) => [e.name, e.isDirectory()] as [string, boolean])
+    dir_cache.set(d, { mt, ents })
+    if (dir_cache.size > 4000) dir_cache.delete(dir_cache.keys().next().value as string)
+    return ents
+}
 const isFileAt = (p: string | Buffer) => existsSync(p) && statSync(p).isFile()
 
 export class NodeWormholeNav {
@@ -409,7 +426,7 @@ export class NodeWormholeNav {
                 const seen = new Map<string, boolean>()   // name → isDir (overlay shadows base)
                 for (const d of dirs) {
                     if (!isDirAt(d)) continue
-                    for (const ent of readdirSync(d, { withFileTypes: true })) seen.set(ent.name, ent.isDirectory())
+                    for (const [name, isd] of list_dir(d)) seen.set(name, isd)
                 }
                 for (const name of extra) if (isDirAt(nav.mounts[name])) seen.set(name, true)
                 this.directories = [...seen].filter(([, isd]) => isd).map(([name]) => ({ name }))

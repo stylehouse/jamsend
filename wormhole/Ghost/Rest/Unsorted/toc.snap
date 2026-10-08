@@ -1,0 +1,262 @@
+Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 229 of 415 — one What per directory — give each a home in its area and re-run
+  What:Ghost/L/test_corpus,desc:1 file with no area
+    Doc:Ghost/L/test_corpus/Sample.g
+  What:Ghost/Story,desc:1 file with no area
+    Doc:Ghost/Story/ErrchannelTesting.g
+  What:Ghost/test/Story/Hoho,desc:9 files with no area
+    Doc:Ghost/test/Story/Hoho/HohoAmeliorations.g
+    Doc:Ghost/test/Story/Hoho/HohoAntecedents.g
+    Doc:Ghost/test/Story/Hoho/HohoTiles.g
+    Doc:Ghost/test/Story/Hoho/WaftMapBounce.g
+    Doc:Ghost/test/Story/Hoho/WaftMapCrumb.g
+    Doc:Ghost/test/Story/Hoho/WaftMapPacked.g
+    Doc:Ghost/test/Story/Hoho/WaftMapSeam.g
+    Doc:Ghost/test/Story/Hoho/WaftMapShaft.g
+    Doc:Ghost/test/Story/Hoho/WaftMapSpill.g
+  What:src,desc:2 files with no area
+    Doc:src/app.d.ts
+    Doc:src/demo.spec.ts
+  What:src/lib,desc:4 files with no area
+    Doc:src/lib/Common.ts
+    Doc:src/lib/Selection.svelte.ts
+    Doc:src/lib/boot.ts
+    Doc:src/lib/cluster_name.ts
+  What:src/lib/O,desc:20 files with no area
+    Doc:src/lib/O/Audio.svelte.ts
+    Doc:src/lib/O/BigQualand.svelte.ts
+    Doc:src/lib/O/Cello.svelte
+    Doc:src/lib/O/Cellui.svelte
+    Doc:src/lib/O/Census.svelte
+    Doc:src/lib/O/Filesystem.svelte.ts
+    Doc:src/lib/O/LangCurse.svelte
+    Doc:src/lib/O/LangGraft.svelte
+    Doc:src/lib/O/LangLang.svelte
+    Doc:src/lib/O/LangRegions.svelte
+    Doc:src/lib/O/LangSion.svelte
+    Doc:src/lib/O/Thang.svelte
+    Doc:src/lib/O/ThangShelf.svelte
+    Doc:src/lib/O/Thangs.svelte
+    Doc:src/lib/O/cello_blob.ts
+    Doc:src/lib/O/census_codec.ts
+    Doc:src/lib/O/cyto_lazy.ts
+    Doc:src/lib/O/sockcap.ts
+    Doc:src/lib/O/stho.ts
+    Doc:src/lib/O/vessel_store.ts
+  What:src/lib/O/D,desc:5 files with no area
+    Doc:src/lib/O/D/Diffmatic.svelte
+    Doc:src/lib/O/D/Diffmatication.svelte
+    Doc:src/lib/O/D/Diffmaticui.svelte
+    Doc:src/lib/O/D/LangTwist.svelte
+    Doc:src/lib/O/D/LangTwistui.svelte
+  What:src/lib/O/Funk,desc:13 files with no area
+    Doc:src/lib/O/Funk/Ballistics.svelte
+    Doc:src/lib/O/Funk/Crewkeys.ts
+    Doc:src/lib/O/Funk/DocTing.svelte
+    Doc:src/lib/O/Funk/FunkHost.svelte
+    Doc:src/lib/O/Funk/Grant.ts
+    Doc:src/lib/O/Funk/IdHatch.svelte
+    Doc:src/lib/O/Funk/LensHost.svelte
+    Doc:src/lib/O/Funk/Relay.svelte
+    Doc:src/lib/O/Funk/Rundar.svelte
+    Doc:src/lib/O/Funk/Sealbox.ts
+    Doc:src/lib/O/Funk/StoryTimes.svelte
+    Doc:src/lib/O/Funk/Upkeep.svelte
+    Doc:src/lib/O/Funk/kinds.ts
+  What:src/lib/O/lang/grammars/markdown,desc:1 file with no area
+    Doc:src/lib/O/lang/grammars/markdown/index.ts
+  What:src/lib/O/lang/grammars/stho,desc:2 files with no area
+    Doc:src/lib/O/lang/grammars/stho/index.ts
+    Doc:src/lib/O/lang/grammars/stho/io_tokens.ts
+  What:src/lib/O/lang/grammars/tsstho,desc:1 file with no area
+    Doc:src/lib/O/lang/grammars/tsstho/index.ts
+  What:src/lib/O/lang,desc:1 file with no area
+    Doc:src/lib/O/lang/registry.ts
+  What:src/lib/O/shelved,desc:4 files with no area
+    Doc:src/lib/O/shelved/LiesWorkup.svelte
+    Doc:src/lib/O/shelved/NaviLeg.svelte
+    Doc:src/lib/O/shelved/Workup_note.md
+    Doc:src/lib/O/shelved/Workup_spec.md
+  What:src/lib/O/spec,desc:79 files with no area
+    Doc:src/lib/O/spec/App_todo.md
+    Doc:src/lib/O/spec/Arrival_todo.md
+    Doc:src/lib/O/spec/Atheory_todo.md
+    Doc:src/lib/O/spec/Attractor_todo.md
+    Doc:src/lib/O/spec/Cello_meditation_todo.md
+    Doc:src/lib/O/spec/Cello_mesh_scheme_todo.md
+    Doc:src/lib/O/spec/Cello_synthesis_todo.md
+    Doc:src/lib/O/spec/Cello_todo.md
+    Doc:src/lib/O/spec/Cello_tree_scheme_todo.md
+    Doc:src/lib/O/spec/Cello_universal_scheme_1_todo.md
+    Doc:src/lib/O/spec/Cello_universal_scheme_2_todo.md
+    Doc:src/lib/O/spec/Cello_universal_scheme_3_todo.md
+    Doc:src/lib/O/spec/Cello_universal_scheme_4_todo.md
+    Doc:src/lib/O/spec/Cello_universal_scheme_5_todo.md
+    Doc:src/lib/O/spec/Cello_universal_scheme_6_todo.md
+    Doc:src/lib/O/spec/Census_todo.md
+    Doc:src/lib/O/spec/ClusterAddressing_todo.md
+    Doc:src/lib/O/spec/CodeReview_todo.md
+    Doc:src/lib/O/spec/Composition_todo.md
+    Doc:src/lib/O/spec/Consolidation_todo.md
+    Doc:src/lib/O/spec/Covenant_design.md
+    Doc:src/lib/O/spec/Cytui_cleave_todo.md
+    Doc:src/lib/O/spec/Daemon_todo.md
+    Doc:src/lib/O/spec/Datalayer_todo.md
+    Doc:src/lib/O/spec/Download_stall_handover.md
+    Doc:src/lib/O/spec/Emotion_todo.md
+    Doc:src/lib/O/spec/Engage_integration.md
+    Doc:src/lib/O/spec/Error_channel_todo.md
+    Doc:src/lib/O/spec/Focus_todo.md
+    Doc:src/lib/O/spec/Follow_todo.md
+    Doc:src/lib/O/spec/Frontier.md
+    Doc:src/lib/O/spec/GhostHMR_todo.md
+    Doc:src/lib/O/spec/Glass_reduction_todo.md
+    Doc:src/lib/O/spec/Glassbeast_voice.md
+    Doc:src/lib/O/spec/Grantwalk_handover.md
+    Doc:src/lib/O/spec/InkSurprise_todo.md
+    Doc:src/lib/O/spec/LangCompiler_TODO.md
+    Doc:src/lib/O/spec/LangSolver_report.md
+    Doc:src/lib/O/spec/LiesEnd_spec.md
+    Doc:src/lib/O/spec/Lies_handover.md
+    Doc:src/lib/O/spec/LinkDevice_leak_todo.md
+    Doc:src/lib/O/spec/Love_todo.md
+    Doc:src/lib/O/spec/Mag_v1_handover.md
+    Doc:src/lib/O/spec/Mag_vs_flatstock_preen.md
+    Doc:src/lib/O/spec/Netsitu_todo.md
+    Doc:src/lib/O/spec/Onboard_todo.md
+    Doc:src/lib/O/spec/Onboarding_todo.md
+    Doc:src/lib/O/spec/Peeroleum_handover.md
+    Doc:src/lib/O/spec/Perf_todo.md
+    Doc:src/lib/O/spec/Persistence_todo.md
+    Doc:src/lib/O/spec/Phone_instrument_todo.md
+    Doc:src/lib/O/spec/Pier_todo.md
+    Doc:src/lib/O/spec/Portability_doc.md
+    Doc:src/lib/O/spec/Radiation_determinism_todo.md
+    Doc:src/lib/O/spec/Radio_future.md
+    Doc:src/lib/O/spec/Radiobuddies_handover.md
+    Doc:src/lib/O/spec/RemoteHeist_todo.md
+    Doc:src/lib/O/spec/Repli_idspace_todo.md
+    Doc:src/lib/O/spec/Seemables_todo.md
+    Doc:src/lib/O/spec/Snappy_todo.md
+    Doc:src/lib/O/spec/Solo_todo.md
+    Doc:src/lib/O/spec/Sounditron_todo.md
+    Doc:src/lib/O/spec/Speeches_todo.md
+    Doc:src/lib/O/spec/Springcore_meander.md
+    Doc:src/lib/O/spec/Statemap_todo.md
+    Doc:src/lib/O/spec/Story_cli_docs.md
+    Doc:src/lib/O/spec/Story_future_directions.md
+    Doc:src/lib/O/spec/Stuff_todo.md
+    Doc:src/lib/O/spec/Trust_audit_handover.md
+    Doc:src/lib/O/spec/UI_seams_todo.md
+    Doc:src/lib/O/spec/V1_cut_todo.md
+    Doc:src/lib/O/spec/Voro_render_faults_todo.md
+    Doc:src/lib/O/spec/Voro_render_todo.md
+    Doc:src/lib/O/spec/Voromay_todo.md
+    Doc:src/lib/O/spec/Vyto_client.md
+    Doc:src/lib/O/spec/Wander_todo.md
+    Doc:src/lib/O/spec/Whitehole_todo.md
+    Doc:src/lib/O/spec/WikipediaCell_todo.md
+    Doc:src/lib/O/spec/reactivity_docs.md
+  What:src/lib/O/spec/voro_modes,desc:1 file with no area
+    Doc:src/lib/O/spec/voro_modes/README.md
+  What:src/lib/O/spec/vyto_workingouts,desc:8 files with no area
+    Doc:src/lib/O/spec/vyto_workingouts/calm.md
+    Doc:src/lib/O/spec/vyto_workingouts/client.md
+    Doc:src/lib/O/spec/vyto_workingouts/commission.md
+    Doc:src/lib/O/spec/vyto_workingouts/pelt.md
+    Doc:src/lib/O/spec/vyto_workingouts/pile.md
+    Doc:src/lib/O/spec/vyto_workingouts/processes.md
+    Doc:src/lib/O/spec/vyto_workingouts/shapes.md
+    Doc:src/lib/O/spec/vyto_workingouts/spool.md
+  What:src/lib/O/test,desc:11 files with no area
+    Doc:src/lib/O/test/MachReactivity.svelte
+    Doc:src/lib/O/test/MachReqy.svelte
+    Doc:src/lib/O/test/Machinery.svelte
+    Doc:src/lib/O/test/Mundane.svelte
+    Doc:src/lib/O/test/ReactiveInline.svelte
+    Doc:src/lib/O/test/ReactiveWaft.svelte
+    Doc:src/lib/O/test/ReactiveWaftComp.svelte
+    Doc:src/lib/O/test/TextLinestests.svelte
+    Doc:src/lib/O/test/Understandication.svelte
+    Doc:src/lib/O/test/Understandity.svelte
+    Doc:src/lib/O/test/Understandium.svelte
+  What:src/lib/O/ui,desc:43 files with no area
+    Doc:src/lib/O/ui/Actions.svelte
+    Doc:src/lib/O/ui/BeatFace.svelte
+    Doc:src/lib/O/ui/BootGate.svelte
+    Doc:src/lib/O/ui/Butler.svelte
+    Doc:src/lib/O/ui/CpuLegBanner.svelte
+    Doc:src/lib/O/ui/CpuLegs.svelte.ts
+    Doc:src/lib/O/ui/DiagFace.svelte
+    Doc:src/lib/O/ui/DocCompost.svelte
+    Doc:src/lib/O/ui/DocDiff.svelte
+    Doc:src/lib/O/ui/DocMinimap.svelte
+    Doc:src/lib/O/ui/DocPoint.svelte
+    Doc:src/lib/O/ui/DocRow.svelte
+    Doc:src/lib/O/ui/DocStorying.svelte
+    Doc:src/lib/O/ui/EncodingSplatter.svelte
+    Doc:src/lib/O/ui/EntropyArrest.svelte
+    Doc:src/lib/O/ui/ErrlogFace.svelte
+    Doc:src/lib/O/ui/FaceSucker.svelte
+    Doc:src/lib/O/ui/InkSurprise.svelte
+    Doc:src/lib/O/ui/InterestStrip.svelte
+    Doc:src/lib/O/ui/Lens.svelte
+    Doc:src/lib/O/ui/LibraryRun.svelte
+    Doc:src/lib/O/ui/MatstyleEditor.svelte
+    Doc:src/lib/O/ui/MiniWaft.svelte
+    Doc:src/lib/O/ui/NaviScroll.svelte
+    Doc:src/lib/O/ui/PeelInput.svelte
+    Doc:src/lib/O/ui/Plank.svelte
+    Doc:src/lib/O/ui/ResidualMote.svelte
+    Doc:src/lib/O/ui/RiffFace.svelte
+    Doc:src/lib/O/ui/ShareButton.svelte
+    Doc:src/lib/O/ui/ShuffleFace.svelte
+    Doc:src/lib/O/ui/Splash.svelte
+    Doc:src/lib/O/ui/StemHive.svelte
+    Doc:src/lib/O/ui/SupervisorFace.svelte
+    Doc:src/lib/O/ui/SupervisorPanel.svelte
+    Doc:src/lib/O/ui/SurprisePopover.svelte
+    Doc:src/lib/O/ui/TodoSpool.svelte
+    Doc:src/lib/O/ui/TransferFace.svelte
+    Doc:src/lib/O/ui/TreeFace.svelte
+    Doc:src/lib/O/ui/UptimeFace.svelte
+    Doc:src/lib/O/ui/Vexpandy.svelte
+    Doc:src/lib/O/ui/WikipediaFace.svelte
+    Doc:src/lib/O/ui/boot_gate.svelte.ts
+    Doc:src/lib/O/ui/calm.ts
+  What:src/lib/O/ui/micro,desc:6 files with no area
+    Doc:src/lib/O/ui/micro/Bandwidth.svelte
+    Doc:src/lib/O/ui/micro/DeleteX.svelte
+    Doc:src/lib/O/ui/micro/InviteQR.svelte
+    Doc:src/lib/O/ui/micro/Orb.svelte
+    Doc:src/lib/O/ui/micro/hold.ts
+    Doc:src/lib/O/ui/micro/lifetell.ts
+  What:src/lib/V,desc:1 file with no area
+    Doc:src/lib/V/BigSoundland.svelte
+  What:src/lib/data,desc:4 files with no area
+    Doc:src/lib/data/Stuffing.svelte
+    Doc:src/lib/data/Stuffusion.svelte
+    Doc:src/lib/data/Stuffziad.svelte
+    Doc:src/lib/data/Stuffzipper.svelte
+  What:src/lib/server,desc:1 file with no area
+    Doc:src/lib/server/watch.ts
+  What:src/routes,desc:2 files with no area
+    Doc:src/routes/+layout.svelte
+    Doc:src/routes/+page.svelte
+  What:src/routes/BigShapeland,desc:1 file with no area
+    Doc:src/routes/BigShapeland/+page.svelte
+  What:src/routes/BigSoundland,desc:1 file with no area
+    Doc:src/routes/BigSoundland/+page.svelte
+  What:src/routes/BigWordland,desc:1 file with no area
+    Doc:src/routes/BigWordland/+page.svelte
+  What:src/routes/Otro,desc:1 file with no area
+    Doc:src/routes/Otro/+page.svelte
+  What:src/routes/art,desc:1 file with no area
+    Doc:src/routes/art/+page.svelte
+  What:src/routes/ice,desc:1 file with no area
+    Doc:src/routes/ice/+page.svelte
+  What:src/routes/ink,desc:1 file with no area
+    Doc:src/routes/ink/+page.svelte
+  What:src/routes/ink/islands,desc:1 file with no area
+    Doc:src/routes/ink/islands/+page.svelte
+  What:src/routes/resolve,desc:1 file with no area
+    Doc:src/routes/resolve/+page.svelte

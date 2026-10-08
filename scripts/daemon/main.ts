@@ -83,6 +83,7 @@
 import http from 'node:http'
 import path from 'node:path'
 import crypto from 'node:crypto'
+import inspector from 'node:inspector'
 import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs'
 import { JSDOM } from 'jsdom'
 
@@ -148,6 +149,8 @@ const say = (m: string) => {
     } catch { /* logging must never be why the daemon dies */ }
 }
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
+// no per-replace() stack capture here (Stuff.svelte.ts OPTIMISE_FOR_DX) — a headless box pays source-map rewriting for it
+;(globalThis as any).__JAMSEND_NO_DX = process.env.JAMSEND_DX !== '1'
 
 // ── 1. the browser, such as it is ────────────────────────────────────────────────────────────
 // jsdom BEFORE any app module loads (hence the dynamic imports further down — a static import
@@ -737,16 +740,72 @@ const vyto_state = () => {
     return null
 }
 
+// THE IDLE FLOOR (2026-10-07, owner: "that's way too much cpu"): every tick is a whole belief pass on every House
+//  (think → drain), and the loop ran ~6.7 of them a second with nothing queued.  The floor is the LEAST time between
+//   ticks; work arriving mid-nap (a frame queues an elvis on some House's todo) cuts the nap short at the next 20ms
+//    poll, so a busy box keeps its old pace and only an idle one slows.  Tunable live: GET /tune?idle_ms=N (token).
+let idle_ms = +(process.env.IDLE_MS || 1000)
+// WHO WOKE IT — the first queued item on the first busy House, tallied, so /status names what keeps an idle box ticking
+const woke: Record<string, number> = {}
+const todo_waiting = () => {
+    for (const h of allHouses(H)) if (h.todo?.length) {
+        const e: any = h.todo[0]
+        const k = h.name + ':' + (e?.sc?.fn ? 'fn:' + (e.sc.see ?? '?') : (e?.sc?.elvis ?? '?'))
+        woke[k] = (woke[k] || 0) + 1
+        return true
+    }
+    return false
+}
+const nap = async (ms: number) => {
+    const until = Date.now() + ms
+    while (Date.now() < until) {
+        await sleep(Math.min(20, until - Date.now()))
+        if (todo_waiting()) return
+    }
+}
+
+// profile_for — the V8 CPU profiler over `ms`, reduced to the hottest functions by SELF time (+ where they live).
+//  The question "what is the idle box doing" answered by the machine, not by reading the loop and guessing.
+const profile_for = (ms: number): Promise<any> => new Promise((resolve) => {
+    const ses = new inspector.Session()
+    ses.connect()
+    const done = (out: any) => { try { ses.disconnect() } catch {} ; resolve(out) }
+    ses.post('Profiler.enable', () => ses.post('Profiler.setSamplingInterval', { interval: 1000 }, () => ses.post('Profiler.start', () => {
+        setTimeout(() => ses.post('Profiler.stop', (err: any, r: any) => {
+            if (err || !r?.profile) return done({ error: String(err?.message || 'no profile') })
+            const p = r.profile, dt: number[] = p.timeDeltas || [], samples: number[] = p.samples || []
+            const self: Record<number, number> = {}
+            for (let i = 0; i < samples.length; i++) self[samples[i]] = (self[samples[i]] || 0) + (dt[i] || 0)
+            const byFn: Record<string, number> = {}
+            let total = 0
+            for (const nd of p.nodes) {
+                const t = (self[nd.id] || 0) / 1000; total += t
+                const cf = nd.callFrame
+                const key = (cf.functionName || '(anon)') + ' ' + String(cf.url || '').split('/').slice(-2).join('/') + ':' + (cf.lineNumber + 1)
+                byFn[key] = (byFn[key] || 0) + t
+            }
+            const top = Object.entries(byFn).sort((a, b) => b[1] - a[1]).slice(0, 40).map(([k, t]) => ({ fn: k, ms: Math.round(t), pct: Math.round(1000 * t / Math.max(1, ms)) / 10 }))
+            done({ ms, sampled_ms: Math.round(total), top })
+        }), ms)
+    })))
+})
+
 // cpu_state — process CPU since the LAST /status read, as a percent of one core (2026-10-07: "60–80% CPU while
 //  idle" was a docker-stats reading nobody here could take).  Two reads a minute apart give the idle figure.
-let cpu_last = { t: Date.now(), u: process.cpuUsage() }
+//  A WINDOW, NOT "SINCE THE LAST READ": the heartbeat calls stats() every 10s too, so a read-resets clock measured
+//   whatever slice the last caller left (over_s:8).  Re-sample only once a window has passed; report the last full one.
+let cpu_last = { t: Date.now(), u: process.cpuUsage(), ticks: 0 }
+let cpu_seen = { pct: 0, over_s: 0, ticks_per_s: 0 }
 const cpu_state = () => {
-    const now = Date.now(), u = process.cpuUsage()
-    const ms = (u.user - cpu_last.u.user + u.system - cpu_last.u.system) / 1000
-    const pct = now > cpu_last.t ? Math.round(100 * ms / (now - cpu_last.t)) : 0
-    const over_s = Math.round((now - cpu_last.t) / 1000)
-    cpu_last = { t: now, u }
-    return { pct, over_s, ticks_per_s: +(ticks / Math.max(1, (now - t0) / 1000)).toFixed(2) }
+    const now = Date.now()
+    if (now - cpu_last.t >= 30_000) {
+        const u = process.cpuUsage()
+        const ms = (u.user - cpu_last.u.user + u.system - cpu_last.u.system) / 1000
+        const span = now - cpu_last.t
+        cpu_seen = { pct: Math.round(100 * ms / span), over_s: Math.round(span / 1000), ticks_per_s: +((ticks - cpu_last.ticks) / (span / 1000)).toFixed(2) }
+        cpu_last = { t: now, u, ticks }
+    }
+    return cpu_seen
 }
 
 // census_state — WHERE THE HEAP IS (2026-10-07: heap 1.5GB of a 1.65GB cap while /c dumped 5MB of sc).  The weight
@@ -771,6 +830,8 @@ const census_state = () => {
         const k = n.sc ? Object.keys(n.sc)[0] ?? '?' : '?'
         const row = by[k] ?? (by[k] = { n: 0, bytes: 0, entries: 0 })
         row.n++
+        // binary riding .sc too — a %Prehead keeps its audio chunk as sc.buf (a Uint8Array), not on .c
+        if (n.sc) for (const sk of Object.keys(n.sc)) { const b = bin(n.sc[sk]); if (b) { row.bytes += b; const kk = k + '.sc.' + sk; const cr = ckeys[kk] ?? (ckeys[kk] = { bytes: 0, entries: 0 }); cr.bytes += b } }
         const c = n.c
         if (c && typeof c === 'object') {
             for (const ck of Object.keys(c)) {
@@ -809,6 +870,7 @@ const stats = () => {
         wedge: (H.top_House?.() as any)?.mutex_held?.('beliefs') ?? null,
         mem: mem_state(),
         cpu: cpu_state(),
+        woke: Object.entries(woke).sort((a, b) => b[1] - a[1]).slice(0, 12),
         inside: probe_line(),
         book: book_state(),
         stock: stock_state(),
@@ -871,6 +933,17 @@ const server = http.createServer((req, res) => {
     const url = new URL(req.url || '/', 'http://x')
     res.setHeader('content-type', 'application/json')
     if (url.pathname === '/status') return res.end(safe_json(stats()))
+    if (url.pathname === '/tune') {
+        if (!token_ok(req, url)) { res.statusCode = 401; return res.end('{"error":"token required"}') }
+        const v = url.searchParams.get('idle_ms')
+        if (v != null && isFinite(+v) && +v >= 0) { idle_ms = +v; say(`🎛 idle floor → ${idle_ms}ms`) }
+        return res.end(JSON.stringify({ idle_ms }))
+    }
+    if (url.pathname === '/profile') {
+        if (!token_ok(req, url)) { res.statusCode = 401; return res.end('{"error":"token required"}') }
+        const ms = Math.max(1000, Math.min(60000, +(url.searchParams.get('ms') || 10000)))
+        return void profile_for(ms).then((o) => res.end(safe_json(o))).catch((e) => { try { res.statusCode = 500; res.end(String(e)) } catch {} })
+    }
     if (url.pathname === '/census') {
         if (!token_ok(req, url)) { res.statusCode = 401; return res.end('{"error":"token required"}') }
         try { return res.end(safe_json(census_state())) } catch (e: any) { res.statusCode = 500; return res.end(JSON.stringify({ error: String(e?.message || e) })) }
@@ -976,7 +1049,7 @@ const server = http.createServer((req, res) => {
             }
         })()
     }
-    res.statusCode = 404; res.end('{"paths":["/status","/c?depth=3 (token)","/stop (token)","/restock (token)","/invite?base=<url> (token)","/census (token)"]}')
+    res.statusCode = 404; res.end('{"paths":["/status","/c?depth=3 (token)","/stop (token)","/restock (token)","/invite?base=<url> (token)","/census (token)","/profile?ms= (token)","/tune?idle_ms= (token)"]}')
   } catch (e: any) {
     // The backstop.  Nothing this server does is worth the process, and everything above is a READ.
     try { res.statusCode = 500; res.end(`{"error":${JSON.stringify(String(e?.message || e))}}`) } catch {}
@@ -1611,7 +1684,10 @@ while (!stopping) {
     if (SECS && (Date.now() - t0) / 1000 > SECS) { say(`SECS=${SECS} reached`); break }
 
     const wait = tt.count > 0 ? Math.max(5, Math.min(120, Math.round((tt.soonest - now_s()) * 1000))) : 50
-    await sleep(wait)
+    // a ttlilt due SOONER than the floor still wins (that wait is its own clock); otherwise nap the floor, woken by work
+    if (todo_waiting()) await sleep(5)
+    else if (tt.count > 0 && Number.isFinite(tt.soonest) && wait < idle_ms) await nap(wait)
+    else await nap(Math.max(wait, idle_ms))
 }
 
 say('stopped — draining pending writes')

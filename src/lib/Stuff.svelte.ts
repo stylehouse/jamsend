@@ -3,7 +3,10 @@ import { SvelteMap, SvelteSet } from "svelte/reactivity";
 import type { Travel } from "$lib/Selection.svelte";
 import { armap, ex, exactly, hakd, isar, map, tex, throttle } from "$lib/Common";
 
-const OPTIMISE_FOR_DX = true
+// DX = every replace() captures its caller's stack, so a nested-replace collision can name BOTH callers.  Worth it in a
+//  browser; on the jamserve daemon (vite-node rewrites every stack through source maps) it measured ~8% of a core idle
+//   (2026-10-07 /profile), so the daemon sets globalThis.__JAMSEND_NO_DX and replace() checks at CALL time.
+const OPTIMISE_FOR_DX = () => !(globalThis as any).__JAMSEND_NO_DX
 // DROP_COMPACT_AT — after this many un-reindexed drop()s on one C, its index auto-compacts (rebuilds
 //  from live children).  Well under the i_z 6000 "giant stuff" ceiling and small enough that a
 //   drop-churned parent's o_query never scans a long tail of dead rows.  The human's ~500.
@@ -997,7 +1000,7 @@ export class Stuff extends TimeOffice {
                 + new Error().stack.split("\n").slice(2).join("\n")
             return stack.split("\n")
         }
-        if (OPTIMISE_FOR_DX) {
+        if (OPTIMISE_FOR_DX()) {
             // < possibly expensive?
             // note where we're coming from
             const stack = stacken()

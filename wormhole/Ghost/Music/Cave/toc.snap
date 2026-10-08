@@ -71,17 +71,18 @@ Waft:Ghost/Music/Cave,desc:the collection — heist original bytes into the Cave
     Point,method:Heard_meh,desc:a reaction — an early skip radio-written
     Point,method:Heard_taken,desc:is it loved
     Point,method:Heard_verdict,desc:what happened to the take
-    Point,method:Heard_notice,desc:mark unseen on arrival
+    Point,method:Heard_seen,desc:mark a card seen
     Point,method:Heard_unseen,desc:how many unseen
     Point,method:Heard_gc,desc:the clock that forgets
     Point,method:Heard_clone_beat,desc:copy verdicts across
-  What:the hand road,desc:a phone hands its loved tracks to the laptop — land got and wake
+  What:the roads,desc:a card names the road that fetched it — the pool road is a child of the card a human made — the old hand road is retired — the heart-settings switch the roads
     Doc:Ghost/M/Heard.g
-    Point,method:Heard_hand_targets,desc:who to hand to
-    Point,method:Heard_hand_land,desc:a hand lands
-    Point,method:Heard_hand_got,desc:the laptop says got
-    Point,method:Heard_hand_wake,desc:re-offer
-    Point,method:Heard_tip,desc:tip a card over
+    Point,method:Heard_road,desc:which road bears this card
+    Point,method:Heard_road_mint,desc:a pool press under a human card grows a Road child
+    Point,method:Heard_road_promote,desc:a human touch promotes a machine-first card
+    Point,method:Heard_hand_on,desc:is the share-my-hearts road on
+    Point,method:Heard_hand_set,desc:switch it
+    Point,method:Heard_tip,desc:the one-time heart-settings tip
   What:the siphon,desc:tags and playlists over the collection
     Doc:Ghost/M/Siphon.g
     Point,method:Siphon_tags,desc:the tag set

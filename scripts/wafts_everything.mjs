@@ -137,9 +137,9 @@ W.push(['Ghost/Music/Cave', 'the collection — heist original bytes into the Ca
  ['What:the berth', 'the magazine on disk — parts and the fold — Musica the zine — a cursor names a spot and heals across a rename',
   'Doc:Ghost/M/Heist.g', P('Berth_dir', 'where a berth lives'), P('Berth_fold', 'fold parts'), P('Musica_zine_ensure', 'the zine'), P('Musica_cards', 'cards of the zine'), P('Musica_rename', 'rename with a redirect'), P('Cursor_make', 'a cursor into a magazine'), P('Cursor_resolve', 'find the spot'), P('Cursor_heal', 'heal across a rename'), 'Doc:src/lib/O/ui/ZineFace.svelte'],
  ['What:the heard', 'the Heard Mag is the ledger — a Card per track per pub — love takes and unlove unwants — verdicts and the unseen mark',
-  'Doc:Ghost/M/Heard.g', P('Heard_mag', 'the Mag per pub'), P('Heard_card', 'the Card per track'), P('Heard_take', 'a reaction — yay — re-affirms on a later press never unloves'), P('Heard_nay', 'a reaction — not in my pool never drawn again'), P('Heard_meh', 'a reaction — an early skip radio-written'), P('Heard_taken', 'is it loved'), P('Heard_verdict', 'what happened to the take'), P('Heard_notice', 'mark unseen on arrival'), P('Heard_unseen', 'how many unseen'), P('Heard_gc', 'the clock that forgets'), P('Heard_clone_beat', 'copy verdicts across')],
- ['What:the hand road', 'a phone hands its loved tracks to the laptop — land got and wake',
-  'Doc:Ghost/M/Heard.g', P('Heard_hand_targets', 'who to hand to'), P('Heard_hand_land', 'a hand lands'), P('Heard_hand_got', 'the laptop says got'), P('Heard_hand_wake', 're-offer'), P('Heard_tip', 'tip a card over')],
+  'Doc:Ghost/M/Heard.g', P('Heard_mag', 'the Mag per pub'), P('Heard_card', 'the Card per track'), P('Heard_take', 'a reaction — yay — re-affirms on a later press never unloves'), P('Heard_nay', 'a reaction — not in my pool never drawn again'), P('Heard_meh', 'a reaction — an early skip radio-written'), P('Heard_taken', 'is it loved'), P('Heard_verdict', 'what happened to the take'), P('Heard_seen', 'mark a card seen'), P('Heard_unseen', 'how many unseen'), P('Heard_gc', 'the clock that forgets'), P('Heard_clone_beat', 'copy verdicts across')],
+ ['What:the roads', 'a card names the road that fetched it — the pool road is a child of the card a human made — the old hand road is retired — the heart-settings switch the roads',
+  'Doc:Ghost/M/Heard.g', P('Heard_road', 'which road bears this card'), P('Heard_road_mint', 'a pool press under a human card grows a Road child'), P('Heard_road_promote', 'a human touch promotes a machine-first card'), P('Heard_hand_on', 'is the share-my-hearts road on'), P('Heard_hand_set', 'switch it'), P('Heard_tip', 'the one-time heart-settings tip')],
  ['What:the siphon', 'tags and playlists over the collection',
   'Doc:Ghost/M/Siphon.g', P('Siphon_tags', 'the tag set'), P('Siphon_tag_apply', 'tag a track'), P('Siphon_playlist', 'a playlist from tags'), P('Siphon_home', 'where siphons live')],
  ['What:the tests', 'Doc:Ghost/Story/HeistTesting.g', 'Doc:Ghost/Story/BerthTesting.g', 'Doc:Ghost/Story/SiphonTesting.g'],
@@ -164,7 +164,7 @@ W.push(['Ghost/Vis/Visua', 'the visual — the crush that gangs leaves — the g
   'Doc:src/lib/O/Vytui.svelte', 'Doc:src/lib/O/Cyto.svelte', P('cyto_scan', 'walk the particles into nodes'), P('cytyle_classify', 'skip invisible compound'), P('cyto_update_wave', 'the animation wave'),
   'Doc:src/lib/O/Cytui.svelte', 'Doc:src/lib/O/Matstyle.svelte', P('matstyle_for', 'a swatch for a mainkey'), P('matstyle_apply', 'apply'), 'Doc:src/lib/O/glass_faces.ts', 'Doc:src/lib/O/glass_kinds.ts', 'Doc:src/lib/V/BigShapeland.svelte', 'Doc:scripts/runner_shot.mjs', 'Doc:scripts/runner_eye.mjs'],
  ['What:the tests', 'Doc:Ghost/Story/VoroTesting.g', P('VoroMitosis_seed', 'a flora that divides'), P('VoroScape_library', 'a library scape'), 'Doc:Ghost/V/VytoTesting.g', P('VytoStaple_seed', 'the glass beside a run'), P('VytoCell_seed', 'dosed cogs into cells'), P('VytoMitosis_found', 'grow and go extinct'), P('VytoTandem_found', 'two watchers one gear'), P('VytoFreeze_stand', 'freeze on a failed run'), P('VytoSeek_stand', 'seek a step pip')],
- ['What:the spec', 'Doc:src/lib/O/spec/Glassbeast_todo.md', 'Doc:src/lib/O/spec/Vyto_spec.md', 'Doc:src/lib/O/spec/Vyto_todo.md', 'Doc:src/lib/O/spec/Vyto_sizing_todo.md', 'Doc:src/lib/O/spec/Vyto_perf_todo.md', 'Doc:src/lib/O/spec/Cellsizing_todo.md', 'Doc:src/lib/O/spec/Voro_todo.md', 'Doc:src/lib/O/spec/Voro_vtuffing.md', 'Doc:src/lib/O/spec/Voro_svg_stuffing.md', 'Doc:src/lib/O/spec/Lens_posable_TODO.md', 'Doc:src/lib/O/spec/Waft_styling_todo.md'],
+ ['What:the spec', 'Doc:src/lib/O/spec/Glassbeast_todo.md', 'Doc:src/lib/O/spec/Vyto_spec.md', 'Doc:src/lib/O/spec/Vyto_sizing_todo.md', 'Doc:src/lib/O/spec/Cellsizing_todo.md', 'Doc:src/lib/O/spec/Voro_todo.md', 'Doc:src/lib/O/spec/Voro_vtuffing.md', 'Doc:src/lib/O/spec/Voro_svg_stuffing.md', 'Doc:src/lib/O/spec/Lens_posable_TODO.md', 'Doc:src/lib/O/spec/Waft_styling_todo.md'],
 ]])
 
 W.push(['Ghost/Land/Wordland', 'the land — the bet turned on the code itself — what the code says what it does and who asks',
@@ -246,6 +246,43 @@ W.push(['Everything', 'READ THIS FIRST — one Waft per area of the program list
   ['What:stale names are bugs', 'a Doc path or Point that no longer resolves is a mint bug — scripts/wafts_everything.mjs validates every one before writing — re-run it after a rename'],
   ['What:new sessions read this Waft first', 'then the area Waft for the work at hand — then its _todo §0']],
 ]])
+
+// ── COVERAGE — every source file has a home (2026-10-08, the owner: "do we ensure everything in src/ and Ghost/ is in
+//  Everything? that'd be good" — for the cave, whose resting hole presents Everything as the whole project).  It did not:
+//   186 of 415 source files were cited anywhere.  Placing a file in an AREA is curation (the policy: one area per ghost,
+//    split past ~150 lines), so this does not guess — it collects every file no Waft cites into one generated Waft,
+//     grouped by directory, and Everything cites it WITH THE COUNT, so nothing falls out of the map and the debt is the
+//      number on the door.  Give a file a home in its area and re-run; it leaves the unsorted on its own.
+const COVER_ROOTS = ['Ghost', 'src']
+const COVER_EXT   = /\.(g|svelte|ts|md)$/
+const COVER_SKIP  = /(^|\/)(node_modules|gen|history|ulative)(\/|$)/
+const UNSORTED    = 'Ghost/Rest/Unsorted'
+{
+  const cited = new Set()
+  const scan = (node) => { for (const c of node) { if (Array.isArray(c)) scan(c); else if (typeof c === 'string' && c.startsWith('Doc:')) cited.add(c.slice(4)) } }
+  for (const [, , , tree] of W) for (const w of tree) scan(w)
+  const files = []
+  const walk = (d) => {
+    for (const e of fs.readdirSync(ROOT + '/' + d, { withFileTypes: true })) {
+      const rel = d + '/' + e.name
+      if (COVER_SKIP.test(rel)) continue
+      if (e.isDirectory()) walk(rel)
+      else if (COVER_EXT.test(e.name)) files.push(rel)
+    }
+  }
+  for (const r of COVER_ROOTS) walk(r)
+  const rest = files.filter(f => !cited.has(f)).sort()
+  const byDir = new Map()
+  for (const f of rest) { const d = f.slice(0, f.lastIndexOf('/')); if (!byDir.has(d)) byDir.set(d, []); byDir.get(d).push(f) }
+  W.push([UNSORTED, `every source file no area Waft cites yet — ${rest.length} of ${files.length} — one What per directory — give each a home in its area and re-run`, [],
+    [...byDir].map(([d, fs_]) => [`What:${d}`, `${fs_.length} file${fs_.length === 1 ? '' : 's'} with no area`, ...fs_.map(f => 'Doc:' + f)])])
+  const every = W.find(w => w[0] === 'Everything')
+  const at = every[3].findIndex(w => w[0] === 'What:the policy')
+  every[3].splice(at, 0, ['What:the unsorted', `${UNSORTED} — ${rest.length} of ${files.length} source files no area claims yet — by directory — the debt of this map`, `FromWhat:Waft:${UNSORTED}`])
+  const pol = every[3].find(w => w[0] === 'What:the policy')
+  pol.push(['What:every file has a home', `every source file under ${COVER_ROOTS.join(' and ')} is cited by an area Waft or sits in the unsorted Waft — re-running this script recounts it`])
+  console.log(`coverage: ${files.length - rest.length} of ${files.length} source files cited by an area — ${rest.length} unsorted across ${byDir.size} directories`)
+}
 
 // ── validate + emit ──
 const defs = new Map()

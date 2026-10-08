@@ -28,7 +28,7 @@ const OATH_LINE_RE      = /^\s*Assertion:([a-z0-9-]+),/gm
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Lagoon(): string { return '28776e7e3d946dd1~g1' },
+    Ghostmeta_Ghost_L_Lagoon(): string { return '5473c1f810bf209b~g1' },
 
 // Lagoon.g — the READER LAYER over the censuses.  The third ghost in Ghost/L/ (the land); spec home:
 //  src/lib/O/spec/Lagoon_todo.md.  `Lagoon` is the owner's working title (2026-09-08) and the image is
@@ -1414,7 +1414,7 @@ Lagoon_cave_mode(w, mode) {
 Lagoon_cave_go(w, step) {
     let st = w.c.cave || []
     let top = st[st.length - 1]
-    let same = top && top.lvl === step.lvl && top.path === step.path && top.m === step.m && top.fam === step.fam && top.dir === step.dir
+    let same = top && top.lvl === step.lvl && top.path === step.path && top.m === step.m && top.fam === step.fam && top.dir === step.dir && top.key === step.key
     if (!same) w.c.cave = st.concat([step])
     this.Lagoon_cave_show(w)
 
@@ -1504,6 +1504,7 @@ Lagoon_cave_level(w) {
     let sx = {}
     if (here.lvl === 'search' && !here.q) return this.Lagoon_cave_crown(out.concat(this.Lagoon_cave_rest(w)))
     if (here.lvl === 'search') return this.Lagoon_cave_crown(out.concat(this.Lagoon_cave_files(w, sx, here.dir)))
+    if (here.lvl === 'area') return this.Lagoon_cave_crown(out.concat(this.Lagoon_cave_area(w, here)))
     if (here.lvl === 'file') return this.Lagoon_cave_crown(out.concat(this.Lagoon_cave_methods(w, here, sx)))
     if (here.lvl === 'method') return this.Lagoon_cave_crown(out.concat(this.Lagoon_cave_place(w, here, sx)))
     return out
@@ -1568,7 +1569,8 @@ Lagoon_cave_parse_everything(text) {
         if (m[2] === 'What' && depth === 1) {
             let name = rest.split(',desc:')[0]
             let tail = rest.split(',desc:')[1] || ''
-            cur = { name: name, desc: tail.split(',FromWhat:')[0], docs: [], rules: [] }
+            let from = (tail.split(',FromWhat:')[1] || '').replace(/^Waft:/, '')
+            cur = { name: name, desc: tail.split(',FromWhat:')[0], from: from, docs: [], rules: [] }
             areas.push(cur)
         } else if (cur && m[2] === 'Doc') {
             cur.docs.push(rest.split(',')[0])
@@ -1588,9 +1590,55 @@ Lagoon_cave_areas(w, areas) {
         }
         for (const r of a.rules) kids.push({ Rule: r.name, guise: { tok: 'rule:' + r.name } })
         let v = { Area: a.name, guise: { tok: 'area:' + a.name, hue: 'area:' + a.name, dose: Math.max(1, kids.length), kids: kids } }
-        if (a.docs.length) v.guise.press = () => this.Lagoon_cave_enter(w, a.docs[0], null)
+        // pressing an area walks into ITS Waft — every doc the area claims, under the Whats its author drew (for the
+        //  unsorted area those Whats are directories) — so the whole project is reachable from the resting hole
+        if (a.from) v.guise.press = () => this.Lagoon_cave_go(w, { lvl: 'area', key: a.from, name: a.name })
+        else if (a.docs.length) v.guise.press = () => this.Lagoon_cave_enter(w, a.docs[0], null)
         return v
     })
+
+},
+// THE AREA LEVEL — an area Waft's own shape: one vertebra per What it draws, its docs as ribs (each wearing its
+//  directory's hue; press one to walk into the file).  The Waft is READ once off Atlas's nav and kept as face state;
+//   until it lands the level is just the head, and the read re-sows it.
+Lagoon_cave_area(w, here) {
+    let wafts = w.c.cave_wafts || (w.c.cave_wafts = {})
+    let parsed = wafts[here.key]
+    if (parsed === undefined) {
+        wafts[here.key] = null
+        let nav = typeof this.Atlas_nav === 'function' ? this.Atlas_nav() : null
+        if (nav && typeof nav.read_file === 'function') {
+            Promise.resolve(nav.read_file('wormhole/' + here.key, 'toc.snap')).then(text => {
+                wafts[here.key] = this.Lagoon_cave_parse_waft(String(text ?? ''))
+                delete w.c.cave_sig
+                this.Lagoon_cave_show(w)
+            }).catch(() => { wafts[here.key] = [] })
+        }
+        return []
+    }
+    if (!parsed) return []
+    return parsed.map(sec => ({ What: sec.name, guise: { tok: 'what:' + here.key + '#' + sec.name, hue: 'area:' + here.name, dose: Math.max(1, sec.docs.length),
+        kids: sec.docs.map(d => ({ Doc: d.replace(/^.*\//, ''), line: 1, guise: { tok: 'wdoc:' + here.key + '>' + sec.name + '>' + d,
+            hue: this.Lagoon_cave_dir(d) || '(root)', press: () => this.Lagoon_cave_enter(w, d, null) } })) } }))
+        .filter(v => v.guise.kids.length)
+
+},
+// a Waft's sections: every What that directly holds Docs, in order (a Doc repeated under two Whats is shown under each)
+Lagoon_cave_parse_waft(text) {
+    let secs = []
+    let cur = null
+    for (const line of text.split('\n')) {
+        let m = line.match(/^( *)(What|Doc):(.*)$/)
+        if (!m) continue
+        if (m[2] === 'What') {
+            cur = { name: m[3].split(',desc:')[0].split(',FromWhat:')[0], docs: [] }
+            secs.push(cur)
+        } else if (cur) {
+            let d = m[3].split(',')[0]
+            if (cur.docs.indexOf(d) < 0) cur.docs.push(d)
+        }
+    }
+    return secs.filter(x => x.docs.length)
 
 },
 // THE BROWSE DOOR — nothing typed, so nothing to rank: the code's LARGER OBJECTS (Lagoon_families — every def
@@ -1653,6 +1701,7 @@ Lagoon_cave_rope(w) {
     for (const s of w.c.cave || []) {
         if (s.lvl === 'search' && !s.dir) out.push('⌕ ' + (s.q || ''))
         if (s.lvl === 'search' && s.dir) out.push(s.dir + '/')
+        if (s.lvl === 'area') out.push(s.name)
         if (s.lvl === 'file') out.push(this.Lagoon_cave_base(s.path) + (s.fam ? ' · ' + s.fam + '…' : ''))
         if (s.lvl === 'method') {
             let far = s.from && s.path !== s.from ? this.Lagoon_cave_base(s.path) + '.' : ''
@@ -1891,19 +1940,58 @@ Lagoon_cave_families(w, path, hs, sx) {
 },
 // one hit as a rib.  Inside a mapped method it opens that method's place, landing the editor ON the hit;
 //  with no anatomy under it, it lands the code and leaves the cave.
-Lagoon_cave_hit(w, h, sx) {
+async Lagoon_cave_hit(w, h, sx) {
     let g = {}
     g[h.kind] = h.name
     g.line = h.line
-    g.guise = { tok: h.path + ':' + h.line, press: () => {
+    g.guise = { tok: h.path + ':' + h.line, press: async () => {
+        // LAND ON THE HIT'S OWN LINE (2026-10-08, the owner: the Aside "doesn't hilight the target row… or at all").  A
+        //  `text:<word>` point resolves to the word's FIRST occurrence in the doc, not this hit's line — so a Mention or a
+        //   Text hit sends a piece of its own line instead (Lang_resolve_point tries an exact match first).
+        let point = h.point
+        if (h.kind === 'Mention' || h.kind === 'Text') {
+            let q = String(((w.c.cave || [])[0] || {}).q || '')
+            let txt = this.Lagoon_cave_line(w, h.path, h.line) || await this.Lagoon_cave_read_line(h.path, h.line)
+            point = this.Lagoon_cave_line_point(txt, q) || point
+        }
         let m = this.Lagoon_cave_method_at(w, h.path, h.line, {})
         if (m) {
-            this.Lagoon_cave_go(w, { lvl: 'method', path: h.path, m: m.name, point: h.point })
+            this.Lagoon_cave_go(w, { lvl: 'method', path: h.path, m: m.name, point: point })
             return
         }
-        this.Lagoon_cave_emit(w, 'land', { path: h.path, point: h.point, leave: 1 })
+        this.Lagoon_cave_emit(w, 'land', { path: h.path, point: point, leave: 1 })
     } }
     return g
+
+},
+// one line of a doc through Atlas's nav — a single read, at a press, never a sweep
+async Lagoon_cave_read_line(path, line) {
+    let nav = typeof this.Atlas_nav === 'function' ? this.Atlas_nav() : null
+    if (!nav || typeof nav.read_file !== 'function') return ''
+    let cut = path.lastIndexOf('/')
+    try {
+        let text = await nav.read_file(path.slice(0, cut), path.slice(cut + 1))
+        return String(String(text ?? '').split('\n')[line - 1] ?? '').trim()
+    } catch (e) {
+        return ''
+    }
+
+},
+// a `text:` point that finds THIS line: the comma-free piece of it holding the query (a comma would split the saved
+//  Point's sc), trimmed of comment slashes, long enough to be unique-ish and short enough to stay a phrase
+Lagoon_cave_line_point(txt, q) {
+    let line = String(txt || '').replace(/^\s*\/\/+\s*/, '').trim()
+    if (!line) return null
+    let low = String(q || '').toLowerCase()
+    let bits = line.split(',').map(b => b.trim()).filter(b => b.length > 0)
+    let pick = bits.find(b => low && b.toLowerCase().indexOf(low) >= 0)
+    if (!pick) pick = bits.reduce((a, b) => (b.length > a.length ? b : a), '')
+    if (pick.length > 80) {
+        let at = low ? pick.toLowerCase().indexOf(low) : -1
+        let from = at > 30 ? at - 30 : 0
+        pick = pick.slice(from, from + 80).trim()
+    }
+    return pick.length >= 4 ? 'text:' + pick : null
 
 },
 // into a file — or, if Atlas has no map of it (a spec, an unmapped module), land it and leave
@@ -1931,13 +2019,16 @@ Lagoon_cave_methods(w, here, sx) {
         if (!byM[m.name]) byM[m.name] = []
         byM[m.name].push(h)
     }
+    // BROWSING (no query — the file was reached through an area): there are no hits to filter by, so the file is
+    //  every method it holds, in file order, its families fused — the file's own shape
+    let browsing = !String(((w.c.cave || [])[0] || {}).q || '')
     let out = []
     for (const m of an.methods) {
-        let hs = byM[m.name]
+        let hs = byM[m.name] || (browsing && (here.fi == null || m.fam === here.fi) ? [] : null)
         if (!hs) continue
         let ribs = hs.filter(h => !(h.kind === 'Def' && h.name === m.name)).map(h => this.Lagoon_cave_hit(w, h, sx))
         let v = { Method: m.label, stem: (m.r ? m.r + '/' : '') + m.anchor + '@' + m.fam }
-        v.guise = { tok: 'mm:' + here.path + '#' + m.name, dose: hs.length, kids: ribs,
+        v.guise = { tok: 'mm:' + here.path + '#' + m.name, dose: Math.max(1, hs.length), kids: ribs,
             press: () => this.Lagoon_cave_go(w, { lvl: 'method', path: here.path, m: m.name }) }
         out.push(v)
     }

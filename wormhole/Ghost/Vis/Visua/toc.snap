@@ -22,6 +22,8 @@ Waft:Ghost/Vis/Visua,desc:the visual — the crush that gangs leaves — the gla
     Funkcion:Storying,of_Book:VytoDepth
     Funkcion:Storying,of_Book:VytoOrchestra
     Funkcion:Storying,of_Book:VytoMembrane
+    Funkcion:Storying,of_Book:VytoGuise
+    Funkcion:Storying,of_Book:VytoSpine
   What:the crush,desc:Voro — the census that gangs loose leaves behind a representative — the model and its facts
     Doc:Ghost/V/Voro.g
     Point,method:Voro_crush_scan,desc:scan the worlds
@@ -101,9 +103,7 @@ Waft:Ghost/Vis/Visua,desc:the visual — the crush that gangs leaves — the gla
   What:the spec
     Doc:src/lib/O/spec/Glassbeast_todo.md
     Doc:src/lib/O/spec/Vyto_spec.md
-    Doc:src/lib/O/spec/Vyto_todo.md
     Doc:src/lib/O/spec/Vyto_sizing_todo.md
-    Doc:src/lib/O/spec/Vyto_perf_todo.md
     Doc:src/lib/O/spec/Cellsizing_todo.md
     Doc:src/lib/O/spec/Voro_todo.md
     Doc:src/lib/O/spec/Voro_vtuffing.md

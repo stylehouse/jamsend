@@ -207,6 +207,21 @@ One page of state.  Everything under it is trail: read `## 0′` for how a thing
 
 ### HANDOVER — 2026-09-10, written at 92% context.
 
+### EVERY FILE HAS A HOME — the map's debt on its door, and the cave walks it — 2026-10-08
+The owner: *"do we ensure everything in src/ and Ghost/ is in Everything? that'd be good — to do with this tool"*.  It did not:
+ **186 of 415** source files were cited by any area Waft.
+- `scripts/wafts_everything.mjs` gained a COVERAGE pass: every `.g .svelte .ts .md` under `Ghost/` and `src/` (skipping gen ·
+   history · ulative · node_modules) that no Waft cites goes into a generated **`Waft:Ghost/Rest/Unsorted`**, one What per
+    directory; Everything cites it as **`What:the unsorted`** with the count ("229 of 415 — the debt of this map"), and the
+     policy gained **`every file has a home`**.  Placing a file in an AREA stays curation — the script never guesses; a file
+      leaves the unsorted when an area cites it and the script is re-run.
+- The first run refused to write (the validator's own law): 7 stale names from others' work — the retired Heard hand road
+   (now `What:the roads` — Heard_road · _road_mint · _road_promote · Heard_hand_on/_set · Heard_tip), `Heard_notice` →
+    `Heard_seen`, and Vyto_todo / Vyto_perf_todo (in history/ now) dropped from the visual area.
+- **The cave walks it**: pressing an AREA at rest goes into that area's Waft — one vertebra per What its author drew, its docs as
+   ribs (directory hue), press one to walk into the file; a file reached without a query shows EVERY method in file order, its
+    families fused.  So the whole project — the 229 included, under `the unsorted` by directory — is reachable from the hole.
+
 ### THE CAVE MEASURED — the wait was the queue, not the work — 2026-10-07, later
 The owner: *"it does a big laggy search far too often… this needs to be quite performant. maybe you could put some timers in
  and figure out what's slow."*  Book **`LagoonCaveBench`** (LagoonTesting.g — a MEASUREMENT, no oaths, recording not kept) stands
