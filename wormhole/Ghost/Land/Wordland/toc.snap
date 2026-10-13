@@ -3,6 +3,8 @@ Waft:Ghost/Land/Wordland,desc:the land — the bet turned on the code itself —
     Funkcion:Storying,of_Book:AtlasStaple
     Funkcion:Storying,of_Book:ElectrodeStaple
     Funkcion:Storying,of_Book:LagoonStaple
+    Funkcion:Storying,of_Book:LagoonCave
+    Funkcion:Storying,of_Book:WorkshopStaple
     Funkcion:Storying,of_Book:Hackarium
     Funkcion:Storying,of_Book:Educarium
   What:what the code says,desc:Atlas keeps the compiler Map for every doc headless — the corpus rostered in full on a runner
@@ -32,6 +34,36 @@ Waft:Ghost/Land/Wordland,desc:the land — the bet turned on the code itself —
     Point,method:Lagoon_lint,desc:the lint
     Point,method:Lagoon_errands,desc:the Aside read back newest first
     Point,method:Lagoon_figurines,desc:distinct-caller size
+  What:the terminal,desc:the room speaks verbs — :verb in the cave — a verb is owned by its ghost and lists itself — writes go to the editor
+    Doc:Ghost/L/Lagoon.g
+    Point,method:Lagoon_cave_command,desc:run a :verb from the hole
+    Point,method:Lagoon_cave_verbs,desc:the verbs that match — the controls documented
+    Point,method:Lagoon_cave_answer,desc:a verb answer as spine
+    Point,method:verbs_Lagoon,desc:the reader verbs
+    Doc:Ghost/L/Atlas.g
+    Point,method:verbs_Atlas,desc:the census refresh
+    Doc:src/lib/O/LiesFunk.svelte
+    Point,method:Verbs_all,desc:every verbs_ table on the House
+    Point,method:Verb_run,desc:the one gate — writes refused where writing is not this tab duty
+    Doc:src/lib/L/everything.js
+    Point,method:everything_map,desc:the authored map of the program
+    Point,method:everything_build,desc:coverage validate emit — one emitter two hosts
+  What:the workshop,desc:build a creation and watch it live — :play :watch :make — a creation is a ghost under Ghost/Play with one world
+    Doc:Ghost/L/Workshop.g
+    Point,method:verbs_Workshop,desc:play watch make
+    Point,method:Workshop_watch,desc:load it and stand its world in the room
+    Point,method:Workshop_heart,desc:a beat while watched — stops itself
+    Point,method:Workshop_make,desc:a new creation from the starter
+    Doc:Ghost/Play/Garden.g
+    Point,method:Garden,desc:the starter creation — seeds sprout flower and wilt
+    Point,method:Garden_grow,desc:one step of its life
+    Point,method:Garden_bloom,desc:petals and a new seed
+    Doc:Ghost/Play/Pond.g
+    Point,method:Pond,desc:rules that meet — fish and a heron rise and fall
+    Point,method:Pond_step,desc:eggs hatch and fish lay
+    Point,method:Pond_heron,desc:comes when the pond is full — eats — leaves when it is thin
+    Doc:Ghost/L/WorkshopTesting.g
+    Point,method:WorkshopStaple,desc:the proof — step by hand and swear what happened
   What:the rooms,desc:BigWordland is the room — the Hackarium the Clerkdesk the Educarium
     Doc:src/lib/L/BigWordland.svelte
     Doc:src/lib/L/Hackarium.svelte
@@ -52,3 +84,5 @@ Waft:Ghost/Land/Wordland,desc:the land — the bet turned on the code itself —
     Doc:src/lib/O/spec/Clerkdesk_todo.md
     Doc:src/lib/O/spec/Docindex_todo.md
     Doc:src/lib/O/spec/Meaningfold_todo.md
+    Doc:src/lib/O/spec/Verbs_todo.md
+    Doc:src/lib/O/spec/Emotion_todo.md

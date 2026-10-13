@@ -1753,27 +1753,32 @@ await M.eatfunc({
         // freetext — every query token must land in a doc (stem exact | prefix); rank by hit mass
         const tokens = [...needle.matchAll(/[a-z0-9]+/g)].map(m => H.Lies_stem(m[0])).filter(s => s.length >= 2)
         if (tokens.length) {
-            let per_doc: Map<string, { count: number, line: number }> | undefined
+            //  each doc also carries the LINES the words sit on (deduped, in order, capped) so a face can show every
+            //   mention, not only the first (the cave, 2026-10-12)
+            type Got = { count: number, line: number, lines: Set<number> }
+            let per_doc: Map<string, Got> | undefined
             for (const tok of tokens) {
-                const docs_for = new Map<string, { count: number, line: number }>()
+                const docs_for = new Map<string, Got>()
                 for (const [s, posting] of dex.post) {
                     if (s !== tok && !(tok.length >= 3 && s.startsWith(tok))) continue
                     for (const [path, ls] of posting) {
                         const got = docs_for.get(path)
-                        if (got) got.count += ls.length
-                        else docs_for.set(path, { count: ls.length, line: ls[0] })
+                        if (got) { got.count += ls.length; for (const l of ls) got.lines.add(l) }
+                        else docs_for.set(path, { count: ls.length, line: ls[0], lines: new Set(ls) })
                     }
                 }
                 if (!per_doc) { per_doc = docs_for; continue }
                 for (const p of [...per_doc.keys()]) {                   // AND across tokens
                     const v = docs_for.get(p)
                     if (!v) per_doc.delete(p)
-                    else per_doc.get(p)!.count += v.count
+                    else { const g = per_doc.get(p)!; g.count += v.count; for (const l of v.lines) g.lines.add(l) }
                 }
             }
             const ranked = [...(per_doc ?? new Map())].sort((a: any, b: any) => b[1].count - a[1].count).slice(0, cap)
-            for (const [path, v] of ranked as any)
-                out.texts.push({ path, title: title_of(path), line: v.line, count: v.count, snippet: snip_at(path, v.line) })
+            for (const [path, v] of ranked as any) {
+                const lines = [...(v.lines as Set<number>)].sort((a, b) => a - b).slice(0, 40)
+                out.texts.push({ path, title: title_of(path), line: lines[0] ?? v.line, lines, count: v.count, snippet: snip_at(path, lines[0] ?? v.line) })
+            }
         }
         return out
     },
@@ -2539,6 +2544,60 @@ await M.eatfunc({
             const came = b.split('\n').filter(l => l && !A.has(l)).map(l => '+ ' + l)
             return [...gone, ...came].join('\n') || '(no change)'
         },
+        // ── THE VERB REGISTRY (spec/Verbs_todo.md §2) ─────────────────────────────────────────────────────
+        //  A verb is owned by the ghost whose subject it is: any ghost may define `verbs_<Ghost>()` returning
+        //   `[{ name, desc, args, where, writes, run(w, ask) }]`.  eatfunc already merges every ghost's methods
+        //    onto the House, so the registry is simply the `verbs_*` methods this House has — nothing to enrol;
+        //     a loaded ghost brings its verbs, an absent one has none.  Asked fresh each time (a few object
+        //      literals) so a recompiled ghost's verbs are current at once.  First owner wins a name clash.
+        Verbs_all(): any[] {
+            const H = this as any
+            const out: any[] = []
+            const seen = new Set<string>()
+            for (const k of Object.keys(H).sort()) {
+                if (!/^verbs_[A-Za-z]+$/.test(k) || typeof H[k] !== 'function') continue
+                let defs: any = null
+                try { defs = H[k].call(H) } catch (e) { console.warn('🗝 verbs: ' + k + ' threw', e); continue }
+                // a `verbs_*` that is not a registry (an older method that happens to share the prefix) is skipped,
+                //  never fatal — the registry is consulted on EVERY op, so one odd method must not break them all
+                if (defs && typeof defs.then === 'function') { console.warn('🗝 verbs: ' + k + ' returned a Promise — a verbs_* table must stay SYNC (the .g compiler asyncs any method holding an await, even inside an arrow — move the body into its own method)'); continue }
+                if (!Array.isArray(defs)) continue
+                for (const d of defs) {
+                    if (!d?.name || typeof d.run !== 'function' || seen.has(d.name)) continue
+                    seen.add(d.name)
+                    out.push({ ...d, owner: k.slice(6) })
+                }
+            }
+            return out
+        },
+        Verb_find(name: string): any {
+            try { return (this as any).Verbs_all().find((v: any) => v.name === name) ?? null }
+            catch (e) { console.warn('🗝 verbs: registry fault — falling back to the chain', e); return null }
+        },
+        // Verb_run — run a registered verb ON THIS TAB, through the one gate every caller shares (the relay dispatch below,
+        //  and BigWordland's hole): a verb that WRITES is refused by name where writing is not this tab's duty — a music
+        //   page, and a hacker room (read-only by construction; Verbs_todo §1).  Returns { ok, result }.
+        async Verb_run(w: TheC, name: string, ask: any): Promise<{ ok: boolean, result: any }> {
+            const H = this as any
+            const v = H.Verb_find(name)
+            if (!v) return { ok: false, result: { error: `no verb '${name}' on this tab — \`verbs\` lists what is here (its owner may not be loaded)` } }
+            const ro_only = !!(H.Lies_humdinger?.(w) && !H.Lies_is_runner?.(w))
+            const role = H.Lies_role?.(w)
+            if (v.writes && (ro_only || role === 'hacker'))
+                return { ok: false, result: { refused: `verb '${name}' writes — this tab is ${role === 'hacker' ? 'a hacker room' : 'a music-page listener'} (read-only); run it on the editor terminal` } }
+            const result = await v.run(w, ask ?? {})
+            return { ok: !result?.error, result }
+        },
+        // the tab's own verbs — the registry describing itself (Verbs_todo §2: self-documenting)
+        verbs_Lies(): any[] {
+            const H = this as any
+            return [{
+                name: 'verbs', where: 'any', writes: 0, args: '',
+                desc: 'every registered verb on this tab — name, owner, args, where it runs, whether it writes',
+                run: async () => ({ verbs: H.Verbs_all().map((v: any) => ({ name: v.name, owner: v.owner, args: v.args ?? '',
+                    where: v.where ?? 'terminal', writes: v.writes ? 1 : 0, desc: v.desc ?? '' })) }),
+            }]
+        },
         async Lies_runner_ask_recv(w: TheC, frame: any): Promise<boolean> {
             const H    = this as House
             const corr = (frame?.corr ?? frame?.header?.corr) as string | undefined
@@ -2555,7 +2614,9 @@ await M.eatfunc({
             //        broadcast and is unchanged.  The relay-side repair its own comment promises — a second
             //         map for control-plane types — is the proper fix; this needs no server restart.
             if (ask.pub) {
-                const mine = String((H as any).Swarm_live_self?.()?.sc?.prepub ?? (H as any).Lies_self?.(w) ?? '')
+                // Lies_self returns { prepub } — the bare object stringified to "[object Object]", so a tab with no Swarm self
+                //  (a code room) never matched an addressed ask and --player= could not reach it (2026-10-12)
+                const mine = String((H as any).Swarm_live_self?.()?.sc?.prepub ?? (H as any).Lies_self?.(w)?.prepub ?? '')
                 if (!mine || !(mine.startsWith(String(ask.pub)) || String(ask.pub).startsWith(mine))) return false
             }
             // reactap — the reactivity census, forwarded to the shared handler: NO lease touch (a
@@ -2566,6 +2627,7 @@ await M.eatfunc({
             const client = String(ask.client ?? frame?.header?.from ?? 'anon')
             let ok = true
             let result: any = {}
+            let vdef: any = null
             try {
                 H.Lies_engage_touch(w, client)   // any activity from the holder keeps its lease alive
                 // READ-ONLY on a diagnostic humdinger (a music-page listener that stood up a read-only
@@ -2576,10 +2638,17 @@ await M.eatfunc({
                 if (ro_only && (op === 'run' || op === 'release' || op === 'retain' || op === 'accept' || op === 'declare' || op === 'reload' || op === 'ghost_load' || op === 'pick')) {
                     ok = false
                     result = { refused: `op '${op}' refused — this tab is a music-page listener (read-only introspection only)` }
+                } else if ((vdef = (H as any).Verb_find(op))) {
+                    // A REGISTERED VERB WINS over the chain below (Verbs_todo §2) — the chain is the fallback while
+                    //  families move out to the ghosts that own them.  The gate is Verb_run's, shared with the hole.
+                    const r = await (H as any).Verb_run(w, op, ask)
+                    ok = r.ok
+                    result = r.result
                 } else if (op === 'ping') {
                     const sr = H.Lies_rungo_record(w)
                     result = {
-                        role:    H.Lies_is_runner(w) ? 'runner' : 'editor',
+                        // a code room says so (it acked 'editor', which it is not, and the census filed it 'unknown')
+                        role:    H.Lies_is_runner(w) ? 'runner' : (H.Lies_is_hacker(w) ? 'hacker' : 'editor'),
                         channel: H.Lies_channel_live(w) ? 'up' : 'down',
                         running: sr ? { book: sr.sc.Storyrun, phase: sr.sc.phase, uid: sr.sc.uid } : null,
                         favourite_client: (H.top_House().c.favourite_client as string) ?? '',
@@ -2732,125 +2801,8 @@ await M.eatfunc({
                         scanning: dex?.scanning ? 1 : 0,
                         note: 'one polite pass per call — nudge repeatedly until `indexed` stops climbing',
                     }
-                } else if (op === 'atlas_callers' || op === 'atlas_refresh' || op === 'atlas_lint') {
-                    // The reverse lookup owed since the Atlas census began (Stemdex_todo.md §0):
-                    //  "who calls X" WITH the doc it lives in — a wildcard minisnap path already
-                    //   returns every matching call/elvisto row, but prints them without their parent,
-                    //    so it is a count-and-line answer, not a which-file one.  Read-only; needs
-                    //     A:Atlas/w:Atlas already standing (ghost_load --stand=Atlas first) — refuses
-                    //      plainly rather than silently returning [] if it isn't.
-                    //
-                    //  USE NUDGES A PASS (2026-09-06): every atlas_* query first runs Atlas_refresh —
-                    //   re-list the roots, mint the new, un-stamp the moved, drop the gone, map the
-                    //    movers inline — so an answer is as fresh as the disk at the moment of asking,
-                    //     with no second timer (the Stemdex's own searchbar-nudges-a-pass rhythm).
-                    //      `--stale` skips it for a cheap re-ask.  `fresh` in the reply is the tally.
-                    //  2026-09-08 — THE ANSWERS MOVED to `Ghost/L/Lagoon.g` (Atlas keeps; Lagoon asks —
-                    //   Lagoon_todo.md).  The op NAMES are unchanged so no script breaks, but the verbs
-                    //    are Lagoon's now and it finds the census itself, so this only needs to refresh.
-                    const a = ask as any
-                    const atlas = H.top_House().o({ A: 'Atlas' })[0]?.o({ w: 'Atlas' })[0]
-                    const lagoon = H.top_House().o({ A: 'Lagoon' })[0]?.o({ w: 'Lagoon' })[0]
-                    if (!atlas) { ok = false; result = { error: 'no A:Atlas standing — ghost_load Ghost/L/Atlas.g --stand=Atlas first' } }
-                    else if (!lagoon && op !== 'atlas_refresh') { ok = false; result = { error: 'no A:Lagoon standing — ghost_load Ghost/L/Lagoon.g --stand=Lagoon first (the readers moved there 2026-09-08)' } }
-                    else {
-                        const nav = (H as any).Atlas_nav()
-                        let fresh: any = null
-                        if (nav && !a.stale) fresh = await (H as any).Atlas_refresh(atlas, nav)
-                        const census = (atlas.o({ see: 'atlas' })[0] as TheC | undefined)?.sc ?? null
-                        if (op === 'atlas_refresh') result = { fresh, census }
-                        else if (op === 'atlas_callers') {
-                            const name = String(a.name ?? '')
-                            if (!name) { ok = false; result = { error: 'atlas_callers: name required' } }
-                            else result = { name, fresh, callers: (H as any).Lagoon_callers(lagoon, name) }
-                        } else {
-                            // atlas_lint — missing / beyond_eof file:line links, orphan defs; --sees adds
-                            //  the unproven %see sentences (one fixture read per Book, so it is opt-in)
-                            result = { fresh, census, ...(H as any).Lagoon_lint(lagoon) }
-                            if (a.sees && nav) (result as any).unproven = await (H as any).Lagoon_unproven(lagoon, nav)
-                        }
-                    }
-                } else if (op === 'lagoon') {
-                    // The reader layer's own door (2026-09-08).  The `atlas_*` ops kept their names on the
-                    //  move so no script broke, but the verbs are Lagoon's now and it keeps growing them;
-                    //   one op per verb would be a second load-list.  So: `lagoon <verb>`, and the ghost
-                    //    stays the authority on what a verb means.
-                    //   defs [q] · families · mentions <name> · rot · callers <name> · lint · join
-                    const a = ask as any
-                    const lw = H.top_House().o({ A: 'Lagoon' })[0]?.o({ w: 'Lagoon' })[0]
-                    if (!lw) { ok = false; result = { error: 'no A:Lagoon standing — ghost_load Ghost/L/Lagoon.g --stand=Lagoon first' } }
-                    else {
-                        const L = H as any
-                        const verb = String(a.verb ?? 'families')
-                        const arg  = a.name != null ? String(a.name) : ''
-                        const k    = Number(a.k ?? 0) || undefined
-                        // `seek` is the UNIFIED answer over both censuses (Atlas + the Stemdex) — the
-                        //  one the Searchbar and Lagui both render.  Every other verb here is a single
-                        //   reading; this is the seeker's whole reply in one shape.
-                        if (verb === 'seek')          result = L.Lagoon_seek(lw, arg, k ?? 60)
-                        // `beads` — one document as its own shape: regions in file order, defs indented
-                        //  under the bead their author put them in.  `seek doc:<part>` carries it too.
-                        else if (verb === 'beads')    result = L.Lagoon_beads(lw, arg)
-                        else if (verb === 'defs')     result = L.Lagoon_defs(lw, arg, k ?? 300)
-                        else if (verb === 'families') result = L.Lagoon_families(lw, k ?? 60)
-                        else if (verb === 'mentions') result = L.Lagoon_mentions(lw, arg, k ?? 60)
-                        else if (verb === 'rot')      result = L.Lagoon_prose_rot(lw, k ?? 60)
-                        else if (verb === 'callers')  result = { name: arg, callers: L.Lagoon_callers(lw, arg) }
-                        else if (verb === 'lint')     result = L.Lagoon_lint(lw)
-                        else if (verb === 'join')     result = L.Lagoon_join(lw, k ?? 40)
-                        // `rotwork` is the lint ROUTED — grouped by doc, with a proposed fix and a
-                        //  likely exit per group (Lagoon_todo leg 6).  Same census, no extra source.
-                        else if (verb === 'rotwork')  result = L.Lagoon_rotwork(lw, k ?? 12)
-                        // `figurines` — who is well connected: Electrode's measured callers beside Atlas's
-                        //  declared ones, top-most flagged, a dose for a face to size by (2026-09-09)
-                        else if (verb === 'figurines') result = L.Lagoon_figurines(lw, k ?? 40)
-                        // `errands` — the day's research trail read back off the Aside: what you went in
-                        //  there to look at, where you came from, how often you returned.  The shelf was
-                        //   always written; this is the first thing that reads it (Clerkdesk_todo §0).
-                        else if (verb === 'errands')  result = L.Lagoon_errands(lw, k ?? 40)
-                        // `oaths` is the one verb that needs a nav: a Book is not in the census (Atlas
-                        //  rosters code and prose; wormhole/Story is a third shelf), so the `book` and
-                        //   `sworn` link kinds resolve off disk — one toc read per Book.
-                        //  the nav is fetched HERE, not inherited: the `atlas_*` block above declares its
-                        //   own `const nav` inside its else-branch, so referencing that name from this
-                        //    block is a ReferenceError — which is exactly what the first ever call to
-                        //     `oaths` returned ("nav is not defined").  A verb nobody has run is an
-                        //      unverified claim, however carefully it was written.
-                        else if (verb === 'oaths') {
-                            const onav = (H as any).Atlas_nav?.()
-                            result = onav ? await L.Lagoon_oaths(lw, onav)
-                                          : { error: 'no nav — oaths reads wormhole/Story/*/toc.snap off disk' }
-                        }
-                        else { ok = false; result = { error: `lagoon: unknown verb '${verb}' — seek|beads|defs|families|mentions|rot|rotwork|callers|lint|join|oaths` } }
-                        if (result?.error) ok = false
-                    }
-                } else if (op === 'electrode') {
-                    // Electrode (Ghost/L/Electrode.g): both ends of every ghost call, kept as marks on
-                    //  top_House().c.electrode and REDUCED to particles under w:Electrode/%Graph,dontSnap.
-                    //   Needs A:Electrode/w:Electrode standing (ghost_load Ghost/L/Electrode.g --stand=Electrode).
-                    //   verbs: top (default) | arm | disarm | reset | reduce | hangs [--older=ms] | film [--k=N]
-                    //   Runner-only in the CLI's op tables: arming coats every ghost method on the tab.
-                    const a = ask as any
-                    const ew = H.top_House().o({ A: 'Electrode' })[0]?.o({ w: 'Electrode' })[0]
-                    if (!ew) { ok = false; result = { error: 'no A:Electrode standing — ghost_load Ghost/L/Electrode.g --stand=Electrode first' } }
-                    else {
-                        const E = H as any
-                        const verb = String(a.verb ?? 'top')
-                        if (verb === 'arm')          result = { coated: E.Electrode_arm(ew), ...E.Electrode_top(ew, 0) }
-                        else if (verb === 'disarm')  result = { uncoated: E.Electrode_disarm(ew) }
-                        else if (verb === 'reset')   result = { reset: E.Electrode_reset(ew) }
-                        else if (verb === 'reduce')  result = E.Electrode_reduce(ew)
-                        else if (verb === 'hangs')   result = { hangs: E.Electrode_hangs(ew, Number(a.older ?? 0)) }
-                        else if (verb === 'film')    result = { film: E.Electrode_film(ew, Number(a.k ?? 60)) }
-                        else if (verb === 'join')    {
-                            // the join MOVED to Lagoon 2026-09-08 — it reads BOTH censuses and belongs to
-                            //  neither, which is the worked example for why the reader layer exists.
-                            const lw = H.top_House().o({ A: 'Lagoon' })[0]?.o({ w: 'Lagoon' })[0]
-                            if (!lw) { ok = false; result = { error: 'no A:Lagoon standing — ghost_load Ghost/L/Lagoon.g --stand=Lagoon first' } }
-                            else { result = E.Lagoon_join(lw, Number(a.k ?? 40)); if (result?.error) ok = false }
-                        }
-                        else                         result = E.Electrode_top(ew, Number(a.k ?? 20))
-                    }
+                // atlas_callers · atlas_refresh · atlas_lint · lagoon · electrode — MOVED 2026-10-09 to the ghosts that own
+                //  them (verbs_Atlas · verbs_Lagoon · verbs_Electrode, Ghost/L/*.g).  Found above, via Verb_find.
                 } else if (op === 'minisnap') {
                     // TARGETED read of a pointer path (read-only; safe on a humdinger).  See H.minisnap above.
                     const a = ask as any
@@ -3617,7 +3569,7 @@ await M.eatfunc({
                                 note: kind === 'Radio' ? (after?.note ?? null) : null }
                         }
                     }
-                } else { ok = false; result = { error: `unknown op ${op}` } }
+                } else { ok = false; result = { error: `unknown op ${op} — not in the chain, and no loaded ghost registers it as a verb (the owner may not be loaded here — ghost_load it; \`runner_ask verbs\` lists what this tab has)` } }
             } catch (e) {
                 // the first two frames of the stack ride along: a bare `reading 'sc'` from a poke names
                 //  nothing (Ra_pool_report's arg-shape bug sat a week behind one), and the CLI is the

@@ -6,6 +6,7 @@
 import Lagui from "$lib/L/Lagui.svelte"
 import Clerkdesk from "$lib/L/Clerkdesk.svelte"
 import { TESTING_RE } from "$lib/L/testing"
+import { everything_map, everything_build, COVER_ROOTS } from "$lib/L/everything.js"
 // THE CAVE's deck — VytoSpine's own, with room for a family's members on one vertebra before the fold
 //  one scope down crests them (ribs:N, default 7 — "Method ×30" was that crest, and it is not a place)
 const LAGOON_CAVE_DECK      = 'spine,kindfold,budget:400,ribs:48'
@@ -28,7 +29,7 @@ const OATH_LINE_RE      = /^\s*Assertion:([a-z0-9-]+),/gm
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Lagoon(): string { return '5473c1f810bf209b~g1' },
+    Ghostmeta_Ghost_L_Lagoon(): string { return '56f391798aafb865~g1' },
 
 // Lagoon.g — the READER LAYER over the censuses.  The third ghost in Ghost/L/ (the land); spec home:
 //  src/lib/O/spec/Lagoon_todo.md.  `Lagoon` is the owner's working title (2026-09-08) and the image is
@@ -301,6 +302,7 @@ Lagoon_seek(w, q, cap) {
             for (const t of s.texts ?? []) {
                 let row = { name: t.title ?? t.path, doc: t.path, line: t.line ?? 1, from: 'stemdex' }
                 if (t.snippet) row.snippet = t.snippet
+                if (t.lines) row.lines = t.lines
                 out.texts.push(row)
             }
             out.done = s.done
@@ -1371,6 +1373,18 @@ e_Lagoon_cave(A, w, e) {
         }
         return
     }
+    // A COMMAND LINE — `:verb args` (spec/Verbs_todo.md §4).  While typed it lists the verbs that match; Enter runs it
+    //  (Lagoon_cave_command), and the answer stands until the line changes.
+    if (q.indexOf(':') === 0) {
+        let st0 = w.c.cave || []
+        if (!(st0.length === 1 && st0[0].q === q)) {
+            w.c.cave = [{ lvl: 'search', q: q }]
+            delete w.c.cave_hits
+        }
+        if (w.c.cave_answer && w.c.cave_answer.q !== q) delete w.c.cave_answer
+        this.Lagoon_cave_show(w)
+        return
+    }
     // TYPED to nothing — back to the browse door, not out of the cave (leaving is the head's press / Esc)
     if (e?.sc.typed && !q) {
         w.c.cave = [{ lvl: 'search', q: '' }]
@@ -1414,7 +1428,7 @@ Lagoon_cave_mode(w, mode) {
 Lagoon_cave_go(w, step) {
     let st = w.c.cave || []
     let top = st[st.length - 1]
-    let same = top && top.lvl === step.lvl && top.path === step.path && top.m === step.m && top.fam === step.fam && top.dir === step.dir && top.key === step.key
+    let same = top && top.lvl === step.lvl && top.path === step.path && top.m === step.m && top.fam === step.fam && top.dir === step.dir && top.key === step.key && top.point === step.point
     if (!same) w.c.cave = st.concat([step])
     this.Lagoon_cave_show(w)
 
@@ -1446,12 +1460,15 @@ Lagoon_cave_show(w) {
     // THE ONE THING (2026-10-06/07, the owner: "that thing has to be on screen AT ALL TIMES if it's going to exist…
     //  it has to be The One Thing").  REST — the hole and the families, the whole room; FULL — a search or a file;
     //   RAIL — a method, folded back so its landed code comes through beside its doors.  The face decides widths.
-    this.Lagoon_cave_mode(w, here && here.lvl === 'method' ? 'rail' : (here && here.lvl === 'search' && !here.q ? 'rest' : 'full'))
-    if (here && here.lvl === 'method') {
-        let key = here.path + '#' + here.m + '@' + (here.point || '')
+    //  A FLAT FILE (one Atlas has no map of — a spec, an unmapped module) is a place too: its lines in the glass, its text
+    //   landed beside, exactly as a method is.
+    let landing = here && (here.lvl === 'method' || (here.lvl === 'file' && here.flat))
+    this.Lagoon_cave_mode(w, landing ? 'rail' : (here && here.lvl === 'search' && !here.q ? 'rest' : 'full'))
+    if (landing) {
+        let key = here.path + '#' + (here.m || '') + '@' + (here.point || '')
         if (w.c.cave_landed !== key) {
             w.c.cave_landed = key
-            this.Lagoon_cave_emit(w, 'land', { path: here.path, point: here.point || here.m })
+            this.Lagoon_cave_emit(w, 'land', { path: here.path, point: here.point || here.m || null })
         }
     }
     let t0 = performance.now()
@@ -1503,7 +1520,12 @@ Lagoon_cave_level(w) {
     if (!here) return out
     let sx = {}
     if (here.lvl === 'search' && !here.q) return this.Lagoon_cave_crown(out.concat(this.Lagoon_cave_rest(w)))
+    if (here.lvl === 'search' && here.q.indexOf(':') === 0) {
+        let ans = w.c.cave_answer
+        return this.Lagoon_cave_crown(out.concat(ans && ans.q === here.q ? this.Lagoon_cave_answer(w, ans) : this.Lagoon_cave_verbs(w, here.q)))
+    }
     if (here.lvl === 'search') return this.Lagoon_cave_crown(out.concat(this.Lagoon_cave_files(w, sx, here.dir)))
+    if (here.lvl === 'watch') return this.Lagoon_cave_crown(out.concat(this.Lagoon_cave_watch(w, here)))
     if (here.lvl === 'area') return this.Lagoon_cave_crown(out.concat(this.Lagoon_cave_area(w, here)))
     if (here.lvl === 'file') return this.Lagoon_cave_crown(out.concat(this.Lagoon_cave_methods(w, here, sx)))
     if (here.lvl === 'method') return this.Lagoon_cave_crown(out.concat(this.Lagoon_cave_place(w, here, sx)))
@@ -1519,6 +1541,169 @@ Lagoon_cave_crown(out) {
         if (d > most) most = d
     }
     out[0].guise.dose = Math.max(8, Math.round(most * 1.3))
+    return out
+
+},
+// THE COMMAND LINE — the hole speaks verbs (spec/Verbs_todo.md §4).  The registry is the tab's own (Verbs_all, LiesFunk —
+//  every `verbs_<Ghost>()` a loaded ghost declares); a verb runs through Verb_run, the one gate the relay dispatch also
+//   uses, so a verb that writes is refused by name in a hacker room exactly as it is over the wire.
+// Enter on a PLAIN search just asks now (no pause); Enter on `:verb …` runs it.  Args are parsed generically: `--k=N` is a
+//  flag, `--stale` a switch, and positionals fill `verb` then `name` when the verb's own `args` begins with `verb`, else `name`.
+async Lagoon_cave_command(w, v) {
+    let line = String(v ?? '').trim()
+    if (line.indexOf(':') !== 0) {
+        if (w.c.cave_typing) clearTimeout(w.c.cave_typing)
+        this.e_Lagoon_cave(null, w, { sc: { q: line, typed: 1 } })
+        return
+    }
+    let parts = line.slice(1).trim().split(/\s+/).filter(Boolean)
+    let name = parts.shift() || 'verbs'
+    let def = typeof this.Verb_find === 'function' ? this.Verb_find(name) : null
+    let ask = {}
+    let pos = []
+    for (const p of parts) {
+        if (p.indexOf('--') === 0) {
+            let kv = p.slice(2).split('=')
+            ask[kv[0]] = kv.length > 1 ? kv.slice(1).join('=') : 1
+        } else {
+            pos.push(p)
+        }
+    }
+    if (def && /^verb\b/.test(def.args || '')) {
+        if (pos[0]) ask.verb = pos[0]
+        if (pos[1]) ask.name = pos[1]
+    } else if (pos[0]) {
+        ask.name = pos[0]
+    }
+    let SH = w.c.face_on
+    let lies = (SH ? SH.o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] : null) || this.Lagoon_lies()
+    let r = typeof this.Verb_run === 'function'
+        ? await this.Verb_run(lies, name, ask)
+        : { ok: false, result: { error: 'no verb registry on this tab' } }
+    delete w.c.cave_sig
+    // THE WORKSHOP'S WATCH (Ghost/L/Workshop.g) — a creation now stands in this room; the cave becomes its window
+    if (name === 'watch' && r.ok && r.result && r.result.watching) {
+        delete w.c.cave_answer
+        w.c.cave = [{ lvl: 'watch', q: line, name: r.result.watching }]
+        this.Lagoon_cave_show(w)
+        return
+    }
+    w.c.cave_answer = { q: line, name: name, ok: r.ok, result: r.result }
+    w.c.cave = [{ lvl: 'search', q: line }]
+    this.Lagoon_cave_show(w)
+
+},
+// the verbs that match what is typed after the colon — the hole listing what it can do
+Lagoon_cave_verbs(w, q) {
+    let want = String(q).slice(1).trim().split(/\s+/)[0].toLowerCase()
+    let all = typeof this.Verbs_all === 'function' ? this.Verbs_all() : []
+    let hit = all.filter(v => !want || v.name.toLowerCase().indexOf(want) === 0)
+    if (!hit.length) hit = all.filter(v => v.name.toLowerCase().indexOf(want) >= 0)
+    return hit.map(v => {
+        let kids = [{ Says: v.desc || '(no description)', guise: { tok: 'vsay:' + v.name } }]
+        if (v.args) kids.push({ Args: v.args, guise: { tok: 'vargs:' + v.name } })
+        kids.push({ Owner: v.owner + ' · ' + (v.where || 'terminal') + (v.writes ? ' · writes' : ''), guise: { tok: 'vown:' + v.name } })
+        let g = { Verb: ':' + v.name, guise: { tok: 'verb:' + v.name, hue: 'verb:' + v.owner, dose: 3, kids: kids } }
+        if (!v.args || /^\[/.test(v.args)) g.guise.press = () => this.Lagoon_cave_command(w, ':' + v.name)
+        return g
+    })
+
+},
+// a verb's answer as spine: a list is a vertebra and its items ribs; an object is a vertebra of its scalars; loose scalars
+//  gather on one vertebra.  An item that names a doc lands in the editor when pressed.
+Lagoon_cave_answer(w, ans) {
+    if (ans.ok && ans.name === 'play' && ans.result && Array.isArray(ans.result.creations)) {
+        return ans.result.creations.map(c => ({ Creation: c.name, guise: { tok: 'play:' + c.name, hue: 'play:' + c.name, dose: 3,
+            kids: [{ Doc: c.doc, guise: { tok: 'play:' + c.name + '>doc', press: () => this.Lagoon_cave_enter(w, c.doc, null) } }],
+            press: () => this.Lagoon_cave_command(w, ':watch ' + c.name) } }))
+    }
+    if (!ans.ok) {
+        let why = ans.result ? (ans.result.error || ans.result.refused || JSON.stringify(ans.result)) : 'failed'
+        return [{ Error: String(why).slice(0, 200), guise: { tok: 'ans:err', dose: 2 } }]
+    }
+    let res = ans.result
+    if (res == null || typeof res !== 'object') return [{ Answer: String(res), guise: { tok: 'ans:scalar' } }]
+    let out = []
+    let loose = []
+    for (const k of Object.keys(res)) {
+        let v = res[k]
+        if (Array.isArray(v)) {
+            let kids = v.slice(0, 48).map((it, i) => this.Lagoon_cave_answer_item(w, k, it, i))
+            out.push({ Answer: k + ' ×' + v.length, guise: { tok: 'ans:' + k, hue: 'ans:' + k, dose: Math.max(1, v.length), kids: kids } })
+        } else if (v && typeof v === 'object') {
+            let kids = Object.keys(v).slice(0, 48).map(kk => ({ Fact: kk + ': ' + this.Lagoon_cave_short(v[kk]), guise: { tok: 'ans:' + k + '.' + kk } }))
+            out.push({ Answer: k, guise: { tok: 'ans:' + k, hue: 'ans:' + k, dose: Math.max(1, kids.length), kids: kids } })
+        } else {
+            loose.push({ Fact: k + ': ' + this.Lagoon_cave_short(v), guise: { tok: 'ans:.' + k } })
+        }
+    }
+    if (loose.length) out.unshift({ Answer: ans.name, guise: { tok: 'ans:', dose: loose.length, kids: loose } })
+    return out
+
+},
+Lagoon_cave_answer_item(w, k, it, i) {
+    if (it == null || typeof it !== 'object') return { Item: this.Lagoon_cave_short(it), guise: { tok: 'ans:' + k + '#' + i } }
+    let path = it.doc || it.path
+    let say = it.name || it.method || it.stem || it.target || it.title || path || this.Lagoon_cave_short(it)
+    if (path && it.line) say = say + ' · ' + String(path).replace(/^.*\//, '') + ':' + it.line
+    let g = { Item: String(say).slice(0, 120), guise: { tok: 'ans:' + k + '#' + i + ':' + String(say).slice(0, 40) } }
+    if (path) {
+        // like a hit: inside a mapped method it opens that method's place (the glass folds, the code comes through);
+        //  anything else lands and the cave returns to rest — never code landing UNDER a full glass
+        let point = it.name || it.method || it.via || null
+        g.guise.press = () => {
+            let m = it.line ? this.Lagoon_cave_method_at(w, path, Number(it.line), {}) : null
+            if (m) {
+                let step = { lvl: 'method', path: path, m: m.name }
+                if (point) step.point = point
+                this.Lagoon_cave_go(w, step)
+                return
+            }
+            this.Lagoon_cave_emit(w, 'land', { path: path, point: point, leave: 1 })
+        }
+    }
+    return g
+
+},
+Lagoon_cave_short(v) {
+    if (v == null) return String(v)
+    if (typeof v === 'object') return JSON.stringify(v).slice(0, 100)
+    return String(v).slice(0, 100)
+
+},
+// THE WATCH — a creation's world, live (the Workshop's SEE half).  Each top-level particle is a vertebra named by what it IS
+//  (its mainkey) and its value, coloured by its kind; its children are ribs.  The tok is KIND AND VALUE: Garden_become makes a
+//   NEW particle when a seed sprouts, so the glass shows one leaving and the next arriving — honest.  (A value-only tok was tried
+//    so the plant would morph across kinds; Vyto's mirror kept the old row's first key and the name fell off — the label read the
+//     dose instead.  A cross-kind morph is the mirror's question, not the producer's.)  The face re-asks it while watching
+//      (BigWordland), and the sowing's own signature skips the beats where nothing moved.
+Lagoon_cave_watch(w, here) {
+    let SH = w.c.face_on || this.top_House()
+    let cw = SH.o({ A: here.name })[0]?.o({ w: here.name })[0]
+    if (!cw) return [{ Waiting: here.name + ' is not standing in this room yet', guise: { tok: 'watch:wait' } }]
+    let SKIP = { see: 1, self: 1, req: 1, Opt: 1 }
+    let out = []
+    for (const p of cw.o()) {
+        let mk = Object.keys(p.sc)[0]
+        if (!mk || SKIP[mk]) continue
+        let val = String(p.sc[mk])
+        let kids = []
+        for (const k of p.o()) {
+            let km = Object.keys(k.sc)[0]
+            if (!km || SKIP[km]) continue
+            let kg = {}
+            kg[km] = String(k.sc[km])
+            kg.guise = { tok: 'live:' + mk + ':' + val + '>' + km + ':' + k.sc[km], hue: km }
+            kids.push(kg)
+            if (kids.length >= 24) break
+        }
+        let g = {}
+        g[mk] = val
+        g.guise = { tok: 'live:' + mk + ':' + val, hue: mk, dose: 1 + kids.length, kids: kids }
+        out.push(g)
+        if (out.length >= 60) break
+    }
+    if (!out.length) out.push({ Empty: here.name + ' has nothing in its world yet — give it a beat', guise: { tok: 'watch:empty' } })
     return out
 
 },
@@ -1654,25 +1839,20 @@ Lagoon_cave_browse(w) {
 },
 // the head: always the first vertebra, one tok at every depth so it morphs, and pressing it climbs (out,
 //  from the surface).  `deep` rides as a fact — the glass darkens the cave by it.
-// THE HOLE: the head carries a FIELD (Vyto_guise `field` — the glass draws a text box in its label place), so
-//  the root of the creature is where you type.  Its value is the query; the rest of the rope rides beside it.
-//   Typing re-asks through the door directly, as every press does (the sowing's only tree write is the
-//    commission, and that already rides an elvisto), lightly debounced — the owner wants things to ping around
-//     it "pretty fast".  It never grabs focus itself: the hole is always on screen, and the face focuses it on a
-//      summon (`/`) — a hole that took focus on every sowing would steal the hand out of the editor.
+// THE BOX IS THE ROOM'S, NOT THE GLASS'S (2026-10-12, the owner: "whatever this input field is made of, it's the wrong
+//  stuff").  The head once carried a text box drawn inside the SVG, rebuilt on every sowing — so focus, the caret and the
+//   page's scroll all had to be carried across rebuilds by hand.  Now the room (BigWordland) holds one plain input that is
+//    never rebuilt and calls the two doors below (Lagoon_cave_type as you type, Lagoon_cave_command on Enter); the head
+//     only READS what was typed — the rope.
 Lagoon_cave_head(w) {
     let st = w.c.cave || []
     let deep = st.length - 1
-    let q = (st[0] || {}).q || ''
     let rope = this.Lagoon_cave_rope(w)
-    let rest = rope.indexOf(' › ') >= 0 ? rope.slice(rope.indexOf(' › ')) : ''
-    let field = { value: q, placeholder: 'search code & prose  ( / )', rest: rest,
-        oninput: (v) => this.Lagoon_cave_type(w, v) }
-    let head = { Head: rope, guise: { tok: 'cave:head', dose: 1, field: field, press: () => {
+    let head = { Head: rope, guise: { tok: 'cave:head', dose: 1, press: () => {
         // the glass is always on screen, and Vytui presses the head on ANY Escape — one typed into the editor (or
         //  any other box) belongs to that box, not to a climb
         let a = typeof document !== 'undefined' ? document.activeElement : null
-        if (a && (a.isContentEditable || ((a.tagName === 'INPUT' || a.tagName === 'TEXTAREA') && !a.classList.contains('vy-field-in')))) return
+        if (a && (a.isContentEditable || ((a.tagName === 'INPUT' || a.tagName === 'TEXTAREA') && !a.classList.contains('bw-hole')))) return
         this.Lagoon_cave_rise(w)
     } } }
     if (deep > 0) head.deep = deep
@@ -1685,11 +1865,16 @@ Lagoon_cave_head(w) {
 Lagoon_cave_type(w, v) {
     if (w.c.cave_typing) clearTimeout(w.c.cave_typing)
     let q = String(v ?? '').trim()
+    // CLEARING IS NOT A QUESTION — an emptied hole goes back to rest at once, no pause (the owner: "reverts quite sluggishly")
+    if (!q) {
+        this.e_Lagoon_cave(null, w, { sc: { q: '', typed: 1 } })
+        return
+    }
     w.c.cave_typing = setTimeout(() => {
         w.c.cave_typing = null
         let st = w.c.cave || []
         let now = (st[0] || {}).q || ''
-        if (q.length > 0 && q.length < 3) q = ''
+        if (q.length > 0 && q.length < 3 && q.indexOf(':') !== 0) q = ''
         if (q === now && st.length === 1) return
         this.e_Lagoon_cave(null, w, { sc: { q: q, typed: 1 } })
     }, LAGOON_CAVE_PAUSE)
@@ -1702,6 +1887,7 @@ Lagoon_cave_rope(w) {
         if (s.lvl === 'search' && !s.dir) out.push('⌕ ' + (s.q || ''))
         if (s.lvl === 'search' && s.dir) out.push(s.dir + '/')
         if (s.lvl === 'area') out.push(s.name)
+        if (s.lvl === 'watch') out.push('👁 ' + s.name)
         if (s.lvl === 'file') out.push(this.Lagoon_cave_base(s.path) + (s.fam ? ' · ' + s.fam + '…' : ''))
         if (s.lvl === 'method') {
             let far = s.from && s.path !== s.from ? this.Lagoon_cave_base(s.path) + '.' : ''
@@ -1741,12 +1927,25 @@ Lagoon_cave_hits(w) {
         for (const h of r.defs || []) hits.push({ kind: 'Def', name: h.name, path: h.doc ?? h.path, line: h.line, point: h.name })
         for (const h of r.mentions || []) hits.push({ kind: 'Mention', name: r.mentions_of, path: h.doc ?? h.path, line: h.line, point: 'text:' + r.mentions_of })
         for (const h of r.props || []) hits.push({ kind: 'Particle', name: h.name, path: h.doc ?? h.path, line: h.line, point: 'text:' + h.name })
-        for (const h of r.texts || []) hits.push({ kind: 'Text', name: h.snippet || h.title || h.name, path: h.doc ?? h.path, line: h.line, point: 'text:' + String(q).split(/\s+/)[0] })
+        for (const h of r.texts || []) {
+            // EVERY MENTION, not the doc's first (2026-10-12, the owner: "Algo… should be every mention of algorithm") —
+            //  the Stemdex says which lines of the doc hold the words; each is its own hit
+            let lines = h.lines && h.lines.length ? h.lines : [h.line]
+            for (const ln of lines) hits.push({ kind: 'Text', name: h.snippet || h.title || h.name, path: h.doc ?? h.path, line: ln, point: 'text:' + String(q).split(/\s+/)[0] })
+        }
     }
     hits = hits.filter(h => h.path && h.line)
+    // one hit per line: a Def and a Text on the same line are one place (and one tok in the glass)
+    let had = {}
+    hits = hits.filter(h => {
+        let k = h.path + ':' + h.line
+        if (had[k]) return false
+        had[k] = 1
+        return true
+    })
     // a Mention reads as its own line where the Stemdex has read the doc — the def's name twelve times says nothing
     for (const h of hits) {
-        if (h.kind !== 'Mention') continue
+        if (h.kind !== 'Mention' && h.kind !== 'Text') continue
         let text = this.Lagoon_cave_line(w, h.path, h.line)
         if (text) h.name = text
     }
@@ -1945,23 +2144,37 @@ async Lagoon_cave_hit(w, h, sx) {
     g[h.kind] = h.name
     g.line = h.line
     g.guise = { tok: h.path + ':' + h.line, press: async () => {
-        // LAND ON THE HIT'S OWN LINE (2026-10-08, the owner: the Aside "doesn't hilight the target row… or at all").  A
-        //  `text:<word>` point resolves to the word's FIRST occurrence in the doc, not this hit's line — so a Mention or a
-        //   Text hit sends a piece of its own line instead (Lang_resolve_point tries an exact match first).
-        let point = h.point
-        if (h.kind === 'Mention' || h.kind === 'Text') {
-            let q = String(((w.c.cave || [])[0] || {}).q || '')
-            let txt = this.Lagoon_cave_line(w, h.path, h.line) || await this.Lagoon_cave_read_line(h.path, h.line)
-            point = this.Lagoon_cave_line_point(txt, q) || point
-        }
+        let txt = (h.kind === 'Mention' || h.kind === 'Text') ? (this.Lagoon_cave_line(w, h.path, h.line) || await this.Lagoon_cave_read_line(h.path, h.line)) : ''
+        let point = this.Lagoon_cave_hit_point(w, h, txt)
         let m = this.Lagoon_cave_method_at(w, h.path, h.line, {})
         if (m) {
             this.Lagoon_cave_go(w, { lvl: 'method', path: h.path, m: m.name, point: point })
             return
         }
-        this.Lagoon_cave_emit(w, 'land', { path: h.path, point: point, leave: 1 })
+        this.Lagoon_cave_flat_at(w, h.path, point)
     } }
     return g
+
+},
+// LAND ON THE HIT'S OWN LINE (2026-10-08, the owner: the Aside "doesn't hilight the target row… or at all").  A `text:<word>`
+//  point resolves to the word's FIRST occurrence in the doc, not this hit's line — so a Mention or a Text hit sends a piece of
+//   its own line instead (Lang_resolve_point tries an exact match first).  `txt` is the line when the caller has read it.
+Lagoon_cave_hit_point(w, h, txt) {
+    if (h.kind !== 'Mention' && h.kind !== 'Text') return h.point
+    let q = String(((w.c.cave || [])[0] || {}).q || '')
+    return this.Lagoon_cave_line_point(txt || this.Lagoon_cave_line(w, h.path, h.line), q) || h.point
+
+},
+// stand on a flat file at a point: a press inside the flat level MOVES the landing rather than stacking a step per line
+Lagoon_cave_flat_at(w, path, point) {
+    let st = w.c.cave || []
+    let top = st[st.length - 1]
+    if (top && top.lvl === 'file' && top.flat && top.path === path) {
+        w.c.cave = st.slice(0, st.length - 1).concat([{ lvl: 'file', path: path, flat: 1, point: point }])
+        this.Lagoon_cave_show(w)
+        return
+    }
+    this.Lagoon_cave_go(w, { lvl: 'file', path: path, flat: 1, point: point })
 
 },
 // one line of a doc through Atlas's nav — a single read, at a press, never a sweep
@@ -1994,10 +2207,13 @@ Lagoon_cave_line_point(txt, q) {
     return pick.length >= 4 ? 'text:' + pick : null
 
 },
-// into a file — or, if Atlas has no map of it (a spec, an unmapped module), land it and leave
+// into a file.  One Atlas has no map of (a spec, an unmapped module) is entered FLAT — its hit lines as the level, the
+//  text landed beside on the first of them.  It used to land and LEAVE, and leaving is rest, so a press on a spec emptied
+//   the search (2026-10-12, the owner: "I click on a blob and it reverts to empty search query").
 Lagoon_cave_enter(w, path, fam) {
     if (!this.Lagoon_cave_anat(w, path, {})) {
-        this.Lagoon_cave_emit(w, 'land', { path: path, point: null, leave: 1 })
+        let first = this.Lagoon_cave_hits(w).find(h => h.path === path)
+        this.Lagoon_cave_go(w, { lvl: 'file', path: path, flat: 1, point: first ? this.Lagoon_cave_hit_point(w, first, '') : null })
         return
     }
     this.Lagoon_cave_go(w, { lvl: 'file', path: path })
@@ -2009,7 +2225,7 @@ Lagoon_cave_enter(w, path, fam) {
 //    (that hit IS the vertebra).  Pressed from a family rib, the level holds only that family.
 Lagoon_cave_methods(w, here, sx) {
     let an = this.Lagoon_cave_anat(w, here.path, sx)
-    if (!an) return []
+    if (!an) return this.Lagoon_cave_hits(w).filter(h => h.path === here.path).map(h => this.Lagoon_cave_hit(w, h, sx))
     let byM = {}
     for (const h of this.Lagoon_cave_hits(w)) {
         if (h.path !== here.path) continue
@@ -2107,6 +2323,133 @@ Lagoon_cave_index(sx) {
     }
     sx.idx = idx
     return idx
+},
+//#endregion
+
+//#region THE VERBS — what the reader answers from a terminal (spec/Verbs_todo.md; moved out of LiesFunk's op chain 2026-10-09)
+// `lagoon <verb>` is the reader layer's own door; `atlas_callers` / `atlas_lint` kept their 2026-09-06 names so no script
+//  broke when the answers moved here (2026-09-08) — they refresh Atlas first ("use nudges a pass"; `--stale` skips it).
+// A verbs_* method is a DECLARATION TABLE only (the .g compiler asyncs any method holding an `await`); bodies are methods.
+verbs_Lagoon() {
+    let H = this
+    return [
+        { name: 'lagoon', where: 'terminal', writes: 0, args: 'verb [name] [--k=N]',
+          desc: 'the reader layer — seek · beads · defs · families · mentions · rot · rotwork · callers · lint · join · figurines · errands · oaths',
+          run: (w, a) => H.Lagoon_verb(w, a) },
+        { name: 'atlas_callers', where: 'terminal', writes: 0, args: '<name> [--stale]',
+          desc: 'who calls a method — with the doc and enclosing def — Atlas refreshed first',
+          run: (w, a) => H.Lagoon_verb_callers(w, a) },
+        { name: 'everything_check', where: 'terminal', writes: 0, args: '',
+          desc: 'the program map checked against the tree — coverage and every stale name — writes nothing',
+          run: (w, a) => H.Lagoon_everything(w, a, false) },
+        { name: 'everything', where: 'editor', writes: 1, args: '',
+          desc: 'rebuild the program map — every area Waft and Everything — validated first — written through the repo nav',
+          run: (w, a) => H.Lagoon_everything(w, a, true) },
+        { name: 'atlas_lint', where: 'terminal', writes: 0, args: '[--sees] [--stale]',
+          desc: 'missing and beyond-EOF file:line links and orphan defs — --sees adds the unproven %see sentences',
+          run: (w, a) => H.Lagoon_verb_lint(w, a) },
+    ]
+
+},
+// THE PROGRAM MAP, from a terminal (src/lib/L/everything.js — one map, one emitter, two hosts; spec/Verbs_todo.md §3.3).
+//  This host reads the tree the way the land already does: the FILE LIST is Atlas's census (refreshed first, so a file made a
+//   minute ago counts), every TEXT and every Book comes through the repo nav.  `write` only when asked and only on the editor
+//    terminal (the verb's `writes` makes Verb_run refuse it elsewhere); a problem anywhere writes nothing at all.
+async Lagoon_everything(w, a, write) {
+    let c = this.Lagoon_verb_census()
+    let nav = this.Atlas_nav ? this.Atlas_nav() : null
+    if (!c.atlas) return { error: 'no A:Atlas standing — the map lists the tree off its census' }
+    if (!nav) return { error: 'no repo nav on this tab' }
+    await this.Atlas_refresh(c.atlas, nav)
+    let rostered = new Set(c.atlas.o({ Doc: 1 }).map(d => String(d.sc.Doc)))
+    let split = (p) => {
+        let cut = p.lastIndexOf('/')
+        return [p.slice(0, cut), p.slice(cut + 1)]
+    }
+    let read = async (p) => {
+        try {
+            let ab = split(p)
+            return await nav.read_file(ab[0], ab[1])
+        } catch (e) {
+            return null
+        }
+    }
+    let host = {
+        files: () => [...rostered].filter(p => COVER_ROOTS.some(r => p.indexOf(r + '/') === 0)),
+        exists: async (p) => rostered.has(p) || (await read(p)) != null,
+        text: (p) => read(p),
+        book: async (b) => (await read('wormhole/Story/' + b + '/toc.snap')) != null,
+    }
+    let r = await everything_build(everything_map(), host)
+    let out = { coverage: r.coverage, problems: r.problems, wafts: r.out.map(x => ({ name: x[0], lines: x[1].split('\n').length - 1 })) }
+    if (!write || r.problems.length) {
+        if (write) out.written = 0
+        return out
+    }
+    for (const x of r.out) {
+        let ab = split('wormhole/' + x[0] + '/toc.snap')
+        await nav.write_file(ab[0], ab[1], x[1])
+    }
+    out.written = r.out.length
+    return out
+
+},
+Lagoon_verb_census() {
+    let top = this.top_House()
+    return { atlas: top.o({ A: 'Atlas' })[0]?.o({ w: 'Atlas' })[0], lw: top.o({ A: 'Lagoon' })[0]?.o({ w: 'Lagoon' })[0] }
+
+},
+// "use nudges a pass" (2026-09-06): an atlas_* ask refreshes Atlas first; --stale skips it for a cheap re-ask
+async Lagoon_verb_fresh(atlas, a) {
+    let nav = this.Atlas_nav()
+    if (!nav || a.stale) return null
+    return await this.Atlas_refresh(atlas, nav)
+
+},
+async Lagoon_verb(w, a) {
+    let lw = this.Lagoon_verb_census().lw
+    if (!lw) return { error: 'no A:Lagoon standing — ghost_load Ghost/L/Lagoon.g --stand=Lagoon first' }
+    let verb = String(a.verb ?? 'families')
+    let arg = a.name != null ? String(a.name) : ''
+    let k = Number(a.k ?? 0) || undefined
+    if (verb === 'seek') return this.Lagoon_seek(lw, arg, k ?? 60)
+    if (verb === 'beads') return this.Lagoon_beads(lw, arg)
+    if (verb === 'defs') return this.Lagoon_defs(lw, arg, k ?? 300)
+    if (verb === 'families') return this.Lagoon_families(lw, k ?? 60)
+    if (verb === 'mentions') return this.Lagoon_mentions(lw, arg, k ?? 60)
+    if (verb === 'rot') return this.Lagoon_prose_rot(lw, k ?? 60)
+    if (verb === 'callers') return { name: arg, callers: this.Lagoon_callers(lw, arg) }
+    if (verb === 'lint') return this.Lagoon_lint(lw)
+    if (verb === 'join') return this.Lagoon_join(lw, k ?? 40)
+    if (verb === 'rotwork') return this.Lagoon_rotwork(lw, k ?? 12)
+    if (verb === 'figurines') return this.Lagoon_figurines(lw, k ?? 40)
+    if (verb === 'errands') return this.Lagoon_errands(lw, k ?? 40)
+    if (verb === 'oaths') {
+        let onav = this.Atlas_nav ? this.Atlas_nav() : null
+        return onav ? await this.Lagoon_oaths(lw, onav) : { error: 'no nav — oaths reads wormhole/Story/*/toc.snap off disk' }
+    }
+    return { error: 'lagoon: unknown verb ' + verb + ' — seek|beads|defs|families|mentions|rot|rotwork|callers|lint|join|figurines|errands|oaths' }
+
+},
+async Lagoon_verb_callers(w, a) {
+    let c = this.Lagoon_verb_census()
+    if (!c.atlas) return { error: 'no A:Atlas standing — ghost_load Ghost/L/Atlas.g --stand=Atlas first' }
+    if (!c.lw) return { error: 'no A:Lagoon standing — ghost_load Ghost/L/Lagoon.g --stand=Lagoon first (the readers moved there 2026-09-08)' }
+    let name = String(a.name ?? '')
+    if (!name) return { error: 'atlas_callers: name required' }
+    let fresh = await this.Lagoon_verb_fresh(c.atlas, a)
+    return { name: name, fresh: fresh, callers: this.Lagoon_callers(c.lw, name) }
+
+},
+async Lagoon_verb_lint(w, a) {
+    let c = this.Lagoon_verb_census()
+    if (!c.atlas) return { error: 'no A:Atlas standing — ghost_load Ghost/L/Atlas.g --stand=Atlas first' }
+    if (!c.lw) return { error: 'no A:Lagoon standing — ghost_load Ghost/L/Lagoon.g --stand=Lagoon first (the readers moved there 2026-09-08)' }
+    let fresh = await this.Lagoon_verb_fresh(c.atlas, a)
+    let out = Object.assign({ fresh: fresh, census: c.atlas.o({ see: 'atlas' })[0]?.sc ?? null }, this.Lagoon_lint(c.lw))
+    let nav = this.Atlas_nav()
+    if (a.sees && nav) out.unproven = await this.Lagoon_unproven(c.lw, nav)
+    return out
 },
 //#endregion
 // (a .g must end on a comment or a statement, never a method-final brace)

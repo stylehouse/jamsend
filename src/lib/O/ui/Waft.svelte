@@ -299,6 +299,61 @@
         })
     })
 
+    // ── the stick + its breadcrumb ────────────────────────────────────
+    //   The Waft's own C (its header row) is position:sticky at the top of whatever scrolls it — the
+    //    body in the capped stances, the page in 'free' (whose body clips sideways only, so it is no
+    //     scroll container and sticky passes through).  Under it, once you're scrolled INTO something,
+    //      a breadcrumb: every item whose box straddles the stick's foot, outer to inner (DOM order IS
+    //       nesting).  Pure render — read off the DOM on scroll (one capture listener catches the body
+    //        and every outer scroller), never touching the C.  A sub-Waft's items belong to its own stick.
+    let stick_el = $state<HTMLElement | undefined>(undefined)
+    let crumbs   = $state<{ label: string; el: HTMLElement }[]>([])
+    const CRUMB_H = 18      // the crumb line's height, counted whether shown or not — so showing it never moves the foot
+    // the foot line the crumbs are read at: the header row's bottom plus the crumb line
+    function stick_foot(): number {
+        const hdr = stick_el?.firstElementChild as HTMLElement | null
+        return hdr ? hdr.getBoundingClientRect().bottom + CRUMB_H : -Infinity
+    }
+    function crumbs_read() {
+        if (!stick_el || !body_el) { if (crumbs.length) crumbs = []; return }
+        const foot = stick_foot()
+        const got: { label: string; el: HTMLElement }[] = []
+        for (const el of body_el.querySelectorAll<HTMLElement>('[data-crumb]')) {
+            if (el.closest('.ls-waft-body') !== body_el) continue
+            const r = el.getBoundingClientRect()
+            if (r.top < foot && r.bottom > foot) got.push({ label: el.dataset.crumb as string, el })
+        }
+        if (got.length !== crumbs.length || got.some((g, k) => g.el !== crumbs[k].el)) crumbs = got
+    }
+    // a crumb press: bring that item's header to just under the stick's header row
+    function crumb_go(el: HTMLElement) {
+        const hdr = stick_el?.firstElementChild as HTMLElement | null
+        if (!hdr || !body_el) return
+        const d = el.getBoundingClientRect().top - hdr.getBoundingClientRect().bottom
+        if (capstate !== 'free') body_el.scrollTop += d
+        else {
+            // free: the page (or whatever outer box) scrolls — the user's own hand asked, so moving it is right
+            el.style.scrollMarginTop = (hdr.getBoundingClientRect().bottom - stick_el!.getBoundingClientRect().top + 4) + 'px'
+            el.scrollIntoView({ block: 'start' })
+        }
+    }
+    // a crumb's words: the mainkey's value, or (a %Point,method:X style marker) the next key's
+    function crumb_of(C: TheC): string {
+        const ks = Object.keys(C.sc ?? {})
+        const mk = ks[0]
+        if (!mk) return '?'
+        const v = C.sc[mk]
+        if (v !== 1 && v !== '1' && v !== '' && v != null) return mk + ':' + v
+        const k2 = ks[1]
+        return k2 ? mk + ' ' + k2 + ':' + C.sc[k2] : mk
+    }
+    $effect(() => {
+        let raf = 0
+        const on = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; crumbs_read() }) }
+        window.addEventListener('scroll', on, { capture: true, passive: true })
+        return () => { window.removeEventListener('scroll', on, { capture: true }); if (raf) cancelAnimationFrame(raf) }
+    })
+
     // Embedded applets (%Funkcion) render through FunkHost — the kind module owns the
     //  pad/light, the strike, and the armed glow.  See O/Funk/.
 
@@ -845,7 +900,61 @@
         {@const inline_flow    = is_what && what_inlined(C) && !editing_struct}
         {@const show_tog       = is_what && (has_funk_child(C) || what_inlined(C))}
         {@const child_as_C     = is_what ? editing_struct : funk_as_C}
-        <div class="{td.item_cls} {dyn_cls}">
+        <div class="{td.item_cls} {dyn_cls}" data-crumb={C === waft ? undefined : crumb_of(C)}>
+            {#if C === waft}
+                <!-- the Waft's own C rides the top of its scroller, and under it — once you're scrolled
+                     INTO something — the path in: every item whose box straddles the stick's foot -->
+                <div class="ls-waft-stick" bind:this={stick_el}>
+                    {@render item_hdr(C, upC, t, dpath, is_what, show_tog, editing_struct)}
+                    {#if crumbs.length}
+                        <div class="ls-crumbs">
+                            {#each crumbs as cr, k (k)}
+                                {#if k}<span class="ls-crumb-sep">›</span>{/if}
+                                <button class="ls-crumb" onclick={() => crumb_go(cr.el)} title={cr.label}>{cr.label}</button>
+                            {/each}
+                        </div>
+                    {/if}
+                </div>
+            {:else}
+                {@render item_hdr(C, upC, t, dpath, is_what, show_tog, editing_struct)}
+            {/if}
+            {#if td.child_types}
+                {#if editing.has(C) && (add_type_C.has(C) || add_raw_C.has(C))}
+                    <div class="ls-add-row">{@render pi(add_item_props(C, orb_trigger.get(C) ?? C))}</div>
+                {/if}
+                {#if items.length}
+                    <div class={inline_flow ? 'ls-inline' : 'ls-items'}>
+                        {#each items as child (child)}
+                            {@render waftitem(child, C, child_as_C, inline_flow)}
+                        {/each}
+                    </div>
+                {/if}
+            {/if}
+        </div>
+    {:else}
+        <!-- generic C — mainkey is none of the ITEM_TYPES and it isn't a %Funkcion.
+             A Waft is an indifferent medium that holds any C, so an un-schema'd particle
+             (the Keep's WaftTimes|Cursor, the Cluster's %HostedIdentity, …) renders as a
+             plain editable C row — the same generic PeelInput a Funkcion edits through — and
+             recurses its child tree, so the whole /* shows instead of nothing.  No ITEM_TYPE
+             means no add-picker|spotlight|navigate; the orb edits the line, ✕ deletes. -->
+        {@const gitems = (() => { void C.version; return C.o() as TheC[] })()}
+        <div class="ls-item ls-item-c" data-crumb={crumb_of(C)}>
+            <div class="ls-item-hdr">{@render pi(raw_props(C, upC))}</div>
+            {#if gitems.length}
+                <div class="ls-items">
+                    {#each gitems as child (child)}
+                        {@render waftitem(child, C, false, false)}
+                    {/each}
+                </div>
+            {/if}
+        </div>
+    {/if}
+    {/if}
+{/snippet}
+
+<!-- item_hdr — a typed item's header row (the Waft's own is wrapped in the sticky stick above) -->
+{#snippet item_hdr(C: TheC, upC: TheC, t: ItemType, dpath: string | undefined, is_what: boolean, show_tog: boolean, editing_struct: boolean)}
             <div class="ls-item-hdr" class:ls-hdr-desc={!!C.sc?.desc && !editing.has(C)}>
                 <!-- a Funkcion-bearing What carries the inline⇄edit toggle as part of its
                      illusion: ✎ flips to the editable bullet C**, ◉ restores the live inline flow. -->
@@ -871,39 +980,6 @@
                     <button class="ls-fromwhat" onclick={() => jump_fromwhat(fw_key)} title="go to Waft:{fw_key}">≋</button>
                 {/if}
             </div>
-            {#if td.child_types}
-                {#if editing.has(C) && (add_type_C.has(C) || add_raw_C.has(C))}
-                    <div class="ls-add-row">{@render pi(add_item_props(C, orb_trigger.get(C) ?? C))}</div>
-                {/if}
-                {#if items.length}
-                    <div class={inline_flow ? 'ls-inline' : 'ls-items'}>
-                        {#each items as child (child)}
-                            {@render waftitem(child, C, child_as_C, inline_flow)}
-                        {/each}
-                    </div>
-                {/if}
-            {/if}
-        </div>
-    {:else}
-        <!-- generic C — mainkey is none of the ITEM_TYPES and it isn't a %Funkcion.
-             A Waft is an indifferent medium that holds any C, so an un-schema'd particle
-             (the Keep's WaftTimes|Cursor, the Cluster's %HostedIdentity, …) renders as a
-             plain editable C row — the same generic PeelInput a Funkcion edits through — and
-             recurses its child tree, so the whole /* shows instead of nothing.  No ITEM_TYPE
-             means no add-picker|spotlight|navigate; the orb edits the line, ✕ deletes. -->
-        {@const gitems = (() => { void C.version; return C.o() as TheC[] })()}
-        <div class="ls-item ls-item-c">
-            <div class="ls-item-hdr">{@render pi(raw_props(C, upC))}</div>
-            {#if gitems.length}
-                <div class="ls-items">
-                    {#each gitems as child (child)}
-                        {@render waftitem(child, C, false, false)}
-                    {/each}
-                </div>
-            {/if}
-        </div>
-    {/if}
-    {/if}
 {/snippet}
 
 <script module lang="ts">
@@ -965,7 +1041,28 @@
        (cursor-follow keeps the glowing row in view) instead of eating the page */
     .ls-waft-body   { max-height: 55vh; overflow: auto; }
     .ls-waft-capped { max-height: 10em; }   /* Vexpany — the tight park */
-    .ls-waft-free   { max-height: none; }   /* infinite growth — the old default, now opt-in */
+    .ls-waft-free   { max-height: none; overflow-x: clip; overflow-y: visible; }   /* infinite growth — the old default, now opt-in.
+                                    clip (not auto|hidden) makes no scroll container, so the stick rides the page */
+    /* the stick — the Waft's own C, always on screen while its body is; its crumb line below.  Opaque (the
+       .ls-waft ground) so rows slide under it; z above rows and their Funkcion faces */
+    .ls-waft-stick {
+        position: sticky; top: 0; z-index: 3;
+        background: #13131d;
+        margin: 0 0 0 -0.35rem; padding-left: 0.35rem;    /* cover the waft's own left rule under it */
+    }
+    .ls-crumbs {
+        display: flex; align-items: center; gap: 0.15rem; height: 18px; overflow: hidden;
+        font-family: monospace; font-size: 0.72rem; color: #667;
+        border-bottom: 1px solid #252535;
+    }
+    .ls-crumb {
+        background: none; border: none; padding: 0 0.15rem; cursor: pointer;
+        color: #7a8fa8; font: inherit; flex: 0 1 auto; min-width: 2em;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 22em;
+    }
+    .ls-crumb:last-child { color: #9ab; flex-shrink: 0.3; }
+    .ls-crumb:hover { color: #cde; text-decoration: underline; }
+    .ls-crumb-sep { color: #445; flex-shrink: 0; }
     /* side-by-side — half width; the flex-wrap parent pairs two halves onto one row */
     .ls-waft-half { flex: 1 1 calc(50% - 0.3rem); min-width: 0; }
 

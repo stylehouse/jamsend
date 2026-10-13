@@ -257,6 +257,19 @@ What still holds: **don't `npm install` on a whim** — the lockfile pins the tr
  `wormhole/Docindex`) is uid 1000's now. A `root:root 755` dir there is a leftover from before the
   switch — `sudo chown -R 1000:1000 <dir>` on the host, once.
 
+## Verbs: a tab's controls are pluggable, owned, and list themselves
+
+A **terminal** is a tab holding the repo (Atlas's nav), the cluster (its relay seat) and the dev server at once —
+ BigWordland or an editor.  Its controls are **verbs**: any ghost may define `verbs_<Ghost>()` returning
+  `[{ name, desc, args, where, writes, run(w, ask) }]`; `eatfunc` merges ghost methods onto the House, so the registry
+   is simply the `verbs_*` methods present (`Verbs_all`/`Verb_find`/`Verb_run`, LiesFunk) — a loaded ghost brings its
+    verbs.  `runner_ask verbs` lists them; BigWordland's hole runs them as `:verb args` (Enter) and answers as spine.
+ **A verb that `writes` is refused by name in a hacker room or a music page** — writes belong to the editor terminal.
+ **A `verbs_*` must stay a SYNC declaration table**: the `.g` compiler makes any method holding an `await` (even inside an
+  arrow) `async`, so put each body in its own method and point `run` at it.  LiesFunk's old op chain is the fallback while
+   families move out — **add new controls as verbs, never as another `op ===` branch.**  `spec/Verbs_todo.md` has the
+    inventory (which ops and scripts move, which stay as the floor) and the Workshop (`Ghost/L/Workshop.g`, `Ghost/Play/`).
+
 ## Running a Story Book: a real Lies%runner request, never headless
 
 Verify a Book by asking a LIVE runner to run it — not a headless boot.

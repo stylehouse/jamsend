@@ -9,6 +9,13 @@ A node daemon that boots the whole jamsend machine headless and stays up: a stab
 
 ## 0. What to get on with next
 
+### 0.00 2026-10-13 — TEND: asking the box to do things, one signed call through any door → `spec/Tend_todo.md`
+
+The owner wants an API "that Cluster_trust'd users can engage with … http or emit (via relay)". The design and the
+ rung-by-rung build spec live in **`Tend_todo.md`**. The core move: the CALL is self-signed by the caller's identity key
+  (verb + args + target + ts + seq), so HTTP and the relay are both dumb pipes. Permission is a `Grant:Tend` the box signs,
+   revocable by `%NotGrant`. The current HTTP routes become shims onto one dispatcher (rung T0, no behaviour change).
+
 ### 0.0 2026-09-15 — the "24 KB/s for nothing" stream, what the box hands out on whose leeway, and HEISTRANT
 
 **The stream is the ROLLING SHELF being followed, not a bug in one verb.** `/status` said `serve:{live:[],

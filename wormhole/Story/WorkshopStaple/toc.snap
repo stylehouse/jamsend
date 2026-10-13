@@ -1,0 +1,32 @@
+story:WorkshopStaple
+  Styles
+  Plan
+  Opt
+    For
+  EntropyArrest
+    Entcase:Self_round
+      lematch,self,round
+        means,drop
+  TimeSpool
+    TimeTotal:beliefs,avg=0.025
+      sample=0.029,at=1791500526
+      sample=0.023,at=1791500541
+      sample=0.024,at=1791500549
+      sample=0.024,at=1791500580
+      sample=0.026,at=1791500594
+      sample=0.022,at=1791500603
+      sample=0.025,at=1791501243
+    TimeTotal:step,avg=0.004
+      sample=0.005,at=1791500526
+      sample=0.004,at=1791500541
+      sample=0.004,at=1791500549
+      sample=0.004,at=1791500580
+      sample=0.004,at=1791500594
+      sample=0.004,at=1791500603
+      sample=0.004,at=1791501243
+  step,dige:014dbce8783be880
+  step=2,desc:load the Workshop and the Garden — stand the garden on this run,dige:a8fe148557b850ef
+  step=3,desc:step the garden — a seed is planted then sprouts then flowers with five petals,dige:6ab939d1a0812c08
+  step=4,desc:keep stepping — the flower drops a new seed and in its time wilts away,dige:dfaef64d054e97f8
+  step=5,desc:a creation nobody watches gets no heart — it stops itself,dige:f068b152ef4d1ce2
+  step=6,desc:the Workshop lists its creations — the Garden among them,dige:de1166cafbc0a5b0

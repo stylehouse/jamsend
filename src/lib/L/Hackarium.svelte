@@ -94,6 +94,10 @@
             //   unless the room includes it.  No world is minted: the cave stands A:Vyto on THIS room at
             //    its first search, so UI:Vyto enrolls beside Langui and BigWordland lifts it over the code.
             //     (eatfunc pushes a ghost onto every House, so including it from the top reaches the room.)
+            // THE WORKSHOP (2026-10-09) — the place to build a creation and watch it live (Ghost/L/Workshop.g: :play :watch
+            //  :make).  Verbs only, no world: its creations' worlds stand on this room when watched.
+            top.Lies_ghost_include('Ghost/L/Workshop.g')
+                .catch((e: any) => console.log(`🔎 Hackarium could not stand the Workshop — ${String(e?.message ?? e)}`))
             top.Lies_ghost_include('Ghost/V/Vyto.g')
                 .then((stood: boolean) => console.log(`🔎 ${H.name} Hackarium ${stood ? 'stood' : 'could not stand'} the glass (Vyto)`))
                 .catch((e: any) => console.log(`🔎 Hackarium could not stand the glass — ${String(e?.message ?? e)}`))

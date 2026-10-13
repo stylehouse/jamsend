@@ -165,7 +165,7 @@ const ATLAS_EXT   = { g: 1, svelte: 1, ts: 1, md: 1 }
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Atlas(): string { return 'b0feff89ee4c0a3e~g1' },
+    Ghostmeta_Ghost_L_Atlas(): string { return 'ea23056643ebec03~g1' },
 
 // Atlas.g — every doc's %Map, kept.  The first ghost in Ghost/L/ (the land; spec home for now:
 //  Stemdex_todo.md §0 "relation EDGES", 2026-09-05).  `Atlas` is a PLACEHOLDER name — an atlas is a
@@ -1043,6 +1043,30 @@ async Atlas_report(w) {
     delete row.sc.waiting
 },
 //#endregion
+
+//#region THE VERBS — what Atlas answers from a terminal (spec/Verbs_todo.md; moved out of LiesFunk's op chain 2026-10-09)
+// atlas_refresh — re-list the roots, mint the new, un-stamp the moved, drop the gone, map the movers inline; the census row
+//  after.  Atlas KEEPS, so its one verb is the keeping; every reading verb is Lagoon's (verbs_Lagoon).
+// A verbs_* method is a DECLARATION TABLE only — the .g compiler makes any method with an `await` in it async (even one
+//  inside an arrow), and the registry needs the table back synchronously.  So each body is its own method.
+verbs_Atlas() {
+    let H = this
+    return [
+        { name: 'atlas_refresh', where: 'terminal', writes: 0, args: '',
+          desc: 'Atlas re-walks its roots and maps what moved — the census row after (a refresh only, every reading is a Lagoon verb)',
+          run: (w, a) => H.Atlas_verb_refresh(w, a) },
+    ]
+
+},
+async Atlas_verb_refresh(w, a) {
+    let atlas = this.top_House().o({ A: 'Atlas' })[0]?.o({ w: 'Atlas' })[0]
+    if (!atlas) return { error: 'no A:Atlas standing — ghost_load Ghost/L/Atlas.g --stand=Atlas first' }
+    let nav = this.Atlas_nav()
+    let fresh = nav ? await this.Atlas_refresh(atlas, nav) : null
+    return { fresh: fresh, census: atlas.o({ see: 'atlas' })[0]?.sc ?? null }
+},
+//#endregion
+// (a .g must end on a comment or a statement, never a method-final brace)
 
 
     })

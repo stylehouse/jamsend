@@ -207,6 +207,19 @@ One page of state.  Everything under it is trail: read `## 0′` for how a thing
 
 ### HANDOVER — 2026-09-10, written at 92% context.
 
+### THE CAVE CLEANSED — the box is the room's, one clock, every mention — 2026-10-12
+The owner: *"whatever this input field is made of, it's the wrong stuff… rethink heaps! analyse. cleanse."*  The hole had been a
+ text box drawn INSIDE the glass's SVG (a guise `field`, a foreignObject), rebuilt on every sowing, and four contrivances
+  carried focus, caret and scroll across those rebuilds (a carry, a "wanted" flag, a focus-retry loop, a key-steering hook) —
+   none fully, hence the scroll-jumps and the caret in the wrong place.  **Cut:** the guise `field` is gone from Vyto/Vytui;
+    BigWordland holds ONE plain `<input class="bw-hole">` at the top of the glass, never rebuilt, calling Lagoon's two doors
+     (`Lagoon_cave_type`, `Lagoon_cave_command`); the head only reads the rope.  **One clock** (500ms) replaces five pollers.
+ **Every mention:** `Lies_search` texts now carry the `lines` the words sit on (capped 40/doc) and the cave makes one hit per
+  line (deduped by path:line) — "Algo" was one row per doc.  **No eject:** a file Atlas has no map of (any spec) used to land
+   and LEAVE, and leaving is rest — the query vanished on a press.  It is now a FLAT file level (its hit lines, rail mode, the
+    text landed beside); a press inside it moves the landing rather than stacking steps.  LagoonCave's open oath re-worded
+     ('the head reads what was typed…') — re-accept owed.
+
 ### EVERY FILE HAS A HOME — the map's debt on its door, and the cave walks it — 2026-10-08
 The owner: *"do we ensure everything in src/ and Ghost/ is in Everything? that'd be good — to do with this tool"*.  It did not:
  **186 of 415** source files were cited by any area Waft.

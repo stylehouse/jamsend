@@ -1,0 +1,8 @@
+Snap:H
+  H:WorkshopStaple,Run
+    A:WorkshopStaple
+      w:WorkshopStaple
+        req:wrangle,eternal,ok
+        req:stand_wait,finished
+    A:Garden
+      w:Garden

@@ -83,7 +83,7 @@ import { DEAD_MS, SLUGGISH_MS, liveness } from '../src/lib/O/runner_liveness.mjs
 //  below for why this is safe (the tab, not the CLI, is the authority on what it will do).
 const UNKNOWN_OK = process.argv.includes('--unknown-ok')
 let PLAYER_PUB = ''   // set by --player=: the one music page a slot-addressed ask is for (sendAsk stamps it into ask.pub)
-const OPS = ['ping', 'probe', 'world', 'minisnap', 'pick', 'stemdex', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain', 'console', 'crew', 'tidy', 'ghost_load', 'atlas_callers', 'atlas_refresh', 'atlas_lint', 'electrode', 'lagoon', 'census']
+const OPS = ['ping', 'probe', 'world', 'minisnap', 'pick', 'stemdex', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain', 'console', 'crew', 'tidy', 'ghost_load', 'atlas_callers', 'atlas_refresh', 'atlas_lint', 'electrode', 'lagoon', 'census', 'verbs']
 
 // ── court a runner via Waft:Cluster ──────────────────────────────────────────────────────────
 //  deLines the registry snap (wormhole/Cluster/toc.snap — the durable HostedIdentity directory the editor
@@ -175,7 +175,11 @@ const pos   = argv.filter(a => !a.startsWith('-') && !a.startsWith('@'))
 const op    = pos[0]
 const arg   = pos[1]
 const watch = flags.has('--watch')
-if (!op || !OPS.includes(op)) {
+// A VERB (spec/Verbs_todo.md): an op this CLI does not know is sent to the tab as-is — the tab's own registry is the
+//  authority (`runner_ask verbs` lists it), so this file never keeps a copy.  The first positional rides as `name`, and
+//   every --key=value (or bare --switch) rides as ask[key]; the tab answers, or names the owner that is not loaded.
+const VERB = !!op && !OPS.includes(op) && /^[a-z][a-z0-9_]*$/.test(op)
+if (!op || (!OPS.includes(op) && !VERB)) {
 	console.error('usage: node scripts/runner_ask.mjs <ping|probe|supervisor|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|console [--tail=N] [--grep=PAT] [--follow]|pick <Ghost/X/Y.g> [<point>]|poke <verb>|crew|census|tidy <crew|rebuffs|forget:<pub>>|ghost_load <Ghost/X/Y.g> [--stand=Name] [--fresh] [--swap]|atlas_callers <name> [--stale]|atlas_refresh|atlas_lint [--sees] [--stale]|electrode [top|arm|disarm|reset|reduce|hangs|film|join] [--k=N] [--older=ms]|lagoon [seek|beads|defs|families|mentions|rot|rotwork|callers|lint|join|oaths|figurines|errands] [<name>] [--k=N]> [@uid] [--runner=<id>|--player=<id>] [--live] [--watch]')
 	process.exit(2)
 }
@@ -208,7 +212,7 @@ const live  = flags.has('--live') || !localHost
 // READ-ONLY verbs — the only ones that may target a role:'player' tab (someone's actual music page).
 //  Module-scope because it now gates TWO doors: explicit --player= targeting (below), and the
 //   auto-court's humdinger veto (a player can answer a to:'runner' broadcast — see the veto).
-const PLAYER_OPS = ['ping', 'probe', 'world', 'minisnap', 'supervisor', 'state', 'rungos', 'runners', 'socklog', 'dump', 'poke', 'reload', 'snap', 'steps', 'assertions', 'console', 'crew', 'tidy', 'atlas_callers', 'atlas_refresh', 'atlas_lint', 'lagoon', 'census']
+const PLAYER_OPS = ['ping', 'probe', 'world', 'minisnap', 'supervisor', 'state', 'rungos', 'runners', 'socklog', 'dump', 'poke', 'reload', 'snap', 'steps', 'assertions', 'console', 'crew', 'tidy', 'atlas_callers', 'atlas_refresh', 'atlas_lint', 'lagoon', 'census', 'verbs']
 
 // ── liveCensus — learn who is on THIS relay, FROM the relay ─────────────────────────────────
 //  clusterRunners() above reads a LOCAL FILE.  Point RUNNER_URL at another host and that file is
@@ -295,6 +299,8 @@ async function liveCensus({ classify = true,
 			//  own-door rule means an addressed ask never reaches a music page's role channel).
 			const s = await askOne(f.slot === 'player' ? 'player' : f.pub, f.slot === 'player' ? { op: 'supervisor', pub: f.pub } : { op: 'supervisor' }, 8000)
 			const h = s?.control === 'runner_ack' && s.ok !== false ? s.result?.humdinger : undefined
+			// a code room (/BigWordland) acks role 'hacker': it rides the player door, read-only, never dispatched
+			if (f.ack.role === 'hacker') { f.role = 'player'; f.kind = 'hacker'; return }
 			f.role = h === true ? 'player'
 				: h === false ? (f.ack.role === 'runner' ? 'runner' : String(f.ack.role ?? 'unknown'))
 				: 'unknown'
@@ -451,7 +457,8 @@ async function probeLive(id, want) {
 			if (a?.control !== 'runner_ack') continue
 			const s = await askOne(want === 'player' ? 'player' : pub, want === 'player' ? { op: 'supervisor', pub } : { op: 'supervisor' }, 8000)
 			const h = s?.control === 'runner_ack' && s.ok !== false ? s.result?.humdinger : undefined
-			const role = h === true ? 'player'
+			const role = a.result?.role === 'hacker' ? 'player'
+				: h === true ? 'player'
 				: h === false ? (a.result?.role === 'runner' ? 'runner' : String(a.result?.role ?? 'unknown'))
 				: 'unknown'
 			if (role === want) return pub
@@ -596,6 +603,13 @@ if (op === 'pick') {
 	const pt = argv[argv.indexOf(arg) + 1]
 	if (pt && !pt.startsWith('-')) ask.point = pt
 	const p = flagVal('--point'); if (p !== undefined) ask.point = p
+}
+if (VERB) {
+	if (arg) ask.name = arg
+	for (const f of argv.filter(x => x.startsWith('--') && !/^--(runner|player|watch|live)\b/.test(x))) {
+		const kv = f.slice(2).split('=')
+		ask[kv[0]] = kv.length > 1 ? kv.slice(1).join('=') : 1
+	}
 }
 if (op === 'lagoon') {
 	// the reader layer over the censuses — see Ghost/L/Lagoon.g.  `lagoon <verb> [name]`.
@@ -1315,6 +1329,15 @@ else if (op === 'snap' && reply.result?.got_snap) {
 	console.error(`console: ${r.returned}/${r.total} line(s)${ask.grep ? ` matching ${JSON.stringify(ask.grep)}` : ''}${ask.tail ? ` (tail ${ask.tail})` : ''} from ${TARGET.slice(0, 8)}`)
 	for (const c of r.lines) { conSeen.add(`${c.t}|${c.line}`); console.log(`${fmtConLine(c)}`) }
 	if (!flags.has('--follow') && !r.total) console.error('  (ring empty — nothing has logged since this tab booted; is it a fresh reload?)')
+} else if (op === 'verbs' && reply.result && Array.isArray(reply.result.verbs)) {
+	// THE TAB'S OWN CONTROLS (spec/Verbs_todo.md) — every verb a loaded ghost registers, asked of the tab itself so this
+	//  CLI never keeps a copy.  Ops still in LiesFunk's chain are not listed here yet; they move family by family.
+	const vs = reply.result.verbs
+	console.log(`verbs: ${vs.length} registered on this tab (the rest of the ops still live in LiesFunk's chain — Verbs_todo §3.1)`)
+	for (const v of vs) {
+		console.log(`  ${v.name.padEnd(15)} ${(v.owner + '').padEnd(10)} ${(v.where + '').padEnd(9)}${v.writes ? ' ✍ writes' : '         '}  ${v.args || ''}`)
+		if (v.desc) console.log(`  ${''.padEnd(15)} ${v.desc}`)
+	}
 } else if (op === 'census' && reply.result && reply.result.diag) {
 	// the wander's map: diag on one line, then a folder table — est% is where the music is believed to be,
 	//  pick% where the draws actually went; a shuffle that is "random enough" keeps those two columns close.

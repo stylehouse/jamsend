@@ -540,11 +540,8 @@ Vyto_guise(spec):
     // `press` — what pressing this cell does (Vytui's cell_click calls source `.c.press`; a crest of these
     //  calls the first member's press with the whole group).  How a producer makes its matter explorable.
     if (typeof g.press === 'function') n.c.press = g.press
-    // `field` — a TEXT BOX in this cell's label place: `{ value, placeholder, rest, oninput(v), autofocus }`.  The
-    //  producer owns what typing means, exactly as it owns a press; the glass only draws the hole.  Born for the
-    //   cave's head (2026-10-03, the owner: *"a big spine-root spine-label-sized hole we type into, and everything
-    //    pings around it"*).  `.c` only, so no Book that never sets it can see it.
-    if (g.field && typeof g.field.oninput === 'function') n.c.field = g.field
+    // (`field` — a text box drawn in the label place — was removed 2026-10-12: a box rebuilt with every sowing could not
+    //  keep focus or caret.  A producer that wants typing gets a plain input from its room; see BigWordland's hole.)
     // `hue` — colour this cell by a key of the producer's choosing instead of its mainkey (Matstyle's deterministic
     //  jewel for any string).  For the cave's landscape (2026-10-07, the owner: "filenames stemmed by their directories…
     //   a graphical indication… so our eye is able to read a big landscape of these cells") — a file wears its directory's.

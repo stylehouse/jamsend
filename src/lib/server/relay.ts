@@ -438,6 +438,66 @@ export function attachRelay(
 	// A frame from a BROWSER socket: deliver local, else forward ONCE to the peer relay. payload
 	//  is a string (text JSON frame) or a Buffer (binary [header JSON]\n[buffer]) — routed the same
 	//   way, by header.to; the binary buffer tail is never inspected.
+	// ── THE FROM-CHECK (2026-10-13, Trust_audit_handover §0.2) ─────────────────────────────────────────
+	//  The relay routed on header.to alone and never looked at header.from, so a socket could claim ANY identity as
+	//   the sender.  The Swarm frames carry a signed voucher and survive that; the music plane (repli_*) carries none
+	//    and was admitted on header.from — so a stranger could inject catalog lines / audio pages "from" a friend, or
+	//     forge wants.  Rule: a frame whose `from` is IDENTITY-SHAPED (16 hex, optionally _N — a prepub or a seat) is
+	//      forwarded only if THIS socket bound that address by a verified hello (`ws.bound`, handleHello).  Role names,
+	//       cli-* askers and channels are not identity-shaped and pass untouched.  The r2r bridge (routeFromPeer) is
+	//        a trusted link and is not gated here.  RELAY_FROM_CHECK=enforce (default) | log (forward + complain) | off.
+	//  ORDER IS KEPT: frames that arrive while the socket's hello is still verifying queue behind it, and every frame
+	//   after a queued one queues too, so a seq-ordered inbox never sees them overtake each other.
+	const FROM_CHECK = (process.env.RELAY_FROM_CHECK || 'enforce') as 'enforce' | 'log' | 'off'
+	const ID_ADDR = /^[0-9a-f]{16}(_[1-9]\d*)?$/
+	const fromRefused = new Map<string, number>()
+	function claimedFrom(payload: string | Buffer): string {
+		const h = typeof payload === 'string' ? parse(payload)?.header : binHeader(payload)
+		return h && typeof h.from === 'string' ? h.from : ''
+	}
+	function fromProven(ws: WebSocket, from: string): boolean {
+		if (!from || !ID_ADDR.test(from)) return true
+		const b = (ws as any).bound as Set<string> | undefined
+		return !!(b && b.has(from))
+	}
+	function fromRefuse(ws: WebSocket, payload: string | Buffer, from: string) {
+		const n = (fromRefused.get(from) || 0) + 1
+		fromRefused.set(from, n)
+		const kind = typeof payload === 'string' ? frameKind(payload) : frameKindBin(payload)
+		if (n === 1 || n % 100 === 0) {
+			const b = (ws as any).bound as Set<string> | undefined
+			relayLog(`⛔ FROM ${FROM_CHECK === 'log' ? 'UNPROVEN (log mode — forwarded anyway)' : 'REFUSED'} — a socket (addr=${(ws as any).qaddr || '-'}, bound=${b ? [...b].join(',') : 'none'}) sent ${kind} claiming from=${from}, which it never bound by a signed hello ×${n}`)
+		}
+		const told = ((ws as any).fromTold ??= new Set<string>())
+		if (FROM_CHECK === 'enforce' && !told.has(from)) {
+			told.add(from)
+			try { ws.send(JSON.stringify({ control: 'from_refused', from, reason: 'frames claiming this identity need a verified hello on this socket first' })) } catch {}
+		}
+	}
+	function fromGate(ws: WebSocket, payload: string | Buffer, go: () => void) {
+		if (FROM_CHECK === 'off') { go(); return }
+		const w = ws as any
+		const judge = () => {
+			const from = claimedFrom(payload)
+			if (fromProven(ws, from)) { go(); return }
+			fromRefuse(ws, payload, from)
+			if (FROM_CHECK === 'log') go()
+		}
+		const settle = () => { if (--w.fqn === 0) w.fq = null }
+		// something already queued on this socket → join the queue, whatever this frame claims
+		if (w.fq) { w.fqn++; w.fq = w.fq.then(judge).catch(() => {}).finally(settle); return }
+		const from = claimedFrom(payload)
+		if (fromProven(ws, from)) { go(); return }
+		// not proven YET, but a hello is in flight on this socket → wait for it, then judge
+		if (w.helloPending) {
+			w.fqn = 1
+			w.fq = Promise.resolve(w.helloPending).catch(() => {}).then(judge).catch(() => {}).finally(settle)
+			return
+		}
+		fromRefuse(ws, payload, from)
+		if (FROM_CHECK === 'log') go()
+	}
+
 	function routeFromBrowser(payload: string | Buffer): 'local' | 'bridge' | 'dropped' {
 		const bin = typeof payload !== 'string'
 		const to = bin ? headerToBin(payload as Buffer) : headerTo(payload as string)
@@ -557,7 +617,14 @@ export function attachRelay(
 			return
 		}
 		if (msg.control === 'gen_write') { void handleGenWrite(ws, msg); return }
-		if (msg.control === 'hello') { void handleHello(ws, msg); return }
+		if (msg.control === 'hello') {
+			// FROM-CHECK (2026-10-13): frames this socket sends while its hello is still verifying wait for it (see
+			//  fromGate), so the async verify can't race a frame that follows the hello on the same socket.
+			const p = handleHello(ws, msg)
+			;(ws as any).helloPending = p
+			void p.finally(() => { if ((ws as any).helloPending === p) (ws as any).helloPending = null })
+			return
+		}
 		// census (asker → relay): WHO IS BOUND HERE, answered from the relay's own tables.
 		//  Discovery has always been done by BROADCAST — an ask to the well-known role name `runner`,
 		//   which `deliverLocal` fans to every socket bound under it.  That works for one tab and lies
@@ -995,13 +1062,17 @@ export function attachRelay(
 		ws.on('message', (data: any, isBinary: boolean) => {
 			// A binary message is a buffer-carrying frame ([header JSON]\n[buffer]) — route it
 			//  whole by its header line; it is never a control frame.
-			if (isBinary) { routeFromBrowser(asBuffer(data)); return }
+			if (isBinary) { const buf = asBuffer(data); fromGate(ws, buf, () => { routeFromBrowser(buf) }); return }
 			const text = asText(data)
 			const msg = parse(text)
 			if (msg && msg.control) {
 				handleControl(ws, msg)
 				return
 			}
+			fromGate(ws, text, () => forwardText(text, msg))
+		})
+		// the text frame's forward, unchanged in behaviour — split out so fromGate can run it now or after a hello lands
+		const forwardText = (text: string, msg: any) => {
 			// Remember the asking socket by corr so a browser's control-frame reply (a …_ack, handled
 			//  below) can be routed back to this addr-less CLI.  ghost_compile (→ editor) and runner_ask
 			//   (→ runner) are the two addr-less-CLI request frames; both reply by corr, not by addr.
@@ -1017,7 +1088,7 @@ export function attachRelay(
 				try { ws.send(JSON.stringify({ control: 'undeliverable', to: msg.header?.to ?? '?', path: msg.dock?.path, corr: String(askCorr) })) } catch {}
 				ackBack.delete(String(askCorr))
 			}
-		})
+		}
 		// Log the disconnect — it was silent before (only the bind logged), so a half-open drop +
 		//  rebind read as two "browser bound" lines with no close between, hiding the reconnect.
 		//   relayLog broadcasts as control:log, so this also lands in each browser console + the

@@ -1,0 +1,82 @@
+// Garden.g — your first creation.  Watch it in BigWordland: type  :watch Garden  into the hole.
+//
+//  This file is a GHOST: a handful of little programs the machine runs over and over.  `Garden(A, w)` runs on every
+//   beat, and `w` is the garden's WORLD — a box of particles.  Everything you put in `w` shows up in the glass,
+//    and when you change this file and compile it, the garden changes while you watch.
+//
+//  A particle is written like a line of a snap:  w.i({ Seed: 'rose 1' })  makes a Seed called 'rose 1'.
+//   Its first word (Seed) is what it IS — the glass gives every kind its own colour.
+//
+//  Things to try, one at a time (change it, compile, watch what happens):
+//   · GROW_MS — how fast the garden takes a step (smaller is faster)
+//   · SPROUT_AT / BLOOM_AT — how long a seed waits before it sprouts, and a sprout before it flowers
+//   · Garden_bloom — how many petals a flower grows, and when it drops a new seed
+//   · a new kind of thing: in Garden_grow, add  if (w.c.beat % 7 === 0) w.i({ Bee: 'buzz ' + w.c.beat })
+//   · then teach the bees something to do — they are yours.
+
+IMPORT()
+    const GROW_MS   = 900         // one step of the garden, in milliseconds
+    const SPROUT_AT = 3           // steps a seed waits before it sprouts
+    const BLOOM_AT  = 3           // steps a sprout waits before it flowers
+    const WILT_AT   = 14          // steps a flower lives
+    const MAX_PLANTS = 16         // the garden never grows past this many plants
+    const NAMES = ['rose', 'tulip', 'daisy', 'iris', 'poppy', 'lily', 'fern', 'clover', 'violet', 'aster']
+
+// every beat: if it is time for a step, take one
+Garden(A, w):
+    let now = Date.now()
+    if (w.c.last && now - w.c.last < GROW_MS) {
+        return
+    }
+    w.c.last = now
+    w.c.beat = (w.c.beat || 0) + 1
+    this.Garden_grow(w)
+
+// one step of the garden's life: every plant gets a step older, and some of them change
+Garden_grow(w):
+    let plants = this.Garden_plants(w)
+    if (!plants.length) {
+        // an empty garden plants its first seed
+        w.i({ Seed: this.Garden_name(w) })
+        return
+    }
+    for (const p of plants) {
+        p.c.age = (p.c.age || 0) + 1
+        if (p.sc.Seed && p.c.age >= SPROUT_AT) {
+            this.Garden_become(w, p, 'Sprout')
+        } else if (p.sc.Sprout && p.c.age >= BLOOM_AT) {
+            this.Garden_become(w, p, 'Flower')
+        } else if (p.sc.Flower) {
+            this.Garden_bloom(w, p)
+        }
+    }
+
+// a flower grows a petal each step (up to five), drops a new seed now and then, and one day wilts away
+Garden_bloom(w, flower):
+    let petals = flower.o({ Petal: 1 })
+    if (petals.length < 5) {
+        flower.i({ Petal: String(petals.length + 1) })
+    }
+    if (flower.c.age === 6 && this.Garden_plants(w).length < MAX_PLANTS) {
+        w.i({ Seed: this.Garden_name(w) })
+    }
+    if (flower.c.age >= WILT_AT) {
+        w.drop(flower)
+    }
+
+// a plant becomes the next thing — a new particle with the same name, so the glass sees the SAME plant change
+Garden_become(w, p, kind):
+    let name = p.sc.Seed || p.sc.Sprout || p.sc.Flower
+    w.drop(p)
+    let next = {}
+    next[kind] = name
+    w.i(next).c.age = 0
+
+Garden_plants(w):
+    return w.o({ Seed: 1 }).concat(w.o({ Sprout: 1 }), w.o({ Flower: 1 }))
+
+// a fresh name for a new seed: a flower's name and a number, so no two plants are ever confused
+Garden_name(w):
+    w.c.n = (w.c.n || 0) + 1
+    return NAMES[(w.c.n - 1) % NAMES.length] + ' ' + w.c.n
+// (a .g must end on a comment or a statement, never a method-final brace)

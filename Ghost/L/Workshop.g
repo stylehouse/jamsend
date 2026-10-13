@@ -1,0 +1,122 @@
+// Workshop.g — the place to build a creation and watch it live (spec/Verbs_todo.md §5).
+//
+//  The owner, 2026-10-09: *"get creative and deliver what you think kids will get productive with in a week. so we need to
+//   establish some place where we can build and observe a creation."*  The machine already had the three halves and had never
+//    put them in one room: MAKE (Lies compiles a dock into a running ghost, live), SEE (the glass draws a world's particles as
+//     they change), PROVE (a Book swears what happened).  A CREATION is a small ghost under `Ghost/Play/` with one world;
+//      `Ghost/Play/Garden.g` is the starter, written to be read and changed by someone new.
+//
+//  Its verbs, from the hole in BigWordland (or `runner_ask <verb>` on a terminal):
+//    :play            the creations — press one to watch it
+//    :watch <Name>    load it and stand its world in this room; the glass draws it living (Lagoon.g's watch level)
+//    :make <Name>     a new creation from the starter, written and compiled — WRITES, so only on the editor terminal
+//
+//  A Workshop keeps nothing of its own: the creations are files, their worlds belong to the room that watches them.
+
+IMPORT()
+    const PLAY_DIR = 'Ghost/Play'
+    const STARTER  = 'Garden'
+    const NAME_RE  = /^[A-Z][A-Za-z0-9]*$/
+    const HEART_MS = 300          // how often a watched creation is given a beat (its own clock decides what a beat does)
+
+// the declaration table (a verbs_* must stay sync — the bodies are their own methods; LiesFunk Verbs_all)
+verbs_Workshop():
+    let H = this
+    return [
+        { name: 'play', where: 'terminal', writes: 0, args: '',
+          desc: 'the creations — every ghost under Ghost/Play — press one to watch it live',
+          run: (w, a) => H.Workshop_play(w, a) },
+        { name: 'watch', where: 'terminal', writes: 0, args: '<Name>',
+          desc: 'load a creation and stand its world in this room — the glass draws it living',
+          run: (w, a) => H.Workshop_watch(w, a) },
+        { name: 'make', where: 'editor', writes: 1, args: '<Name>',
+          desc: 'a new creation from the Garden starter — written into Ghost/Play and compiled — then :watch it',
+          run: (w, a) => H.Workshop_make(w, a) },
+    ]
+
+// the creations, off Atlas's census (it rosters Ghost/ already) — never a second directory walk
+Workshop_play(w, a):
+    let atlas = this.top_House().o({ A: 'Atlas' })[0]?.o({ w: 'Atlas' })[0]
+    let paths = []
+    if (atlas) {
+        for (const d of atlas.o({ Doc: 1 })) {
+            let p = String(d.sc.Doc)
+            if (p.indexOf(PLAY_DIR + '/') === 0 && /\.g$/.test(p)) paths.push(p)
+        }
+    }
+    if (!paths.length) paths.push(PLAY_DIR + '/' + STARTER + '.g')
+    paths.sort()
+    return { creations: paths.map(p => ({ name: p.replace(/^.*\//, '').replace(/\.g$/, ''), doc: p, line: 1 })) }
+
+// where a watched creation's world stands: the room the cave belongs to (BigWordland's Run House), else the top House
+Workshop_room():
+    let top = this.top_House()
+    let lw = top.o({ A: 'Lagoon' })[0]?.o({ w: 'Lagoon' })[0]
+    return (lw && lw.c.face_on) || top
+
+async Workshop_watch(w, a):
+    let name = String(a.name ?? '').trim()
+    if (!NAME_RE.test(name)) return { error: 'watch: a creation is named like Garden — a capital then letters and digits' }
+    let path = PLAY_DIR + '/' + name + '.g'
+    let top = this.top_House()
+    if (typeof this[name] !== 'function') {
+        let stood = await top.Lies_ghost_include(path)
+        if (!stood) return { error: 'could not load ' + path + ' — is it compiled? (gen/Play/' + name + '.go must exist — :make compiles a new one)' }
+    }
+    let SH = this.Workshop_room()
+    let cw = SH.oai({ A: name }).oai({ w: name })
+    this.Workshop_heart(name, SH, cw)
+    return { watching: name, house: SH.name, doc: path }
+
+// A CREATION NEEDS A HEART.  A room ticks on its own only now and then (the ambient clock, seconds apart, and not at all on a
+//  room whose run left it parked) — measured: the Garden stood and never took a step until something poked the room.  So
+//   while it is WATCHED a creation gets a targeted think (that world alone, not a whole pass of the room) a few times a
+//    second; the creation's own clock (Garden's GROW_MS) decides what a beat means.  The heart stops itself the moment the
+//     cave stops watching this creation or its world is gone — a self-throttling pump, %Reach's shape, nothing to unwatch.
+Workshop_heart(name, SH, cw):
+    if (cw.c.heart) return
+    let H = this
+    cw.c.heart = setInterval(() => {
+        let still = SH.o({ A: name })[0]?.o({ w: name })[0] === cw
+        if (!still || !H.Workshop_watched(name)) {
+            clearInterval(cw.c.heart)
+            delete cw.c.heart
+            return
+        }
+        // addressed by its A/w PATH, the way every elvisto in the machine is ('Lies/Lies') — a world minted by oai off a
+        //  House carries no c.up chain, so a ref target cannot find its House ("no House has A:[object Object]")
+        SH.i_elvisto(name + '/' + name, 'think')
+    }, HEART_MS)
+
+// is the cave watching this creation right now?
+Workshop_watched(name):
+    let lw = this.top_House().o({ A: 'Lagoon' })[0]?.o({ w: 'Lagoon' })[0]
+    let st = lw ? (lw.c.cave || []) : []
+    return !!(st[0] && st[0].lvl === 'watch' && st[0].name === name)
+
+// a new creation: the starter, renamed throughout, written through the repo nav and compiled by the editor's own pipeline
+//  (Lies_provide_dock force_compile — the same dock-involved compile the CLI's ghost_compile ticket ends in)
+async Workshop_make(w, a):
+    let name = String(a.name ?? '').trim()
+    if (!NAME_RE.test(name)) return { error: 'make: name it like Garden — a capital then letters and digits' }
+    let nav = typeof this.Atlas_nav === 'function' ? this.Atlas_nav() : null
+    if (!nav || typeof nav.write_file !== 'function') return { error: 'make writes a file — this tab has no repo nav' }
+    let path = PLAY_DIR + '/' + name + '.g'
+    let there = null
+    try {
+        there = await nav.read_file(PLAY_DIR, name + '.g')
+    } catch (e) {
+        there = null
+    }
+    if (there != null) return { error: path + ' already exists — :watch ' + name }
+    let starter = await nav.read_file(PLAY_DIR, STARTER + '.g')
+    if (starter == null) return { error: 'no starter at ' + PLAY_DIR + '/' + STARTER + '.g' }
+    let text = String(starter).split(STARTER).join(name)
+    await nav.write_file(PLAY_DIR, name + '.g', text)
+    let compiled = false
+    if (typeof this.Lies_provide_dock === 'function') {
+        await this.Lies_provide_dock(w, path, { force_compile: true })
+        compiled = true
+    }
+    return { made: path, compiled: compiled, next: ':watch ' + name }
+// (a .g must end on a comment or a statement, never a method-final brace)

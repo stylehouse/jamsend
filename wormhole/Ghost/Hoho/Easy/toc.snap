@@ -37,7 +37,6 @@ Waft:Ghost/Hoho/Easy,desc:the foundation — particles in a House — the req ma
     Funkcion:Storying,of_Book:ErrChannel
     Funkcion:Storying,of_Book:RehealSmoke
     Funkcion:Storying,of_Book:Nestcut
-    Funkcion:Storying,of_Book:GhoghoDrone
     Funkcion:Storying,of_Book:BootGateNoFSA
   What:the particle,desc:everything is a C — the mainkey is what a thing IS — sc snaps and c is runtime only — o finds i creates oai finds-or-creates
     Doc:src/lib/Stuff.svelte.ts

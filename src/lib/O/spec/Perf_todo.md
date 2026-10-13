@@ -117,6 +117,16 @@ Four read-only surveys went over the machinery: the belief pass, the wake source
     officing), and eternal reqs look like work every pass. It needs an up-propagated dirty bit (REACTAP's per-host tap is the
      base), the pass's own bumps excluded, and a `wants_clock` opt-in for handlers that do time-based work without a change
       (Lies_heartbeat, rungo/compile timeouts, mirror nudge, round-driven worlds; list in §7.6). Do it after R8 and R2.
+- **R9 The relay keep-alive (owner idea, 2026-10-13, unbuilt).** A ~3 s "nothing" frame from the relay to every tab, on the
+   theory that inbound socket traffic keeps a backgrounded Chrome tab awake. Hidden tabs today pulse about once a minute,
+    which is what starves the rung-3 pier heal. Two cautions:
+   - **Throttling may not lift.** Chrome's intensive throttling may still throttle TIMERS while message handlers run. So drive
+      the background beat FROM the keep-alive's handler rather than hoping `setTimeout` speeds up. Measure on a hidden tab:
+       pulse cadence before and after.
+   - **Don't make it a full pass.** It must not post a full `think`: the handler checks for due work (a beat, a ttlilt) and
+      returns otherwise. Otherwise every tab pays a whole belief pass every 3 s, which is §7's disease handed to every
+       listener.
+   Relay cost is trivial: one tiny frame per socket per 3 s.
 - **R5 Resume, don't poll.** Unchanged: a waiting req registers a resume instead of a trickle.
 - **R7 Instruments off the server hot path.** `OPTIMISE_FOR_DX` landed. Also: the `◈ pull` console line per record per beat, and
    `Heist_keep_persist`'s JSON-stringify-to-compare.

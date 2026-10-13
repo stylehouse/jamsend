@@ -19,7 +19,7 @@ Waft:Everything,desc:READ THIS FIRST — one Waft per area of the program lists 
     Doc:Ghost/V/Vyto.g
     Doc:src/lib/O/Vytui.svelte
     Doc:src/lib/O/spec/Glassbeast_todo.md
-  What:the land,desc:Ghost/Land/Wordland — Atlas Electrode Lagoon — BigWordland Hackarium Clerkdesk,FromWhat:Waft:Ghost/Land/Wordland
+  What:the land,desc:Ghost/Land/Wordland — Atlas Electrode Lagoon — BigWordland Hackarium Clerkdesk — the terminal and its verbs — the Workshop,FromWhat:Waft:Ghost/Land/Wordland
     Doc:Ghost/L/Lagoon.g
     Doc:src/lib/L/BigWordland.svelte
     Doc:src/lib/O/spec/Wordland_todo.md
@@ -38,7 +38,7 @@ Waft:Everything,desc:READ THIS FIRST — one Waft per area of the program lists 
     Doc:src/lib/O/LiesStore.svelte
     Doc:src/lib/O/spec/Keeping_spec.md
     Doc:src/lib/O/spec/Clerkdesk_todo.md
-  What:the unsorted,desc:Ghost/Rest/Unsorted — 229 of 415 source files no area claims yet — by directory — the debt of this map,FromWhat:Waft:Ghost/Rest/Unsorted
+  What:the unsorted,desc:Ghost/Rest/Unsorted — 224 of 416 source files no area claims yet — by directory — the debt of this map,FromWhat:Waft:Ghost/Rest/Unsorted
   What:the policy,desc:how this map is kept — each rule is one What below with the rule as its desc
     What:one Waft per area,desc:a ghost lives in ONE area Waft — a Doc may be cited from another area only under a What that says why
     What:Points are the main functions,desc:a Point method is an entry the reader should know — with keywords as its desc — not every def — the code is the full list
@@ -48,4 +48,4 @@ Waft:Everything,desc:READ THIS FIRST — one Waft per area of the program lists 
     What:rebalance when an area splits,desc:when a Waft passes about 150 lines or two stories live in it — split it and add the new Waft here
     What:stale names are bugs,desc:a Doc path or Point that no longer resolves is a mint bug — scripts/wafts_everything.mjs validates every one before writing — re-run it after a rename
     What:new sessions read this Waft first,desc:then the area Waft for the work at hand — then its _todo §0
-    What:every file has a home,desc:every source file under Ghost and src is cited by an area Waft or sits in the unsorted Waft — re-running this script recounts it
+    What:every file has a home,desc:every source file under Ghost and src is cited by an area Waft or sits in the unsorted Waft — re-running this map recounts it

@@ -1,0 +1,5 @@
+Snap:H
+  H:WorkshopStaple,Run
+    A:WorkshopStaple
+      w:WorkshopStaple
+        req:wrangle,eternal,ok

@@ -148,31 +148,23 @@
         return segs[segs.length - 1] ?? path
     }
 
-    // THE CAVE (2026-09-25; re-cut 2026-10-03; ONE VISUAL 2026-10-03) — search, worn as a creature, over the
-    //  code.  The owner: *"I'm wanting just the one visual: a big spine-root spine-label-sized hole we type into,
-    //   and everything pings around it pretty fast."*  So where the glass is loaded, the top bar holds no search
-    //    box at all — a ⌕ chip (or `/`) opens the cave, and the HOLE you type into is the spine's own head
-    //     (Lagoon.g THE CAVE, a Vyto guise `field`).  Empty, the code's families stand around it; typed, its
-    //      files and their stem families.  The Searchbar remains only as the fallback when Vyto is absent.
-    //  The producer tells the room three things through `cave_on`: LAND (show this code — the Searchbar's own
-    //   delivery, `Lies_ghost_pick`), LEAVE (the head pressed at the surface, or Esc — the cave closes) and MODE
-    //    (at a method the glass folds to a left RAIL and the room steps right, so the code sits beside its doors).
-    //  The Stemdex is FED from here, as the Searchbar used to: nudged while the cave is open and the index has
-    //   not converged, and the cave re-reads it so text hits fill in as they land.
+    // THE CAVE (2026-09-25; re-cut 2026-10-03; ONE VISUAL 2026-10-03; CLEANSED 2026-10-12) — search, worn as a creature,
+    //  over the code (Lagoon.g THE CAVE).  The owner: *"that thing has to be on screen AT ALL TIMES if it's going to exist…
+    //   it has to be The One Thing"* — so it is stood at boot and never hides: REST (the families) and a search fill the
+    //    room; a method or a flat file folds it to a left RAIL so the landed code comes through beside it.
+    //  THE HOLE IS A PLAIN INPUT, OURS (2026-10-12, the owner: *"whatever this input field is made of, it's the wrong
+    //   stuff"*).  It used to be a box drawn inside the glass's SVG, rebuilt on every sowing, and focus, caret and scroll
+    //    were all carried across those rebuilds by four separate contrivances.  This one is never rebuilt, so it keeps
+    //     its focus and caret by being a normal input.  It calls the cave's two doors: Lagoon_cave_type (debounced there)
+    //      and Lagoon_cave_command (Enter).  Escape reaches the head's press through Vytui's window key (climbs a step).
+    //  The producer tells the room three things through `cave_on`: LAND (show this code — `Lies_ghost_pick`), LEAVE (the
+    //   head pressed at the surface — back to rest) and MODE (rest|full|rail).
     let cave_open = $state(false)
     let cave_mode = $state('full')
     let dismiss   = $state(0)
     let vyto_ready = $state(false)
+    let hole: HTMLInputElement | undefined = $state()
     const lagoon_w = () => (H as any)?.o({ A: 'Lagoon' })[0]?.o({ w: 'Lagoon' })[0]
-    $effect(() => {
-        if (vyto_ready) return
-        const t = setInterval(() => { if (typeof (H as any)?.Vyto_guise === 'function') { vyto_ready = true; clearInterval(t) } }, 400)
-        return () => clearInterval(t)
-    })
-    // THE ONE THING (2026-10-07, the owner: "that thing has to be on screen AT ALL TIMES if it's going to exist…
-    //  it has to be The One Thing").  The cave is stood at boot and never hides: REST (the hole + the families) and a
-    //   search fill the room; a method folds it to a rail so the landed code comes through beside it.  Climbing out
-    //    (the head at the surface, Esc in the hole, ✕) returns it to REST.  The chip and `/` only put the hand in it.
     function cave_on(ev: string, a: any) {
         if (ev === 'land' && a?.path) {
             // the code lands in the glass's own room — show that House so the code comes through beside the rail
@@ -184,24 +176,14 @@
         if (ev === 'mode') cave_mode = a === 'rail' ? 'rail' : 'full'
     }
     function rest_cave() {
+        if (hole) hole.value = ''
         H?.i_elvisto('Lagoon/Lagoon', 'Lagoon_cave', { open: 1 })
     }
-    // the hand into the hole — the glass is already there, so a summon costs nothing
+    // the hand into the hole (the chip, `/`) — no scrolling: the glass is a fixed layer, the input sits at its top
     function focus_hole() {
         if (!cave_open) open_cave()
-        // the hole may not be painted yet (a first open, a remount) — look for it for a moment rather than once
-        let n = 0
-        const look = () => {
-            const el = document.querySelector('.vy-field-in') as HTMLInputElement | null
-            if (el) {
-                el.closest('section')?.scrollIntoView({ block: 'nearest' })
-                el.focus()
-                el.setSelectionRange(el.value.length, el.value.length)
-                return
-            }
-            if (n++ < 40) requestAnimationFrame(look)
-        }
-        look()
+        hole?.focus({ preventScroll: true })
+        hole?.select()
     }
     function open_cave() {
         if (!H) return
@@ -211,10 +193,46 @@
         lies?.house.i_elvisto('Lies/Lies', 'Lies_stemdex_scan', {})
         H.i_elvisto('Lagoon/Lagoon', 'Lagoon_cave', { open: 1 })
     }
-    // stand it as soon as the room can: the glass loaded, Lagoon standing, a Lies to land code in
+    function hole_input() {
+        const lw = lagoon_w()
+        if (lw && hole) (H as any).Lagoon_cave_type(lw, hole.value)
+    }
+    function hole_key(ev: KeyboardEvent) {
+        const lw = lagoon_w()
+        if (ev.key === 'Enter' && lw && hole) (H as any).Lagoon_cave_command(lw, hole.value)
+    }
+    // ONE CLOCK for the cave (was five: a glass-loaded poll, a stand-it poll, the Stemdex nudge, the watch refresh and a
+    //  key-steering hook).  Twice a second: stand the cave once the room can; while it is up, show a watched creation
+    //   live (the sowing's signature skips beats where nothing moved); every third beat feed the Stemdex while its small
+    //    roster converges, re-asking the cave ONLY when it read something new; and keep the box agreeing with the cave
+    //     when the hand is elsewhere (a family pressed at rest sets the query).
     $effect(() => {
-        if (cave_open) return
-        const t = setInterval(() => { if (vyto_ready && lies && lagoon_w()) { clearInterval(t); open_cave() } }, 400)
+        let beat = 0
+        let seen_done = -1
+        const t = setInterval(() => {
+            beat++
+            if (!vyto_ready && typeof (H as any)?.Vyto_guise === 'function') vyto_ready = true
+            const lw = lagoon_w()
+            if (!cave_open) {
+                if (vyto_ready && lies && lw) open_cave()
+                return
+            }
+            const st = (lw?.c.cave || []) as any[]
+            if (st[0]?.lvl === 'watch' || st[st.length - 1]?.lvl === 'watch') H?.i_elvisto('Lagoon/Lagoon', 'Lagoon_cave', { refresh: 1 })
+            if (hole && document.activeElement !== hole && !lw?.c.cave_typing && st[0]?.lvl === 'search') {
+                const q = String(st[0].q ?? '')
+                if (hole.value.trim() !== q && q.length) hole.value = q
+            }
+            if (beat % 3) return
+            const dex = (lies?.w as any)?.c?.stemdex
+            const converged = !!(dex && dex.total > 0 && dex.done >= dex.total)
+            if (!converged && !dex?.scanning) lies?.house.i_elvisto('Lies/Lies', 'Lies_stemdex_scan', {})
+            const fresh = !converged && dex && dex.done !== seen_done
+            if (fresh) seen_done = dex.done
+            // at rest with no families yet: Atlas is still mapping — look again
+            const empty_rest = lw && lw.c.cave_browse_n === 0 && st[0]?.q === ''
+            if (fresh || empty_rest) H?.i_elvisto('Lagoon/Lagoon', 'Lagoon_cave', { refresh: 1 })
+        }, 500)
         return () => clearInterval(t)
     })
     // the fallback Searchbar (no glass on this tab) still drives the cave's old door
@@ -225,26 +243,6 @@
         if (lw) lw.c.cave_on = cave_on
         H.i_elvisto('Lagoon/Lagoon', 'Lagoon_cave', { q, r })
     }
-    // feed the Stemdex while the cave is open and its (small — the room's own Wafts) roster is converging, and
-    //  re-ask the cave ONLY when the index actually read something new.  (2026-10-06: a roster widened to every
-    //   Atlas doc plus an unconditional 1.5s re-ask was a read-STUCK storm and a re-sow tailspin — reverted.)
-    $effect(() => {
-        if (!cave_open) return
-        let seen_done = -1
-        const t = setInterval(() => {
-            const dex = (lies?.w as any)?.c?.stemdex
-            const converged = !!(dex && dex.total > 0 && dex.done >= dex.total)
-            if (!converged && !dex?.scanning) lies?.house.i_elvisto('Lies/Lies', 'Lies_stemdex_scan', {})
-            if (!converged && dex && dex.done !== seen_done) {
-                seen_done = dex.done
-                H?.i_elvisto('Lagoon/Lagoon', 'Lagoon_cave', { refresh: 1 })
-            }
-            // at rest with no families yet: Atlas is still mapping — look again
-            const lw = lagoon_w()
-            if (lw && lw.c.cave_browse_n === 0 && (lw.c.cave || [])[0]?.q === '') H?.i_elvisto('Lagoon/Lagoon', 'Lagoon_cave', { refresh: 1 })
-        }, 1500)
-        return () => clearInterval(t)
-    })
     // '/' opens the hole from anywhere that is not already typing (capture phase, à la the Searchbar)
     $effect(() => {
         if (!vyto_ready) return
@@ -362,6 +360,9 @@
     {#if glass_ui && glass_house && !sprawl}
         <section class="bw-piece bw-glass" class:up={cave_up} class:rail={cave_mode === 'rail'}>
             <button class="bw-glass-x" title="back to rest — the hole and the families" onclick={rest_cave}>×</button>
+            <input class="bw-hole" bind:this={hole} spellcheck="false" autocomplete="off"
+                   placeholder="search code & prose  ( / )   ·   :verbs"
+                   oninput={hole_input} onkeydown={hole_key} />
             <svelte:component this={glass_ui.sc.component} H={glass_house} />
         </section>
     {/if}
@@ -517,6 +518,14 @@
         flex: 1; background-color: rgba(22, 17, 13, 0.94) !important; background-image: none !important;
         backdrop-filter: blur(1.5px);
     }
+    /* the hole — a plain input at the top of the glass, never rebuilt (2026-10-12) */
+    .bw-hole {
+        flex: none; margin: 0.45rem 2.6rem 0.35rem 0.6rem; padding: 0.42rem 0.8rem;
+        font: 600 1.05rem/1.2 system-ui, sans-serif; color: #ffe6bd;
+        background: rgba(30, 22, 14, 0.92); border: 1px solid rgba(224, 180, 110, 0.45); border-radius: 8px; outline: none;
+    }
+    .bw-hole:focus { border-color: rgba(255, 210, 130, 0.9); box-shadow: 0 0 18px rgba(255, 200, 110, 0.3); }
+    .bw-hole::placeholder { color: rgba(230, 200, 160, 0.45); font-weight: 400; }
     .bw-glass-x {
         position: absolute; top: 0.3rem; right: 0.4rem; z-index: 5;
         background: rgba(14, 15, 25, 0.8); border: 1px solid rgba(224, 180, 110, 0.35); border-radius: 6px;

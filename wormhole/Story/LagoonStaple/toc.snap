@@ -9,7 +9,6 @@ story:LagoonStaple
         means,drop
   TimeSpool
     TimeTotal:beliefs,avg=0.031
-      sample=0.019,at=1788897941
       sample=0.018,at=1788897973
       sample=0.012,at=1788897979
       sample=0.014,at=1788897985
@@ -17,8 +16,10 @@ story:LagoonStaple
       sample=0.047,at=1788937487
       sample=0.026,at=1789108496
       sample=0.08,at=1789110086
+      sample=0.012,at=1791758440
+      sample=0.01,at=1791758549
+      sample=0.061,at=1791758710
     TimeTotal:step,avg=0.004
-      sample=0.002,at=1788897941
       sample=0.002,at=1788897973
       sample=0.002,at=1788897979
       sample=0.002,at=1788897985
@@ -26,6 +27,9 @@ story:LagoonStaple
       sample=0.006,at=1788937487
       sample=0.003,at=1789108496
       sample=0.01,at=1789110086
+      sample=0.002,at=1791758440
+      sample=0.001,at=1791758549
+      sample=0.008,at=1791758710
   step,dige:11e5d0398a0133fc
   step=2,desc:load Atlas and Lagoon on demand — stand Atlas on the frozen corpus and the reader beside it,dige:0237d87d658e884b
     Assertion:the-reader-ghost-loads,sentence:the reader ghost loads on demand beside the census — no manifest edit needed

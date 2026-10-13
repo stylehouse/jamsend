@@ -5,6 +5,68 @@ Rewritten 2026-07-26 against the live tree, after a code read of both stacks. Co
 
 ---
 
+## 0. What to get on with next — RE-READ 2026-10-13 (the owner: "I think there are per-frame signatures, and hello and trust checks should be real by now")
+
+The split-personality table below (2026-07-26) is **stale in its transport column**. `Tyrant.g` was retired on
+ 2026-09-16, and the Swarm layer grew real sender authentication on top of the still-mock Peeroleum pipe. The truth, read
+  from the code on 2026-10-13:
+
+### 0.1 What is REAL now
+
+| property | where | verdict |
+|---|---|---|
+| **Link auth to the relay** | `Swarm_station_hello` signs a header with the soul key (and a body hello with the body key); `relay.ts` `verifyHeader`s before binding an identity address. "Identities bind via signed hello only" (relay.ts ~510) | ✅ real |
+| **Sender proof on every Swarm frame** | the per-era **station voucher** (`{control,from,pub,era,ts}` signed by the soul key, or by a crew body's own key + its `Grant:Crew`), attached to every swarm frame; verified in the hear funnel by `Swarm_voucher_ok` (Swarm.g ~2163) against the pub imported AT SEAL. Crew road: `verify_grant` + by/for checks + `NotGrant:Crew` ejection | ✅ real, **per era** |
+| **Pier-less frames** (reach, reach_done) | `Swarm_reach_vouched` (~2276): voucher signature + soul is mine or a sealed friend's | ✅ real, per era |
+| **Society layer** (invites, grants, reinvites, crew charter/roster) | as below: ed25519 throughout, single-use spends | ✅ real |
+
+### 0.2 What is still NOT real
+
+| property | where | verdict |
+|---|---|---|
+| **Per-frame integrity** | the voucher is minted once per era and does **not** cover the frame's body, seq or type. Anyone who sees one of a friend's frames (the relay, which sees everything) can lift the voucher onto a forged body to that same peer until the era changes. `body_hash` is an unkeyed sha256: it catches corruption, not forgery (Peeroleum.g ~1131–1135, "header-sign verify lands here too" is still a TODO) | ❌ owed |
+| **Replay of whole frames** | the inbox's seq guards ordering/dup within an epoch, but a seq isn't signed | ❌ owed (falls out of the row above) |
+| **Peeroleum's own hello/trust** | `hear_hello` is `startsWith(pier%pub)` (Peeroleum.g ~125); `hear_trust` is "trivial under the mock" (~132). Now a sequencing handshake UNDER the Swarm voucher, so it matters less, but it's still a mock | ❌ mock, demoted |
+| **Privacy** | every frame is cleartext to the relay. Only the device-link account ferry is sealed. That posture was accepted ([[ferry-security-posture]]) | ❌ none |
+| **The music plane's sender** | `repli_*` frames (catalog lines, audio pages, wants, parked/missed) go straight through `Peeroleum_send` with NO `swarm` bag, so no voucher (Repli.g 480/485/665/710/725). They were admitted on `header.from` alone, and the relay routed on `.to` without ever checking `.from`. A stranger could inject catalog/audio "from" a friend, or forge wants that make you serve a friend a flood | ✅ **closed 2026-10-13 by the relay FROM-CHECK** (below), for the transport; WT2 closes it cryptographically |
+| **Voucher cache vs revocation** | `sealed.c.voucher_ok` short-circuits re-verification for the era ([[voucher-cache-outlives-revocation]]) | ⚠ cleared on membership change, check |
+
+### 0.25 LANDED 2026-10-13 — the relay from-check (`src/lib/server/relay.ts` `fromGate`)
+
+A frame whose `header.from` is identity-shaped (16 hex, optionally `_N`) is forwarded only if the SENDING SOCKET bound
+ that address by a verified signed hello (`ws.bound`). Frames that arrive while that socket's hello is still verifying
+  queue behind it, in order. Role names, `cli-*` and channels pass untouched. The relay-to-relay bridge isn't gated.
+   `RELAY_FROM_CHECK=enforce` (default) | `log` | `off`.
+- **A refusal** logs `⛔ FROM REFUSED … ×n` (first and every 100th) and sends the socket one `control:'from_refused'`.
+- **Limits:** this trusts the relay. A malicious RELAY can still forge anything, and only WT2 fixes that. Within a pair
+   that both hello on this relay, it closes header.from spoofing for every plane at once.
+- **Observed after landing:** 3 min of relay log, runners and a code room hello-bound normally, zero refusals. The music
+   tabs and the daemon had not yet re-helloed.
+
+### 0.3 The plan: a session key per era turns all four ❌ into one mechanism
+
+Signing every frame with ed25519 is the obvious port of Peerily's `crypto.sign = Id.sign(json)`, and it would close
+ integrity. But it costs ~1 ms per op in JS at chunk rates of hundreds a second, and it still leaves the wire readable. The
+  better rung is the one Signal-style systems use:
+- **WT1 — an authenticated key exchange per era.** Each side puts an ephemeral X25519 public key into the era handshake it
+   already does (`swarm_hi` / the voucher), signed by its identity key exactly as the voucher is. Both derive a pair session
+    key: ECDH → HKDF with both prepubs and both eras as salt. Nothing new to trust: the identity signatures are the ones
+     already verified at the hear funnel.
+- **WT2 — per-frame AEAD.** AES-GCM (WebCrypto: fast, native) over `{type, seq, era, body_hash}` + the body. The relay keeps
+   cleartext `{from, to}` for routing only. That gives integrity, replay protection (seq + era inside the tag) and privacy
+    in one stroke. Chunk buffers encrypt in place at native speed.
+- **WT3 — retire the mock.** `hear_hello` / `hear_trust` either carry WT1's keys or go. The voucher stays for the pier-less
+   road and the first frame of an era. Its per-era replay window closes because nothing after the handshake is accepted
+    without the session tag.
+- **WT4 — the sealed-account ferry** rides the same session key instead of its own seal (or keeps its own; decide in WT1).
+
+Owed before building: a design pass reading `Peeroleum_spec.md` §4–§7 (frame format, `[header JSON]\n[raw buffer]`,
+ inbox/ack), the era/reset machinery (`Swarm_note_era`, `Peeroleum_reset_handshake`), and the Books that pin frame bytes
+  (SwarmShare, SwarmBody, Peeroleum Books). Encrypting changes bytes every fixture of a wire Book may hold. **Independent
+   of Tend** (`Tend_todo.md`): a tend call is self-signed and stays safe on today's wire.
+
+---
+
 ## 🔁 The correction that rewrites this doc (this REPLACES the old "bomb")
 
 **An earlier version of THIS file said the `.g` comms were a "Story-SIMULATION — don't audit them." That

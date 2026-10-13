@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_LagoonTesting(): string { return 'f5d98e4f724fbb1f~g1' },
+    Ghostmeta_Ghost_L_LagoonTesting(): string { return 'ccdde1c86040d5ad~g1' },
 
 // LagoonTesting.g — né Lagoonation.g.  The Lagoon.g proof, under the `<Name>Testing.g` convention
 //  (owner ruling 2026-09-09; src/lib/L/testing.ts is the one predicate).
@@ -492,8 +492,8 @@ async LagoonCave_open(w) {
         top.e_Lagoon_cave(null, lw, { sc: { open: 1 } })
         await this.LagoonCave_until(w, '⌕ ', 'open')
         let seeds = this.LagoonCave_sown(w) || []
-        let fld = seeds[0] ? seeds[0].c.field : null
-        w.c.open_field = fld && typeof fld.oninput === 'function' && fld.value === '' ? 1 : 0
+        // the room's box types through the cave's door (Lagoon_cave_type); the head reads the empty query
+        w.c.open_field = typeof top.Lagoon_cave_type === 'function' && seeds[0] && String(seeds[0].sc.Head).trim() === '⌕' ? 1 : 0
         w.c.open_fams = seeds.slice(1).map(s => s.sc.Family).join(' ')
         w.c.open_root = seeds.length > 1 && Number(seeds[0].sc.dose) > Number(seeds[1].sc.dose) ? 1 : 0
     })
@@ -502,9 +502,9 @@ async LagoonCave_open(w) {
 async LagoonCave_search(w) {
     w.i({desc: 'type into the hole — one vertebra per file and its ribs the stem families holding hits'})
     this.expecting(w, 'search_wait', 20, async () => {
-        let head = (this.LagoonCave_sown(w) || [])[0]
-        let fld = head ? head.c.field : null
-        if (fld) fld.oninput('Sample')
+        let top = this.top_House()
+        let lw = this.LagoonStaple_lw(w)
+        if (lw) top.Lagoon_cave_type(lw, 'Sample')
         await this.LagoonCave_until(w, '⌕ Sample', 'search')
         let seeds = this.LagoonCave_sown(w) || []
         let doc = seeds.find(s => s.sc.Doc === 'Ghost/L/test_corpus/Sample.g')
@@ -578,7 +578,7 @@ async LagoonCave_leave(w) {
 },
 LagoonCave_witness(w) {
     if (w.c.open_field && w.c.open_root && this.LagoonStaple_at(w, 3)) {
-        this.story_swear(w, 'the hole is the head — a field to type into and the biggest bone of the creature')
+        this.story_swear(w, 'the head reads what was typed and is the biggest bone of the creature')
     }
     if (w.c.open_fams === 'Sample…' && this.LagoonStaple_at(w, 3)) {
         this.story_swear(w, 'with nothing typed the code families stand around the hole')

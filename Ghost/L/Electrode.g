@@ -272,4 +272,35 @@ Electrode_film(w, k):
 //  It was written here first because this is where the tally is; that was convenience, and convenience
 //   is exactly how a ghost globulates.  `runner_ask electrode join` still works and dispatches to Lagoon.
 //#endregion
+
+//#region THE VERBS — what Electrode answers from a terminal (spec/Verbs_todo.md; moved out of LiesFunk's op chain 2026-10-09)
+// electrode <verb> — top (default) · arm · disarm · reset · reduce · hangs [--older=ms] · film [--k=N] · join (Lagoon's).
+//  Arming coats every ghost method on the tab — a runner's business; disarm on a shared runner.
+// A verbs_* method is a DECLARATION TABLE only (the .g compiler asyncs any method holding an `await`); the body is its own method.
+verbs_Electrode():
+    let H = this
+    return [
+        { name: 'electrode', where: 'runner', writes: 0, args: 'top|arm|disarm|reset|reduce|hangs|film|join [--k=N] [--older=ms]',
+          desc: 'both ends of every ghost call — arm coats every method; top lists the hottest flows; hangs lists frames never exited',
+          run: (w, a) => H.Electrode_verb(w, a) },
+    ]
+
+Electrode_verb(w, a):
+    let ew = this.top_House().o({ A: 'Electrode' })[0]?.o({ w: 'Electrode' })[0]
+    if (!ew) return { error: 'no A:Electrode standing — ghost_load Ghost/L/Electrode.g --stand=Electrode first' }
+    let verb = String(a.verb ?? 'top')
+    if (verb === 'arm') return Object.assign({ coated: this.Electrode_arm(ew) }, this.Electrode_top(ew, 0))
+    if (verb === 'disarm') return { uncoated: this.Electrode_disarm(ew) }
+    if (verb === 'reset') return { reset: this.Electrode_reset(ew) }
+    if (verb === 'reduce') return this.Electrode_reduce(ew)
+    if (verb === 'hangs') return { hangs: this.Electrode_hangs(ew, Number(a.older ?? 0)) }
+    if (verb === 'film') return { film: this.Electrode_film(ew, Number(a.k ?? 60)) }
+    if (verb === 'join') {
+        // the join MOVED to Lagoon 2026-09-08 — it reads BOTH censuses and belongs to neither
+        let lw = this.top_House().o({ A: 'Lagoon' })[0]?.o({ w: 'Lagoon' })[0]
+        if (!lw) return { error: 'no A:Lagoon standing — ghost_load Ghost/L/Lagoon.g --stand=Lagoon first' }
+        return this.Lagoon_join(lw, Number(a.k ?? 40))
+    }
+    return this.Electrode_top(ew, Number(a.k ?? 20))
+//#endregion
 // (a .g must end on a comment or statement, never a method-final brace)
