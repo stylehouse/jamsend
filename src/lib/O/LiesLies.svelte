@@ -1483,6 +1483,10 @@
         async Creduler_reswap(w: TheC) {
             const H = this as House
             const POLL_MS = 2000                                   // throttle: at most one ETag sweep per 2s
+            // NOT ON THE DAEMON (2026-10-14): it swaps ghosts off its own disk watch, so this probe was a fetch (or ~35
+            //  HEADs) every 2s at its ORIGIN — prod — for nothing.  The polling itself is a case for Atheory_todo
+            //   ("code changes should push out to the runners that need them").
+            if ((H.top_House() as any)?.c?.boot_role === 'daemon') return
             const now = Date.now()
             if (((w.c.reswap_last as number) ?? 0) + POLL_MS > now) return
             w.c.reswap_last = now

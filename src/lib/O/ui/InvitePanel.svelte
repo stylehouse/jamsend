@@ -139,6 +139,14 @@
         big_size = Math.floor(Math.min(window.innerWidth * 0.92, window.innerHeight * 0.8))
         big = true
     }
+    // LEAVING THE BIG QR LEAVES THE QR (owner 2026-10-14: "after exiting the QR view, I want the non-fullscreen QR view to go
+    //  away and just be plain Door").  The invite it showed stays spendable (it was minted, not shown); a new press mints a
+    //   fresh one.  Every close — ✕, click-away, Esc — comes through here.
+    function close_big() {
+        sheet_close()
+        big = false
+        url = ''
+    }
     // NAME BEFORE INVITE, AS A JAMMED PROCESS (the owner 2026-08-28: "must have a name to get the
     //  Invite worked on" then "it should be UI process spawning, and jam the Invite before it begins" —
     //   NOT a thrown error, NOT a dead button).  Pressing invite unnamed SPAWNS the invite process and
@@ -754,7 +762,7 @@
 </script>
 
 <!-- Escape closes the big QR face (top-level — svelte:window may not sit inside a block) -->
-<svelte:window onkeydown={(e) => { if (big && e.key === 'Escape') { sheet_close(); big = false } }} />
+<svelte:window onkeydown={(e) => { if (big && e.key === 'Escape') { close_big() } }} />
 
 <!-- the name-ask: the first-time move, rendered wherever an unnamed self is about to act -->
 {#snippet namer(hint: string)}
@@ -775,7 +783,7 @@
     <span class="ip-note">{hint}</span>
     {#if name_err}<span class="ip-note">⚠ {name_err}</span>{/if}
 {/snippet}
-<div class="ip" class:inglass>
+<div class="ip" class:inglass class:arrival>
     {#if relic}
         <!-- the old garden's invite: recognized, named, and — since the migration — redeemable.
              The note only carries what the LANDING FACE below cannot: that this is an old link, so
@@ -1013,8 +1021,8 @@
          the QR fills the screen, so a stopPropagation on it left only a sliver of escapable margin
          ("too hard to get out of", the human) — plus the ✕ and Escape (the svelte:window rides
          the template top, as it must). -->
-    <div class="ip-overlay" use:portal onclick={() => { sheet_close(); big = false }}>
-        <button class="ip-big-x" onclick={() => { sheet_close(); big = false }} title="close (Esc or click anywhere)">✕</button>
+    <div class="ip-overlay" use:portal onclick={() => { close_big() }}>
+        <button class="ip-big-x" onclick={() => { close_big() }} title="close (Esc or click anywhere)">✕</button>
         {#if sheet_on}
             <!-- SHEET mode — a card, so the download link is clickable.  The "any click closes" rule
                  above is for the full-bleed QR (there was nothing but a sliver of margin to escape
@@ -1073,6 +1081,43 @@
     /* in the glass the panel is a narrow column beside the music, not a fullscreen welcome — the
        same sentence, sized for the room it is standing in (matching `.ip.inglass .ip-note`). */
     .ip.inglass .ip-land > .ip-title { font-size: 1.05rem; }
+    /* ARRIVAL — the panel inside the Butler's fullscreen welcome card (owner 2026-10-14: "make all the text on the 'you
+       were invited' screen bigger and nicer, more like the app is now").  The card is the frame (navy, light sans, the big
+        orange tap), so the panel drops its own box and speaks in the card's voice: larger type throughout, the inviter's
+         name warm, and the two steps (that's me → · join) as the card's own orange button.  The Door's compact panel and
+          the in-glass panel are untouched — this is scoped to `arrival` alone. */
+    .ip.arrival {
+        display: flex; flex-direction: column; align-items: flex-start; gap: 0.9rem; width: 100%;
+        padding: 0; background: none; border: none; color: #e8f3ff; font-size: 1.25rem;
+    }
+    .ip.arrival .ip-land, .ip.arrival .ip-mint { gap: 1rem; }
+    .ip.arrival .ip-land > .ip-title { font-size: 1.8rem; font-weight: 300; line-height: 1.35; color: #e8f3ff; }
+    .ip.arrival .ip-land > .ip-title b { font-weight: 600; color: #ffc172; }
+    .ip.arrival .ip-row { gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+    .ip.arrival .ip-name {
+        font-size: 1.5rem; padding: 0.7rem 1.1rem; border-radius: 14px; width: 17rem; max-width: 100%;
+        background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(127, 199, 255, 0.28); color: #e8f3ff;
+    }
+    .ip.arrival .ip-name::placeholder { color: rgba(232, 243, 255, 0.38); }
+    .ip.arrival .ip-name:focus { border-color: #7fc7ff; box-shadow: 0 0 0 3px rgba(127, 199, 255, 0.15); }
+    .ip.arrival .ip-go {
+        font-size: 1.5rem; font-weight: 600; padding: 0.7rem 1.7rem; border-radius: 14px; border: none;
+        color: #2b1500; background: linear-gradient(180deg, #ffb156, #ff8c1a);
+        animation: ip-breath-warm 2.6s ease-in-out infinite;
+    }
+    .ip.arrival .ip-go:hover { background: linear-gradient(180deg, #ffc172, #ffa040); }
+    .ip.arrival .ip-go.ip-waiting, .ip.arrival .ip-go:disabled {
+        background: rgba(255, 255, 255, 0.07); color: rgba(232, 243, 255, 0.35); animation: none; box-shadow: none;
+    }
+    .ip.arrival .ip-go-join { font-size: 1.8rem; padding: 0.8rem 2.1rem; }
+    .ip.arrival .ip-go:focus-visible { outline: 2px solid #fff3e0; outline-offset: 3px; }
+    .ip.arrival .ip-note { font-size: 1.15rem; color: #9fb3c8; max-width: 30rem; line-height: 1.45; }
+    .ip.arrival .ip-warn { color: #ffd08a; }
+    @keyframes ip-breath-warm {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(255, 140, 26, 0.45); }
+        50%      { box-shadow: 0 0 0 8px rgba(255, 140, 26, 0); }
+    }
+    @media (prefers-reduced-motion: reduce) { .ip.arrival .ip-go { animation: none; } }
     .ip-act {
         background: #232338; border: 1px solid #44446a; color: #ccd;
         cursor: pointer; font-size: 0.78rem; padding: 0.15rem 0.6rem; border-radius: 5px;

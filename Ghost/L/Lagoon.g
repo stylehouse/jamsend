@@ -1791,12 +1791,16 @@ Lagoon_cave_head(w):
     let st = w.c.cave || []
     let deep = st.length - 1
     let rope = this.Lagoon_cave_rope(w)
-    let head = { Head: rope, guise: { tok: 'cave:head', dose: 1, press: () => {
+    let head = { Head: rope, guise: { tok: 'cave:head', dose: 1, press: (n, how) => {
         // the glass is always on screen, and Vytui presses the head on ANY Escape — one typed into the editor (or
         //  any other box) belongs to that box, not to a climb
         let a = typeof document !== 'undefined' ? document.activeElement : null
         if (a && (a.isContentEditable || ((a.tagName === 'INPUT' || a.tagName === 'TEXTAREA') && !a.classList.contains('bw-hole')))) return
-        this.Lagoon_cave_rise(w)
+        // a CLICK on the head seeks the box (the room's input — the head used to BE the box), and climbs if the rope
+        //  is deep; ESCAPE (Vytui presses the head on it, saying so: how.key) only climbs — the hand is already where it types
+        let by_key = !!(how && how.key === 'Escape')
+        if (!by_key) this.Lagoon_cave_emit(w, 'seek', null)
+        if (by_key || (w.c.cave || []).length > 1) this.Lagoon_cave_rise(w)
     } } }
     if (deep > 0) head.deep = deep
     return head

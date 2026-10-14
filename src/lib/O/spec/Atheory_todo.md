@@ -201,6 +201,59 @@ The 16 are a platform layer nobody designed: `Radio_trace` · `Ra_recs` · `Ra_r
    fields can only be inherited from `Housing`.  Behaviour only; a hard constraint, not a preference.
 - **Where the 150 single-caller reaches land** — the audit above is unstarted.
 
+## Case study: the serving box (2026-10-14) — two more irritations, measured, fed here rather than patched
+
+The owner, after a week tuning the jamserve daemon: *"we do indeed need to compartmentalise and notice change better, but I
+ think we might be scraping together a case study to feed to Atheory more than further optimising this now… this is a
+  coherent point!"* The numbers and file:lines are in `Perf_todo.md` §7 (§7.6 is four surveys' evidence). What it says about
+   Housing's next shape:
+
+3. **Code arrives by polling.** `Creduler_reswap` (`LiesLies.svelte:1483`) asks the dev server "which `.go` changed?" every
+    2 s from every runner tab (`/__gen/dige`, or ~35 HEADs without it). It even did so on the daemon, at prod, for nothing (now
+     skipped there). Owner: *"we should not require polling like that, code changes should push out to the required runners."*
+      The server already knows the instant a `.go` is written (the Docindex push, `control:docindex` ≈450 ms, is the precedent).
+       And A** knows which runner holds which ghost (the declared manifest of §0 irritation 1). So delivery is a PUSH addressed
+        by the manifest: "Swarm.go changed → the runners whose A** holds Swarm get it". The swap seam ("never mid-run") stays
+         the receiver's rule. Visibility comes free: a code version becomes a particle on the A that holds it, so "which runner is
+          on which Swarm.go" reads off the tree instead of an ETag map in `.c`.
+4. **Change is noticed by re-running everything.** A belief pass re-derives the world (organise, attend, reqdo_sweep, officing)
+    whether or not anything changed. The surveys found why that can't be cheaply gated today:
+    - `version` is per particle and nothing carries it to the world or the House;
+    - plain `sc` and `.c` writes record nothing;
+    - every pass bumps every A itself (the `self_timekeeping` round, `A.replace({w:1})`);
+    - eternal reqs look like work every pass;
+    - wakes are anonymous (`think` from anyone, for anything).
+
+    On a box that never sleeps, that re-running WAS the workload (60–80% of a core, idle). The Atheory answer is
+     **compartments that know they changed**: each A/w carries a dirty mark raised by any mutation beneath it (an up-walk on
+      bump, which REACTAP's per-host tap already half-does), cleared at the end of its own pass. A pass visits only dirty
+       compartments plus those holding a HOLD (an unfinished req, a due ttlilt). Clock-driven work declares itself
+        (`wants_clock`) instead of riding every pass. A wake names its compartment (`think(w)`, not `think`).
+
+    **The owner's direction (2026-10-14), rejecting even a module-level counter many readers consume:** *"this need is going
+     into the Atheory design, possibly some kind of space-flow map that refers to itself for responditivity and time|space
+      isolation scheme… the need to make the entire weave of computation mergable."* Read as requirements:
+    - **Space-flow map.** Which compartment feeds which is itself legible matter, the map the passes follow, not a global
+       signal everyone polls.
+    - **Refers to itself for responditivity.** A change finds who must respond by consulting that map, so responsiveness is
+       a lookup, not a broadcast.
+    - **Time|space isolation.** A compartment's pass sees a consistent slice: one place, one moment.
+    - **Mergeable.** Two weaves of computation (two tabs, two bodies, a runner and an editor) can be joined like the
+       particles they're made of, which only works if every change is a recorded, attributable event.
+
+    That's a Housing redesign, not a patch. Its correctness rests on EVERY change being noticed, which is exactly what the
+     code doesn't guarantee today. Hence: case study first, rebuild later.
+
+*Interim on the daemon (deliberately small):*
+- the tour rests with no audience;
+- an idle floor with wake-on-queued-work;
+- no stack capture per `replace()`;
+- a dir-listing cache;
+- the reswap skip.
+
+None of these touches Housing's pass. The proposed "R1b" (a global bump counter to skip empty daemon thinks) is parked: it's
+ a cheap imitation of irritation 4's dirty marks, and its blind spot (writes that don't bump) is the same blind spot.
+
 ## Not yet
 
 The toplevel inventory (what happens between page-load and commission) is still owed, and §0's second

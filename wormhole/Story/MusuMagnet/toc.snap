@@ -4,8 +4,7 @@ story:MusuMagnet
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.1
-      sample=0.188,at=1790983013
+    TimeTotal:beliefs,avg=0.088
       sample=0.161,at=1791064742
       sample=0.082,at=1791067484
       sample=0.075,at=1791155133
@@ -15,8 +14,8 @@ story:MusuMagnet
       sample=0.073,at=1791362717
       sample=0.053,at=1791362862
       sample=0.179,at=1791363324
-    TimeTotal:step,avg=0.014
-      sample=0.027,at=1790983013
+      sample=0.069,at=1791964181
+    TimeTotal:step,avg=0.013
       sample=0.023,at=1791064742
       sample=0.012,at=1791067484
       sample=0.011,at=1791155133
@@ -26,6 +25,7 @@ story:MusuMagnet
       sample=0.01,at=1791362717
       sample=0.008,at=1791362862
       sample=0.026,at=1791363324
+      sample=0.01,at=1791964181
   step,dige:ac14022b8c72c323
   step=2,dige:339bfd31f9b30fb0
   step=3,dige:39292f044f048c93

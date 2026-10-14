@@ -303,39 +303,56 @@
     //   The Waft's own C (its header row) is position:sticky at the top of whatever scrolls it — the
     //    body in the capped stances, the page in 'free' (whose body clips sideways only, so it is no
     //     scroll container and sticky passes through).  Under it, once you're scrolled INTO something,
-    //      a breadcrumb: every item whose box straddles the stick's foot, outer to inner (DOM order IS
-    //       nesting).  Pure render — read off the DOM on scroll (one capture listener catches the body
-    //        and every outer scroller), never touching the C.  A sub-Waft's items belong to its own stick.
+    //      a breadcrumb: every item whose OWN header row has gone under the stick while its box still
+    //       runs on below, outer to inner (DOM order IS nesting).  Pure render — read off the DOM on
+    //        scroll (one capture listener catches the body and every outer scroller), never touching the
+    //         C.  A sub-Waft's items belong to its own stick.
+    //   Two rules keep it from thrashing (it did — on|off in a loop at the line):
+    //    · the crumb line OVERLAYS the rows (absolute, under the header) — it never takes flow space, so
+    //       its showing can't shove the content and flip the very reading that showed it;
+    //    · a buffer: an item joins at CRUMB_BUF past the foot and leaves only CRUMB_BUF the other side.
+    //   A crumb press lands its item's header just BELOW the foot — so that item reads as the real row
+    //    at the top, under the rest of the breadcrumb (its ancestors), and is no longer a crumb itself.
     let stick_el = $state<HTMLElement | undefined>(undefined)
     let crumbs   = $state<{ label: string; el: HTMLElement }[]>([])
-    const CRUMB_H = 18      // the crumb line's height, counted whether shown or not — so showing it never moves the foot
+    const CRUMB_H   = 18    // the crumb line's height; it overlays the rows, so the foot sits this far under the header
+    const CRUMB_BUF = 4     // hysteresis either side of the foot
     // the foot line the crumbs are read at: the header row's bottom plus the crumb line
     function stick_foot(): number {
         const hdr = stick_el?.firstElementChild as HTMLElement | null
         return hdr ? hdr.getBoundingClientRect().bottom + CRUMB_H : -Infinity
     }
+    // an item's own header row (direct child), else the item's box
+    function crumb_row(el: HTMLElement): HTMLElement {
+        return (el.querySelector(':scope > .ls-item-hdr') as HTMLElement | null) ?? el
+    }
     function crumbs_read() {
         if (!stick_el || !body_el) { if (crumbs.length) crumbs = []; return }
         const foot = stick_foot()
+        const was = new Set(crumbs.map(c => c.el))
         const got: { label: string; el: HTMLElement }[] = []
         for (const el of body_el.querySelectorAll<HTMLElement>('[data-crumb]')) {
             if (el.closest('.ls-waft-body') !== body_el) continue
-            const r = el.getBoundingClientRect()
-            if (r.top < foot && r.bottom > foot) got.push({ label: el.dataset.crumb as string, el })
+            const box = el.getBoundingClientRect()
+            if (box.bottom <= foot) continue                          // wholly passed — not an ancestor of anything here
+            const top = crumb_row(el).getBoundingClientRect().top
+            const line = was.has(el) ? foot + CRUMB_BUF : foot - CRUMB_BUF
+            if (top < line) got.push({ label: el.dataset.crumb as string, el })
         }
         if (got.length !== crumbs.length || got.some((g, k) => g.el !== crumbs[k].el)) crumbs = got
     }
-    // a crumb press: bring that item's header to just under the stick's header row
+    // a crumb press: that item's header row lands just below the foot (clear of the leave-buffer)
     function crumb_go(el: HTMLElement) {
-        const hdr = stick_el?.firstElementChild as HTMLElement | null
-        if (!hdr || !body_el) return
-        const d = el.getBoundingClientRect().top - hdr.getBoundingClientRect().bottom
+        if (!stick_el || !body_el) return
+        const land = stick_foot() + CRUMB_BUF + 2
+        const d = crumb_row(el).getBoundingClientRect().top - land
         if (capstate !== 'free') body_el.scrollTop += d
         else {
             // free: the page (or whatever outer box) scrolls — the user's own hand asked, so moving it is right
-            el.style.scrollMarginTop = (hdr.getBoundingClientRect().bottom - stick_el!.getBoundingClientRect().top + 4) + 'px'
-            el.scrollIntoView({ block: 'start' })
+            crumb_row(el).style.scrollMarginTop = (land - stick_el.getBoundingClientRect().top) + 'px'
+            crumb_row(el).scrollIntoView({ block: 'start' })
         }
+        requestAnimationFrame(crumbs_read)
     }
     // a crumb's words: the mainkey's value, or (a %Point,method:X style marker) the next key's
     function crumb_of(C: TheC): string {
@@ -347,11 +364,23 @@
         const k2 = ks[1]
         return k2 ? mk + ' ' + k2 + ':' + C.sc[k2] : mk
     }
+    // read at most every CRUMB_MS, on a frame, with a trailing read so the resting position is always right
+    const CRUMB_MS = 60
     $effect(() => {
-        let raf = 0
-        const on = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; crumbs_read() }) }
+        let raf = 0, last = 0, trail: any = 0
+        const read = () => { raf = 0; last = performance.now(); crumbs_read() }
+        const on = () => {
+            if (raf || trail) return
+            const wait = CRUMB_MS - (performance.now() - last)
+            if (wait <= 0) raf = requestAnimationFrame(read)
+            else trail = setTimeout(() => { trail = 0; raf = requestAnimationFrame(read) }, wait)
+        }
         window.addEventListener('scroll', on, { capture: true, passive: true })
-        return () => { window.removeEventListener('scroll', on, { capture: true }); if (raf) cancelAnimationFrame(raf) }
+        return () => {
+            window.removeEventListener('scroll', on, { capture: true })
+            if (raf) cancelAnimationFrame(raf)
+            if (trail) clearTimeout(trail)
+        }
     })
 
     // Embedded applets (%Funkcion) render through FunkHost — the kind module owns the
@@ -1051,7 +1080,9 @@
         margin: 0 0 0 -0.35rem; padding-left: 0.35rem;    /* cover the waft's own left rule under it */
     }
     .ls-crumbs {
-        display: flex; align-items: center; gap: 0.15rem; height: 18px; overflow: hidden;
+        position: absolute; top: 100%; left: 0; right: 0;     /* overlays the rows — never takes flow space (see stick_foot) */
+        background: #13131d; padding-left: 0.35rem;
+        display: flex; align-items: center; gap: 0.15rem; height: 18px; box-sizing: border-box; overflow: hidden;
         font-family: monospace; font-size: 0.72rem; color: #667;
         border-bottom: 1px solid #252535;
     }

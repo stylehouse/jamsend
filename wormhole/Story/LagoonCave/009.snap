@@ -20,7 +20,7 @@ Snap:H
         req:leave_wait,finished
         saw:cave,lvl:up,rope:⌕ Sample › Sample,shape:Method=Sample_alpha() | Method=_beta() | Method=Sample_gamma()
         saw:cave,lvl:up,rope:⌕ Sample,shape:Dir=Ghost/L/test_corpus/ | Doc=Ghost/L/test_corpus/Sample.g [Family=Sample… ×2 ; Family=Sample_gamma()]
-        saw:cave,lvl:left,events:mode:rest mode:full mode:rail land:Sample.g#Sample_alpha land:Sample.g#Sample_beta land:Sample.g#Sample_alpha mode:full leave
+        saw:cave,lvl:left,events:mode:rest mode:full mode:rail land:Sample.g#Sample_alpha land:Sample.g#Sample_beta seek land:Sample.g#Sample_alpha seek mode:full seek leave
     A:Vyto
       w:Vyto,grawave_duration=0.4
         Organ:Scan,family:chronicler,reads:the grappled worlds,writes:the mirror,status:stub

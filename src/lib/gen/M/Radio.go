@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return 'dcd6394872f1a4cd~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '5dc4380222cc0d07~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -2292,7 +2292,10 @@ Radio_alone_why(w) {
     //    explains the silence better than a contact list does.  This is the narrow repair to this
     //     function's real flaw: `anyPier` treats any stored %Pier as an expectation, when the thing
     //      that actually creates one is an invite.
-    if (this.Supervisor_w) {
+    // NOT IN A BOOK (2026-10-14, MusuRadioAim step 3 red 5/5): the Supervisor is the RUNNER TAB's own live watch, so a
+    //  long-lived runner whose arrival watch once gave up told every Book run since "your friends did not come online".
+    //   Same tab-wide gate the Presence read above already rides (Story_replaying) — a live read never leaks into a Book.
+    if (this.Supervisor_w && !(typeof this.Story_replaying === 'function' && this.Story_replaying())) {
         let sup = this.Supervisor_w(this.top_House())
         // `because` is the arming event, carried by whoever armed it — an invite ("come here", and
         //  nobody came) or our own standup on a machine with friends ("they're just not up").  Two

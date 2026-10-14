@@ -489,7 +489,7 @@
     //  ⚠ `Sounditron.g:278` still deletes `s.c.inviting` in that `onunmain`; it is now a write to a
     //   key nobody reads. Harmless, but it should go on the next compile of that ghost.
     // the pier-list cap ("yay many") — five rows before the +N more toggle takes over.
-    const PIERS_SHOWN = 5
+    const PIERS_SHOWN = 12   // several per line now (the grid), so the fold comes later — was 5 in the single column
     let piers_all = $state(false)
     // THE OUR-BOX SPLIT (owner 2026-08-30: "ourselves and all our Piers that are Linked in a box of
     //  their own … the box is a box").  A 🔗 cave pier is OUR OTHER DEVICE — it belongs beside the
@@ -621,7 +621,9 @@
                     <span class="df-dot here">●</span>
                     <!-- the device's own role rides the "you" row (owner 2026-10-03: the title is just the name) —
                          and its 🧲, beside the others' -->
-                    <span class="df-name">you{#if face.instance}<span class="df-role"> · {face.instance.role}{#if face.instance.name && face.instance.name !== face.name} {face.instance.name}{/if}</span>{/if}</span>
+                    <!-- a crew of ONE has no Captain worth naming (owner 2026-10-14: "don't say Crew role CAPTAIN if it's the only one in
+                         the Crew") — the role appears once there is a second body (a Cave) for it to be distinguished from -->
+                    <span class="df-name">you{#if face.instance && (face.instance.role !== 'Captain' || face.family.length || cave_piers.length)}<span class="df-role"> · {face.instance.role}{#if face.instance.name && face.instance.name !== face.name} {face.instance.name}{/if}</span>{/if}</span>
                     {#if face.magnet.show && face.instance?.prepub && face.magnet.can.includes(face.instance.prepub)}
                         <button class="df-mag" class:on={face.magnet.at === face.instance.prepub} onclick={() => magnet_to(face.instance.prepub)}
                             title={face.magnet.at === face.instance.prepub ? 'your hearts land HERE — this folder is your big pile' : 'land your hearts here instead'}>🧲</button>
@@ -957,8 +959,13 @@
     /* friends — inline wrapping chips, unboxed; a suggestion row takes the full width */
     /* SINGLE COLUMN (owner 2026-09-01: "at 20em there's two wobbly columns of them") — a capped-width
        Door wraps a flex list into an uneven grid; stack the piers in one clean column instead. */
-    .df-others { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin-top: 4px; }
-    .df-others .df-friend { margin-top: 0; }
+    /* SEVERAL PER LINE, EVENLY (owner 2026-10-14: "the list of Piers in Door should be several on each line or so").  The
+       09-01 single column answered "two wobbly columns" from a wrapping flex list; a GRID of equal cells can't wobble — every
+        name gets the same width and ellipsizes, so the columns line up however long the names are. */
+    .df-others { display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: 3px 12px; margin-top: 4px; }
+    .df-others .df-friend { margin-top: 0; min-width: 0; }
+    .df-others .df-friend .df-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    .df-others .df-more { grid-column: 1 / -1; justify-self: start; }
     .df-friend { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-top: 4px; }
     /* the prepub tag beside a friendly name — small, dim, monospace (matches .df-pub on the title line). */
     .df-fpub { font-size: 8px; opacity: 0.5; font-family: monospace; font-weight: 400; margin-left: 5px; letter-spacing: 0; }

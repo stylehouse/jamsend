@@ -77,13 +77,13 @@ Four read-only surveys went over the machinery: the belief pass, the wake source
 
 **Daemon-only cuts. Books never see these, so they're the safest first.**
 - **R1 ✅ Demand-driven ticks.** No tick without queued work or a due ttlilt, beyond a 1 s floor (`IDLE_MS`, `/tune`).
-- **R1b The daemon's own think is the biggest anonymous wake.** `main.ts` posts `think` to EVERY House on every loop iteration,
+- **R1b ⏸ PARKED 2026-10-14 → `Atheory_todo.md` "Case study: the serving box" (owner: feed a case study, don't keep optimising Housing). The daemon's own think is the biggest anonymous wake.** `main.ts` posts `think` to EVERY House on every loop iteration,
    including iterations started by a share beat `fn` that changed nothing. Post it only to a House whose global bump counter
     moved, or that holds an unfinished req or due ttlilt. First tag the post (`see:'daemon_tick'`) so the `woke` tally can prove
      whose thinks they are.
 - **R1c Adaptive share beat.** `Swarm_share_loop` ticks every 600 ms forever. Make it 600 ms while a pull, serve, keep or
    playback is live, otherwise 3–5 s.
-- **R1d Strip dev probes from a server.** `Creduler_reswap` does a fetch or 35 HEADs every 2 s, but a daemon has no HMR. Remove
+- **R1d (reswap ✅ skipped on the daemon 2026-10-14) Strip dev probes from a server.** `Creduler_reswap` does a fetch or 35 HEADs every 2 s, but a daemon has no HMR. Remove
    the duplicate `Ra_pcm_sweep` (it runs on an interval AND per pump). Latch `Sounditron_trickle` so a pass can't re-era it.
 
 **Wire cuts. Halve the frames.**

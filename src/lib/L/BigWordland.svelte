@@ -164,6 +164,24 @@
     let dismiss   = $state(0)
     let vyto_ready = $state(false)
     let hole: HTMLInputElement | undefined = $state()
+    // the rail's width — dragged at its right edge, remembered per viewer (a convenience: lost storage = the CSS default)
+    const RAIL_KEY = 'bw-rail-w'
+    let rail_w: number | null = $state((() => { try { const v = Number(localStorage.getItem(RAIL_KEY)); return v > 0 ? v : null } catch { return null } })())
+    function rail_grip(e: PointerEvent) {
+        const grip = e.currentTarget as HTMLElement
+        grip.setPointerCapture(e.pointerId)
+        const move = (m: PointerEvent) => { rail_w = Math.round(Math.max(180, Math.min(window.innerWidth * 0.6, m.clientX))) }
+        const up = () => {
+            grip.removeEventListener('pointermove', move); grip.removeEventListener('pointerup', up)
+            try { if (rail_w) localStorage.setItem(RAIL_KEY, String(rail_w)) } catch {}
+        }
+        grip.addEventListener('pointermove', move); grip.addEventListener('pointerup', up)
+        e.preventDefault()
+    }
+    function rail_reset() {
+        rail_w = null
+        try { localStorage.removeItem(RAIL_KEY) } catch {}
+    }
     const lagoon_w = () => (H as any)?.o({ A: 'Lagoon' })[0]?.o({ w: 'Lagoon' })[0]
     function cave_on(ev: string, a: any) {
         if (ev === 'land' && a?.path) {
@@ -173,17 +191,21 @@
             if (a.leave) rest_cave()
         }
         if (ev === 'leave') rest_cave()
+        if (ev === 'seek') focus_hole()
         if (ev === 'mode') cave_mode = a === 'rail' ? 'rail' : 'full'
     }
     function rest_cave() {
         if (hole) hole.value = ''
         H?.i_elvisto('Lagoon/Lagoon', 'Lagoon_cave', { open: 1 })
     }
-    // the hand into the hole (the chip, `/`) — no scrolling: the glass is a fixed layer, the input sits at its top
+    // the hand into the hole (the chip, the head, `/`).  Over the overlay no scrolling — the glass is a fixed layer, the
+    //  input sits at its top.  In the sprawl the box rides the Vyto piece down the page, and the hand ASKED for it, so the
+    //   page brings it on screen (only on this deliberate seek — nothing periodic ever focuses it)
     function focus_hole() {
         if (!cave_open) open_cave()
         hole?.focus({ preventScroll: true })
         hole?.select()
+        if (sprawl) hole?.scrollIntoView({ block: 'center' })
     }
     function open_cave() {
         if (!H) return
@@ -335,12 +357,13 @@
         {/each}
     </div>
     <div class="bw-room" class:bw-railed={pins.length > 0} class:bw-sprawl={sprawl}
-         class:bw-caverail={cave_up && cave_mode === 'rail'}>
+         class:bw-caverail={cave_up && cave_mode === 'rail'} style:--rail-w={rail_w ? rail_w + 'px' : null}>
         {#each (sprawl ? houses : houses.filter(h => h.c.ip === active_ip)) as house (house.c.ip)}
             {#each house.UIs.ob({ UI: 1 }) as uiC (keyser(uiC.sc))}
                 {#if !ui_hidden(uiC.sc.UI) && !is_glass(uiC)}
                     <section class="bw-piece" class:bw-piece-lies={uiC.sc.UI === 'Lies'}>
                         <span class="bw-tag">{house.name} · {uiC.sc.UI}</span>
+                        {#if uiC.sc.UI === 'Vyto' && house === glass_house}{@render hole_box()}{/if}
                         <svelte:component this={uiC.sc.component} H={house} />
                     </section>
                 {/if}
@@ -358,11 +381,13 @@
 
     <!-- THE GLASS — its own layer, drawn from the House that holds it, whichever House the switcher shows -->
     {#if glass_ui && glass_house && !sprawl}
-        <section class="bw-piece bw-glass" class:up={cave_up} class:rail={cave_mode === 'rail'}>
+        <section class="bw-piece bw-glass" class:up={cave_up} class:rail={cave_mode === 'rail'} style:--rail-w={rail_w ? rail_w + 'px' : null}>
+            {#if cave_mode === 'rail'}
+                <div class="bw-rail-grip" role="separator" aria-orientation="vertical" title="drag to size the rail · double-click to reset"
+                     onpointerdown={rail_grip} ondblclick={rail_reset}></div>
+            {/if}
             <button class="bw-glass-x" title="back to rest — the hole and the families" onclick={rest_cave}>×</button>
-            <input class="bw-hole" bind:this={hole} spellcheck="false" autocomplete="off"
-                   placeholder="search code & prose  ( / )   ·   :verbs"
-                   oninput={hole_input} onkeydown={hole_key} />
+            {@render hole_box()}
             <svelte:component this={glass_ui.sc.component} H={glass_house} />
         </section>
     {/if}
@@ -392,6 +417,15 @@
 {#if H}
     <Ghost {H} />
 {/if}
+
+<!-- THE HOLE — one plain input, drawn wherever the glass is: atop the overlay, or atop the Vyto piece in the sprawl
+     (where there is no overlay).  Only one place renders at a time, so the one bind holds.  Before 2026-10-14 it lived
+     in the overlay alone, so the sprawl had NO box — the chip, the head and '/' had nothing to seek. -->
+{#snippet hole_box()}
+    <input class="bw-hole" bind:this={hole} spellcheck="false" autocomplete="off"
+           placeholder="search code & prose  ( / )   ·   :verbs"
+           oninput={hole_input} onkeydown={hole_key} />
+{/snippet}
 
 <style>
     /* the room — big, dark, empty; the machine's pieces float in it */
@@ -509,8 +543,14 @@
         display: flex; flex-direction: column;
         visibility: hidden; pointer-events: none;
     }
-    .bw-piece.bw-glass.rail { right: auto; width: min(28rem, 34vw); }
-    .bw-room.bw-caverail { padding-left: calc(min(28rem, 34vw) + 0.8rem); }
+    /* the rail's width: --rail-w once dragged (rail_grip), else the default */
+    .bw-piece.bw-glass.rail { right: auto; width: var(--rail-w, min(24rem, 30vw)); }
+    .bw-room.bw-caverail { padding-left: calc(var(--rail-w, min(24rem, 30vw)) + 0.8rem); }
+    .bw-rail-grip {
+        position: absolute; top: 0; bottom: 0; right: -4px; width: 8px; z-index: 2;
+        cursor: col-resize; touch-action: none;
+    }
+    .bw-rail-grip:hover, .bw-rail-grip:active { background: rgba(224, 180, 110, 0.25); }
     .bw-piece.bw-glass.up { visibility: visible; pointer-events: auto; }
     /* the copper sheet goes translucent HERE only — a scoped :global, so no other page that mounts Vytui
        changes by a pixel — and the code ghosts through beneath the spine */
@@ -524,6 +564,7 @@
         font: 600 1.05rem/1.2 system-ui, sans-serif; color: #ffe6bd;
         background: rgba(30, 22, 14, 0.92); border: 1px solid rgba(224, 180, 110, 0.45); border-radius: 8px; outline: none;
     }
+    .bw-piece:not(.bw-glass) > .bw-hole { display: block; width: calc(100% - 1.2rem); box-sizing: border-box; margin: 0.2rem 0.6rem 0.4rem; }
     .bw-hole:focus { border-color: rgba(255, 210, 130, 0.9); box-shadow: 0 0 18px rgba(255, 200, 110, 0.3); }
     .bw-hole::placeholder { color: rgba(230, 200, 160, 0.45); font-weight: 400; }
     .bw-glass-x {

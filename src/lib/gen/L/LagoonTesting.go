@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_LagoonTesting(): string { return 'ccdde1c86040d5ad~g1' },
+    Ghostmeta_Ghost_L_LagoonTesting(): string { return 'b1a923fe609ce5c3~g1' },
 
 // LagoonTesting.g — né Lagoonation.g.  The Lagoon.g proof, under the `<Name>Testing.g` convention
 //  (owner ruling 2026-09-09; src/lib/L/testing.ts is the one predicate).
@@ -472,9 +472,10 @@ async LagoonCave_until(w, rope, lvl) {
     w.i({ saw: 'cave', lvl: lvl, rope: this.LagoonCave_rope(w), shape: this.LagoonCave_shape(w) })
 
 },
-// press a seed the way a hand would — Vytui's cell_click calls the source's own `.c.press`
-LagoonCave_press(seed) {
-    if (seed && typeof seed.c.press === 'function') seed.c.press(seed, null)
+// press a seed the way a hand would — Vytui's cell_click calls the source's own `.c.press`; `how` is what Vytui's Escape
+//  passes ({ key: 'Escape' }) — a click at the surface only SEEKS the box, Escape there leaves
+LagoonCave_press(seed, how) {
+    if (seed && typeof seed.c.press === 'function') seed.c.press(seed, how || null)
 
 },
 async LagoonCave_open(w) {
@@ -557,6 +558,7 @@ async LagoonCave_climb(w) {
         this.LagoonCave_press((this.LagoonCave_sown(w) || [])[0])
         await this.LagoonCave_until(w, '⌕ Sample › Sample › Sample_alpha()', 'climb')
         w.c.climbed = this.LagoonCave_rope(w) === '⌕ Sample › Sample › Sample_alpha()' ? 1 : 0
+        w.c.sought = (w.c.events || []).indexOf('seek') >= 0 ? 1 : 0
     })
 
 },
@@ -569,7 +571,7 @@ async LagoonCave_leave(w) {
             await this.LagoonCave_until(w, rope, 'up')
         }
         let at_top = this.LagoonCave_rope(w) === '⌕ Sample'
-        this.LagoonCave_press((this.LagoonCave_sown(w) || [])[0])
+        this.LagoonCave_press((this.LagoonCave_sown(w) || [])[0], { key: 'Escape' })
         w.c.left = at_top && (w.c.events || []).indexOf('leave') >= 0 ? 1 : 0
         w.c.modes = (w.c.events || []).filter(e => e.indexOf('mode') === 0).join(' ')
         w.i({ saw: 'cave', lvl: 'left', events: (w.c.events || []).join(' ') })
@@ -577,6 +579,9 @@ async LagoonCave_leave(w) {
 
 },
 LagoonCave_witness(w) {
+    if (w.c.sought && w.c.climbed && this.LagoonStaple_at(w, 8)) {
+        this.story_swear(w, 'a click on the head seeks the box and climbs — the head used to be the box')
+    }
     if (w.c.open_field && w.c.open_root && this.LagoonStaple_at(w, 3)) {
         this.story_swear(w, 'the head reads what was typed and is the biggest bone of the creature')
     }

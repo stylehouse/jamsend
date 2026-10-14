@@ -4190,7 +4190,7 @@
                     const fn = head?.c?.source_n?.c?.press
                     const hc = (paintMap.get(w) ?? []).find(c => c.row === head)
                     if (hc && typeof fn === 'function') spine_dive_cam(w, hc)
-                    if (typeof fn === 'function') { try { fn(head.c.source_n) } catch (er) { console.warn('◈ Vyto escape press threw', er) } }
+                    if (typeof fn === 'function') { try { fn(head.c.source_n, { key: 'Escape' }) } catch (er) { console.warn('◈ Vyto escape press threw', er) } }
                 }
                 return
             }

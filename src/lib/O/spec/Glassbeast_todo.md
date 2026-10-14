@@ -218,7 +218,11 @@ The owner: *"whatever this input field is made of, it's the wrong stuff… rethi
   line (deduped by path:line) — "Algo" was one row per doc.  **No eject:** a file Atlas has no map of (any spec) used to land
    and LEAVE, and leaving is rest — the query vanished on a press.  It is now a FLAT file level (its hit lines, rail mode, the
     text landed beside); a press inside it moves the landing rather than stacking steps.  LagoonCave's open oath re-worded
-     ('the head reads what was typed…') — re-accept owed.
+     ('the head reads what was typed…') — no re-accept needed (its toc declares no oaths; 9/9 matched the fixtures).
+ **2026-10-14, the box everywhere:** it lived in the overlay alone, so the SPRAWL (▦) had no box — the ⌕ chip, the head and '/'
+  had nothing to seek (and '/' fell to Liesui's Searchbar).  One `hole_box` snippet now draws it atop the overlay OR atop the
+   Vyto piece in the sprawl (one place at a time, one bind); a head CLICK seeks it (emits `seek`, and climbs if deep), Escape
+    only climbs; in the sprawl the seek scrolls it on screen.  The rail's width drags at its edge (remembered per viewer).
 
 ### EVERY FILE HAS A HOME — the map's debt on its door, and the cave walks it — 2026-10-08
 The owner: *"do we ensure everything in src/ and Ghost/ is in Everything? that'd be good — to do with this tool"*.  It did not:

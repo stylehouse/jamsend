@@ -30,12 +30,15 @@ Credulate,of_Book:MusuHeist
   GhostInclude:Ghost_Story_InvFerry,dige:25d7e048c292e562~g1
   GhostInclude:Ghost_Story_InvWalk,dige:e3dd6a1629d67c5c~g1
   GhostInclude:Ghost_V_Voro,dige:e0323dccaf9924f8~g1
-  GhostInclude:Ghost_V_Vyto,dige:7e9196d20557ac1f~g1
+  GhostInclude:Ghost_V_Vyto,dige:ba54bff0606590e3~g1
   GhostInclude:Ghost_V_VytoTesting,dige:63d8fa84ff5d490e~g1
   GhostInclude:Ghost_Story_VoroTesting,dige:ba7f8d826ff81866~g1
   GhostInclude:Ghost_Story_Sounditron,dige:df0cefec57fe806b~g1
   GhostInclude:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
-  last_ok,at=1791363683.123,ok_pct
+  GhostInclude:Ghost_L_Lagoon,dige:be123a3b89d9175d~g1
+  GhostInclude:Ghost_L_LagoonTesting,dige:b1a923fe609ce5c3~g1
+  GhostInclude:Ghost_L_Atlas,dige:ea23056643ebec03~g1
+  last_ok,at=1791964232.762,ok_pct
     uses:Ghost_N_Peeroleum,dige:ee39d52bb1441684~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:8f51a3d0dfa19017~g1
@@ -67,8 +70,11 @@ Credulate,of_Book:MusuHeist
     uses:Ghost_Story_InvFerry,dige:25d7e048c292e562~g1
     uses:Ghost_Story_InvWalk,dige:e3dd6a1629d67c5c~g1
     uses:Ghost_V_Voro,dige:e0323dccaf9924f8~g1
-    uses:Ghost_V_Vyto,dige:7e9196d20557ac1f~g1
+    uses:Ghost_V_Vyto,dige:ba54bff0606590e3~g1
     uses:Ghost_V_VytoTesting,dige:63d8fa84ff5d490e~g1
     uses:Ghost_Story_VoroTesting,dige:ba7f8d826ff81866~g1
     uses:Ghost_Story_Sounditron,dige:df0cefec57fe806b~g1
     uses:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
+    uses:Ghost_L_Lagoon,dige:be123a3b89d9175d~g1
+    uses:Ghost_L_LagoonTesting,dige:b1a923fe609ce5c3~g1
+    uses:Ghost_L_Atlas,dige:ea23056643ebec03~g1
