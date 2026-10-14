@@ -917,15 +917,19 @@
     const TAKEOVER_ZOOM_MAX = 3
     const TAKEOVER_DESIGN_W = 440
 
-    function measure_molds() {
+    const nat_seen = new Map<string, string>()   // main's last natural-box signature, for the 🎴 nat log
+    function measure_molds(force = false) {
+        if (force === true) console.log(`🎴 f: forcing a re-fit of ${molds.size} cell(s) — main=${main_cell?.mk ?? '-'} (${main_key ?? '-'})`)
         try {
             let next: Map<string, number> | null = null
+            if (force === true && main_key && !molds.has(main_key)) console.log(`🎴 f: main ${main_key} is NOT REGISTERED — registered: [${[...molds.keys()].join(', ')}]`)
+            const skip = (key: string, why: string) => { if (force === true) console.log(`🎴 f: skip ${key} — ${why}`) }
             for (const [key, scroll] of molds) {
-                if (!scroll?.isConnected) continue
+                if (!scroll?.isConnected) { skip(key, 'scroll detached (stale registration)'); continue }
                 const child = scroll.firstElementChild as HTMLElement | null
-                if (!child || typeof child.offsetWidth !== 'number') continue
+                if (!child || typeof child.offsetWidth !== 'number') { skip(key, 'no face element'); continue }
                 const mold = scroll.parentElement as HTMLElement | null
-                if (!mold) continue
+                if (!mold) { skip(key, 'no mold'); continue }
                 // THE TAKEOVER DICTATES ITS WIDTH (owner 2026-09-29: "a big full-map of a Heist cell … react to viewport
                 //  changes nicely" → "can we know how wide we are to be and force-wrap everything?").  Two box models
                 //   meet here: a RIM cell is content-sized (inside-out: the face's natural box → --fit), but a TAKEOVER
@@ -955,7 +959,7 @@
                 const iw = Math.min(mold.clientWidth * INSCRIBE_W * INLAY_SCALE, vw * 0.94), ih = mold.clientHeight * INSCRIBE_H * INLAY_SCALE
                 // round the natural box to 6px so a 1-2px animation wobble in the Face can't nudge the fit
                 const nw = Math.round(child.offsetWidth / 6) * 6, nh = Math.round(child.offsetHeight / 6) * 6
-                if (!(nw > 0 && nh > 0 && iw > 0 && ih > 0)) continue
+                if (!(nw > 0 && nh > 0 && iw > 0 && ih > 0)) { skip(key, `zero size nat ${nw}×${nh} inscr ${iw | 0}×${ih | 0}`); continue }
                 // THE WEDGE (the owner: "its guts still get stuck not big enough sometimes… we need
                 //  to do better there, that was one of the main incompetencies of Vyto").  The old
                 //   box-stretched SKIP (|child.w − scroll.w| ≤ 1 ⇒ don't measure) wedged the fit at
@@ -967,6 +971,17 @@
                 //         rather than not at all.  Measures are CHEAP (a handful of offset reads on
                 //          <10 cells), so we look often and let the dead-band keep it calm.
                 const stretched = Math.abs(child.offsetWidth - scroll.clientWidth) <= 1
+                // EVIDENCE (2026-10-14, "the inlay that resizes when needed is still not so"): say every change of the MAIN's
+                //  natural box, with the verdict, even when the fit then stays put — a frozen fit with a moving `nat` names the
+                //   decision; a frozen `nat` names the measure.
+                if (key === main_key) {
+                    const sig = nw + 'x' + nh + (stretched ? 's' : '') + '@' + (iw | 0) + 'x' + (ih | 0)
+                    if (nat_seen.get(key) !== sig) {
+                        nat_seen.set(key, sig)
+                        const desc = (e: Element) => e.tagName.toLowerCase() + '.' + String((e as HTMLElement).className || '').trim().split(/\s+/).slice(0, 2).join('.')
+                        console.log(`🎴 nat[main ${main_cell?.mk}] ${nw}×${nh} (scrollH ${child.scrollHeight}) of ${desc(child)} · kids [${[...scroll.children].map(desc).join(' | ')}] · scroll ${scroll.clientWidth} · inscr ${iw | 0}×${ih | 0} · ${stretched ? 'STRETCHED (width ignored)' : 'compact'} · fit now ${(fits.get(key) ?? 1).toFixed(2)}`)
+                    }
+                }
                 const cap = key === main_key ? FIT_MAX_MAIN : FIT_MAX_SAT
                 // NEVER SCALE A STRETCHED FACE *UP* (owner 2026-08-30: "the cell inlay left|right padding is
                 //  not there at all, we're missing a letter off the text").  A stretched (block-layout) face
@@ -980,7 +995,8 @@
                 const raw = stretched ? Math.min(scap, ih / nh) : Math.min(iw / nw, ih / nh)
                 const fit = Math.max(FIT_MIN, Math.min(cap, raw))
                 const cur = fits.get(key) ?? 1
-                if (Math.abs(fit - cur) / cur <= FIT_DEADBAND) continue   // dead-band damp
+                if (force && key === main_key) console.log(`🎴 f: forced re-fit [main ${main_cell?.mk}] ${cur.toFixed(2)}→${fit.toFixed(2)} · nat ${nw}×${nh} inscr ${iw | 0}×${ih | 0} · ${stretched ? 'stretched' : 'compact'}`)
+                if (!force && Math.abs(fit - cur) / cur <= FIT_DEADBAND) continue   // dead-band damp
                 // DELIVERY (owner 2026-08-31: "intent and delivery of some cell layout state is what we're after").
                 //  The main cell's fit is what actually SIZES it — a giant cell is a fit that never got applied
                 //   (mold unmeasured) or a wrong natural box.  Log the change so the ×½-then-back wobble + the
@@ -1038,6 +1054,20 @@
         measure_soon()
     })
     $effect(() => () => { for (const t of event_looks) clearTimeout(t) })
+    // "f" = FORCE A RE-FIT (owner 2026-10-14: "can we assign 'f' keypresses to running the resize code, so I can check it
+    //  even works").  Every inlay, dead-band off, the main's numbers logged.  Ignored while typing in a field.
+    $effect(() => {
+        if (typeof window === 'undefined') return
+        const onkey = (e: KeyboardEvent) => {
+            if (e.key !== 'f' || e.ctrlKey || e.metaKey || e.altKey) return
+            const t = e.target as HTMLElement | null
+            const tag = t?.tagName
+            if (t?.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+            try { nat_seen.clear(); measure_molds(true) } catch (er) { console.log('🎴 f: threw', er) }
+        }
+        window.addEventListener('keydown', onkey, true)
+        return () => window.removeEventListener('keydown', onkey, true)
+    })
 
     // the shared observer + the action.  Rides each cell's .cello-face-scroll; OBSERVES the
     //  face's own root inside it (Vytui:3188-3209).
@@ -1048,6 +1078,12 @@
         let kid: Element | null = null
         let mykey = key
         molds.set(mykey, el)
+        // …AND THE MOLD ITSELF (owner 2026-10-14: "the whole window changing sizes to cause a Cello inlay resizing").  The
+        //  stage RO catches the window, but the glass re-cuts each cell's shape AFTER that (the tessellation settles on its
+        //   own clock, often past the 450/900ms late looks), so the fit was measured against the OLD cell.  Watching the
+        //    mold means any change to the space the face must fit — window, re-tessellation, a neighbour arriving — re-fits.
+        //     The fit writes --fit on the scroll, never the mold's box, and FIT_DEADBAND damps any wobble.
+        let moldEl: Element | null = null
         const attach = () => {
             // TORN-DOWN GUARD (owner 2026-08-30, Incogni: "threw on faceRO!.observe(kid) … after Link took us
             //  giantcell").  A giant-cell mount/unmount churns actions fast; the teardown $effect nulls faceRO, but a
@@ -1055,6 +1091,10 @@
             //    faceRO!.observe(kid) dereferences null.  Bail before touching the observer; the catch was the net,
             //     this is the fix.
             if (!faceRO) { kid = null; return }
+            try {
+                const m = el.parentElement
+                if (m && m !== moldEl) { if (moldEl) faceRO!.unobserve(moldEl); moldEl = m; faceRO!.observe(m) }
+            } catch { /* no-op */ }
             try {
                 const k = el.firstElementChild
                 if (k === kid) return
@@ -1064,16 +1104,32 @@
             } catch { /* no-op */ }
         }
         attach(); queueMicrotask(attach)
+        // THE FACE ELEMENT IS SWAPPED UNDER US (2026-10-14, owner: "they don't seem to notice when I resize the window or
+        //  the inlay content changes").  The main's face sits in a {#key main_cell.key}, so Radio → Door → Pooling replaces
+        //   the scroll's child, and attach() — run at mount and on a key update, both possibly BEFORE the new child lands —
+        //    kept observing the detached old root: content changes in the live face never fired, and every fit froze at the
+        //     size measured at the swap (the console's constant "nat …×144").  Watch the scroll's children and re-attach on
+        //      every swap; a new face is also a new natural box, so measure.
+        const mo = typeof MutationObserver !== 'undefined'
+            ? new MutationObserver(() => { try { attach(); measure_soon(); measure_lately() } catch { /* never escape */ } })
+            : null
+        try { mo?.observe(el, { childList: true }) } catch { /* no-op */ }
         measure_soon(); measure_lately()   // first look — the Face lands right after mount
         return {
             update(nk: string) {
-                if (nk !== mykey) { molds.delete(mykey); mykey = nk; molds.set(mykey, el) }
+                if (nk !== mykey) { if (molds.get(mykey) === el) molds.delete(mykey); mykey = nk; molds.set(mykey, el) }
                 attach()
             },
             destroy() {
                 try { if (kid) faceRO?.unobserve(kid) } catch { /* no-op */ }
+                try { if (moldEl) faceRO?.unobserve(moldEl) } catch { /* no-op */ }
+                try { mo?.disconnect() } catch { /* no-op */ }
+                moldEl = null
                 kid = null
-                molds.delete(mykey)
+                // ONLY IF STILL OURS (2026-10-14, the frozen inlay): a cell's scroll re-created under the SAME key registers
+                //  the new element first, then this old one's destroy ran `molds.delete(key)` — deleting the NEW entry, so
+                //   the cell was never measured again until a switch minted a new key ("it happens when switching cells").
+                if (molds.get(mykey) === el) molds.delete(mykey)
             },
         }
     }

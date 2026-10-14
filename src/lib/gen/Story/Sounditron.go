@@ -11,7 +11,7 @@ import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return 'df0cefec57fe806b~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return '0de272b54e59b42d~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -538,6 +538,11 @@ Sounditron_commission(w) { const H = this;
     //    verbatim old gate — fixtures byte-identical.
     let link_up = mh_hd ? (this.Sounditron_surfaced_get(w) || this.Sounditron_focus_get(w) === 'Link') : (active || this.Sounditron_focus_get(w) === 'Link')
     if (link_up && link) organs.push(link)
+    // THE PIER CELL (owner 2026-10-14: "it should be a whole new Cell that disappears when exited") — grappled ONLY
+    //  while it is the focus, so navigating anywhere else folds it away and nothing has to remember to close it.
+    //   Minted on demand by Sounditron_pier_open (a live gesture), so no Book ever sees one.
+    let pierv = w.o({ PierView: 1 })[0]
+    if (pierv && this.Sounditron_focus_get(w) === 'PierView') organs.push(pierv)
     // the transfer HUD (the human 2026-07-30 "I keep wanting more transfer visual feedback but I don't see
     //  any"): Heist_keep_beat mints and keeps current a persistent dontSnap %Transfer cell on the radio
     //   world, but a cell only draws once it's in this commission's grapple set — same law as every other
@@ -1461,6 +1466,37 @@ Sounditron_link_close(w) {
         if (cw && cw.c) { this.Sounditron_surfaced_set(cw, 0) }
     } catch (e) {}
     try { if (this.Sounditron_focus) { this.Sounditron_focus('Link') } } catch (e) {}
+    if (top && top.bump_version) { top.bump_version() }
+    return 1
+
+},
+// Sounditron_pier_open — a friend's green dot in the Door: open THEIR cell.  %PierView,of:<pub> is a REFERRING
+//  particle (never a second %Pier — those are the friendship ledger rows), one per glass, re-pointed per open.
+//   It lives where %Link and %Door live (the client world) and is shown only while focused (the commission above).
+Sounditron_pier_open(pub) {
+    let vw = this.Sounditron_vyto ? this.Sounditron_vyto().vw : null
+    let cw = vw ? (vw.c.client_w || vw) : null
+    if (!cw || !pub) { return 0 }
+    let pv = cw.o({ PierView: 1 })[0]
+    if (!pv) {
+        pv = cw.i({ PierView: 1, face: 'PierView', of: String(pub) })
+        pv.c.up = cw
+    }
+    if (String(pv.sc.of || '') !== String(pub)) { pv.sc.of = String(pub); pv.bump() }
+    this.Sounditron_focus('PierView')
+    let top = this.top_House ? this.top_House() : null
+    if (top && top.bump_version) { top.bump_version() }
+    return 1
+},
+// Sounditron_pier_close — the cell's ✕: drop the referring particle and land back on the Door.
+Sounditron_pier_close() {
+    let vw = this.Sounditron_vyto ? this.Sounditron_vyto().vw : null
+    let cw = vw ? (vw.c.client_w || vw) : null
+    if (!cw) { return 0 }
+    let pv = cw.o({ PierView: 1 })[0]
+    this.Sounditron_focus('Door')
+    if (pv) { cw.drop(pv) }
+    let top = this.top_House ? this.top_House() : null
     if (top && top.bump_version) { top.bump_version() }
     return 1
 

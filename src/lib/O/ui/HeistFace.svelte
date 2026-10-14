@@ -840,7 +840,7 @@
             <!-- what ticking it means, said once, inline (a phone has no hover) -->
             <div class="kf-why">
                 from now on a <strong>♥</strong> heists the whole album straight away{(lofiWish ?? n?.sc?.lofi) ? ', as lofi' : ''}, without this screen.
-                Change it any time in <strong>Door → you</strong>: <em>ask</em> brings this screen back · <em>lofi</em> for small copies.
+                Change it any time in <strong>Door</strong>, under <em>you</em>: <em>ask</em> brings this screen back · <em>lofi</em> for small copies.
             </div>
         {/if}
         <div class="kf-foot">

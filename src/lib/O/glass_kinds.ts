@@ -31,6 +31,7 @@ import BeatFace from './ui/BeatFace.svelte'
 import TreeFace from './ui/TreeFace.svelte'
 import LinkFace from './ui/LinkFace.svelte'
 import WikipediaFace from './ui/WikipediaFace.svelte'
+import PierViewFace from './ui/PierViewFace.svelte'
 
 export const GLASS_KINDS: Record<string, any> = {
     Beat: BeatFace,       // the session HUD — beat N/7 + the live countdown for the wait we're in
@@ -48,6 +49,7 @@ export const GLASS_KINDS: Record<string, any> = {
     Transfer: TransferFace,// the LIVE transfer HUD — jiggling rx/tx bars + per-track pull/serve progress + freed
     Door: DoorFace,       // who am I + who's with me — identity, landings, pulse liveness
     Link: LinkFace,       // the device-link ceremony (copy this account to a Cave) — its own takeover cell
+    PierView: PierViewFace, // ONE FRIEND — opened from their Door dot: ☆ star · a note · ⊘ ban; gone when you leave it
     Riffle: RiffleFace,   // rifle a collection — the deck: crates, folders, deal/sweep
     Riff: RiffFace,       // one dealt card — a track (▶ tunes) or a folder (open descends)
     Zine: ZineFace,       // the pocket mag (Faves Berth) — its cards listed, ▶ auditions

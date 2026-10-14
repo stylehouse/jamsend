@@ -634,6 +634,7 @@
     //    the link HERE: we lift its ?Iz onto our live `self` and surface the same landing face +
     //     JOIN.  Accepts a full URL, a `?Iz=…` tail, or a bare token.
     let paste = $state('')
+    let paste_focus = $state(false)
     let paste_err = $state('')
     // THE RAW PASTED URL, FRAGMENT AND ALL — because `iz_from` reads only `?Iz` and a device-link
     //  (MyCave) carries its seal in the `#fc=` FRAGMENT (Swarm_ferry_link returns `<base>?Iz=…#fc=<secret>`),
@@ -660,6 +661,14 @@
             }
         } catch {}
         window.location.href = full
+    }
+    // the pasted link's From= (query or anchor) — the inviter's NAME, display only and unsigned, exactly as the landing
+    //  reads it off its own URL (url_from below).  The token proves who; this only says it nicely until the seal.
+    function from_of(text: string): string {
+        try {
+            const u = new URL(String(text || '').trim())
+            return u.searchParams.get('From') || new URLSearchParams(String(u.hash || '').slice(1)).get('From') || ''
+        } catch { return '' }
     }
     function url_with_frag(text: string): string {
         try { const u = new URL(String(text || '').trim()); return u.hash ? u.toString() : '' } catch { return '' }
@@ -700,6 +709,13 @@
     //  writes an error and never clears one the loud path put there.  Silence is the whole contract —
     //   every prefix of a valid link fails to parse, so a chatty version would flash a complaint at
     //    someone who is simply still pasting.  Once a token parses there is nothing left to confirm.
+    // a landing the person decided against: clear the offer, the paste, and the Door's %Invite row
+    let joined_sealed = $derived(/sealed|you are friends|✓/.test(String(joined || '')))
+    function landing_cancel() {
+        const serial = invite?.serial
+        invite = null; iz = ''; paste = ''; paste_full = ''; joined = ''; join_over = false; auto_fired = false
+        if (serial) { try { H?.Swarm_invite_cancel?.(serial) } catch {} }
+    }
     function paste_try() {
         if (invite) return                      // an offer is already on screen; don't fight it
         if (adopt_from(paste)) return           // a device link — leave it for paste_load to route (?Adopt=)
@@ -722,8 +738,10 @@
             if (full) { try { go_link(full); return } catch {} }
             return
         }
-        iz = tok; invite = t; iz_err = ''; joined = ''; auto_fired = false; join_over = false; join_focused = false
+        iz = tok; invite = (!t.friendly && from_of(paste)) ? { ...t, friendly: from_of(paste) } : t; iz_err = ''; joined = ''; auto_fired = false; join_over = false; join_focused = false
         paste_full = full
+        // the hole EMPTIES once a link lands (owner 2026-10-14) — the offer is on screen now; the link lives in iz/paste_full
+        paste = ''
     }
     function paste_load() {
         paste_err = ''
@@ -748,8 +766,9 @@
         paste_relic = null
         // a NEW pasted invite re-arms the door: without clearing join_over, a second link after a
         //  spent first one lands on a panel with no join button at all.
-        iz = tok; invite = t; iz_err = ''; joined = ''; auto_fired = false; join_over = false; join_focused = false
+        iz = tok; invite = (!t.friendly && from_of(paste)) ? { ...t, friendly: from_of(paste) } : t; iz_err = ''; joined = ''; auto_fired = false; join_over = false; join_focused = false
         paste_full = url_with_frag(paste)
+        paste = ''
         // A PASTED DEVICE LINK LANDS ON ITS WHOLE URL (owner 2026-08-30).  The friend "⨝ join" button — which
         //  used to do this navigate for a MyCave — is gone now that the consent lives in the Link cell; so route
         //   the paste the same way here.  `iz_from` drops the `#fc=` seal, so we MUST reload on the full pasted
@@ -842,12 +861,22 @@
                               while `!named`) is step 1 for everyone, and JOIN only appears once you are
                                named.  The auto-join effect is already `named`-gated, so this only
                                 closes the manual button's older-identity loophole. -->
-                    {#if !join_over}
-                        <button class="ip-go ip-go-join" bind:this={join_btn} onclick={join}>
-                            ⨝ join {invite.friendly || invite.prepub}
-                        </button>
-                        <span class="ip-note">one tap or ⏎ — they will see your name and you will hear their music</span>
-                    {/if}
+                    <!-- JOIN and CANCEL share one row, centred on each other (owner 2026-10-14: "the join Lump / cancel alignment").
+                         CANCEL: a pasted invite you didn't mean, or one that's stuck — put it down; the link still works, paste or
+                          scan it again to retry.  Not on the arrival welcome, where joining is the point. -->
+                    <span class="ip-row ip-joinrow">
+                        {#if !join_over}
+                            <button class="ip-go ip-go-join" bind:this={join_btn} onclick={join}>
+                                ⨝ join {invite.friendly || invite.prepub}
+                            </button>
+                        {/if}
+                        {#if !arrival && !joined_sealed}
+                            <button class="ip-act" onclick={landing_cancel} title="put this invite down — open the link again to retry">cancel</button>
+                        {/if}
+                    </span>
+                    {#if !join_over}<span class="ip-note">one tap or ⏎ — they will see your name and you will hear their music</span>{/if}
+                {:else if !arrival && !joined_sealed}
+                    <button class="ip-act" onclick={landing_cancel} title="put this invite down — open the link again to retry">cancel</button>
                 {/if}
                 {#if joined}<span class="ip-note">{joined}</span>{/if}
                 <!-- the joiner's version, deliberately QUIETER and placed AFTER the join button: they
@@ -945,12 +974,26 @@
                       whose whole promise is social, with no way to find out what the thing IS.
                      Quiet by construction — `.ip-readme` is a text link, not a `.ip-act`: the mint
                       is the act, and this must not read as a second one. -->
+                <!-- ONE ROW: invite · paste · README (owner 2026-10-14: "one row of: invite paste README, where it is
+                     <button> <input> <a> as it is") — the paste field rides between them and takes the slack -->
                 <span class="ip-row ip-mintrow">
                     <button class="ip-go ip-go-mint" class:ip-still={friends.length > 0 || (!named && !iz)}
-                            onclick={mint} title="mint a single-use Music invite and show its QR">invite a friend</button>
+                            onclick={mint} title="mint a single-use Music invite and show its QR">invite</button>
+                    {#if !landed_url && !invite}
+                        <!-- the HOLE with its word floating over it, not a placeholder (owner 2026-10-14: "not placeholder text but
+                             similar functioning with a hovering over the top 'paste'") — a placeholder inherits the input's font
+                              rules; this label is plain text we size freely, click-through, gone once the hole has focus or text -->
+                        <span class="ip-pastehole">
+                            <input class="ip-paste" bind:value={paste} title="paste an invite or device link"
+                                onfocus={() => (paste_focus = true)} onblur={() => (paste_focus = false)}
+                                oninput={paste_try}
+                                onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); paste_load() } }} />
+                            {#if !paste && !paste_focus}<span class="ip-pastelabel" aria-hidden="true">paste</span>{/if}
+                        </span>
+                    {/if}
                     <a class="ip-readme" href="https://github.com/stylehouse/jamsend#readme"
                        target="_blank" rel="noopener noreferrer"
-                       title="what jamsend is, on github">README↗</a>
+                       title="what jamsend is, on github">README</a>
                 </span>
                 <!-- NO `born_today` HERE (dropped 2026-08-08, Onboard_todo §0 item 1).  This note explains
                      what the button DOES, and the moment that explanation is worth having is "you have no
@@ -972,7 +1015,7 @@
             <!-- paste-a-link: accept an invite as THIS identity (the enclosing ?I), never a fresh
                  role-default.  Hidden when we OPENED from a scan (the landing face already has it)
                  or an offer is already on screen. -->
-            {#if !landed_url && !invite}
+            {#if url && !landed_url && !invite}
                 <!-- JUST THE FIELD (the owner 2026-08-11: *"the 'paste an invite link' is just the
                      field, no need for accept?"*).  Right — pasting a link IS the act; a second click
                      to confirm what you just pasted is a step that only exists because the field
@@ -986,8 +1029,8 @@
                         oninput={paste_try}
                         onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); paste_load() } }} />
                 </span>
-                {#if paste_err}<span class="ip-note">⚠ {paste_err}</span>{/if}
             {/if}
+            {#if paste_err && !landed_url && !invite}<span class="ip-note">⚠ {paste_err}</span>{/if}
             <!-- the door speaks: every failed hello|redeem is a %rebuff on the identity — show the
                  recent ones so a denied scan is a NAMED event here, not silence (hello_unknown
                  was invisible through the whole 2026-07-18 two-tab session) -->
@@ -1188,9 +1231,27 @@
        this.  Red would read as an error to be fixed on the spot and would sour a welcome screen. */
     .ip-warn { color: #e0a45c; }
     .ip-row { display: flex; gap: 0.4rem; }
+    .ip-joinrow { align-items: center; gap: 0.7rem; flex-wrap: wrap; }
     /* the mint row: the button sets the height, the link sits on its centre line rather than
        stretching to it — a full-height link would read as a second button. */
-    .ip-mintrow { align-items: center; gap: 0.7rem; flex-wrap: wrap; }
+    .ip-mintrow { align-items: center; gap: 0.5rem; flex-wrap: nowrap; }
+    /* the one-row trio, sized down together (owner 2026-10-14: "invite slightly smaller, paste much smaller, readme smaller") */
+    .ip-mintrow .ip-go-mint { font-size: 0.82rem; padding: 0.32rem 0.5rem; }
+    .ip-mintrow .ip-readme { font-size: 0.66rem; }
+    /* the paste field as a HOLE (owner 2026-10-14: "the paste being in a hole looking") — sunk, inset-shadowed, darker
+       than the panel, so it reads as a place to drop something rather than another button */
+    .ip-paste {
+        width: 2.4rem; height: 1rem; min-width: 0; font-size: 0.55rem; line-height: 1;
+        background: #0b0b12; border: 1px solid #2a2a3c; border-radius: 6px;
+        box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.7), inset 0 0 0 1px rgba(0, 0, 0, 0.4);
+        padding: 0 2px; color: #dde; box-sizing: border-box;
+    }
+    .ip-paste:focus { border-color: #5a5a8a; outline: none; }
+    .ip-pastehole { position: relative; display: inline-flex; flex: 0 0 auto; }
+    .ip-pastelabel {
+        position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+        pointer-events: none; font-size: 0.5rem; font-style: italic; letter-spacing: 0.04em; color: #6a6a8a;
+    }
     /* deliberately the QUIETEST thing in the block — dimmer than `.ip-note`'s siblings are loud,
        underlined only on hover, so it is findable by someone looking for it and invisible to
        someone getting on with the invite. */

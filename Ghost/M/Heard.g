@@ -782,6 +782,24 @@ Heard_seen(w, me, pub, id):
     card.bump()
     return 1
 
+// Heard_seen_landed — the LANDED list was on screen: spend every mark whose newest news IS its landing.  The
+//  waiting-row rule (Heard_seen per listed row) assumed every news stamp lands while the wish is still OUTSTANDING,
+//   and Heard_mark_landed (2026-10-04) broke that: a landed take leaves the waiting rows, so its `landed_at` news was
+//    listed nowhere and never spent — "3 new" forever (owner 2026-10-14, a878).  The landed rows are where a landing
+//     is read, so reading them spends it.  Only landings: a newer verdict on the same card still counts as news.
+Heard_seen_landed(w, me):
+    let mag = this.Heard_mag_find(w, me)
+    if (!mag) { return 0 }
+    let n = 0
+    for (const card of this.Heard_cards(mag)) {
+        if (this.Heard_is_machine(card) || !this.Heard_news(card)) { continue }
+        if (+(card.sc.landed_at || 0) < this.Heard_news_at(card)) { continue }
+        card.sc.looked_at = '' + this.Heard_now(w)
+        card.bump()
+        n = n + 1
+    }
+    return n
+
 // Heard_unseen — what the Haul cell shows.  A COUNT, nothing more; the rows themselves say what changed
 //  (Heard_word already turns a verdict into a sentence a person reads).  A machine press (rung 4) never
 //   nags — nobody wants "your pool auto-fetch failed" as an attention ping.

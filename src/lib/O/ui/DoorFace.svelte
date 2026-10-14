@@ -3,6 +3,7 @@
     calm_watch()   // measure the fps once; under ~40 the glow below is switched off (calm.ts)
     import { lifewatch } from './micro/lifetell'   // DIAGNOSTIC — strip with the rest of the remount probes
     import InvitePanel from './InvitePanel.svelte'
+    import { pier_marks } from './pier_marks'
     import DeleteX from './micro/DeleteX.svelte'   // the confirmey delete (arm → "forget?" → confirm)
     // DoorFace — WHO AM I and WHO'S WITH ME, floating in the glass: the identity + front-door
     //  arc as the prioritised, for-the-user's-eyes face (the human's ?Iz ask, 2026-07-19).
@@ -387,6 +388,10 @@
         } catch { return [] }
     })
 
+    function invite_cancel(serial: string) {
+        try { (H as any)?.Swarm_invite_cancel?.(serial) } catch {}
+        try { (H as any)?.top_House?.()?.bump_version?.() } catch {}
+    }
     function invite_retry(serial: string) {
         try { void (H as any)?.Swarm_invite_retry?.(serial) } catch {}
     }
@@ -496,7 +501,17 @@
     //   me-row and the Link Device door, not scattered among friends.  Both lists honour the
     //    optimistic-forget set; the cap applies to FRIENDS only (our own devices are few and always shown).
     let cave_piers   = $derived(((face?.friends ?? []) as any[]).filter((f: any) => f.cave && !forgotten.has(f.pub)))
-    let friend_piers = $derived(((face?.friends ?? []) as any[]).filter((f: any) => !f.cave && !forgotten.has(f.pub)))
+    // ── THE BOXES HANGING OFF THE DOTS (owner 2026-10-14) — your own green dot opens YOUR controls (the ♥ heist toggles,
+    //  more to come); a friend's dot opens THEIR box (☆ star · a note · ban).  One open at a time: `'me'` or a pier's pub.
+    // PIER MARKS — my private marks on a friend (star, note), in the House stash (`stashed.Pier_marks[pub]`, which persists
+    //  itself on any change).  Deliberately NOT on the %Pier: those are account/ledger rows whose stash keeps only page +
+    //   grants, and a star is taste, not membership.  Never leaves this browser.
+    let marks = $derived.by(() => { void H?.version; void tick; return pier_marks(H) })
+    // a friend's dot opens THEIR CELL (owner 2026-10-14: "a whole new Cell that disappears when exited")
+    function pier_open(pub: string) { try { (H as any)?.Sounditron_pier_open?.(pub) } catch {} }
+    // starred friends first (stable otherwise)
+    let friend_piers = $derived(((face?.friends ?? []) as any[]).filter((f: any) => !f.cave && !forgotten.has(f.pub))
+        .map((f: any, i: number) => ({ f, i })).sort((a: any, b: any) => (marks[b.f.pub]?.star ? 1 : 0) - (marks[a.f.pub]?.star ? 1 : 0) || a.i - b.i).map((x: any) => x.f))
     // OPTIMISTIC FORGET (owner 2026-08-30: "a 'forget…' button lingers for quite a while when I click
     //  delete").  Swarm_pier_forget mints a signed %NotGrant + UnInvites; the retired-filter then drops
     //   the row — but that rides a commission, so the DeleteX sat in its 15s `fired` "forget…" state
@@ -536,11 +551,10 @@
     </div>
 {:else}
 <div class="df">
-    <div class="df-title">🚪 {face.name ?? 'standing you up…'}
-        {#if face.prepub && !naming}
-            <button class="df-edit" onclick={name_open} title="name yourself — friends see this">✎</button>
-        {/if}
-        {#if face.prepub}<span class="df-pub">{face.prepub}</span>{/if}
+    <!-- the NAME moved into the crew box under its "you" label (owner 2026-10-14); the title keeps only the tags, and
+         goes entirely when there are none -->
+    {#if !face.prepub || face.listen_only || settle?.state === 'owed'}
+    <div class="df-title">{#if !face.prepub}🚪 standing you up…{/if}
 
         {#if face.listen_only}<span class="df-listen"
             title="listening only — this browser can't open a music folder, so you're a radio terminal. Your identity lives only in this browser: clearing site data forgets you (linked devices will fix that).">🎧 listening only</span>{/if}
@@ -550,6 +564,7 @@
         {#if settle?.state === 'owed'}<span class="df-settle owed"
             title="your ledger changed but no share folder is open to write it to — it lives only in this tab until you open one.">⛁ write owed</span>{/if}
     </div>
+    {/if}
     <!-- INVITE SITS ABOVE THE PIER LIST (the owner 2026-08-10) — it was at the bottom, under a list
          that grows, so the one verb a newcomer needs was the one thing that walked off the cell as
          friends arrived.
@@ -565,19 +580,7 @@
     {#if face.prepub}
         <div class="df-panel"><InvitePanel {H} inglass /></div>
     {/if}
-    {#if naming}
-        <div class="df-naming">
-            <input class="df-input" bind:value={name_draft} autocomplete="off" placeholder="what do friends call you?"
-                onkeydown={(e) => { if (e.key === 'Enter') name_save(); if (e.key === 'Escape') naming = false }} />
-            <button class="df-edit" onclick={name_save}>✓</button>
-        </div>
-        {#if name_err}<div class="df-note">⚠ {name_err}</div>{/if}
-    {:else if face.prepub && !face.named}
-        <div class="df-note">✎ name yourself — the name rides your invites</div>
-    {/if}
-    {#if face.door?.landed}
-        <div class="df-invite">📨 invite from <b>{face.door.from}</b></div>
-    {/if}
+    <!-- (the "📨 invite from X" line is gone — the panel's landing card above already says it, owner 2026-10-14) -->
     {#if face.door?.note}
         <div class="df-note">{face.door.note}</div>
     {/if}
@@ -590,6 +593,10 @@
             title={`invite #${inv.serial} from ${inv.prepub}${inv.to ? ` — grants ${inv.to}` : ''}${inv.n ? ` (n ${inv.n})` : ''} — ${inv.state}`}>
             <span>✉ #{inv.serial}{inv.to ? ` ${inv.to}` : ''} from {inv.prepub}</span>
             <span class="df-invstate">{inv.state}</span>
+            {#if inv.state !== 'sealed'}
+                <button class="df-invretry df-invx" onclick={() => invite_cancel(inv.serial)}
+                    title="cancel — open the invite link again to retry">✕</button>
+            {/if}
             {#if inv.state === 'redeeming' && inv.waited >= 20}
                 <!-- SILENCE IS THE ONLY NO A STRANGER GETS: an issuer never answers a hello it cannot verify, so the
                      clock is all the invitee has.  Say what the silence usually means, and offer the hello again. -->
@@ -608,6 +615,8 @@
          the same "where this soul stands" reading, one level deeper. -->
     {#if face.up || face.prepub || cave_piers.length || face.family.length}
         <div class="df-ourbox">
+            <!-- the box's name, floating off its top-left corner (owner 2026-10-14) -->
+            <span class="df-legend">you</span>
             <!-- ROW ONE, nowrap: me + uptime + the Link Device door.  THIS row sets the box's width
                  (owner: "that first row is the nowrap inline one, so it sets the width") — the caves
                  below wrap inside it rather than stretching the Door into tinytext. -->
@@ -623,20 +632,35 @@
                          and its 🧲, beside the others' -->
                     <!-- a crew of ONE has no Captain worth naming (owner 2026-10-14: "don't say Crew role CAPTAIN if it's the only one in
                          the Crew") — the role appears once there is a second body (a Cave) for it to be distinguished from -->
-                    <span class="df-name">you{#if face.instance && (face.instance.role !== 'Captain' || face.family.length || cave_piers.length)}<span class="df-role"> · {face.instance.role}{#if face.instance.name && face.instance.name !== face.name} {face.instance.name}{/if}</span>{/if}</span>
+                    <span class="df-name">{face.name ?? 'you'}</span>
+                    {#if face.prepub && !naming}<button class="df-edit" onclick={name_open} title="name yourself — friends see this">✎</button>{/if}
+                    <!-- the prepub: one day the identity switcher (owner 2026-10-14), a plain tag for now -->
+                    {#if face.prepub}<span class="df-pub" title="your identity · {face.prepub}">{String(face.prepub).slice(0, 8)}</span>{/if}
+                    {#if face.instance && (face.instance.role !== 'Captain' || face.family.length || cave_piers.length)}<span class="df-role"> · {face.instance.role}{#if face.instance.name && face.instance.name !== face.name} {face.instance.name}{/if}</span>{/if}
                     {#if face.magnet.show && face.instance?.prepub && face.magnet.can.includes(face.instance.prepub)}
                         <button class="df-mag" class:on={face.magnet.at === face.instance.prepub} onclick={() => magnet_to(face.instance.prepub)}
-                            title={face.magnet.at === face.instance.prepub ? 'your hearts land HERE — this folder is your big pile' : 'land your hearts here instead'}>🧲</button>
+                            title={face.magnet.at === face.instance.prepub ? 'Heists land HERE — this folder is your big pile' : 'land Heists here instead'}>🧲</button>
                     {/if}
-                    <!-- HEISTABILITY (owner 2026-10-07): how a ♥ becomes a heist, on YOUR row — the two answers the first
-                         Cell:Heist asked for "every ♥".  ask = open Cell:Heist on each ♥ · lofi = hearts arrive as small ogg copies. -->
-                    <span class="df-heistab" title="how your ♥ heists whole albums">♥
-                        <button class="df-lofi" class:on={heistab.ask} onclick={heistab_ask} role="checkbox" aria-checked={heistab.ask}
-                            title={heistab.ask ? 'ask ticked — each ♥ opens Cell:Heist first · untick to heist straight away' : 'ask unticked — each ♥ heists the album straight away · tick to see Cell:Heist first'}><span class="df-tick">{heistab.ask ? '☑' : '☐'}</span>ask</button>
-                        <button class="df-lofi" class:on={heistab.lofi} onclick={magnet_lofi} role="checkbox" aria-checked={heistab.lofi}
-                            title={heistab.lofi ? 'LOFI ticked — your hearts arrive as small ogg copies · untick for originals' : 'LOFI unticked — your hearts arrive as the full files · tick for small ogg copies'}><span class="df-tick">{heistab.lofi ? '☑' : '☐'}</span>lofi</button>
-                    </span>
                 </div>
+            </div>
+            {#if naming}
+                <div class="df-naming">
+                    <input class="df-input" bind:value={name_draft} autocomplete="off" placeholder="what do friends call you?"
+                        onkeydown={(e) => { if (e.key === 'Enter') name_save(); if (e.key === 'Escape') naming = false }} />
+                    <button class="df-edit" onclick={name_save}>✓</button>
+                </div>
+                {#if name_err}<div class="df-note">⚠ {name_err}</div>{/if}
+            {:else if face.prepub && !face.named}
+                <div class="df-note">✎ name yourself — the name rides your invites</div>
+            {/if}
+            <!-- ROW TWO: ask · lofi · Link Device (owner 2026-10-14: "a similar 'ask lofi LinkDevice' three things in a row on
+                 the second row of the you in the Crew").  HEISTABILITY: ask = open Cell:Heist on each ♥ · lofi = hearts arrive as
+                 small ogg copies.  Link Device opens the Link cell. -->
+            <div class="df-ourrow df-ourrow2">
+                <button class="df-lofi" class:on={heistab.ask} onclick={heistab_ask} role="checkbox" aria-checked={heistab.ask}
+                    title={heistab.ask ? 'ask ticked — each ♥ shows the Heist setup first · untick to heist straight away' : 'ask unticked — each ♥ heists the album straight away · tick to see the Heist setup first'}><span class="df-tick">{heistab.ask ? '☑' : '☐'}</span>ask</button>
+                <button class="df-lofi" class:on={heistab.lofi} onclick={magnet_lofi} role="checkbox" aria-checked={heistab.lofi}
+                    title={heistab.lofi ? 'LOFI ticked — Heists arrive as small ogg copies · untick for originals' : 'LOFI unticked — Heists arrive as the full files · tick for small ogg copies'}><span class="df-tick">{heistab.lofi ? '☑' : '☐'}</span>lofi</button>
                 {#if face.prepub}
                     <!-- LINK A DEVICE — opens the Link ceremony as a BELLY CELL (owner 2026-08-29: "I want a
                          Cell").  Sounditron_link_open focuses %Link directly; you leave it by "no". -->
@@ -668,7 +692,7 @@
                             <span class="df-name"><span class="df-role">{b.role}</span> {#if b.name}{b.name}{:else}<span class="df-fpub df-fpub-solo">{b.pub8}</span>{/if}</span>
                             {#if face.magnet.show && b.prepub && face.magnet.can.includes(b.prepub)}
                                 <button class="df-mag" class:on={face.magnet.at === b.prepub} onclick={() => magnet_to(b.prepub)}
-                                    title={face.magnet.at === b.prepub ? 'your hearts land on ' + (b.name || b.role) + ' — its folder is your big pile' : 'land your hearts on ' + (b.name || b.role) + ' instead'}>🧲</button>
+                                    title={face.magnet.at === b.prepub ? 'Heists land on ' + (b.name || b.role) + ' — its folder is your big pile' : 'land Heists on ' + (b.name || b.role) + ' instead'}>🧲</button>
                             {/if}
                             {#if true}
                                 <!-- EJECT A CREWMATE (owner 2026-09-03: "dropping Piers with the ✕ button as we
@@ -733,14 +757,15 @@
          width below its chip).  The 🔗 caves are gone from here — they live in the our-box above. -->
     <div class="df-others">
     {#each (piers_all ? friend_piers : friend_piers.slice(0, PIERS_SHOWN)) as f (f.pub)}
-        <div class="df-friend">
-            <span class="df-dot" class:here={f.rung === 'here'} class:fading={f.rung === 'fading'} class:half={f.seal === 1 && f.rung !== 'away'}
+        <div class="df-friend" class:starred={!!marks[f.pub]?.star}>
+            <button class="df-dot df-dotbtn" onclick={() => pier_open(f.pub)} class:here={f.rung === 'here'} class:fading={f.rung === 'fading'} class:half={f.seal === 1 && f.rung !== 'away'}
                 title={(f.ago == null ? `${f.name} — not heard this session (their tab is closed or away)` : `${f.name} — heard ${f.ago}s ago`)
                     + (f.cave ? ' · 🔗 your Cave (a device of yours)' : '') + (f.music ? ' · ♪ granted' : '') + (f.records != null ? ` · ${f.records} records` : '')
-                    + (f.seal === 1 ? ` · ⚠ sealing 1 of 2 — ${f.seal_missing}; should heal itself, say so if it sits` : '')}>●</span>
+                    + (f.seal === 1 ? ` · ⚠ sealing 1 of 2 — ${f.seal_missing}; should heal itself, say so if it sits` : '')
+                    + ' · click: open their cell — star, notes, ban'}>●</button>
             <!-- "Gwop eed831f1" — friendly prominent, prepub small (owner 2026-08-31: "both name and prepub …
                  make the [name] part bigger, the rest pretty small").  Unnamed pier → just the pub8, once. -->
-            <span class="df-name">{f.cave ? '🔗 ' : ''}{#if f.friendly}{f.friendly}<span class="df-fpub">{f.pub8}</span>{:else}<span class="df-fpub df-fpub-solo">{f.pub8}</span>{/if}</span>
+            <span class="df-name" title={marks[f.pub]?.note || ''}>{marks[f.pub]?.star ? '★ ' : ''}{f.cave ? '🔗 ' : ''}{#if f.friendly}{f.friendly}<span class="df-fpub">{f.pub8}</span>{:else}<span class="df-fpub df-fpub-solo">{f.pub8}</span>{/if}</span>
             <!-- FORGET (away rows only): retire a pier that will never return — a dead Incognito tab, an
                  abandoned link test.  Swarm_pier_forget mints the standard signed %NotGrant per feature
                  (durable; the row stays in the ledger as history) + UnInvites the pub, and the retired
@@ -894,12 +919,37 @@
        idiom to wrap INSIDE it without ever stretching it.  The border is the point ("the box is a
        box"). */
     .df-ourbox {
+        position: relative;
         width: fit-content; max-width: 100%;
-        margin-top: 6px; padding: 4px 8px 5px;
+        margin-top: 12px; padding: 8px 8px 5px;
         border: 1px solid rgba(170, 150, 220, 0.35); border-radius: 8px;
         background: rgba(140, 120, 200, 0.07);
     }
     .df-ourrow { display: flex; flex-wrap: nowrap; align-items: center; gap: 12px; white-space: nowrap; }
+    .df-ourrow2 { margin-top: 4px; gap: 10px; flex-wrap: wrap; }
+    /* the "you" label floating off the box's top-left corner — a fieldset legend without the fieldset */
+    .df-legend {
+        position: absolute; top: -0.7em; left: 8px; padding: 0 6px; border-radius: 6px;
+        font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+        color: #d9a9ef; background: #1e1628; border: 1px solid rgba(170, 150, 220, 0.35); line-height: 1.5;
+    }
+    /* a dot you can press: the same glyph, no button chrome, a ring while its box is open */
+    .df-dotbtn { background: none; border: none; padding: 0 1px; cursor: pointer; pointer-events: auto; line-height: 1; font: inherit; font-size: 10px; }
+    .df-dotbtn.open { outline: 1px solid currentColor; outline-offset: 1px; border-radius: 50%; }
+    /* the box hanging off a dot — full width of its container, controls on wrapped lines */
+    .df-dotbox {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 5px; padding: 5px 8px;
+        border-radius: 7px; border: 1px solid rgba(127, 232, 191, 0.3); background: rgba(127, 232, 191, 0.06);
+        font-size: 11px; pointer-events: auto;
+    }
+    .df-pierbox { grid-column: 1 / -1; flex-direction: column; align-items: stretch; }
+    .df-pierhead { font-size: 12px; }
+    .df-pierrow { display: flex; align-items: center; gap: 10px; }
+    .df-note-in {
+        width: 100%; box-sizing: border-box; resize: vertical; font: inherit; font-size: 11px; color: #dde;
+        background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(170, 150, 220, 0.3); border-radius: 5px; padding: 3px 6px;
+    }
+    .df-friend.starred .df-name { color: #f0d080; }
     /* width:min-content makes this row's contribution to the box's width the WIDEST SINGLE CHIP
        (chips are nowrap-atomic — never a break between 🔗 and the name), not the whole line of
        them; min-width:100% then hands it whatever width the box resolved (row one, or that widest
@@ -1003,6 +1053,8 @@
     .df-invrow { flex-wrap: wrap; }
     .df-invwhy { flex-basis: 100%; font-size: 9px; color: #b9a98a; }
     .df-invretry { font-size: 9px; margin-left: 4px; padding: 0 4px; cursor: pointer; }
+    .df-invx { margin-left: auto; opacity: 0.6; background: none; border: none; color: inherit; pointer-events: auto; }
+    .df-invx:hover { opacity: 1; color: #e06a6a; }
     /* the +N more toggle — the cap's release valve, styled to whisper */
     .df-more {
         pointer-events: auto; cursor: pointer; background: none; border: none;

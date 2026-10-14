@@ -16,7 +16,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'd455b8a3a7411212~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'ef52ffd9c4b256ab~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -704,6 +704,24 @@ Swarm_invite_words(why) {
     if (k === 'bad_grant') return 'the invite did not check out on their side — ask for a fresh one'
     if (k === 'unknown') return 'they do not recognise this invite — it may be from another of their devices'
     return 'refused (' + k + ')'
+
+},
+// Swarm_invite_cancel — the Door row's ✕ (owner 2026-10-14: "Redeems should be able to be cancelled too right? then if
+//  they scan the QR code again they could retry").  Drop the visitor's copy of the claim; nothing on the issuer's side
+//   moves (a hello already in flight just lands or doesn't).  Scanning or pasting the link again re-notes the %Invite
+//    and says hello afresh — that IS the retry.  A sealed row is history, never cancelled.
+Swarm_invite_cancel(serial) {
+    let A = this.top_House().o({ A: 'Clustation' })[0]
+    let w = A ? A.o({ w: 'Swarm' })[0] : null
+    if (!w) return 0
+    let n = 0
+    for (const inv of w.o({ Invite: String(serial) })) {
+        if (inv.sc.state === 'sealed') continue
+        w.drop(inv)
+        n = n + 1
+    }
+    if (n) console.log('✉ invite #' + String(serial) + ' — cancelled; open the link again to retry')
+    return n
 
 },
 // Swarm_invite_retry — say hello again for a still-unsealed invite (the Door's ↻, or a caller that knows the
@@ -3304,6 +3322,19 @@ async Swarm_redeem(w, ident, iz, advice) {
     let t = this.Swarm_token_parse(iz)
     if (!t) {
         this.Swarm_rebuff(ident, 'forged', iz)
+        return null
+    }
+    // YOUR OWN INVITE (2026-10-14, Lump pasted Lump's link): redeeming it says hello to your own address — the wire
+    //  answers "another live body of you" and `not-them`, the row sits at `redeeming` forever and ↻ only repeats it.
+    //   Refuse it here, in words, before anything is sent.  Prefix-match, so a body of my own soul counts too.
+    let mine = String(ident.sc.prepub || '')
+    let theirs = String(t.prepub || '')
+    if (mine && theirs && (mine === theirs || mine.startsWith(theirs) || theirs.startsWith(mine))) {
+        if (w.c && w.c.station_up) {
+            this.Swarm_invite_note(w, iz)
+            this.Swarm_invite_settle(w, theirs, 'refused', 'this is your own invite — send it to a friend to open')
+        }
+        console.log('✉ refused: that invite is your own (' + theirs.slice(0, 8) + ') — nothing to join')
         return null
     }
     // the %Invite lifecycle: the vivified particle (Swarm_invite_note) walks to `redeeming` the

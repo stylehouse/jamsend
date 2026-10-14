@@ -288,6 +288,9 @@
         const me = A?.Radio_pub?.(W)
         if (!W || !me) return
         for (const p of face.piers) for (const q of p.waiting) { try { A?.Heard_seen?.(W, me, p.dj, q.of) } catch {} }
+        // …and the LANDED rows (≥3 always drawn when not a bud) spend landing news — a landed take is no longer waiting,
+        //  so the loop above can never reach it (the stuck "3 new", 2026-10-14)
+        if (face.albums.length) { try { A?.Heard_seen_landed?.(W, me) } catch {} }
     })
 
     // WIPE — the only verb in this cell that reaches the DISK.  Two presses, like the other two, and the
