@@ -241,6 +241,85 @@ if (!RELAY) {
     try { delete (win as any).WebSocket } catch {}
 }
 
+// ── THE SOCKET WATCHDOG (2026-10-15, the owner: "daemon doesn't seem to gracefully recover from prod server restarts") ──
+//  A browser tab never needs this: a server restart makes Vite RELOAD the page, and its Lies channel carries a 15s
+//   ping/pong reaper anyway.  The daemon has neither (no Vite, CHANNEL off), and node's WebSocket has no ping API — so a
+//    restart behind Caddy could leave the station socket "open" and DEAF forever (measured: "tour resting — no friend
+//     heard in 10 min" with friends' tabs up, the pier heal re-offering grants into the void every 5 min).
+//  The fix rides Tribunal's OWN reconnect: wrap the socket class, note when anything last arrived, and after SILENCE_MS
+//   ask the relay a question it always answers (`who` with no addrs: who_ok if hello-bound, who_error if not).  No
+//    answer in PROBE_MS, or an un-bound answer ⇒ close() the socket; Tribunal's onclose redials with backoff and its open
+//     hooks re-hello + re-mint the voucher.  The probe's reply is swallowed here, so Presence never sees an empty who_ok.
+const SILENCE_MS = +(process.env.WS_SILENCE_MS || 45_000), PROBE_MS = +(process.env.WS_PROBE_MS || 15_000)
+const watched_sockets = new Set<any>()
+let wd_seq = 0
+if (RELAY && typeof (globalThis as any).WebSocket === 'function') {
+    const Native = (globalThis as any).WebSocket
+    class WatchedSocket extends Native {
+        _rx_at = Date.now(); _probe: { corr: string, at: number } | null = null; _user_onmessage: any = null
+        constructor(url: any, protocols?: any) {
+            super(url, protocols)
+            watched_sockets.add(this)
+            this.addEventListener('close', () => { watched_sockets.delete(this) })
+        }
+        get onmessage() { return this._user_onmessage }
+        set onmessage(fn: any) {
+            this._user_onmessage = fn
+            super.onmessage = (ev: any) => {
+                this._rx_at = Date.now()
+                const d = ev?.data
+                if (typeof d === 'string' && d.includes('"corr":"wd-')) {
+                    try {
+                        const m = JSON.parse(d)
+                        if (this._probe && m.corr === this._probe.corr) {
+                            this._probe = null
+                            if (m.control === 'who_error') {
+                                say(`🛰⚠ watchdog: the relay answers but this socket is NOT hello-bound (${m.reason || '?'}) — reconnecting to re-hello`)
+                                try { this.close() } catch {}
+                            }
+                            return
+                        }
+                    } catch { /* not ours — fall through */ }
+                }
+                fn?.call(this, ev)
+            }
+        }
+    }
+    ;(globalThis as any).WebSocket = WatchedSocket
+    try { (win as any).WebSocket = WatchedSocket } catch {}
+    setInterval(() => {
+        const now = Date.now()
+        for (const s of watched_sockets) {
+            // a close() on a dead link can hang in CLOSING waiting for a close frame that never comes — then Tribunal's
+            //  onclose never fires and it never redials.  After 10s, fire the close ourselves (once) and let go of it.
+            if (s.readyState === 2) {
+                if (!s._closing_at) s._closing_at = now
+                else if (now - s._closing_at > 10_000 && !s._forced) {
+                    s._forced = 1
+                    say(`🛰⚠ watchdog: close() hung ${Math.round((now - s._closing_at) / 1000)}s on a dead link — firing close so Tribunal redials`)
+                    try { s.dispatchEvent(new Event('close')) } catch {}
+                    watched_sockets.delete(s)
+                }
+                continue
+            }
+            if (s.readyState !== 1) continue
+            if (s._probe) {
+                if (now - s._probe.at > PROBE_MS) {
+                    say(`🛰⚠ watchdog: ${String(s.url).replace(/\?.*$/, '')} silent ${Math.round((now - s._rx_at) / 1000)}s and no answer to a probe in ${PROBE_MS / 1000}s — half-open; forcing a reconnect`)
+                    s._probe = null
+                    try { s.close() } catch {}
+                }
+                continue
+            }
+            if (now - s._rx_at > SILENCE_MS) {
+                const corr = 'wd-' + (++wd_seq)
+                s._probe = { corr, at: now }
+                try { s.send(JSON.stringify({ control: 'who', addrs: [], corr })) } catch { try { s.close() } catch {} }
+            }
+        }
+    }, 5_000).unref?.()
+}
+
 // ── shutdown — the ONE choke point every exit path funnels through ──────────────────────────
 // Daemon_todo §8.5: `process.exit()` used to be called directly at every exit site.  Two problems
 //  with that, both silent: (1) dexie-node's save() only ever SCHEDULES a write via queueMicrotask,

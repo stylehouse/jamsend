@@ -1,4 +1,7 @@
-# Tend_todo — asking a box to do things: one signed call, any door
+# Signed_call_todo — asking a box to do things: one signed call, any door
+
+*(Renamed from `Tend_todo.md` 2026-10-15, which clashed with the unrelated `history/Tend_todo.md`.  "Tend" survives
+ only as the placeholder name of the grant, §9.)*
 
 **Status: DESIGN + BUILD SPEC, nothing built (2026-10-13).** Written to be implemented rung by rung by a Sonnet
  session; each rung lists its files, functions, shapes and its proof. The grant's name is **open**: "Tend" throughout,

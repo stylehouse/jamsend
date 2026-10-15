@@ -3,7 +3,7 @@
 The boot→share→name→(link) arc. Consolidated 2026-08-31 during the device-ferry live-testing session,
  as the ferry finally walked end-to-end (splash → OPEN SHARE → grant → auto-reload → become → SAS → cross).
   Companions: `Crew_todo.md` (Cave|Captain bodies + the ceremony — it absorbed Division/Ferry_rebuild,
-   both now `spec/history/`), `MobilenoFSA_todo.md` / `Portability_todo.md` (the listen-only life).
+   both now `spec/history/`), `MobilenoFSA_todo.md` *(gone: its phone/listen-only arc folded into `Portability_todo.md` 2026-08-26; its linked-devices half became the Crew feature, `Crew_todo.md`)* / `Portability_todo.md` (the listen-only life).
 
 ## 0. What to get on with next
 

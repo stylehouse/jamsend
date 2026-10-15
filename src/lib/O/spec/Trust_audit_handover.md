@@ -63,7 +63,7 @@ Signing every frame with ed25519 is the obvious port of Peerily's `crypto.sign =
 Owed before building: a design pass reading `Peeroleum_spec.md` §4–§7 (frame format, `[header JSON]\n[raw buffer]`,
  inbox/ack), the era/reset machinery (`Swarm_note_era`, `Peeroleum_reset_handshake`), and the Books that pin frame bytes
   (SwarmShare, SwarmBody, Peeroleum Books). Encrypting changes bytes every fixture of a wire Book may hold. **Independent
-   of Tend** (`Tend_todo.md`): a tend call is self-signed and stays safe on today's wire.
+   of Tend** (`Signed_call_todo.md`): a tend call is self-signed and stays safe on today's wire.
 
 ---
 

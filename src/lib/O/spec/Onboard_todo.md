@@ -22,7 +22,7 @@ First real field day: `showDirectoryPicker` is desktop-Chromium-only — never m
  "OPEN SHARE just sat there" for every phone/Brave/Firefox visitor. The gate now at least SAYS why
   (`boot_gate.fsa_advice`, both faces, BootGateNoFSA.spec.ts). The owner's ruling: *"we need
    listening only mode, and some way to transport the user's Identity to their desktop chrome…
-    can we fit it all in Door?"* — design now in **`MobilenoFSA_todo.md`** (split 2026-08-15,
+    can we fit it all in Door?"* — design now in **`MobilenoFSA_todo.md`** *(gone: its phone/listen-only arc folded into `Portability_todo.md` 2026-08-26; its linked-devices half became the Crew feature, `Crew_todo.md`)* (split 2026-08-15,
      listening-only wire half landed the same day). Both open questions RESOLVED
     same day: multi-device is embraced via **LinkDevice**, a live self-Invite ceremony (owner's
      ruling, in the section); and `83244ad6`'s intent is recovered from its own diff — it guards the

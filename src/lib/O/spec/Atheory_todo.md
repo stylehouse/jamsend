@@ -244,6 +244,13 @@ The owner, after a week tuning the jamserve daemon: *"we do indeed need to compa
     That's a Housing redesign, not a patch. Its correctness rests on EVERY change being noticed, which is exactly what the
      code doesn't guarantee today. Hence: case study first, rebuild later.
 
+5. **The heap a body carries should be chosen, not inherited (2026-10-15).** The jamserve daemon idles at ~725 MB RSS (~1.35 GB
+    while encoding). The particle tree is ~5 MB of that; the rest is the whole app booted headless: vite-node, jsdom, every UI
+     face, the Story/Vyto houses. A serving body needs perhaps a fifth of it. That's irritation 1's declared manifest with a
+      ROLE: an A** that says "serve" loads the serving ghosts, prebuilt, and nothing that only exists to be looked at. Owner:
+       *"it could lose some weight as part of Atheory which is going to be selective about the javascript heap we have
+        running."* Measurements + the cheap interim levers: `Daemon_todo.md` §0.000.
+
 *Interim on the daemon (deliberately small):*
 - the tour rests with no audience;
 - an idle floor with wake-on-queued-work;
@@ -253,6 +260,131 @@ The owner, after a week tuning the jamserve daemon: *"we do indeed need to compa
 
 None of these touches Housing's pass. The proposed "R1b" (a global bump counter to skip empty daemon thinks) is parked: it's
  a cheap imitation of irritation 4's dirty marks, and its blind spot (writes that don't bump) is the same blind spot.
+
+## The merge organ — LE and Repli each hold half of it (expanding the retired Tend §7, 2026-10-15)
+
+> 👤 **For people.** The owner wants Atheory to make *"the entire weave of computation mergeable"*: two tabs, two devices,
+> a friend's copy, an LLM's suggestion, all able to meet and become one, the way particles already can.  The machine has
+> TWO halves of the thing that would do that, built separately, and neither is whole.  One (LE, the editor's "understanding")
+> can hold a rival version of something and decide whether to take it, but only for documents.  The other (Repli, the
+> wire's replication) moves any kind of thing between bodies, but has no notion of a rival version at all: whatever arrives
+> simply IS the new truth.  Meanwhile, every place two bodies actually share state has grown its own little merge by hand.
+> This section says what one merge organ would be, and why it's an Atheory job rather than a patch.
+
+Source: `history/Tend_todo.md` §7, "Why not LE, why not Repli" (scouted in full 2026-09-04; its references re-checked
+ 2026-10-15: `Repli_design.md` still asks for the Seem port, the sole-writer axiom is still `Repli.g:313`, LE's encode
+  path is unchanged).  The rest of that retired doc's vocabulary (qua/grain/accord) is left where it is on purpose (owner:
+   *"I don't really believe much of this language… maybe we'd better leave most of it"*).
+
+### What the two share — the part that is already right
+
+Both stand a `Selection` and bottom out in the SAME `resolve()` pairing (`Stuff.svelte.ts:1114`): given a new tree and an
+ old one, pair each new particle with the old one it IS, by unambiguity scoring, and say what was born, what went, and what
+  stayed.  Both independently dodged the same `est_D_T` footgun and both left `resolve_strict` off.  Twice-validated, by two
+   teams of one, a month apart.  **Any merge organ is `Selection`/`resolve()` at its core.  Don't build another.**
+
+### What each half lacks
+
+| | LE (`LangHold`, `i_Seem`/`o_Seem`) | Repli (`Repli.g`) |
+|---|---|---|
+| **a candidate** — a rival version held BESIDE the canonical, decided on | ✅ `Seem_clone_C`: origin vs working | ❌ arriving lines go straight into the live `%Theirs` shelf (`Repli_merge:356`) |
+| **who wins** | the human, by accepting | unaskable: the **sole-writer axiom** (`Repli.g:313`): only the sender ever writes, so its copy IS truth |
+| **any mainkey** | ❌ `LE_encode_compare → Seem_toString → enWaft` faults outside `%What/%Doc/%Point` (silently corrupts the gate, not a crash) | ✅ protocol-blind lines |
+| **depth** | ❌ clone extent hard-coded depth-1, in two places | ✅ whole subtrees, paged |
+| **key-level memory** (which KEY moved, not just which particle) | partial (the D-sphere) | ❌ a `.c.repli_sent_sc` smear: never snaps, dies on reload, so a mutation across a restart splits into a twin (`Repli_design.md` §5) |
+| **refusals** | ❌ `U%unaccepted` lives on `.c`, and the D-sphere is `r()`-wiped each walk | ❌ `ra_missed`/`breach` on `.c` |
+| **proven** | ❌ no Book (only Svelte rigs) | ✅ eleven Books |
+
+Read across a row: each column is strong exactly where the other is weak.
+
+### Why it's urgent now: the sole-writer world is over
+
+Repli's axiom was true when a body only ever mirrored a FRIEND's shelf.  It stopped being true when one soul got many
+ bodies (crew, 2026-09) and when the same ledger began living on several devices.  Since then, every shared-state seam
+  has hand-rolled its own merge:
+- **`Heard_mirror_merge`** (`Heard.g:379`): per stamp, newest timestamp wins, plus a special case so an un-ticked LOFI can
+   travel (the "listing copy only ever adds" bug, 2026-10-04).
+- **`Swarm_crew_heard`** (`Swarm.g:241`): the crew ledger, signature-gated.
+- **`Swarm_charter_heard`** (`Swarm.g:8280`) and **`Swarm_roster_heard`** (`Swarm.g:8037`): the charter and the roster.
+- **`Repli_merge`** itself, with its identity table and `.c` shadow.
+- **Pier marks** (☆/notes) — deliberately kept browser-local (2026-10-14) precisely because there was no merge to trust.
+
+Each one re-decides "same thing?", "who wins?", "what about a delete?" and "what about a refusal?" on its own, and each
+ has had its own bug where the answer was subtly wrong.  That's the anonymous-wake disease (Case study irritation 4) in
+  data form: no shared organ, so everyone re-derives.
+
+### The organ, in four rules (design, unbuilt)
+
+1. **Pair with `resolve()`, on DECLARED identity.**  Identity is minted by whoever mints the thing (an id, a tok, a
+    prepub), never inferred from content: inferred identity makes every rename a goner+newborn and every re-parse churn.
+     `c.vyto_tok` is the precedent.
+2. **Arriving data is a CANDIDATE, not the truth.**  It lands beside the canonical, and a per-kind POLICY accords it:
+   - *derivations* (computed from the canonical; can only be stale) auto-accord;
+   - *proposals* (want to become the canonical) need a rule or a person.
+   "Newest stamp wins" (heard), "signed by the soul wins" (crew/charter) and "the sender owns it" (a friend's shelf: today's
+    sole-writer case, now just one policy among several) are all policies, not separate mechanisms.
+3. **Key-level memory is a sphere, not a smear.**  Per the owner's 2026-08-05 framing in `Repli_design.md` §5, the
+    "what did I last send/accept for this key" memory is a second sphere in `D/*`, stitched at each particle.  It's a real
+     C** that can persist, so restarts stop splitting twins.
+4. **Refusals snap, with their reason.**  A refusal that lives on `.c` is re-offered forever.  The machine must remember
+    what it declined and why, the same as what it took.
+
+### Lineage and naming (owner, 2026-10-15)
+
+- **LE came first, and Repli was written knowing it**, which is why Repli reused `Selection`/`resolve()` and why
+   `Repli_design.md` asks to move onto `i_Seem`/`o_Seem`.
+- **Se becomes known as Merge, eventually.**  `Selection` (the "Se") is the pairing engine both halves stand on.  It's on
+   the same development path as `Cstructures_todo.md` §3, "what the Se wants": every saying carries its provenance
+    (`by:` which engine, `rule:` which law, `hid:` what it subsumed, `pass:` when).  That's rule 4 above generalised: not
+     only refusals but every merge decision states why.  The thing that holds state and reacts in certain ways.
+- **"Bi-directional Repli" was never built.**  Today each side runs its own one-way Repli of its own shelf; friends mirror
+   each other through two channels.  The real two-way case is the crew: two bodies of ONE soul writing the same ledger.
+    That's what the hand-rolled merges above are doing.
+
+### The next iteration — not a port, a successor
+
+Owner: *"the next iteration will be another LE|Repli thing.  LE is going away, and Repli should be easily replaced by a
+ more mature and feature-achieving version of itself… having it stream over the wire, be distributable, like fractures of
+  conversations on the fediverse drifting by that can load their earlier bits."*
+
+So the old "port Repli onto i_Seem/o_Seem first" is dropped.  The successor (call it Merge until it's named) is built new,
+ keeping only what's twice-validated (`resolve()` pairing), and is shaped by these properties:
+
+- **Fractures, not dumps.**  The unit on the wire is a fracture: a piece of a weave (a few particles, or one change)
+   carrying its declared identity and a reference to what it came from.  A receiver can hold a PARTIAL weave.
+- **Earlier bits load on demand.**  Like a fediverse reply drifting into your timeline, you can see it without the thread,
+   and ask for its ancestors when you want them.  A fracture names its parents, and any holder can serve them.  Today's
+    `repli_want` (pull the offsets you lack) is the seed of this, but it only knows "pages of one record".
+- **Distributable.**  A fracture is valid from whoever holds it, not only its author.  It is authenticated by its own
+   signature, not by the road it came on.  That's the same move as the signed call (`Signed_call_todo.md` §3) and the WT session
+    keys (`Trust_audit_handover.md` §0.3).  SoundPooling already distributes audio this way; Merge does it for state.
+- **Streams.**  It applies as it arrives, in any order the parents allow.  No "whole catalog every 60 s" (Perf §7: R4c).
+- **Candidate + policy + provenance** (rules 2–4): arriving fractures are candidates; a per-kind policy accords them; every
+   decision, and every refusal, leaves its `by/rule/why`.
+
+### Point (c), expanded: prove the organ on ONE known-answer merge
+
+Before anything new rides it, the organ must reproduce a merge we already trust, exactly.  The heard mirror is the case:
+- **Today:** `Heard_mirror_merge` (`Heard.g:379`) walks a sibling's Cards.  For each one, per stamp key, the newer
+   timestamp wins.  Listing keys copy over when a stamp advanced, and `lofi` follows the press exactly.  That's about 25
+    lines of hand logic.
+- **On the organ:** the sibling's Mag arrives as a candidate; `resolve()` pairs Cards by their declared identity
+   `(id, pub)`; the policy is "per key, max stamp; listing keys ride an advance; lofi rides the press".  The organ produces
+    the accorded Mag and the provenance rows.
+- **The proof:** MusuHeard, MusuMagnet and MusuHandoff stay byte-identical, with the old function deleted.  If the policy
+   can't be said in a few lines, or the fixtures move, the organ's abstraction is wrong.  We'd learn that cheaply, on a
+    merge we already understand, before trusting it with crew ledgers or the wire.
+- **Why that one:** it's small, well fixtured, single-policy, already multi-writer (Captain + Cave), and it has had the
+   exact class of bug the organ exists to end (the un-ticked LOFI that couldn't travel, 2026-10-04).
+
+### What it unlocks
+
+- **Pier marks** (☆/notes) that follow you across your Caves, which are browser-local today because nothing could merge
+   them safely.
+- **The crew's ledgers** (crew, charter, roster) without per-kind merge code.
+- **Eventually the editor and runner sharing one weave.**  Today the editor compiles a `.go` and ships its bytes to each
+   runner (`LiesStore_good → land_good`), and Atheory's case-study irritation 3 is that delivery being polled.  With Merge,
+   code changes would be fractures like any other, pushed to the bodies that hold that ghost.
 
 ## Not yet
 

@@ -23,6 +23,11 @@
      already swells the identifier, so "posed nicely" is built — what is missing is a *producer* of
       Points (a narrative What) and a *winder* (a cursor that walks it).
 
+**Drained 2026-10-15 (one section only, on purpose).** §7 "Why not LE, why not Repli" is expanded in
+ `Atheory_todo.md` → "The merge organ — LE and Repli each hold half of it".  The rest of this doc's vocabulary stays here,
+  undrained (owner: *"I don't really believe much of this language though, it seems explosive... maybe we'd better leave
+   most of it"*).  (The live signed-call grant design that briefly shared this name is now `spec/Signed_call_todo.md`.)
+
 **Findings below that stay true and were verified against the code** — the reason this file is kept
  rather than deleted:
 

@@ -393,7 +393,7 @@ Deliberately not decided: where `k` comes from when a particle has no natural id
 - **`Vyto_sizing_todo.md` §7 / `LangSion._se_plan`** — Sunpit/IOexpr waiting for a tenant; the
    standing sphere a `uio` maintains is that tenant (a held `_io_cursor` frontier, re-diffed
     instead of drained).
-- **`MobilenoFSA_todo.md` §2, `Identity_persist_todo.md` §7.4, `Repli_design.md`** — the three
+- **`MobilenoFSA_todo.md` §2 *(gone: its phone/listen-only arc folded into `Portability_todo.md` 2026-08-26; its linked-devices half became the Crew feature, `Crew_todo.md`)*, `Identity_persist_todo.md` §7.4, `Repli_design.md`** — the three
    merge fronts that will borrow §6's organ.
 - **`Text.svelte` (enLine/enWaft, the Dif codec) + `EntropyArrest.md` (spay)** — the boundary
    language and the wall's noise-taste; §4.1 is why they are platform pieces now, not just

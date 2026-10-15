@@ -9,10 +9,44 @@ A node daemon that boots the whole jamsend machine headless and stays up: a stab
 
 ## 0. What to get on with next
 
-### 0.00 2026-10-13 — TEND: asking the box to do things, one signed call through any door → `spec/Tend_todo.md`
+### 0.000 2026-10-15 — WEIGHT: a daemon that can lurk on someone's computer forever → part of Atheory
+
+> 👤 **For people.** The owner: *"725 MB ram is tons isn't it? I was hoping this might lurk in the background of someone's
+> computer forever with minimal disruption."* It is. The daemon today is the whole browser app running headless, and most of
+> its memory is the app's machinery, not the music it serves. Slimming it is the same job as Atheory's "be selective about
+> which JavaScript is running", so it waits for that rather than being patched here.
+
+**Measured (2026-10-08..15, `/status` mem + `/census` + the heartbeat):**
+- **At boot,** before serving anything: JS heap ~390 MB, RSS ~1.1–1.3 GB.
+- **While the tour digs + encodes:** RSS ~1.35 GB. **The moment the tour rested** ("no friend heard in 10 min"): RSS fell to
+   **~725 MB** and stayed there. So roughly half of the peak is tour/ffmpeg working memory, and the rest is the resident app.
+- **The particle tree itself is small:** ~9k particles, ~5 MB of `sc` dumped by `/c`. Audio chunks (`%Prehead` sc.buf) are
+   bounded by the 40-record shelf. The weight is NOT our data.
+
+**Where it goes (by construction, not yet each measured):**
+- **vite-node:** compiles every module at runtime and keeps the module graph + source maps. It also made every `Error().stack`
+   expensive (the replace() stack capture, now off on the daemon).
+- **jsdom:** a whole fake browser, so Svelte and the ghosts find a `window`.
+- **Every UI face:** compiled and imported (`glass_kinds` → DoorFace → InvitePanel …) though nothing renders (`FACELESS`).
+- **Houses the server doesn't need:** H:Story (the Sounditron Book drive), H:Vyto (the glass), w:Lies (the editor channel,
+   even with CHANNEL off).
+- **The tour's ffmpeg buffers and file reads** (rested when nobody listens since 2026-10-07).
+
+**The shape of the fix, and why it's Atheory's:** a serving body should load only the ghosts on the serving path: Swarm,
+ Peeroleum/Tribunal, Repli, Ra/Radio supply, Heist serve, Heard. Prebuilt, not compiled at runtime; no DOM, no faces, no
+  Story/Vyto. That's exactly Atheory irritation 1 ("code loading is random lists" → a DECLARED manifest per A), with a role
+   dimension: a daemon is an A** whose manifest says "serve", not "show". Until that lands, the cheap levers are:
+- **`FACELESS`** (already default for Vyto).
+- **Not standing H:Story at all** on a daemon whose Book is only Sounditron's boot. Check what the boot actually needs from
+   it first.
+- **Bounding the encode cache.**
+
+**Guess at the target:** 150–250 MB idle for a serve-only body. Measure each cut with `/census` + `/status` mem, before and after.
+
+### 0.00 2026-10-13 — TEND: asking the box to do things, one signed call through any door → `spec/Signed_call_todo.md`
 
 The owner wants an API "that Cluster_trust'd users can engage with … http or emit (via relay)". The design and the
- rung-by-rung build spec live in **`Tend_todo.md`**. The core move: the CALL is self-signed by the caller's identity key
+ rung-by-rung build spec live in **`Signed_call_todo.md`**. The core move: the CALL is self-signed by the caller's identity key
   (verb + args + target + ts + seq), so HTTP and the relay are both dumb pipes. Permission is a `Grant:Tend` the box signs,
    revocable by `%NotGrant`. The current HTTP routes become shims onto one dispatcher (rung T0, no behaviour change).
 
