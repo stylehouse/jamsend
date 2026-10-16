@@ -1,10 +1,10 @@
 # Heist_todo.md — heisting music off a friend
 
-You hear a track on a friend's radio, you press ⇊, and the original file lands in your collection
- under a folder you chose. That is the whole feature. This doc states how it works now, straight —
-  the dated build strata it replaces are at `spec/history/Heist_todo_strata.md`, kept for the
-   reasoning (the census rewrite, the `music/` teardown, the seven-bug adversarial review, the
-    %Stream starve) rather than for anything current.
+You hear a track on a friend's radio, you press ♥, and the whole album lands in your collection —
+ no folder to choose, no form to fill in. That is the whole feature; §0 states it straight. This doc
+  states how it works now — the dated build strata it replaces are at
+   `spec/history/Heist_todo_strata.md`, kept for the reasoning (the census rewrite, the `music/`
+    teardown, the seven-bug adversarial review, the %Stream starve) rather than for anything current.
 
 **Vocabulary settled 2026-08-09, after three goes.** The intent particle — one nab of one album — was
  `%Keep`; the human ruled it "too weak a word" (2026-08-05). It became `%Haul`, but only because
@@ -35,78 +35,117 @@ Fixed by moving the blocker rather than the blocked:
 
 ---
 
-## 0. Next move (read first)
+## 0. What heisting is
 
-### START HERE — the state of it as of 2026-08-13, overnight
+A heist is how a track you hear becomes a file you own. Press ♥ on a friend's track and the **WHOLE
+ ALBUM** lands on disk — not just the one track, and with no path or folder to choose. **Ruled
+  2026-10-07** (owner: *"it only downloads one track when I clicked yay? we want the whole album"*;
+   *"lets ignore our ability to change the path… just downloading whole albums is fine"*): path/section
+    choosing is dropped from the ♥ road. Verify in code: `Heist_keep_take_go` (`Ghost/M/Heist.g`) treats
+     ANY `%Pick` the folder census has minted as proof the album is described, then pulls every pick,
+      not just the seed's own — the seed's own pick can miss forever on an alias the census never
+       minted, which is exactly why "any pick" and not "the seed's pick" is the gate. `Heist_defaults.one`
+        is the one escape hatch: set it and a ♥ reverts to the old single-track take.
 
-**⇒ UPDATED, and the sentence below is no longer true.** A runner came back late (idle, advertising, so
- a real runner tab and not a humdinger) and **MusuHeist ran GREEN, 22/22, `ok_pct 1.0`, caveat 12 —
-  exactly its documented baseline**, three runs, the third to prove the caveat count had settled. So the
-   landing path, the filing, the byte-faithful read-back, the manifest, the magazine recast AND the
-    2026-08-13 ledger work are all seen working on a live runner. `wormhole/Story/MusuHeist/017–022.snap`
-     were re-recorded through `runner_ask accept` (which took exactly the 6 red steps, not the caveats).
+**`Heist_defaults`** (`Heist_defaults_get`/`_set`/`_rehydrate`, dual-homed in `H.stashed` (Dexie) and
+ the `HeistDefaults` Berth Waft, so a fresh profile recovers it from disk) is the one global
+  per-listener settings bag a ♥ reads:
 
-~~**Nothing is verified on a live runner.** Every change below is unit-tested and compiled; none of it has
- been seen working. The owner's tabs went down at the end of the session and no Book has been run since
-  the morning.~~ **What is STILL unseen is the part no Book can reach: the UI.** A Book has no pointer.
-   So the first move remains *look at it*: open a heist, open a second one while the first runs, and check
-    the Haul cell lists both and opens each. And the ledger's legacy-row path (a real collection with
-     `%Probation` rows in it) is unit-tested only — a Book sweeps its marrauding root, so it never meets
-      one; `scripts/Newlyadded.spec.ts` is the only thing that has ever exercised it.
+| key | means | when absent |
+|---|---|---|
+| `ask` | `'1'` = open Cell:Heist on the next ♥ to ask LOFI + "for every ♥"; `'0'` = never ask again | never answered yet ⇒ ask |
+| `lofi` | transcode to a small Ogg/Vorbis copy for a phone, rather than the original bytes | take the original |
+| `one` | revert to the pre-2026-10-07 single-track take; path/section choosing only exists behind this | whole album |
 
-**What changed about how this can be checked, and it is the session's most reusable finding.** "No browser
- in the claude container" had been read for weeks as "no face can be tested". That was never true — a
-  Svelte face is a component, and `mount(Face, {target, props:{n, H}})` in jsdom, beside a compiled `.go`
-   mounted for its real verbs, renders it and runs its handlers. `scripts/HaulFace.spec.ts` and
-    `scripts/HeistCostLine.spec.ts` are that; the second one pins the owner's own *"it was short, only
-     showing 1 track"* to a DOM assertion. **Any face-level report can now be reproduced without a runner**,
-      which is the gap that cost a day earlier. Both are in `npm run checks`.
+**The "for every ♥" tickbox** (`HeistFace.svelte`, Cell:Heist) is the setup form's one remaining
+ honest job: a once-per-listener choice, never per album (`Heist_take_asks` is the one rule deciding
+  whether a ♥ opens the form at all). Ticked + ▶ start writes `Heist_defaults{ask:'0', lofi}` and
+   every later ♥ heists straight away with no form. A heart carried in from another body never asks —
+    it is being hauled for someone who isn't looking at this screen. Door → you carries the same pair
+     back as **♥ ☑ask ☐lofi**, so it is never a one-way setting.
 
-**The three questions that decide what comes next**, in the order they will actually bite:
- 1. **Does the Haul list feel like the right home for the queue?** It is now the *only* way into a running
-     heist. If it reads as a control panel rather than a way through, the fix is to take verbs off the row,
-      not to bring the individual heist buds back.
- 2. **Does the setup form really take the left side now?** Four precedence bugs were fixed blind. If it
-     still seats wrong, `BELLY_SWELL` (`vyto_focus.ts`, currently 1.6) is the dial — the pick itself is now
-      one tested function, so a wrong *position* and a wrong *choice* are separately diagnosable.
- 3. **Is `un_n`/`un_size` actually populated on a friend's records — and is it now the FOLDER's number?**
-     The whole cost line leans on it, it is humdinger-gated so no Book covers it, and it now does disk IO on
-      the share beat. Two things to look at on a live tab: the cost line before anyone has been asked (it
-       should already say 68, not 2), and the beat's own cadence (`Ra_unity_look` is capped at 4 folder
-        listings a beat with a 10-minute TTL, so a settled shelf should cost nothing — if the beat gets
-         sticky, that cap is the dial). A3 below is still the only thing that can put it in a fixture.
+**The particles** (full vocabulary + the 2026-08-09 rename history, above): `%Heist` is ONE album
+ nab; `%Caper` is the job that does the filing + landing decision for one friend; `%Haul` stays the
+  free name reserved for the larger collective — it is never minted as a second ledger alongside the
+   newlyadded log (§0V below is why).
 
-**Then the backlog, unchanged: A2/A3 (the owed Books and un-gating the unity), then Track B.**
+**The pump, window, landing, face** — one line each, full detail in §3–§6:
+- **the pump** (§3): no req machine, no ttlilt — a plain ~600ms beat (`Swarm_share_loop` →
+   `Heist_keep_beat` → `Heist_keep_step`).
+- **the window** (§4): 2 picks in flight at once, 24-chunk overlap so the next track's materialise
+   starts before the current one finishes landing.
+- **landing** (§5): a byte-faithful cp — the source's own filename and folder layout survive
+   unchanged, whole-file hash verified against `body_hash` before anything is kept.
+- **the face** (§6): `HeistFace.svelte` — *section* (yours, the category, auto-stamped) and
+   *directories* (theirs, the shared source-folder prefix) as two never-merged breadcrumbs.
 
-### THE DATA-RESIDING PASS, 2026-08-13 late — what was audited and what it turned up
+**The Haul cell** (`HaulFace.svelte`) is the one way through to a running or landed heist: queued /
+ pausable / cancellable above, landed-and-fading below. It buds only while it is news (24h), and once
+  its landed rows have been seen on screen it spends them through `Heard_seen_landed` (`Ghost/M/Heard.g`)
+   so the same album does not relight the cell twice.
 
-Asked for a sweep over "the data residing side". Three findings, all landed; recorded here mostly so the
- next pass does not re-walk the same ground.
+**Heisting on another body.** A ♥ pressed when you aren't the one operating the destination routes
+ through the **🧲** — the Crew-structure mark that names which body a heart's originals land on —
+  rather than onto the pressing device. `RemoteHeist_todo.md` is the live design for that road: the
+   Captain/Cave split, the 🧲 route, and the still-open question of whether a per-keep setup form has
+    anything left to ask now that the album is whole and the path is fixed.
 
- 1. **`un_n` priced from a cache** — §(1) below. The big one.
- 2. **Idempotent is not cheap.** `Heist_resume_sync`'s backfill loop called `Heist_newlyadded_note` once per
-     landed pick on a single beat, above a comment reading *"Cheap: Heist_newlyadded_note is already
-      idempotent"*. Two different properties under one word: idempotence bounds what a repeat **writes**,
-       while the entire cost here is the **read** that precedes the decision not to write — every call
-        re-opened the whole newlyadded document (`toc.snap` plus every part up to the first gap, all
-         deWafted). A resumed 68-track heist read the growing ledger 68 times on one reload beat, each open
-          folding one more part than the last. Quadratic, silent, and worse as the collection grows.
-       *Fixed* by letting the note take an already-open ledger and hoisting the open out of the loop —
-        lazily, so the common resume (nothing to repair) still never touches it. **Deliberately not a `.c`
-         cache**: a cache would have to guess a TTL and would widen the window in which another tab appends
-          a part we do not know about and our next append overwrites it. Pinned + mutation-tested in
-           `MultiHeist.spec.ts`.
- 3. **A silent cap reads as completeness.** `Heist_haul_look` whittles the `%Hauls` bag to the newest 40 and
-     stamps the true total as `n_all`, but `HaulFace` still counted its own truncated list — so a human with
-      317 landed albums would be told they had 40, and the overflow line would sit at "…and 28 more" for
-       ever. Both now read `n_all`. Wrong in the one direction that never looks wrong, which is the general
-        lesson: **whenever a cap exists, something on screen has to know the uncapped number.**
+### Still open (verify each against the code before acting on it)
 
-*Checked and found sound* (recorded so it is not re-derived): no `{"undef"}` markers anywhere under
- `wormhole/` — the guard-before-stamp idiom is holding; the `%Probation` `seq` ordinal cannot collide,
-  because a `drop` flips `feeling` and never deletes the card, so the count it derives from is monotonic;
-   `Berth_open`/`Berth_append`/`Berth_save` are properly bounded, with `Berth_parts_max` (64) triggering a
-    compaction that unlinks the parts it folded.
+- **An ffmpeg-failing file is retried forever and never marked bad.** `Ra_stock_one` (`Ghost/M/Ra.g`)
+   returns null on a probe or encode it cannot do, and nothing stamps the file — so a daemon re-probes
+    the same unreadable mp3 (a bad codec build, a corrupt file) on every stocking pass, and `failed=`
+     in the `ra_native` heartbeat (`scripts/daemon/ra_native.ts`, the `stats.failed` counter) climbs
+      without bound for the same handful of files. Contrast with the PULL side, which does mark bad:
+       `Heist_pull_giveup` stamps `pick.sc.failed = 1` after 90 unanswered materialise-asks or 5
+        stalled benches (`Ghost/M/Heist.g`) — the stock side has no equivalent.
+- **The pre-ask still isn't independent of the landing beat.** §4 "why it still rests between
+   tracks" is unchanged: a track's land (read-back + hash) runs INSIDE the 600ms beat, so a landing
+    beat that overruns is the same beat that should have pre-asked the next track. The fix named
+     there — make the pre-ask independent of the landing beat — is still unbuilt.
+- **The legacy ungated `committing` loop is still a landmine.** `state:'committing'` still calls
+   `Heist_keep_pull`, the all-parallel loop that drove the 3GB source-side cliff (§4's LANDMINE). It
+    is only reachable from the orphaned `HeistSetup.svelte` chooser (§11), which should make it dead
+     in practice — verify nothing still mints a `committing` keep before relying on that being true.
+
+### §0 log (2026-08-13, kept for the arc)
+
+**The state as of that overnight, compressed.** A late run confirmed the whole landing path, filing,
+ byte-faithful read-back, manifest, magazine recast and that day's ledger work all GREEN on a live
+  runner (MusuHeist 22/22, `ok_pct 1.0`, three consecutive runs, the third to prove the caveat count
+   had settled). What no Book could reach was the UI itself — a Book has no pointer — so the standing
+    instruction was always *look at it*: open a heist, open a second one while the first runs, and
+     check the Haul cell lists both and opens each.
+
+**The reusable finding, worth keeping past the night it was found.** "No browser in the claude
+ container" does not mean "no face can be tested." A Svelte face is a component: mounting a compiled
+  `.go` on a stub House and `mount(Face, {target, props:{n, H}})`-ing the component in jsdom renders
+   it and runs its real handlers. `scripts/HaulFace.spec.ts` and `scripts/HeistCostLine.spec.ts` are
+    the proof (the second pins the owner's own *"it was short, only showing 1 track"* to a DOM
+     assertion) — any face-level report can be reproduced this way without a runner, which is the gap
+      that cost a day earlier. Both are in `npm run checks`.
+
+A sweep that same evening over "the data residing side" landed three fixes, each a lesson worth
+ keeping past the fixes themselves:
+ 1. **Pricing a folder from a stale cache reads as a bug in the thing being priced, not in the
+     cache** — the `un_n`/`un_size` saga below.
+ 2. **Idempotent is not cheap.** Idempotence bounds what a repeat **writes**; it says nothing about
+     what the repeat must **read** first to decide not to write. `Heist_resume_sync`'s backfill loop
+      called `Heist_newlyadded_note` once per landed pick on a single beat, re-opening the whole
+       newlyadded document (`toc.snap` plus every part) each time — a resumed 68-track heist read the
+        growing ledger 68 times on one reload beat. *Fixed* by hoisting the open out of the loop,
+         lazily, so the common resume (nothing to repair) never touches it. **Deliberately not a `.c`
+          cache** — a cache would have to guess a TTL and would widen the window in which another tab's
+           append gets silently overwritten. Pinned + mutation-tested in `MultiHeist.spec.ts`.
+ 3. **A silent cap reads as completeness.** `Heist_haul_look` whittles the `%Hauls` bag to the newest
+     40 and stamps the true total separately as `n_all` — but if a reader counts its own truncated
+      list instead of reading `n_all`, a human with 317 landed albums is told they have 40. The general
+       lesson: **whenever a cap exists, something on screen has to know the uncapped number.**
+
+*Checked and found sound that night* (recorded so it needn't be re-derived): no `{"undef"}` markers
+ anywhere under `wormhole/`; the `%Probation` `seq` ordinal cannot collide, because a `drop` flips
+  `feeling` and never deletes the card; `Berth_open`/`Berth_append`/`Berth_save` are properly bounded,
+   with `Berth_parts_max` (64) triggering a compaction that unlinks the parts it folded.
 
 ### TWO BUGS THE OWNER READ OFF A LIVE TAB, 2026-08-13 late — DIAGNOSED, ONE FIXED
 
@@ -671,16 +710,16 @@ This doc reserved `%Haul` for "the larger collective" and the first surface read
    BASELINE.** Proven by controlled revert — my Ra.g hunks stripped, recompiled to `4938d5f513f1067e`
     (the build hash §0c already records as current), re-run: still 0/40. So it is not the PCM work.
    The tell is in step 1 and it is one key: the live snap carries `w:MusuRaStream,now=1751980010` and
-    the fixture carries a bare `w:MusuRaStream`. `Radiation.g:78` pins the swarm clock
+    the fixture carries a bare `w:MusuRaStream`. `RaTesting.g` pins the swarm clock
      (`w.sc.now = 1751980000 + 10*n`) — the value matches *exactly* at n=1 — and that pin has been in
       since commit `7935704a` (**2026-08-05**), while the fixtures were last committed `7640a284`
        (08-07). So the fixtures postdate the pin and still lack it, which means **they were not recorded
         from a live runner** — the CLAUDE.md headless-boot trap, whose fixtures match themselves and go
          all-red on the real runner. Downstream the divergence widens (the pinned clock feeds every
-          signature, `since` and grant — `Radiation.g:824` says so in words), so by step 2 the live run
+          signature, `since` and grant — `RaTesting.g` says so in words), so by step 2 the live run
            is a whole round behind the fixture and missing the `%Record` + its `%Preview` chunks.
    **Consequence for anyone reaching for a gate: MusuRaStream currently gates nothing**, and the same
-    doubt hangs over its Radiation.g siblings (`MusuRaChase`, `MusuRaStock`, `MusuRaTerm`, `MusuRaCast`).
+    doubt hangs over its RaTesting.g siblings (`MusuRaChase`, `MusuRaStock`, `MusuRaTerm`, `MusuRaCast`).
      Re-record from a LIVE runner before trusting any of them. ⚠ And note this Book is **not provably
       deterministic run-to-run** — two runs at the same build agreed on steps 1–13 and diverged from 14
        on. Until that is settled, *"diges differ"* is NOT sufficient to attribute blame on this Book;
@@ -756,7 +795,7 @@ This doc reserved `%Haul` for "the larger collective" and the first surface read
          null means `Ra_encode_open` refused. Anything else is the decode still running, so it waits
           (bounded `w.c.ra_decode_wait`, 60s, and the enclosing loop is era|rec-gated so a skip exits at
            once). Capping at the bound now says *"too slow"*, not *"unreadable"* — at that point slow is
-            all we actually know. `MusuOgg`'s driver had the identical bug and cure (`Heistation.g`,
+            all we actually know. `MusuOgg`'s driver had the identical bug and cure (`HeistTesting.g`,
              2026-08-05); this is the same fix at the live-playback seam.
      **No Book drives `Radio_supply_go`** (its only caller is `Radio.g:354`, live playback), so this
       half is Book-inert by construction and can ONLY be verified by ear: play an own track and hear it
@@ -771,7 +810,7 @@ This doc reserved `%Haul` for "the larger collective" and the first surface read
 
   **Still unjudged:** the `Heist_census_heads` `body_hash` guard (§ below). It was misattributed once
    already and reverted. MusuHeist is now a *trustworthy* gate — the step-2 flake was a real race in
-    `Heistation.g` (census settled outside the belief loop; a wake is not a hold), fixed with a one-shot
+    `HeistTesting.g` (census settled outside the belief loop; a wake is not a hold), fixed with a one-shot
      ttlilt gate, 7 consecutive greens, no fixture footprint — so the guard can finally be tested.
 
 0. **"LOFI" — a `.ogg` heist for phones. BUILT 2026-08-07, source-side, ONE ATTENDED HAUL STILL OWED.**
@@ -905,7 +944,7 @@ This doc reserved `%Haul` for "the larger collective" and the first surface read
      §171`, both `[want]`). The human's read: these want to be ONE named-store-each-side mechanism.
       Not started, likely the next drift.
 5. **`marrauding` is a typo** (double-r) living in the on-disk dir name, the verb, and literals in
-    `Heistation.g` / `Berthation.g`. No recorded fixture contains the string, so the rename is safe
+    `HeistTesting.g` / `BerthTesting.g`. No recorded fixture contains the string, so the rename is safe
      whenever wanted — left alone only because those Book files are open in another thread.
 
 ---
@@ -992,6 +1031,21 @@ The fix is not a bigger `OVERLAP` — it is making the pre-ask independent of th
   drives `Ra_pull_beat` for every un-landed pick every beat, which is the all-parallel behaviour
    that ate 3GB on the source. Only reachable from `HeistSetup.svelte:139`, the chooser path the
     code itself calls dormant. If every progress bar ever advances at once, that is where you are.
+
+### 4.0 Laws the download stall taught (from `history/Download_stall_handover.md`, the 2026-07-29→08-05 hunt)
+
+- **A source releases by DROPPING body particles, never by blanking their bytes.** `Heist_has_body` counts particles, and
+   materialise is idempotent on that count, so a bufless husk makes the next materialise return without re-reading and the
+    sink's wants park forever. A re-materialise over surviving husks would also duplicate seqs (`Heist_body_new` is a bare
+     `i()`, readers take `o()[0]`). `Heist_release_rec` is the right free; `Heist_release_buf` is sink-side only.
+- **Heal on the SOURCE, where the demand already parks.** The want-ask answer cap means a sink re-asking can't heal a
+   released-then-wanted track; a `%parked_want` over a rec with `total` but no bodies *is* the re-materialise demand.
+- **A page before its lines is not a loss.** `Repli_recv_page` stashes the bytes and the late lines attach them. The old
+   "bytes dropped" warn was a false alarm that flooded under ws churn. Only lines lost forever lose data, and the re-ask heals that.
+- **This class only shows on a busy networked system running for minutes.** Compile-green and headless Books can't see
+   it. The proof is two real tabs heisting for a few minutes, read with read-only ops. Never drive a Book on a human's tab
+    to diagnose it: `become_book` hijacks the very heist you're watching.
+- The era/`saw:` rebirth chain that fixed the reload-recovery half is written up in `Backpressure_todo.md` §5.9 ("the epoch").
 
 ### 4.1 The source went permanently deaf after three answers
  *(FOUND + FIXED 2026-08-06, on the human's live two-pier heist)*

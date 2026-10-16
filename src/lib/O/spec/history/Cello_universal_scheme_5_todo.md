@@ -1,5 +1,14 @@
 # Cello Universal Scheme 5 — the snap as a living score
 
+> **HISTORY (retired 2026-10-15).** This was strike 7 of 8 in the Cello rendering tournament
+>  (`Cello_synthesis_todo.md`, Task #42): the scored field — a clef zone (colour-only mainkey
+>   jewel), a mainkey bar, an sc notation field of seven exhaustive pill glyphs, and an
+>    always-present under-staff "undertone" wire for `.c` (coloured by ref kind, never
+>     zero-suppressed). Design-only — none of its mechanisms were ever built. Ranked 5th of 8 —
+>      best DOCTRINE ("lying is structurally prohibited"), but at overview it collapses to a mote
+>       by another name. Its doctrine, undertone wire, and seven-glyph vocabulary are in
+>        `Cello_synthesis_todo.md`'s durable core and scorecard footnote [^7].
+
 ## 0. What to get on with next
 
 This is a DESIGN doc only. No code exists yet. The smallest provable slice

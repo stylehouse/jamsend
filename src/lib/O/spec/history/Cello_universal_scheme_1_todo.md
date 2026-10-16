@@ -1,5 +1,14 @@
 # Cello Universal Scheme 1 — the snap IS the rendering
 
+> **HISTORY (retired 2026-10-15).** This was strike 3 of 8 in the Cello rendering tournament
+>  (`Cello_synthesis_todo.md`, Task #42, where it is called "CelloScore"): the snap-as-a-living-
+>   score, one 24px staff band per particle, a bracket blob at the left margin, designed Faces
+>    mounting inline on their staff. Design-only — none of its mechanisms were ever built. Ranked
+>     6th of 8 — it draws one band per particle unconditionally, so it is the snap re-drawn, and
+>      the snap of a live world is already too long to read. Its honesty-marks-in-the-text-column
+>       idea and the Face-mount-inline seam live on in `Cello_synthesis_todo.md`'s scorecard
+>        footnote [^3].
+
 ## 0. What to get on with next
 
 This doc is a design for a universal C** renderer that is neither the Cello

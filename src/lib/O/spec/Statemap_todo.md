@@ -197,5 +197,5 @@ Measured during a full unit sweep (31 specs at HEAD): `MultiHeist.spec` ×3 and 
  keeping straight:
 - `Presence` — environmental. Its own name says *"a real relay answers `who`"*; no relay is up. Ignore it
    when sweeping offline.
-- `LakeRace` — **a real red, and nobody has chased it.** See the note in `Lies_handover.md`. Do NOT file it
+- `LakeRace` — **a real red, and nobody has chased it.** See the note in `Lies_attention_todo.md`. Do NOT file it
    under "environmental" as an earlier draft of this section did.

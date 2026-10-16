@@ -1,8 +1,10 @@
+> **⚠ Read with this (2026-10-15).** The trust status below is from 2026-07-27 and is stale. `Tyrant.g` was deleted 2026-09-16 (design: `history/Covenant_design.md`). Sender proof is real per era (the Swarm voucher), and the relay from-check (2026-10-13) stops `header.from` spoofing; per-frame signing and privacy are still owed. `Trust_todo.md` §1 is the current truth. (`Trust_audit_handover.md`, which this doc recommended retiring below, has since been merged into `Trust_todo.md` and moved to `history/` — the recommendation stands, just carried out differently than written here.)
+
 # Sharing_design.md — identity, invite, friendship, trust (2026-07-27)
 
 Consolidates the scattered sharing-spine todos — `Swarm_spec.md` (the canonical spine),
  the settled halves of `Swarm_compact_invite_todo.md`, `Identity_persist_todo.md`, and
-  `Trust_audit_handover.md`, plus the two spine sections of `Cluster_spec.md` (§2 trust
+  `Trust_todo.md` (then `Trust_audit_handover.md`), plus the two spine sections of `Cluster_spec.md` (§2 trust
    substrate, §3.2a identity model) — into one settled statement. Written for read +
     preen; **not self-blessed spec.** The forward working docs stay where they are (doc
      map at the end).
@@ -31,10 +33,13 @@ The sharing spine is the **identity → friendship** path that lets a music room
 
 Trust after the seal is **grant-gated**: a music frame crosses only on a held grant; unfriending
  is a signed `%NotGrant` tombstone; every routed frame carries a **per-era voucher** so a sealed
-  friend re-verifies the sender's key the relay never checks. The **society layer** (identity,
-   invite, grant, reinvite, voucher) is **real ed25519**; the **transport layer** beneath it
-    (Peeroleum / Tyrant / Tribunal) is a **deliberate mock pipe** awaiting its crypto port. Live
-     code: `Ghost/S/Swarm.g` (society) + `src/lib/O/Auto.svelte` (Clustation identity boot) +
+  friend re-verifies the sender's key, and (since 2026-10-13) the relay's own from-check stops a
+   socket claiming an identity it never signed a hello for. The **society layer** (identity,
+    invite, grant, reinvite, voucher) is **real ed25519**, and so is the **link/era auth** layer
+     (signed hello, per-era voucher) riding on top of `Peeroleum.g`'s transport. What's still a
+      mock: `Peeroleum.g`'s OWN hello/trust handshake (`hear_hello`/`hear_trust`), and no frame's
+       body/seq/type is itself signed — see `Trust_todo.md` §1 for the current, re-verified split.
+        Live code: `Ghost/S/Swarm.g` (society) + `src/lib/O/Auto.svelte` (Clustation identity boot) +
       `InvitePanel.svelte` / `DoorFace.svelte` (door UI). Green in the **Swarmation** Book and
        exercised as two tabs on one machine over the relay — **never yet between two real
         machines.**
@@ -56,7 +61,7 @@ Trust after the seal is **grant-gated**: a music frame crosses only on a held gr
 - **Disk persistence to `.jamsend`** `[BOOK]` — `Swarm_account_save`/`_load`,
    `Swarm_roster_open`/`_save`, `Swarm_persist` (`Swarm.g:1610-1695`); the keypair folds onto the
     account snap's Identity root via `Swarm_snap_keyed` (`Swarm.g:1547-1554`); the roster is
-     **pub-only**. Green×2 in **SwarmDisk**, but the ONLY callers are `Swarmation.g` + internal —
+     **pub-only**. Green×2 in **SwarmDisk**, but the ONLY callers are `SwarmTesting.g` + internal —
       **no `.svelte` writes disk live.**
 - **Compact invite + presig** `[LIVE]` — token codec `Swarm_token`/`_token_parse` + issuer-MAC
    `Swarm_presig` (`Swarm.g:122-147`); `Swarm_mint_idzeug` (`Swarm.g:177-196`) reached live via
@@ -87,21 +92,23 @@ Trust after the seal is **grant-gated**: a music frame crosses only on a held gr
      pub-only) `Swarm_roster_*` is green in SwarmDisk but never written or read live.
 - **Boot-seed / disk-adopt** `[OWED]` — `Swarm_boot_seed(nav, root, container, want)`
    (`Swarm.g:1707-1719`) is a pure, Book-provable lift (SwarmDisk green×2), but its ONLY callers
-    are `Swarmation.g:1769/1810/1828` + gen — **confirmed NOT wired into
+    are `SwarmTesting.g` + gen — **confirmed NOT wired into
      `Clustation_ensure_identity`.** The Auto glue (adopt the disk owner before minting a parallel
       self, set `sc.active`, re-mirror to Dexie) is **the one owed identity seam** (frontier #4).
 
 ### Trust status — the society layer is real, the transport under it is mock
 
-The single most load-bearing fact, from `Trust_audit_handover`'s split-personality finding
+The single most load-bearing fact, from `Trust_todo.md` §2.2's split-personality finding
  (verified file:line, 2026-07-26):
 
 - `Ghost/S/Swarm.g` — **society layer** — **REAL ed25519.** Invites, grants, reinvites, and
    per-era vouchers all sign + verify; forgery throws; single-use spend + blotter + chain are
     Book-green. Meets or exceeds the Peerily reference.
-- `Ghost/N/Peeroleum.g` / `Tyrant.g` / `Tribunal.g` — **transport layer** — **MOCK (v1, on
+- `Ghost/N/Peeroleum.g` / `Tribunal.g` — **transport layer** — **MOCK (v1, on
    purpose).** `header.sign` is `[OWED]`; `body_hash` is unkeyed sha256; `hear_hello` =
-    `startsWith(pub)`; `hear_trust` = no-op. The wire is a raw pipe.
+    `startsWith(pub)`; `hear_trust` = no-op. (`Tyrant.g`, once named here too, was deleted
+     2026-09-16 — see `history/Covenant_design.md`.) The link itself is real (signed hello,
+      relay from-check); it's the per-frame body that's still unsigned.
 
 Audit each half on its own terms. The society voucher is real per-**era** link-auth, but the wire
  carrying it signs nothing per-**frame** — so the per-connect trust rebuild (structurally correct,
@@ -119,11 +126,11 @@ All five are `[OWED]`. Everything green above is either a Book or two tabs on on
     process, one clock, one localhost. Unproven across a real network: NAT/relay routing to
      `to:<prepub>`, real-latency frame ordering, whether the voucher and the hello-bind survive a
       real reconnect. **The load-bearing unknown** — every item below is a facet of this crossing.
-2. **Transport per-frame crypto is a mock** (`Trust_audit` job A). `Peeroleum.g` has no
-    `header.sign`, `hear_hello` = `startsWith(pub)`, `hear_trust` = no-op. Owed: land
-     `header.sign` + real `hear_hello`/`hear_trust` so the per-connect trust rebuild (which keeps
-      `%Ud` correctly) becomes **cryptographic**. It "unblocks the moment any flow crosses the
-       relay."
+2. **Transport per-frame crypto is still a mock** (`Trust_todo.md` §1, the WT1–WT4 plan). `Peeroleum.g` has no
+    `header.sign`, `hear_hello` = `startsWith(pub)`, `hear_trust` = no-op, and the per-era voucher doesn't cover a
+     frame's body/seq/type. Owed: an authenticated session key per era (WT1) + per-frame AEAD (WT2), so the
+      per-connect trust rebuild (which keeps `%Ud` correctly) becomes cryptographic all the way down. It "unblocks
+       the moment any flow crosses the relay."
 3. **`pier_confirm` (frame 3) has no re-drive on reconnect** — the "fingers-proof" owed. The
     issuer seals one-sided at `pier_hello`; the reciprocal grant rides only frame 3 (fire-once
      `Swarm_deliver`). A reconnect / era-change mid-seal drops it **permanently** → an asymmetric
@@ -160,7 +167,7 @@ All five are `[OWED]`. Everything green above is either a Book or two tabs on on
 - `Identity_persist_todo.md` → the persistence design above. **Keep §5 (the exact Auto seam) +
    its 3 audit bugs** as the owed-seam appendix — it is the precise, verified two-tab wiring
     recipe and must survive intact.
-- `Trust_audit_handover.md` → the **Trust status** subsection above (society-real / transport-mock
+- `Trust_todo.md` (then `Trust_audit_handover.md`) → the **Trust status** subsection above (society-real / transport-mock
    split, the Peerily checklist). It owns the crypto status; job A is frontier #2.
 - `Cluster_spec.md` §2 (trust substrate — the signing layer, already built) + §3.2a (identity
    model — one key, one derived address, the 9→2 collapse) → **extracted** as the trust substrate
@@ -169,7 +176,7 @@ All five are `[OWED]`. Everything green above is either a Book or two tabs on on
 
 **Kept separate (do NOT merge):**
 
-- `Onboard_todo.md` — the first-run funnel + the display handoff to Vyto. **Deferred**; ~80% of
+- `history/Onboard_todo.md` — the first-run funnel + the display handoff to Vyto. **Deferred**; ~80% of
    the components exist, the orchestration is unbuilt. Stays a working todo.
 - `Follow_todo.md` — the DJ-monitor `%Follow` follower mode ("enslave a client to my stream").
    **Not built at all**, deliberately deferred to post-production. Stays a working todo.
@@ -188,9 +195,10 @@ All five are `[OWED]`. Everything green above is either a Book or two tabs on on
 **Retirement recommendation (recommendation only — nothing moved, no other file edited):** once
  this doc is read + preened, retire to `spec/history/` the four merged docs whose durable content
   now lives here — `Swarm_spec.md`, `Swarm_compact_invite_todo.md`, `Identity_persist_todo.md`
-   (carrying its §5 appendix forward into this doc first), `Trust_audit_handover.md` — and extract
+   (carrying its §5 appendix forward into this doc first), `Trust_todo.md` (then `Trust_audit_handover.md`,
+    now merged and retired 2026-10-15) — and extract
     §2 + §3.2a out of `Cluster_spec.md`, leaving the rest as the runner-flock doc. Keep
-     `Onboard_todo.md` and `Follow_todo.md` live. Re-label or retire `Covenant_design.md` as the
+     `history/Onboard_todo.md` and `Follow_todo.md` live. Re-label or retire `Covenant_design.md` as the
       parallel arch it is. **One caveat:** `Swarm_spec.md` is a **blessed `_spec`**, so retiring it
        is the heaviest move here and most squarely yours to bless — until then treat this doc as
         its *companion*, not its replacement.

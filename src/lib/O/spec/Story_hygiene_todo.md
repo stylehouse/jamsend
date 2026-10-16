@@ -210,13 +210,13 @@ Every `src/lib/gen/**.go` write full-reloads EVERY tab on :9091 — observed all
 
 **THE CUSTOMER SET (surveyed 2026-07-26) — a HANDFUL, not the suite.** The natural users are the ~8 Books
  that ALREADY hand-code a `Heist_sweep(this.Heist_meta_dir()+'/test-marrauding-of-<X>')` at start+end:
-  **MusuHeist** (`Heistation.g:142,171`), **MusuBreach** (`:2586,2670`), **MusuBreach_wire** (`:2764,2862`),
+  **MusuHeist** (`HeistTesting.g`), **MusuBreach** (`:2586,2670`), **MusuBreach_wire** (`:2764,2862`),
    **MusuOgg** (`:3142`), **MusuReap** (`:3274,3332`), **MusuSoft** (`:3457,3582`), **MusuBay**
-    (`:3745,3924`), **MusuLossy** (`:4028`) + the **Berthation** Books (`Berthation.g:102,159`). For them the
+    (`:3745,3924`), **MusuLossy** (`:4028`) + the **Berthation** Books (`BerthTesting.g`). For them the
      hook is a DECLARATIVE re-home of a sweep they already run (imperative-in-step-1 → toc-resident `%Reset`),
       plus uniform abortive-safety — NOT a bug-fix (the hand-coded start-sweep already makes them
        deterministic). Everything ELSE needs nothing: most Books write deterministic-named
-        overwrite-idempotent files (MusuLossy's `wav/opus/mp3`, `Heistation.g:4039-4044`) that never
+        overwrite-idempotent files (MusuLossy's `wav/opus/mp3`, `HeistTesting.g`) that never
          accumulate. NOT Sounditron (§4 — real user cache).
 
 **radiostock is a SEPARATE lever from this hook (2026-07-26).** The `radiostock/` monotonic leak now has a

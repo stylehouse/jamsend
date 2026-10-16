@@ -1,3 +1,5 @@
+> **HISTORY (retired 2026-10-15).** The design sketch for `Tyrant.g` (cabinetry: identity, trust, admission) and `Garden.g` (partying) over the Peeroleum floor. `Tyrant.g` was built (M1+M2) and deleted 2026-09-16 with the old prototype; `Garden.g` was never built. The real society layer is `Swarm.g` (`Trust_audit_handover.md` §0). The Linoleum image and the M0–M3 / `%req:join` admission ladder are kept in `Peeroleum_spec.md` §17.1.
+
 # Garden.g + Tyrant.g — the cabinetry & partying over the Peeroleum floor (design sketch)
 
 *Two ghosts (the owner's call): **Tyrant.g** = the cabinetry — identity & trust → admission

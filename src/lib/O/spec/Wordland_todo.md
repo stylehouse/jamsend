@@ -10,7 +10,7 @@
 - **`Ghost/L/`** — the LAND's ghosts: `Atlas.g` (what the code SAYS — every doc's `%Map`, kept),
    `Electrode.g` (what the code DOES — both ends of every call; built 2026-09-08 night, then PARKED by
     the owner), `Lagoon.g` (**the reader layer — every ANSWER asked of a census; built the next
-     afternoon, `Lagoon_todo.md`**), and their Books `Atlantation.g` / `Electrodation.g` / `Lagoonation.g`.
+     afternoon, `Lagoon_todo.md`**), and their Books `AtlasTesting.g` / `ElectrodeTesting.g` / `LagoonTesting.g`.
 - **Atheory** (`Atheory_todo.md`) — what code IS LOADED where: the declared manifest, and the `TheA_<dige>`
    layered prototypes that the two pictures above are meant to inform.
 
@@ -37,7 +37,7 @@ The arc: **the one bet, turned on the code itself.**  `Homethink §1` — *turn 
    Lang_ghostmeta_name`, 1,152 calls per run** — the ready-tick re-reads every spine ghost's version twice
     per tick, 16 ticks a run.  A one-line gate (only re-read when the enrolment set changed) takes it to
      36.  Not applied — it is `LiesLies.svelte`, the live spine; the owner should say.
-- `Ghost/L/Electrodation.g` → **`ElectrodeStaple` GREEN: recorded 6/6 in `mode:new` (10 sworn), contract
+- `Ghost/L/ElectrodeTesting.g` → **`ElectrodeStaple` GREEN: recorded 6/6 in `mode:new` (10 sworn), contract
    installed (10 `Assertion:` lines, unique slugs), then check-mode ×2 — `ok_pct:1, caveat:0`, declared 10 /
     sworn 10 / gaps 0 — and SABOTAGE-PROVEN without a reload** (broken hang-list → `failed` with exactly
      the two "closes" gaps named; revert → green; §4b).
@@ -96,10 +96,10 @@ The arc: **the one bet, turned on the code itself.**  `Homethink §1` — *turn 
 | its Book | `src/lib/L/Educarium.svelte` | Editron's sibling recipe — lays A:Educarium + Lies/Lang editor + Pantheate | boots with the room |
 | the census | `Ghost/L/Atlas.g` (`ATLAS_MAPPER=m13`) | 711 docs, 0 errors, Dexie-warm, refresh-on-use; **12 functions, all keeping** since the readers moved out | `runner_ask ghost_load … --stand=Atlas`, `atlas_refresh`, minisnap |
 | **the reader layer** | `Ghost/L/Lagoon.g` | **BUILT 2026-09-08** — callers · lint · unproven · join; keeps nothing | `ghost_load … --stand=Lagoon`, then `atlas_callers`, `atlas_lint`, `electrode join` |
-| its Book | `Ghost/L/Lagoonation.g` → `LagoonStaple` | 6 steps, 7 sworn, green ×2 (`caveat:0`, gaps 0) — gates the CONCEPT LINE | `runner_ask run LagoonStaple` |
-| its Book | `Ghost/L/Atlantation.g` → `AtlasStaple` | 6 steps, 10 sworn, green (re-swore under `story_swear` 2026-09-08) | `runner_ask run AtlasStaple` |
+| its Book | `Ghost/L/LagoonTesting.g` → `LagoonStaple` | 6 steps, 7 sworn, green ×2 (`caveat:0`, gaps 0) — gates the CONCEPT LINE | `runner_ask run LagoonStaple` |
+| its Book | `Ghost/L/AtlasTesting.g` → `AtlasStaple` | 6 steps, 10 sworn, green (re-swore under `story_swear` 2026-09-08) | `runner_ask run AtlasStaple` |
 | the tap | `Ghost/L/Electrode.g` | built + stood live 2026-09-08; off by default | `runner_ask electrode …` |
-| its Book | `Ghost/L/Electrodation.g` → `ElectrodeStaple` | compiles/parses; first recording pending | `runner_ask ghost_load Ghost/L/Electrodation.g` then `run` |
+| its Book | `Ghost/L/ElectrodeTesting.g` → `ElectrodeStaple` | compiles/parses; first recording pending | `runner_ask ghost_load Ghost/L/ElectrodeTesting.g` then `run` |
 | the fixture corpus | `Ghost/L/test_corpus/` | frozen (`Sample.g`); **never edit** | — |
 | the bundles | `Atheory_todo.md` | design + bench-verified mechanics; nothing built | — |
 
@@ -328,13 +328,13 @@ What that already says, plainly:
 - **`AtlasStaple` went RED under the tap on that first armed run — and equally red UNARMED**, with
    identical step diges both ways, so the tap was innocent.  The step-1 diff said what it was: the
     fixture holds `req:wrangle,eternal,ok` under `w:AtlasStaple` and the live run did not — the Book's
-     own handler was absent.  The owner's tab reload had dropped `Atlantation.g` (an L ghost is not in
+     own handler was absent.  The owner's tab reload had dropped `AtlasTesting.g` (an L ghost is not in
       the spine manifest; `Stemdex_todo §0` names exactly this: *a Book's OWN `.g` must be `ghost_load`ed
        before `run`*).  So the numbers above are a trace of the Story machinery running a HOLLOW Book —
         still a true picture of what a run costs before the Book does anything, which is why
          `Creduler_ensure` dominates it.  The re-measurement with the Book actually working is §4b.
 
-### 4b. The re-measurement — the Book actually working (same night, `Atlantation.g` re-loaded)
+### 4b. The re-measurement — the Book actually working (same night, `AtlasTesting.g` re-loaded)
 
 `AtlasStaple` **green 6/6 unarmed, then green 6/6 ARMED with `caveat:0`** — the coats are invisible to
  the fixture, which is the load-bearing property (a tap that changed a snap would be useless here).
@@ -368,7 +368,7 @@ Method:_collect_line,n:36,ms:2
 
 What this run adds to §4's reading: **the Book spends 3.8 of its seconds polling** (`AtlasStaple_await`
  sleeps 200ms between truth checks — the honest cost of "expecting" over a belief loop the run does not
-  pump, `Atlantation.g` beat 3's comment); the snap encoder (`enL`/`enLine`, ~750 calls) is the next thing
+  pump, `AtlasTesting.g` beat 3's comment); the snap encoder (`enL`/`enLine`, ~750 calls) is the next thing
    after Creduler; and a real `Atlas_map_one` of `Sample.g` costs ~50–190ms, parse included.
 
 **`ElectrodeStaple` recorded first time, 6/6, `mode:new`, 10 sworn.**  Contract installed by hand (10

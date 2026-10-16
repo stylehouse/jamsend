@@ -1,5 +1,13 @@
 # Cello — universal scheme 2: the fibre-band field
 
+> **HISTORY (retired 2026-10-15).** This was strike 4 of 8 in the Cello rendering tournament
+>  (`Cello_synthesis_todo.md`, Task #42): the fibre-band field, mapping tree depth to Y and
+>   sibling subtree-weight to band WIDTH, so a wide band reads as a rich subtree without drawing
+>    every leaf. Design-only — none of its mechanisms were ever built. Ranked 2nd of 8 — the
+>     subtree-weight width channel is a real second dimension of compression, but it still draws
+>      every band, so density becomes a bluff at 10⁶ particles. The width channel lives on in
+>       `Cello_synthesis_todo.md`'s durable core and scorecard footnote [^4].
+
 ## 0. What to get on with next
 
 This doc designs a **third visual language** for the C** substrate — a sibling to `Cello_todo.md`

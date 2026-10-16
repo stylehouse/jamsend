@@ -8,29 +8,36 @@
 
 ## 0. What to get on with next
 
-The verdict, in one breath: **the eight strikes are eight TEMPLATES, and they are all groping
- toward one MECHANISM they don't have — render the RESIDUAL (prediction error), not the
+The verdict, in one breath: **the eight strikes were eight TEMPLATES, and they were all groping
+ toward one MECHANISM none of them had — render the RESIDUAL (prediction error), not the
   particle.** Every strike that "draws each particle in full, however elegantly" has a hard
    scale cliff at ~10³–10⁴ particles, because it spends ink per particle and the expected is
-    never cheap. The meditation (`Cello_meditation_todo.md`) already named the hinge; this doc
-     confirms it survives the adversarial pass and turns it into a buildable first slice.
+    never cheap. The meditation (`Cello_meditation_todo.md`) named the hinge; this doc confirmed
+     it survives the adversarial pass and turned it into a buildable first slice — which has
+      since been built. The eight template docs themselves are design-only and were retired
+       2026-10-15 (`history/Cello_tree_scheme_todo.md`, `history/Cello_mesh_scheme_todo.md`,
+        `history/Cello_universal_scheme_1..6_todo.md`); their durable ideas are scraped into the
+         footnotes on the scorecard (§Round 1) and the durable core (§Round 2) below.
 
-Get on with, in order:
-- **Prove the residual atom** (§R.5, the "smallest buildable slice"): one particle drawn as its
-   DEVIATION from a per-mainkey prior — a normal `%Record` a near-invisible mote, a wounded one
-    (undef sc / .c foam / undropped-finished req) blazing to a full glyph, by the SAME ink rule.
-     This is the one experiment that decides everything; build it before any full field.
-- **Author the prior as matter**: a `%Norm:<mainkey>` under `The/Styles` beside Matstyle's
-   swatches (§R.3). Bootstrap it by observation (the running snap IS the training set), let it be
-    hand-corrected, let it snap. If the prior can't be authored and can't drift, the ship doesn't
-     sail.
-- **Wear the lens on ONE existing template** to prove residual is a LENS not a 9th scheme (§R.6):
-   take the strike that survived farthest (Mesh / scheme 2 field) and make its atoms cost ink by
-    surprise. If a normal atom recedes to texture and a wounded one seizes the eye WITHIN that
-     template, the reconciliation is real.
+**Standing state.** §R.5's smallest buildable slice shipped 2026-08-30 as `ResidualMote.svelte`
+ (the single-particle proof, route `/ink`) and `InkSurprise.svelte` (the population field, route
+  `/ink/islands` — see `InkSurprise_todo.md`). A normal `%Record` recedes to a near-invisible
+   mote; a wounded one (undef sc / `.c` foam / undropped-finished req) blazes to a full glyph, by
+    the same ink rule. The mechanism is proven. Neither component is wired into Cello's live glass
+     (`Cellui.svelte`, `Cello_todo.md`) yet — they stand as their own routes, a lens proven in
+      isolation, not yet a mode Cello's own cells can wear.
 
-The far water (§R.8) — the prior's cold-start, the churn time-constant, whether "kinship = shared
- prior" holds across referring-vs-holding — is still unproven. Say so; don't crown it yet.
+Open, in order:
+- **Wear the lens on Cello's live glass** (§R.6): since all eight template strikes are retired
+   design-only docs (none of their mechanisms were ever built), "wear it on Mesh" is no longer a
+    live option — the concrete move is wiring `ResidualMote`'s surprise rule onto Cellui's own
+     cells (opacity/bloom driven off `surprise`), as a mode, not a 9th scheme.
+- **Author the prior as matter** (§R.3): a `%Norm:<mainkey>` under `The/Styles` beside Matstyle's
+   swatches. Bootstrap it by observation (the running snap IS the training set), let it be
+    hand-corrected, let it snap. Still unbuilt — if the prior can't be authored and can't drift,
+     the ship doesn't sail.
+- The far water (§R.8) — the prior's cold-start, the churn time-constant, whether "kinship = shared
+   prior" holds across referring-vs-holding — is still unproven. Say so; don't crown it yet.
 
 ---
 
@@ -46,14 +53,14 @@ Scores are the judge's, on the far voyage, not the near demo: ✓✓ strong · �
 
 | # | Strike (file) | SCALE | LANG | CHURN | BUNDLE | HONESTY | UNITY | BUILD | THE CLIFF (where it sinks mid-voyage) |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | **Tree** (`Cello_tree_scheme`) — nested wobbly blobs, groupology | ✗ | ✓✓ | ~ | ✓✓ | ✓✓ | ✓ | ✓✓ | **75%-per-level inset + depth_cap 3.** Deep nesting drives cells below the 48px floor in ~4 levels; the real tree is far deeper, so it lives permanently behind "↓ deeper" truncation — you navigate, you never SEE. Containment-as-pixels doesn't compress; it recurses into invisibility. |
-| 2 | **Mesh** (`Cello_mesh`) — depth-bands × mainkey-clusters, motes at zoom | ~ | ✓✓ | ✓ | ✓✓ | ✓✓ | ✓✓ | ✓✓ | **The mote still costs ink.** Best-in-class: depth→band, mainkey→cluster, count→grid is honest arithmetic, and the mote (pill colour + sc-dot pattern) is a real compression step. But a mote is still ONE glyph per particle; 10⁶ motes is 10⁶ things. Chunking inside a scale never defeats the scale (Shunya). Sails farthest of the eight — but the horizon is a wall of motes, not open water. |
-| 3 | **CelloScore / Universal 1** — staff bands + left bracket blob | ✗ | ✓✓ | ~ | ✓✓ | ✓✓ | ✓ | ✓✓ | **One 24px band per particle, unconditionally.** 10⁴ bands = a 240,000px scroll. It is the snap re-drawn — and the snap of a live world is already too long to read; drawing it prettier doesn't shorten it. A log is a log. Honesty marks are excellent (⊞/~.c/↑ in the text column, self-describing) but they annotate a scroll nobody can hold. |
-| 4 | **Fibre-band field / Universal 2** — subtree-weight widths, snap-is-picture | ~ | ✓✓ | ~ | ✓✓ | ✓✓ | ✓✓ | ✓✓ | **"Density IS information" is a bluff at 10⁶.** The subtree-weight width channel is genuinely clever — a wide band = a rich subtree, readable pre-attentively — and the "every band ↔ one snap line, every loss announced" invariant is the sharpest honesty claim in the set. But it still draws every band; at depth×breadth = 10⁶, bands are sub-pixel and the text (its whole payload) is gone. It admits the penalty ("the field is dense") and calls density a feature; the owner's caution is precisely that this is the naive move. |
-| 5 | **Weave / Universal 3** — tiles + left-edge braid genealogy | ✗ | ✓✓ | ✓ | ✓✓ | ✓✓ | ✓✓ | ✓✓ | **The braid is the best idea here and it drowns.** Ancestry as a left-edge colour braid (no indentation) is the cheapest lineage channel of any strike — Vayu's "lineage is a road" made concrete. The minimap is a real answer to scroll. But it is still one 22px tile per particle in DFS order; the tile field is scheme 3's scroll with a better index. Fold tiles name cuts honestly, but the resting field is 10⁴ tiles. |
-| 6 | **Three-zone blob / Universal 4** — rim/strata/waterline, TWIST hatch | ✗ | ✓✓ | ~ | ✓✓ | ✓✓ | ✓✓ | ✓✓ | **A stratum per sc key, a cell per particle, nested.** The strongest BUNDLE statement (rim=mainkey, strata=sc, waterline=.c is the fibre bundle made literal geometry) and the cleanest HONESTY primitive (TWIST hatch absent-by-default = a *guarantee*, present = an *announcement*). But it draws the whole bundle for every particle AND nests them; a dense particle is tall, a deep tree is a fractal of tall cells — it is the worst scaler when sc is rich, because richness inflates ink. |
-| 7 | **Musical staff / Universal 5** — clef/staff/undertone, seven pill glyphs | ✗ | ✓✓ | ~ | ✓✓ | ✓✓ | ✓ | ✓✓ | **Density→staff-height is a compression *of the row*, not of the *count*.** Real virtues: the always-drawn .c undertone wire (you can't forget the underbelly), the seven-glyph sc vocabulary (exhaustive for the model incl. the undef/object-in-sc mint-bug marks), and "lying is structurally prohibited." At overview it collapses staves to 1px rules — which is exactly a mote/band by another name, so it inherits strike 2's cliff without strike 2's cluster grouping. The score doctrine is superb; the score-as-field still spends a rule per particle. |
-| 8 | **Woven Membrane / Universal 6** — warp stripes per sc key, weft-depth hairlines | ✗ | ✓✓ | ~ | ✓ | ✓✓ | ✓✓ | ✓ | **Ink scales with sc-arity: O(particles × keys).** The most expensive scheme by construction — one stripe PER sc key PER particle. A `%Norm`-less field of rich particles is a stripe forest. Stripe-width ∝ value-length is a pretty pre-attentive channel, but it means a wall of text-length noise, not surprise. `warp_stripes(sc)` is the one new primitive and it's the one that guarantees the cliff. Weft-hairlines-as-depth is nice but redundant with every other depth channel here. |
+| 1 | **Tree**[^1] (`history/Cello_tree_scheme_todo.md`) — nested wobbly blobs, groupology | ✗ | ✓✓ | ~ | ✓✓ | ✓✓ | ✓ | ✓✓ | **75%-per-level inset + depth_cap 3.** Deep nesting drives cells below the 48px floor in ~4 levels; the real tree is far deeper, so it lives permanently behind "↓ deeper" truncation — you navigate, you never SEE. Containment-as-pixels doesn't compress; it recurses into invisibility. |
+| 2 | **Mesh**[^2] (`history/Cello_mesh_scheme_todo.md`) — depth-bands × mainkey-clusters, motes at zoom | ~ | ✓✓ | ✓ | ✓✓ | ✓✓ | ✓✓ | ✓✓ | **The mote still costs ink.** Best-in-class: depth→band, mainkey→cluster, count→grid is honest arithmetic, and the mote (pill colour + sc-dot pattern) is a real compression step. But a mote is still ONE glyph per particle; 10⁶ motes is 10⁶ things. Chunking inside a scale never defeats the scale (Shunya). Sails farthest of the eight — but the horizon is a wall of motes, not open water. |
+| 3 | **CelloScore / Universal 1**[^3] — staff bands + left bracket blob | ✗ | ✓✓ | ~ | ✓✓ | ✓✓ | ✓ | ✓✓ | **One 24px band per particle, unconditionally.** 10⁴ bands = a 240,000px scroll. It is the snap re-drawn — and the snap of a live world is already too long to read; drawing it prettier doesn't shorten it. A log is a log. Honesty marks are excellent (⊞/~.c/↑ in the text column, self-describing) but they annotate a scroll nobody can hold. |
+| 4 | **Fibre-band field / Universal 2**[^4] — subtree-weight widths, snap-is-picture | ~ | ✓✓ | ~ | ✓✓ | ✓✓ | ✓✓ | ✓✓ | **"Density IS information" is a bluff at 10⁶.** The subtree-weight width channel is genuinely clever — a wide band = a rich subtree, readable pre-attentively — and the "every band ↔ one snap line, every loss announced" invariant is the sharpest honesty claim in the set. But it still draws every band; at depth×breadth = 10⁶, bands are sub-pixel and the text (its whole payload) is gone. It admits the penalty ("the field is dense") and calls density a feature; the owner's caution is precisely that this is the naive move. |
+| 5 | **Weave / Universal 3**[^5] — tiles + left-edge braid genealogy | ✗ | ✓✓ | ✓ | ✓✓ | ✓✓ | ✓✓ | ✓✓ | **The braid is the best idea here and it drowns.** Ancestry as a left-edge colour braid (no indentation) is the cheapest lineage channel of any strike — Vayu's "lineage is a road" made concrete. The minimap is a real answer to scroll. But it is still one 22px tile per particle in DFS order; the tile field is scheme 3's scroll with a better index. Fold tiles name cuts honestly, but the resting field is 10⁴ tiles. |
+| 6 | **Three-zone blob / Universal 4**[^6] — rim/strata/waterline, TWIST hatch | ✗ | ✓✓ | ~ | ✓✓ | ✓✓ | ✓✓ | ✓✓ | **A stratum per sc key, a cell per particle, nested.** The strongest BUNDLE statement (rim=mainkey, strata=sc, waterline=.c is the fibre bundle made literal geometry) and the cleanest HONESTY primitive (TWIST hatch absent-by-default = a *guarantee*, present = an *announcement*). But it draws the whole bundle for every particle AND nests them; a dense particle is tall, a deep tree is a fractal of tall cells — it is the worst scaler when sc is rich, because richness inflates ink. |
+| 7 | **Musical staff / Universal 5**[^7] — clef/staff/undertone, seven pill glyphs | ✗ | ✓✓ | ~ | ✓✓ | ✓✓ | ✓ | ✓✓ | **Density→staff-height is a compression *of the row*, not of the *count*.** Real virtues: the always-drawn .c undertone wire (you can't forget the underbelly), the seven-glyph sc vocabulary (exhaustive for the model incl. the undef/object-in-sc mint-bug marks), and "lying is structurally prohibited." At overview it collapses staves to 1px rules — which is exactly a mote/band by another name, so it inherits strike 2's cliff without strike 2's cluster grouping. The score doctrine is superb; the score-as-field still spends a rule per particle. |
+| 8 | **Woven Membrane / Universal 6**[^8] — warp stripes per sc key, weft-depth hairlines | ✗ | ✓✓ | ~ | ✓ | ✓✓ | ✓✓ | ✓ | **Ink scales with sc-arity: O(particles × keys).** The most expensive scheme by construction — one stripe PER sc key PER particle. A `%Norm`-less field of rich particles is a stripe forest. Stripe-width ∝ value-length is a pretty pre-attentive channel, but it means a wall of text-length noise, not surprise. `warp_stripes(sc)` is the one new primitive and it's the one that guarantees the cliff. Weft-hairlines-as-depth is nice but redundant with every other depth channel here. |
 
 ### The cross-cut that decides the ranking: the RESIDUAL lens
 
@@ -70,23 +77,24 @@ The meditation's decisive question, applied to each: *does it compress by SURPRI
 
 ### Ranking by which survives farthest
 
-1. **Mesh (2)** — farthest. Depth-band × mainkey-cluster is honest arithmetic that already GROUPS
+1. **Mesh (2)**[^2] — farthest. Depth-band × mainkey-cluster is honest arithmetic that already GROUPS
     the expected (all `%req` in one steel tangle), which is a half-step toward "expected recedes."
      The mote is the closest any strike comes to a residual. Cliff: the mote still costs ink.
-2. **Fibre-band field (4)** — the subtree-weight width channel is a real second dimension of
+2. **Fibre-band field (4)**[^4] — the subtree-weight width channel is a real second dimension of
     compression (breadth without drawing each leaf) and its snap-isomorphism invariant is the
      honesty gold standard. Cliff: still draws every band; density-as-feature is the naive bet named.
-3. **Weave (3)** — the braid + minimap is the best *navigation* answer, which buys scale-of-USE even
-    though it doesn't buy scale-of-INK. Cliff: a better-indexed scroll is still a scroll.
-4. **Three-zone blob (4-file, strike 6)** — best BUNDLE + HONESTY primitives; these two ideas are
+3. **Weave (5, "Universal 3")**[^5] — the braid + minimap is the best *navigation* answer, which
+    buys scale-of-USE even though it doesn't buy scale-of-INK. Cliff: a better-indexed scroll is
+     still a scroll.
+4. **Three-zone blob (4-file, strike 6)**[^6] — best BUNDLE + HONESTY primitives; these two ideas are
     the ones the synthesis KEEPS. Cliff: ink grows with sc-richness AND nesting.
-5. **Musical staff (strike 7)** — best DOCTRINE ("lying is structurally prohibited") + the .c
+5. **Musical staff (strike 7)**[^7] — best DOCTRINE ("lying is structurally prohibited") + the .c
     undertone + the seven-glyph vocabulary. Cliff: overview = a mote by another name, ungrouped.
-6. **CelloScore (strike 3)** — the honesty-marks-in-the-text-column idea is elegant and portable.
+6. **CelloScore (strike 3)**[^3] — the honesty-marks-in-the-text-column idea is elegant and portable.
     Cliff: it is the snap, and the snap is already too long.
-7. **Woven Membrane (strike 8)** — richest per-particle reading, O(particles×keys) ink. Cliff: the
+7. **Woven Membrane (strike 8)**[^8] — richest per-particle reading, O(particles×keys) ink. Cliff: the
     stripe forest; scales worst.
-8. **Tree (strike 1)** — the purest containment reading, but 75%-inset nesting sinks fastest into
+8. **Tree (strike 1)**[^1] — the purest containment reading, but 75%-inset nesting sinks fastest into
     the truncation floor. Cliff: depth eats the cells; you navigate, never see.
 
 *(Note the near-tie among 3–7: they are all one-glyph-per-particle fields differentiated by which
@@ -163,17 +171,18 @@ The one caveat the adversarial pass insists on: residual is a lens, **not a levi
 The synthesis is not "throw out the eight and build residual." It is "the eight supply the
  templates; residual supplies the ink rule." The concretely durable pieces:
 
-- **The fibre-bundle geometry** (strike 6): rim=mainkey, body=sc, waterline=.c. This is the FOVEAL
+- **The fibre-bundle geometry** (strike 6)[^6]: rim=mainkey, body=sc, waterline=.c. This is the FOVEAL
    unfold — when a residual mote is surprising enough to bloom, it blooms into *this*.
-- **The mote / reduced glyph** (strike 2): the cheapest peripheral form. This is what an *expected*
+- **The mote / reduced glyph** (strike 2)[^2]: the cheapest peripheral form. This is what an *expected*
    particle recedes to.
-- **The mainkey-cluster grouping** (strike 2): kinship = shared prior = shared faint texture. This
+- **The mainkey-cluster grouping** (strike 2)[^2]: kinship = shared prior = shared faint texture. This
    is how "expected recedes" reads spatially — a rank of expected `%req` is ONE motif, not N motes.
-- **The subtree-weight width channel** (strike 4): a way to show structural mass without drawing
+- **The subtree-weight width channel** (strike 4)[^4]: a way to show structural mass without drawing
    every leaf — a *pre-computed residual of breadth*.
-- **The braid + minimap** (strike 3): the navigation layer, so the fovea can be MOVED cheaply.
-- **The TWIST-as-guarantee doctrine** (strikes 6 & 7): the honesty rule that residual generalises.
-- **The seven-glyph sc vocabulary** (strike 7): the exhaustive foveal alphabet, incl. the mint-bug
+- **The braid + minimap** (strike 5, not 3 — Weave is "Universal 3" in name, but table row 5)[^5]:
+   the navigation layer, so the fovea can be MOVED cheaply.
+- **The TWIST-as-guarantee doctrine** (strikes 6 & 7)[^6][^7]: the honesty rule that residual generalises.
+- **The seven-glyph sc vocabulary** (strike 7)[^7]: the exhaustive foveal alphabet, incl. the mint-bug
    marks (undef, object-in-sc).
 
 ---
@@ -319,3 +328,64 @@ The belief loop bumps constantly; a static residual would flicker. Borrow Rasa's
 The keel is sound: the eight strikes are one template family, and the mechanism they lack is
  render-the-residual, and it is a lens they can all wear. But the prior — its birth, its drift, its
   granularity — is the far water, and it is where the voyage is actually won or lost.
+
+---
+
+## Footnotes — where each strike's idea is elaborated (all 8 retired to `history/` 2026-10-15)
+
+[^1]: **Tree** — `history/Cello_tree_scheme_todo.md`, "Three visual strata inside each blob cell" +
+ "The tree layout". The `.c` strip renders even when `cref = 0` (shows `c0` in a muted tone) so the
+  stratum reads as a structural layer, never an optional one; an overrun of `kid_cap` (default 12)
+   shows a `… N more` truncation cell rather than a silent cut — "a silent cut reads as 'that's all
+    there is', which TreeFace already calls 'the expensive kind of lie.'"
+
+[^2]: **Mesh** — `history/Cello_mesh_scheme_todo.md`, "Visual vocabulary — the atom" + "The weave
+ layout". The atom glyph (mainkey pill on the rim + sc k:v pairs as pebbles in a flow grid + dashed
+  `.c` feather stubs below a separator) recedes at field zoom to a mote — mainkey pill + a coloured
+   mass whose width still encodes sc-key-count — with each sc key rendered as a dot whose HUE is a
+    deterministic hash of the key name (golden-angle spread, `(djb2(key) * 137.508) % 360`), so a
+     trained eye reads sc composition from a dot pattern without text. Atoms band by containment
+      depth, then cluster by mainkey within a band (the "groupology" — kin particles share a halo).
+
+[^3]: **CelloScore** (Universal Scheme 1) — `history/Cello_universal_scheme_1_todo.md`, "The visual
+ language: element by element". One STAFF BAND per particle (24px, collapsible to 14px below depth
+  2, icon-only under 48px width); a blob-wall BRACKET runs down the left margin of a group of child
+   staves (the orchestral-bracket metaphor: "this system belongs together"); a designed Face mounts
+    INLINE on its staff, replacing the peel-text for that line while the sc rows stay available as a
+     collapse toggle.
+
+[^4]: **Fibre-band field** (Universal Scheme 2) — `history/Cello_universal_scheme_2_todo.md`, "The
+ basic unit: the fibre band". Band width ∝ `subtree_weight` (descendant count + 1), so a rich
+  subtree reads WIDE and a leaf reads narrow — structural mass made visible without drawing every
+   leaf. "The field IS the snap, drawn": the sc run inside a band is `enLine`'s own text,
+    monospaced, in reading order.
+
+[^5]: **Weave** (Universal Scheme 3) — `history/Cello_universal_scheme_3_todo.md`, "The field — how
+ tiles stack" §2.2. Ancestry reads as a stacked LEFT-EDGE COLOUR BRAID: one 2px vertical thread per
+  ancestor, in that ancestor's Matstyle warp colour, widest at depth 0 (3px) and narrowing one px
+   per level to depth 5 (1px) — so a tile's whole lineage is legible with no horizontal indentation
+    offset. A 12px-wide MINIMAP rides the canvas's right edge (one colour bar per tile, 1px height,
+     tap to scroll) so the braid pattern navigates the whole field at a glance.
+
+[^6]: **Three-zone blob** (Universal Scheme 4) — `history/Cello_universal_scheme_4_todo.md`, "The
+ three-zone blob cell" + "The honesty channel — the TWIST token". Rim = mainkey (inscribed on the
+  wall, never lost to a scrolling interior); strata = sc, one horizontal band per k:v pair (strata
+   density = truth density, read before the words); waterline = a submerged `.c` count that is
+    always shown, never followed. The TWIST token: its PRESENCE is an announcement, its ABSENCE is
+     a guarantee — "what you see is what the particle is."
+
+[^7]: **Musical staff** (Universal Scheme 5) — `history/Cello_universal_scheme_5_todo.md`, "§1.1
+ Core metaphor" + "§7 The sc pill vocabulary — seven glyphs". A CLEF ZONE carries only the
+  per-mainkey Matstyle colour, no text (you read "Radio = gold" the way a clef tells you a
+   register); an UNDER-STAFF WIRE for `.c` is ALWAYS present even when `.c` is empty (a blank wire
+    is itself a signal), coloured by ref KIND (runtime=blue, backlink=amber, House chain=purple),
+     never dereferenced. The sc notation field is exhaustively seven pill shapes (flag-only /
+      short-string / truncated / object-in-sc / null / numeric / too-long-to-show), covering every
+       value kind the C model has. Doctrine: "Any rendering that merges [the layers] … is lying."
+
+[^8]: **Woven Membrane** (Universal Scheme 6) — `history/Cello_universal_scheme_6_todo.md`, "§2a
+ One particle = one woven cell". Vertical WARP stripes, one per sc key, width ∝
+  `String(value).length` (floor 8px, ceil 60px) — the construction that guarantees
+   `O(particles × keys)` ink, the worst scaler of the eight. WEFT-ACCENT hairlines at the cell's
+    left rim (one per tree-depth level) are redundant with every other depth channel in the set —
+     named here as the one idea that does NOT survive into the durable core.

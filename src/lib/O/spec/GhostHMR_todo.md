@@ -101,12 +101,12 @@ The arc: a runner must acquire the editor's freshly-compiled `.go` **live, via V
 ### ✅ STEP 0 IS DONE — THE HMR CLAIM IS PROVEN (2026-07-11, mid-run, no reload)
 
 The GhoghoDrone graffiti probe (below) was run end-to-end on the LIVE runner and it **worked**.
- A Story-ghost `.go` (`gen/Story/Radiation.go`) hot-swapped **mid-run** and the very next step
+ A Story-ghost `.go` (`gen/Story/RaTesting.go`) hot-swapped **mid-run** and the very next step
   picked up the new code — no tab reload, same run uid throughout. The evidence, airtight:
 - Started GhoghoDrone (uid `db1d6401`), let it step. Recorded fixtures from a prior run pinned
    `mark:steady`, so this run was `'check'` mode against them.
-- At ~step 10 edited `GhoghoDrone_beat`'s `mark: 'steady'` → `'graffiti'` in `Ghost/Story/Radiation.g`
-   and `ghost_compile`d it. The editor wrote `Radiation.go` (dige `c2c3dc73a6d32777~g1`, `mark:'graffiti'`).
+- At ~step 10 edited `GhoghoDrone_beat`'s `mark: 'steady'` → `'graffiti'` in `Ghost/Story/RaTesting.g`
+   and `ghost_compile`d it. The editor wrote `RaTesting.go` (dige `c2c3dc73a6d32777~g1`, `mark:'graffiti'`).
 - The run **kept the same uid and never reloaded** (state polled continuous 2→…→20). Got_snaps
    read back by `@uid`: **steps 1–10 `mark:steady`, steps 11–20 `mark:graffiti`.** The crossover is
     step 11 — the first beat after the compile landed.
@@ -121,10 +121,10 @@ The GhoghoDrone graffiti probe (below) was run end-to-end on the LIVE runner and
      `mark` change, and (c) the manifest cleanup (item 3) for the editor-graph-isolation guarantees —
       not for making HMR *work*, which it does.
 
-**Loose end (relay-blocked at writing):** the probe left `Radiation.go` at `mark:'graffiti'` on disk;
+**Loose end (relay-blocked at writing):** the probe left `RaTesting.go` at `mark:'graffiti'` on disk;
  the steady recompile to restore parity kept failing on a half-open editor relay (tab-throttle wedge —
   run `scripts/editor_awake.sh` on the host). Before committing the Book: recompile the steady `.g`
-   (editor awake) so `Radiation.go` carries `mark:'steady'` + its steady dige, then record ONE clean
+   (editor awake) so `RaTesting.go` carries `mark:'steady'` + its steady dige, then record ONE clean
     steady GhoghoDrone run for a green `wormhole/Story/GhoghoDrone/toc.snap` (the current toc holds the
      deliberately-red graffiti verdict). The 001–020.snap fixtures are the good steady gate already.
 
@@ -251,7 +251,7 @@ The ledger (editor-minted pins over the recompiled Codebit set; become_book carr
       AND ghost-compile again** so disk parity with the committed tree is restored.
 - **Mid-run**: start a longer Book, ghost-compile mid-flight, expect the run to complete with
    the `%ghost_swapped` caveat visible in `runner_ask steps`.
-- **GhoghoDrone — the purpose-built mid-run probe** (added 2026-07-11, `Ghost/Story/Radiation.g`
+- **GhoghoDrone — the purpose-built mid-run probe** (added 2026-07-11, `Ghost/Story/RaTesting.g`
    + a `What:Misc/What:GhoghoDrone` row in `wormhole/Credence/toc.snap`). A brand-new Book that
     runs **20 steps, each held ~10s** by an `expecting()` ttlilt (a clean RESOLVE under a 12s
      ceiling) → **~200s of wall clock**, a wide window to graffiti mid-flight. No fixtures ⇒ Story
@@ -263,8 +263,8 @@ The ledger (editor-minted pins over the recompiled Codebit set; become_book carr
            `RUNNER_WATCH_MS=250000` — the run outlasts the 120s default watch), then mid-flight edit
             + ghost-compile, and watch `runner_ask snap <n>` / `steps`.
       NOT YET COMPILED/RUN: the editor was unreachable headlessly this session (no ack on the
-       `:9091` relay, `:9092` down), so `Radiation.go` is unregenerated and the Book is unverified —
-        first awake step is to ghost-compile `Ghost/Story/Radiation.g` (editor) + reload a runner.
+       `:9091` relay, `:9092` down), so `RaTesting.go` is unregenerated and the Book is unverified —
+        first awake step is to ghost-compile `Ghost/Story/RaTesting.g` (editor) + reload a runner.
    - ghost-compile tooling note: `npm run ghost-compile` dies `EACCES` here — `node_modules/.vite-temp`
       (vite's TS-config bundle dir) is root-owned. Workaround that worked: a `.mjs` config in a
        scratch dir that has its OWN `node_modules/` with just a `vite` symlink (so the bundle temp

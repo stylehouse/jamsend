@@ -162,13 +162,13 @@ The owner, tired, end of day: *"can we line up the rest of the day's work, and w
         immediate answer off an empty census looks like an answer, which is worse than a refusal.
 3c. **⚑ A RED WHERE EVERY STEP SHARES ONE DIGE AND `sworn 0` IS NOT A FAILURE — the Book's own ghost is
      not loaded** (2026-09-09, and it cost three runs plus a wrongly-reverted fix to recognise).
-     `Ghost/L/Lagoonation.g` is an L ghost like the rest: **any** edit to app source hot-reloads the tab
+     `Ghost/L/LagoonTesting.g` is an L ghost like the rest: **any** edit to app source hot-reloads the tab
       and drops it, `do_fn_for` then finds no handler for `w:LagoonStaple`, the world never ticks, and
        all eight steps snap identical empty state.  The run even completes in ~11s and logs *"8 steps
         clean"*.  `runner_ask`'s auto-stand covers Atlas|Lagoon|Electrode but NOT a Book's own ghost.
      **Tell it apart from a real red by the SHAPE, before bisecting**: a real failure has per-step diges
       and specific named gaps; this has one dige repeated and *every* declared assertion absent.  The
-       fix is `ghost_load Ghost/L/Lagoonation.g` and re-run — nothing to debug.
+       fix is `ghost_load Ghost/L/LagoonTesting.g` and re-run — nothing to debug.
      *(I chased this into `Auto.svelte` and reverted a correct change before spotting it.  The existing
        rule — "a red that reproduces on a stale tab is still not real" — has a sibling: a red that
         reproduces on a tab that has DROPPED the code under test is not real either.)*
@@ -256,7 +256,7 @@ The owner, tired, end of day: *"can we line up the rest of the day's work, and w
        span to intersect**; every def already knows its beads.  A flat `chain` in FILE ORDER with a
         `depth`, per the spec's own first cut: a chain, not a graph (no pose model invented).
     Live: `Atlas.g` → 3 beads / 13 defs, with "the cache" nested inside "the pass" and its four verbs
-     under it.  `Lagoonation.g` → **0 beads, 16 defs, "16 outside every bead"** — which is the honest
+     under it.  `LagoonTesting.g` → **0 beads, 16 defs, "16 outside every bead"** — which is the honest
       answer for a file whose author never drew one, and doubles as a tell for which files are screeds.
 
 **DO NOT, and why:**
@@ -523,7 +523,7 @@ The owner opened `/Otro?H=Hackarium`, clicked a stem, and it landed: *"lovely"*.
        `%aimed:fixture` row.
 3. **Environment must not decide which step a sentence lands on.**  Whether a census happened to be
     standing changed the latch step, which would red the fixture on someone else's runner.
-4. **Drive the pass, do not wait for a tick** (`Atlantation.g` beat 3's lesson, doubled): both censuses
+4. **Drive the pass, do not wait for a tick** (`AtlasTesting.g` beat 3's lesson, doubled): both censuses
     stand on the top House, whose belief loop a Story run does not pump.
 
 **Still owed on this front:** a sabotage proof (break a reader, confirm the named gap), and deleting
@@ -1270,6 +1270,6 @@ The pin rail in BigWordland is the seed of this and is already built: a search h
 
 `Ghost/L/Lagoon.g`, beside `Atlas.g` — the land (`CLAUDE.md`, "the land").  L ghosts are not in the spine
  manifest, so a runner gets it with `ghost_load Ghost/L/Lagoon.g --stand=Lagoon` and a tab reload drops
-  it.  Book: `Ghost/L/Lagoonation.g` → `LagoonStaple` (the `<Name>ation.g` convention: Voro→Voronation,
+  it.  Book: `Ghost/L/LagoonTesting.g` → `LagoonStaple` (the `<Name>ation.g` convention: Voro→Voronation,
    Atlas→Atlantation).  CLI: the existing `atlas_lint` / `atlas_callers` ops keep their names for now and
     dispatch into Lagoon, so nothing a script calls changes on the move.

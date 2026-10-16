@@ -1,3 +1,11 @@
+> **HISTORY (retired 2026-10-15).** This was the first-run funnel doc (commissioned 2026-07-22): the
+>  cold-arrival welcome, the OPEN SHARE + Chrome warning, the %Idzeug-becomes-the-issuer redesign, the
+>   old-garden-links migration, and the invite-robustness audit (three door holes). Owner, 2026-10-15:
+>    "onboarding seems like it could be rolled into App or something." Its living content moved: the
+>     boot→share→name→(link) arc and the arrival UI map → `spec/App_todo.md §0.7`; the %Idzeug-issuer design
+>      + the old-garden migration story → `spec/Crew_todo.md §4`; the invite-robustness audit → `spec/Crew_todo.md §7`.
+>       `Onboarding_todo.md` (its companion, also retired the same day) absorbed this file's overlap first.
+
 # Onboard_todo.md — first-run identity, open-share, and the BigSoundland welcome
 
 The one living doc for the first-run funnel (commissioned 2026-07-22). When a NEW `%Identity`

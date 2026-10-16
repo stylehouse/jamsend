@@ -1,12 +1,103 @@
 # Mag — the audio-discovery protocol (working doc)
 
-**Status: DESIGN / todo.** The lower half (§1 on) is written to read as spec; it is not blessed
- spec yet — the human preens, then promotes to `Mag_spec.md`. The upper half is the arc and the
-  next move. This doc SUPERSEDES the old §2.4 "stock stays flat, Mags only refer" ruling — see §1.
+**Status: DESIGN / todo.** §0 and §1 are written to read as the settled, permanent description of the
+ field; the rest is not blessed spec yet — the human preens, then promotes to `Mag_spec.md`. §0's dated
+  subsections (§0.0–§0.2e) and §9 on are the open arc and the next move. This doc SUPERSEDES the old
+   §2.4 "stock stays flat, Mags only refer" ruling — see §1, which also carries forward `Mag_design.md`
+    (retired 2026-10-15; its content lives in §1).
 
 ---
 
-## 0. What to get on with next
+## 0. The field, as it stands
+
+**What a Mag is.** A `%Mag` is a named container that is at once the curation unit, the GC root, the
+ replication unit on the wire, and the playhead — one particle shape doing four jobs (the one bet,
+  CLAUDE.md: a collection a group can see, prove and rewrite is made of the same stuff as everything
+   else). Pages ride underneath as `%Cloud,page:N` children — **`%Mag : %Waft :: %Cloud : %What`**: the
+    Mag was based on the idea of the Waft (one identifiable document holding `%What` sections), so a
+     Cloud is a What that happens to carry a coordinate, not a subtype of Mag. A Cloud holds `%Record`s
+      (the holding) or `%Card`s (a referring particle naming a holding kept elsewhere) — CLAUDE.md's
+       identity-per-shelf law: a thing exists ONCE as its mainkey, every other mention wears its OWN
+        mainkey and carries the shared `id` as the join.
+
+Two live instances carry the whole app today:
+
+- **`%Mag:shuffle`**, under my own stock shelf — the discovery generator. `Ra_mag_shuffle`/`Ra_mag_page`
+   find-or-create the open page (`Ra_page_size`, 6/page); every owned mint lands there through the one
+    door, `Ra_rec_home`, never flat. The census readers — `Ra_recs`/`Ra_rec_find` and their `_deep`
+     twins — walk `Mag**` recursively, holdings-first at each level, so nesting is found rather than
+      silently dropped. (All `Ghost/M/Ra.g`.)
+- **`%Mag:heard,pub:<me>`** — the heard ledger (`Ghost/M/Heard.g`). One Mag under my own identity, one
+   `%Card,id,pub` per track the radio ever played me, paged one `%Cloud` per sitting. A Card wears two
+    stages — *heard* (a bare id, kept OBLIQUE on purpose) and *taken* (the full listing, cloned once a
+     heist lands it) — and **one Card can carry two roads at once** (`Heard_road`/`Heard_road_mint`): the
+      human's own heist into their library, and a lofi copy into the pool fill, each with its own stamps,
+       so a pool fetch failing never reads as the ♥ failing. `Pool_holders` (`Ghost/M/Pool.g`) is the one
+        resolver for "who has it now" — crew-first, then alphabetical, over every source row — so a
+         human take and a machine pool pull agree on the same holder. `Radio_mag_cursor` (`Ghost/M/Radio.g`)
+          reads both Mags through one shape-agnostic cursor, so "have I heard this" is unified across
+           every Mag a Pier plays.
+
+**The identity rule.** A holding exists once, under its mainkey, wherever it actually keeps its
+ bytes|state. A Card, a Heard entry, a Dogear — anything that merely NAMES a holding elsewhere wears its
+  own mainkey and carries the shared `id`. This is why `%Record` has always crossed the wire safely
+   (`id` was on the sender's identity list from the start) and why `%Mag` needed its own fix before it
+    could (§0.1 item 3 below, landed as `Repli_identity_keys`/`Repli_loc_for` in `Ghost/N/Repli.g`): a
+     name is not automatically a join key, it has to be declared one.
+
+**What's settled — simply how it is now, not news.** The 2026-08-05 ruling day (kept in full below, as
+ §0.0–§0.2e, for its reasoning) closed several questions and nothing since has reopened them:
+
+- **`%Grasp` doesn't exist.** A want is a `%Caper`.
+- **`%randomic` doesn't exist** on a Cloud under `%Mag:shuffle` — a Cloud there is machine-drawn by
+   where it sits; `created_at`/`page:N` are the only coordinates that survive.
+- **There is no Mag KIND vocabulary** — no `shuffle | lineup | faves | culture`. One kind,
+   `%Mag:shuffle`; favouriting is a `%Caper`, not a kind. (§1 below used to describe four kinds; that
+    was the vocabulary this ruling retired — see §1's note.)
+- **`%Crate` (the particle tree) doesn't exist** — `Crate.g`'s verbs survived the drop and serve the
+   Mag shape directly.
+- **`Ra_home_them`'s self-guard is gone** (removed 2026-08-05, `Ghost/M/Ra.g`) — a friend's mirror mints
+   its own `%Theirs,pub:<them>` crate correctly; the self-vs-friend question lives upstream, in
+    `Repli_mirror_lib`, where `me` is actually known.
+- **The sender-side identity table is live** — `Repli_identity_keys` (the declaration) +
+   `Repli_loc_for` (the resolution) replaced the old name-guessing heuristic, `Ghost/N/Repli.g`. See
+    §0.1 item 3 and §0.2 for why a one-line heuristic bug was losing a friend's listening data in
+     shipped code.
+
+**Still open.**
+
+- **The Mag's own wire identity, `Mag,pub`, is RULED but NOT LANDED.** `%Mag:shuffle,pub:<prepub>` is
+   the agreed destination (§0.1 item 2) and the one-line stamp is written out, as a comment, above
+    `Ra_mag_shuffle` in `Ghost/M/Ra.g` — `if (shelf.sc.pub && !mag.sc.pub) mag.sc.pub =
+     String(shelf.sc.pub)`, plus its twin above `Stoker_mag_draw`, plus flipping `Mag: []` →
+      `Mag: ['pub']` in `Repli_identity_keys`. It is held back because it is a 21-Book, ~250-snap
+       re-record, and five of those Books cannot be re-recorded until their clock is pinned. Until it
+        lands, two Piers' Mags are told apart only by which container they land in — a container fault
+         is misfiling now (not merging — `Ra_home_them`'s fix is defence in depth), but the Mag itself
+          still has no wire identity of its own.
+- **§9 — a Mag is writeable:** light tagging that favours the shuffle weighting, and sharing a Mag as a
+   kind of Invite. Design only; see §9.
+- **The remote-Pier cursor's skip — whose feature is it?** The REPORT (a Pier's position) is settled as
+   a Pier fact; the SKIP (advancing a straggler so the era-GC can still drop what nobody sits on) is
+    proposed as a Repli scheduling policy, so Repli stays ignorant of identity — not yet ruled. See
+     §0.0's flock section and §0.1 item 4.
+- **Cloud nesting depth past one layer.** The census readers recurse (§0b, ruled + built 2026-07-26),
+   but `Ra_offer_stock`'s wire stamp (`repli_loc:['Cloud','page']`) is still depth-1 (the DEPTH NOTE
+    above `Ra_offer_stock`, `Ghost/M/Ra.g`) — harmless while nothing nests deeper than one Cloud, and
+     the thing to generalise the day a Mag grows a second layer. Originally raised in the retired
+      `Mag_vs_flatstock_preen.md` §4.
+
+**Where the active frontier actually is now:** not here. `RemoteHeist_todo.md` (the Captain/Cave split,
+ whole-album takes, `Heist_defaults` ask|lofi|one) and `SoundPooling_todo.md` (the pool: press, reach,
+  pool-first radio, cells) are where the Mag model is being extended today. Read those for what's
+   moving; this doc is the settled floor they stand on.
+
+---
+
+The subsections below (§0.0–§0.2e) are the 2026-08-05 ruling day and the overnight verification that
+ followed it, kept in full because the reasoning in them isn't written down anywhere else — read them
+  as a dated record, not a queue of "next" items. The permanent statement of where things landed is §0
+   above and §1 below.
 
 ### 0.0 RULINGS 2026-08-05 — the v1.0 simplification (the human)
 
@@ -91,7 +182,7 @@ That third one becomes **`%PCM`**. The vocabulary then reads with no case-only d
 
 It stays a **particle**, not `.c` payload: its sc (artist|title|loudness|seconds|nchunks) is exactly
  the observable plane the chunk-particle principle wants snapping while the weight sits on `.c`, and
-  two Books already assert on it (`Musuation.g:1345,1391`).
+  two Books already assert on it (`Ghost/Story/MusuTesting.g:1349,1395`).
 
 Its **home moves with the `%Crate` drop.** Today `blob.oai({record:1})` hangs it off a `%blob`; once
  the disk becomes a Mag at the point it is read, that blob IS a `%Record` in a `%Cloud`, so **`%PCM`
@@ -100,7 +191,7 @@ Its **home moves with the `%Crate` drop.** Today `blob.oai({record:1})` hangs it
     synthetic `%Record` parent or leave it world-level as the explicit no-source case.
 
 Mechanically small, and entirely inside `.g`: 3 mint|consume sites (`Crate.g:123`,
- `Crate_radiostock` :145-148, `Sound.g:137`) and 2 Book queries (`Musuation.g:1345,1391`). Ignore
+ `Crate_radiostock` :145-148, `Sound.g:137`) and 2 Book queries (`Ghost/Story/MusuTesting.g:1349,1395`). Ignore
   `Cytoscaping.svelte:106` — prototype.
 
 **Where `enid` went, since the question comes up:** `enid` is alive in the new system as the
@@ -173,8 +264,8 @@ RECOMMENDED: **`pub`, plus the one-word allow-list edit.** The codebase already 
       name for the identity of the very shelf the mag is standing on.
  Second reason, sharper: **the two keys have different value domains.** `pub:` is strictly a prepub.
   `pier:` is "a prepub *or* a Book's stand-in for one" — live it is `lis.sc.prepub`
-   (`Radiation.g:104`), but in Books it is the literal `'Origin1'` (`Heistation.g:3834`) or
-    `'Crowd'` (`Musuation.g:2721`). An identity key whose domain includes a shared placeholder is a
+   (`RaTesting.g`), but in Books it is the literal `'Origin1'` (`HeistTesting.g`) or
+    `'Crowd'` (`Ghost/Story/MusuTesting.g:2653`). An identity key whose domain includes a shared placeholder is a
      collision waiting for the day something keys off `repli_mirror_pier || 'Crowd'`.
  The case FOR `pier` (recorded so it can be overruled knowingly): a Mag *is* served by a Pier, and
   `pier:` is the established word for "the peer that answered". If the human prefers the Heist-layer
@@ -554,23 +645,23 @@ and everything noisy flows through it — `pier.sc.since` (`Swarm.g:1167`), `%Ed
    signed `time` (and so every signature and snap byte) repeats run to run; unpinned = wall clock."*
 
 **So the fix already exists and is already proven — it just was never applied to these Books.**
- `Swarmation.g` pins `w.sc.now` at every beat (30-odd sites) and says why in its header: *"DETERMINISM
+ `SwarmTesting.g` pins `w.sc.now` at every beat (30-odd sites) and says why in its header: *"DETERMINISM
   is total: fixed selves, a pinned clock (w.sc.now stepped per beat), a fixed nonce — ed25519 signs
    deterministically, so every signature, every grant, every snap byte repeats run to run."* And the
     Books that do it — SwarmShare, SwarmDoor, SwarmDisk — are exactly the ones that go green. The
-     Radiation|Heistation Books never pin it (`Radiation.g:1455` does, for one unrelated test), so
+     RaTesting|HeistTesting Books never pin it (`RaTesting.g` does, for one unrelated test), so
       they run on the wall clock and record it.
 
-RECOMMENDED: **pin `w.sc.now` in MusuBuddy / MusuMag / MusuRaStream (`Radiation.g`) and MusuHeist
- (`Heistation.g`), stepped per beat, then re-record those four once.** One line per beat. Cheap, and
+RECOMMENDED: **pin `w.sc.now` in MusuBuddy / MusuMag / MusuRaStream (`RaTesting.g`) and MusuHeist
+ (`HeistTesting.g`), stepped per beat, then re-record those four once.** One line per beat. Cheap, and
   it converts four permanently-meaningless verdicts into real gates.
 
 *The exact shape, so this is a short job.* Each of these Books has a `*_drive(w, req)` that already
- reads the beat — e.g. `MusuRaStream_drive` (`Radiation.g:77`): `let n = (this.c.run)?.c.step_n`.
+ reads the beat — e.g. `MusuRaStream_drive` (`RaTesting.g`): `let n = (this.c.run)?.c.step_n`.
   Immediately after that line, before any dispatch:
 
 ```
-    // DETERMINISM: pin the swarm clock, stepped per beat — Swarmation.g's law.  Unpinned,
+    // DETERMINISM: pin the swarm clock, stepped per beat — SwarmTesting.g's law.  Unpinned,
     //  Swarm_now falls through to the wall clock and this Book's %Pier,since / %Grant,time
     //   (+ the sign over it) / %Edge,at can never re-match a fixture.  §0.2c.
     w.sc.now = <book-base> + 10 * (+n || 0)
@@ -590,8 +681,8 @@ RECOMMENDED: **pin `w.sc.now` in MusuBuddy / MusuMag / MusuRaStream (`Radiation.
     deferral was for.
 
 **Landed:** the pin is in all five drives — `MusuBuddy_drive` (carrying the full reasoning),
- `MusuMag_drive`, `MusuRaStream_drive`, `MusuRaChase_drive` (`Radiation.g`) and `MusuHeist_drive`
-  (`Heistation.g`), each with its own base so two Books' fixtures never read as the same session.
+ `MusuMag_drive`, `MusuRaStream_drive`, `MusuRaChase_drive` (`RaTesting.g`) and `MusuHeist_drive`
+  (`HeistTesting.g`), each with its own base so two Books' fixtures never read as the same session.
 
 **Proven on MusuBuddy before the rest were touched.** Every wall-clock value moved from a recorded
  moment to one derived from the beat, exactly as intended:
@@ -653,7 +744,7 @@ Sweeping the Books nobody had swept (MusuBreach, MusuCursor, MusuHeal, MusuLossy
    `ensure()` exactly once, took the `null`, and `while (ra && …)` never executed a single iteration.
     The Book has been red since that day, and nothing noticed because nothing ran it.
 
- FIXED (`Ghost/Story/Heistation.g`, `MusuOgg_stock`): wait for the detached decode before driving —
+ FIXED (`Ghost/Story/HeistTesting.g`, `MusuOgg_stock`): wait for the detached decode before driving —
   retry `ensure()` until it yields a transcode, bail on `rec.c.pcm_why` so a decode that THREW reports
    instead of re-kicking forever, bounded at 60s inside the beat's existing 240s `expecting()` ttlilt.
  **The sleep in that loop is load-bearing, not politeness.** `ensure()`'s null path contains no
@@ -982,42 +1073,89 @@ The recurse ruling came paired with two forward directions. Neither is built; bo
 
 ---
 
-## 1. The model — stock IS `%Mag**/%Record`
+## 1. The settled model — stock IS `%Mag**/%Record`
 
-A holding does not float flat under a shelf; it lives under a **Mag**. The tree branches:
+This section carries forward the retired `Mag_design.md` (2026-10-15) — the "settled statement" it was
+ written to be, merged with this doc's own §0.1 landing. Read §0 first for the plain-language account;
+  this section is the detailed, file-and-function one.
+
+**Verification basis**, used throughout this doc from here on: `[LIVE]` = a real caller in shipped
+ `.g`/`.svelte`; `[BOOK]` = green in a Story Book only, no live caller yet; `[OWED]` = not built.
+
+**The lineage.** `%Mag : %Waft :: %Cloud : %What` (§0.0) — a Mag is one identifiable publication
+ holding `%Cloud` sections, the way a Waft is one identifiable document holding `%What` sections. A
+  Cloud is a What that happens to carry a coordinate (`page:N`, `created_at`); it is the section layer,
+   one rung down from Mag, never a subtype of it.
+
+A holding does not float flat under a shelf; it lives under a Mag. The live tree:
 
 ```
-%Mine,pub:<me>
-  %Mag:shuffle,day:2026-07-19,page:1        ← the default holding — most of the radiostock is here
-    %Record,id:… > %Preview,seq:0..15 > %Stream,seq:…
-    %Record,id:… …                          (up to a page's worth, ~6, §5)
-  %Mag:Faves                                ← durable curation
-    %Record,id:… (or a %Card referring one held elsewhere)
-  %Mag:Lineup                               ← the rolling programme the radio plays through
+stock/ > %Mag:shuffle > %Cloud,page:N > %Record,id:… > %Preview,seq:0..15 > %Stream,seq:…
 ```
 
-A **`%Mag`** is a container with a KIND (`shuffle | lineup | faves | culture`) and a coordinate
- (`day`/`page` for shuffle pages; a name for durable ones). Records branch under it. A Mag MAY hold
-  a `%Record` outright (a holding) OR a `%Card,id:X` referring to one held under another Mag — the
-   identity-per-shelf law (CLAUDE.md): the thing exists ONCE as its `%Record`; every other mention
-    is a referring `%Card` wearing its own mainkey and carrying the join `id`. So `Faves` refers into
-     `shuffle` by id; it does not duplicate the holding.
+at 6 records/page (`Ra_page_size`). `%Mag:shuffle` is the ONE kind there is — see §0's "what's
+ settled" for why `faves | lineup | culture` no longer exist as kinds. A Cloud MAY hold a `%Record`
+  outright (a holding) OR a `%Card,id:X` referring to one held under another Mag — the identity-per-
+   shelf law (CLAUDE.md): the thing exists ONCE as its `%Record`; every other mention is a referring
+    `%Card` wearing its own mainkey and carrying the join `id`.
 
-This revises the flat-stock ruling: stock branches now, because the branch IS the curation. The flat
- shelf was a way-station; the Mag is the home. **Landed 2026-07-19 (§0.1):** the real shape is
-  `stock/ > %Mag:shuffle > %Cloud,page:N > %Record` — the Mag lives under the stock shelf (the
-   shelf keeps its role as the holdings door; `Ra_home_self` callers never moved), pages are
-    1-based `%Cloud,page` children of the ONE shuffle Mag, and `Ra_pub_of` climbs `c.up` to the
-     shelf that wears `pub`. Friend mirrors stay FLAT until the wire cut carries Mag structure.
+**Landed 2026-07-19 (§0.1):** the Mag lives under the stock shelf (the shelf keeps its role as the
+ holdings door; `Ra_home_self` callers never moved), pages are 1-based `%Cloud,page` children of the
+  ONE shuffle Mag, and `Ra_pub_of` climbs `c.up` to the shelf that wears `pub`. Friend mirrors stay
+   FLAT until the wire cut carries Mag structure.
 
 **Naming + where a Mag stores (ruled 2026-07-19).** A Mag takes after a Waft: `%Mag:<unique-name>` —
- the mainkey value IS the name, as `%Waft:<path>` does it — with pages riding INSIDE as children
-  (`/1`, `/2`… the shuffle's `day`/`page` coordinate), never as sibling top-level Mags. Durable Mags
-   STORE AS BERTHED WAFTS — the Berth is already exactly this seam (`Berth_dir`:
-    `<root>/.jamsend/berth/<prepub>/<name>/toc.snap`, the wormhole dir-with-a-toc.snap shape homed
-     under an identity, documents travelling WITH the music; `Musica_publish` and the Faves door
-      berth this way today). Duration (§3) decides berthing: `faves`|authored Mags berth; `shuffle`
-       pages and `culture` draws are tree-only and die by GC. Friend Mags NEVER berth (§6b).
+ the mainkey value IS the name, as `%Waft:<path>` does it — with pages riding INSIDE as children,
+  never as sibling top-level Mags. A durable Mag stores as a BERTHED WAFT — the Berth is already
+   exactly this seam (`Berth_dir`: `<root>/.jamsend/berth/<prepub>/<name>/toc.snap`, the wormhole
+    dir-with-a-toc.snap shape homed under an identity, documents travelling WITH the music;
+     `Musica_publish` berths this way today). The old rule — "duration decides berthing, `faves` and
+      authored Mags berth, `shuffle` pages and `culture` draws don't" — named kinds that no longer
+       exist; what survives is the DISTINCTION (some Mags are tree-only and die by GC, some persist),
+        just not that vocabulary for naming which. `%Mag:heard,pub:<me>` (§0) is the other live durable
+         Mag — it persists as ordinary House state under `%Identity`, not through the Berth seam, and
+          never crosses the wire at all (it is gossiped, §0's "heard/pool substrate", never replicated).
+           Friend Mags NEVER berth (§6b).
+
+### Settled design, by call site — `[LIVE]` unless marked
+
+- **The paged shape** — `Ra_page_size` (6/page); `Ra_mag_shuffle` (find-or-create
+   `shelf.oai({Mag:'shuffle'})`); `Ra_mag_page` (1-based `%Cloud,page`, opens the last page with room
+    or mints the next). Whole `//#region mag model` in `Ghost/M/Ra.g`.
+- **The one door** — `Ra_rec_home`: every owned mint lands in the open shuffle page, never flat.
+   Callers: stock provisioning, the heist census and cp-landing (`Ghost/M/Heist.g`), keeper copy
+    `Ra_rec_copy` (re-homed 2026-09-04 from the deleted `%Jam` ledger's `Jam_grab` — see
+     `Radio_circuit_todo.md`).
+- **The census readers (recursive)** — `Ra_recs`/`Ra_rec_find` → `Ra_recs_deep`/`Ra_rec_find_deep`.
+   Ruled + built 2026-07-26 (§0b): they recurse over `Mag**` — a `%Record` is the leaf — so a Mag may
+    nest arbitrarily deep and deeper rows are found, not dropped. Called across `Radio.g`, `Swarm.g`,
+     `Heist.g`, `Repli.g`, and the UI (`CrateFace.svelte`, `DoorFace.svelte`).
+- **Mag-as-Repli-unit** — `Ra_offer_stock`: each Mag crosses the wire as ONE husk fragment (the Mag
+   head + its `%Cloud` pages + every `%Record` head, no chunk bytes); pages stamp
+    `repli_loc:['Cloud','page']` so they upsert by page. Still depth-1 — see §0's "still open".
+- **Warm / stage / cursor** — `Ra_mag_warm` (the first 2 records × opening chunks, flips
+   `mag.sc.warm`); `Ra_stage` + the want-once cursor `w.c.ra_wanted`, gated to Mag-homed records so
+    flat scenes stay stampless.
+- **`%Card` vs `%Record`** — Lineup and the culture draw both mint `%Card`, never a second `%Record`
+   (`Radio.g`, `Heist.g`).
+- **The heard/pool substrate** — `%Mag:heard,pub:<me>` (`Ghost/M/Heard.g`) is the SAME Mag/Cloud/Card
+   shape doing ledger duty, not a second model — see §0's "what a Mag is".
+- **Quality split** — `%Record/%Original|%Lossy` chunk mainkey (§10). `MusuLossy` green×2 (2026-07-26).
+
+### The GC invariant — carried forward from `Radio_spec.md` §2.4
+
+`Radio_spec.md`'s reasoning holds verbatim: bytes live in exactly ONE place, so **the GC root set is
+ exactly the Mags, and a holding nothing refers to is reapable.** Branching does not break this — a
+  paged `%Record` is still the single byte-home; Mags still *refer* by id. Deliberately still flat, by
+   design, not oversight:
+
+- **The quarantine mirror** `[LIVE-flat]` — the heist's wet partial; not yet a collection, so its
+   minter never calls the door.
+- **Stray flat/per-record offers and Book scenes** `[LIVE-flat]` — cross per-record, land flat
+   mirrors; the census reads both shapes.
+- **`%Original` master + `%Blob` export re-homed into the shelf/shop** `[OWED]` — the quality tag
+   `%Original` on chunks is live (§10), but the re-homed MASTER layer under the shelf is not
+    (`Radio_spec.md` §2.2).
 
 ## 2. The will above the Mag
 
@@ -1270,7 +1408,7 @@ The human floated it, then blessed it ("pat and say good"): **instead of `%Recor
         ask, though the SNAP is the real proof. **The gen-staleness gotcha bit here:** the runner loads the
          committed `gen/*.go`, and `gen/M/Heist.go` at HEAD still minted `%Body` (the split source was
           committed but its gen never regenerated) — the first run landed `%Body` until `LocalGen` rewrote
-           `gen/M/{Crate,Heist}.go` + `gen/Story/Heistation.go` and the runner reloaded. Revert gen after.
+           `gen/M/{Crate,Heist}.go` + `gen/Story/HeistTesting.go` and the runner reloaded. Revert gen after.
 2. **The `%Lossy` tag-writer gap (the human's "check our %Lossy encoder does tags good").** There is NO lossy
     whole-file encoder today: `Crate_wav_with_tags` writes tags but only for WAV (lossless); `Ra_encode_*`
      (WebCodecs Opus) makes untagged STREAM chunks for playback, not a file. So a `%Lossy` holding is only
@@ -1298,7 +1436,7 @@ The human floated it, then blessed it ("pat and say good"): **instead of `%Recor
     specifically (it shares seq-space with `%Preview`/`%Stream`, so the generic `Repli_chunk_at` could grab
      the wrong one). Add `Heist_body_at(rec,s)` = `rec.o({Original:1,seq:''+s})[0] || rec.o({Lossy:1,seq:''+s})[0]`
       and route :250 through it.
-4. **The Book husk-empty probes — Heistation.g:3573, 3916.** `!card.o({ Body:1 }).length` ("no bytes yet =
+4. **The Book husk-empty probes — HeistTesting.g, 3916.** `!card.o({ Body:1 }).length` ("no bytes yet =
     unspent husk") → `!card.o({Original:1}).length && !card.o({Lossy:1}).length`, or a shared
      `Heist_has_body(card)` helper. These re-record with their Books anyway.
 

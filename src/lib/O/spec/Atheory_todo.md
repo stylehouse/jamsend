@@ -201,6 +201,58 @@ The 16 are a platform layer nobody designed: `Radio_trace` · `Ra_recs` · `Ra_r
    fields can only be inherited from `Housing`.  Behaviour only; a hard constraint, not a preference.
 - **Where the 150 single-caller reaches land** — the audit above is unstarted.
 
+## Case studies — what to feed Atheory
+
+Owner, 2026-10-15: *"we will hand off Atheory, but give more case studies for it, eg the Se|Merge thing is quite it isn't
+ it"*.
+
+**Written:**
+- **The serving box** (below): passes not change, code delivery by polling, the heap a body carries.
+- **The merge organ** (below): Se → Merge, LE + Repli, the sole-writer world ending.
+- **The `.c` smear** (below): 1,234 undeclared keys sorted into five kinds; spheres aligned at D; six design consequences.
+
+**Already written elsewhere in this doc (pointers, not repeats):**
+- **Three load lists that disagree** (`CREDULER_GHOSTS` / `GFILES` / the spine): the load-list inventory above, plus the
+   editor riding a FROZEN spine (`pinned_stable/`).
+- **Wakes nobody owns** (4,918 bare `think`s on an idle daemon; `feebly_ponder`; the trickles): the serving box,
+   irritation 4, with numbers in `Perf_todo.md` §7.
+
+### Shorter case studies (2026-10-15): what happened, what it cost, what Atheory must do
+
+**The stale registration** (Cellui, 2026-10-14).  A cell's inlay never re-fit on a window resize or a content change, only
+ on a manual cell switch.  `sizewatch` registered each mold in a module-level `molds` Map keyed by cell name.  A same-key
+  remount mounted the new element *before* the old one's destroy ran, and the old destroy did `molds.delete(key)`, which
+   deleted the NEW entry.  The fix was one line: `if (molds.get(key) === el) molds.delete(key)`.  It took an evening to
+    find, because nothing showed the Map: the entry just wasn't there.
+ *For Atheory:* a registration is a **finger** (see the `.c` smear) with a lifecycle nobody declared.  If registrations
+  attach to the point they serve and die with it, "whose teardown is this?" has one answer and the bug can't be written.
+   It also wants to be **visible**: a registry the glass could draw would have shown the missing cell at once.
+
+**Live reads leaking into Books** (MusuRadioAim, red 5/5, 2026-10-14).  `Radio_alone_why` asked the Supervisor why the radio
+ was alone, and on a runner the Supervisor it found was *the runner's own* live one, not the Book's.  So a replay's snap
+  carried the live tab's state and differed every run.  The fix was a gate (`!Story_replaying()`), the same shape as the
+   earlier `w === radio_w && !w.c.Run` (memory `live-read-leaks-into-books`).  Each new reader of live state has to
+    remember the gate, and the ones that forget only show up as a flaky Book.
+ *For Atheory:* **time|space isolation as a property of the pass, not of each reader.**  A pass runs *for* a world (live,
+  or a Book's replay), and an edge out of that world is unreachable rather than gated.  Same consequence as the `.c` smear's
+   rule 5, from the test side.
+
+**The trust stack** (`Trust_todo.md` §1, re-read 2026-10-13).  Four layers each authenticate a different thing:
+- the link: a signed hello binds an address at the relay;
+- the era: a voucher, signed once per era, rides every Swarm frame;
+- the society: invites, grants and the crew charter, ed25519 with single-use spends;
+- and, since 2026-10-13, the relay from-check.
+ There are two holes, and both are the same shape.  The voucher doesn't cover the frame's body, so a lifted voucher signs
+  a forged frame until the era turns.  And the whole music plane (`repli_*` frames) went out with **no swarm bag at
+   all**, admitted on `header.from` alone, until the relay check closed it at the transport.  Then `Signed_call_todo.md`
+    designs a fifth thing, signed RPC from the command line, which is a sixth place to get proof right.
+ *For Atheory:* **provenance is a property of every saying, not of a channel.**  `Cstructures_todo.md` §3 already wants each
+  saying to carry `by:` / `rule:` / `hid:` / `pass:`; a frame, a verb call and a particle arriving over the wire are all
+   sayings, so "signed by whom, over what" belongs in the same slot.  A frame with no proof should be as unrepresentable as
+    a particle with no mainkey.  The music plane didn't skip the proof on purpose: it took a side road past the general
+     mechanism (memory `app-infra-boundary`), and a design with one road has no side road.  The merge organ needs this too:
+      its policy "signed by the soul wins" is only as good as the proof on the candidate.
+
 ## Case study: the serving box (2026-10-14) — two more irritations, measured, fed here rather than patched
 
 The owner, after a week tuning the jamserve daemon: *"we do indeed need to compartmentalise and notice change better, but I
@@ -260,6 +312,108 @@ The owner, after a week tuning the jamserve daemon: *"we do indeed need to compa
 
 None of these touches Housing's pass. The proposed "R1b" (a global bump counter to skip empty daemon thinks) is parked: it's
  a cheap imitation of irritation 4's dirty marks, and its blind spot (writes that don't bump) is the same blind spot.
+
+## Case study: the `.c` smear — the other property space, and where it wants to sit relative to the C (2026-10-15)
+
+> 👤 **For people.** Every particle has two drawers.  `sc` is what it says: snapped, sent, asserted, rewritable.  `.c` is
+>  *everything else*, one unlabelled drawer per particle that any ghost can stuff anything into.  This case study counts
+>   what's in the drawer and argues it isn't one drawer: it's four or five different spaces, each wanting its own shape,
+>    lined up with the particle the way a tracing-paper overlay lines up with a map.
+
+### What's in it, measured
+
+`Ghost/**/*.g` alone: **1,234 distinct `.c.X` keys, 8,657 uses.**  679 keys are used three times or fewer, and 116 once.
+ Nobody declared any of them; each was named on the spot by whoever needed somewhere to put something.  Sorting the 89
+  most-used keys by hand (48% of all uses) gives five kinds, all present:
+
+| kind | examples | share of uses (sorted part) | what it is relative to the C |
+|---|---|---|---|
+| **finger** | `up` (713), `source_n`, `radio_w`, `origin_mag`, `repli_src`, `client_w` | 17% | an **edge**: this point is joined to another |
+| **run-cast** | `did_step` (294), `run`, `step_n`, `lis_pre`, `alice` | 12% | a Book's local variables, parked on the world |
+| **overlay** | `humdinger`, `folded`, `held`, `ra_parked`, `grapples`, Vyto's `seed`/`calm`/`tok`/`press` | 9% | an **opinion another organ holds** about this point |
+| **organ** | `rx`/`tx`, `pcm`, `dec`, `connection`, `secret`, `on` | 5% | flesh: a handle or a function that can't be said |
+| **memory** | `repli_sent_sc`, `voucher_ok`, `heard_at`, `ra_want_ts`, `ra_missed`, `last_touch` | 4% | **what this point was**, last beat or last send |
+
+The other 1,145 keys (53% of uses) are the long tail nobody sorted, which is the finding: **the drawer has no kinds, so
+ nothing can know what any entry is for, how long it should live, or what it was derived from.**
+
+`Statehome_todo.md` already rules the first cut (speech vs flesh: *"would the community SEE, PROVE, REWRITE it?"*) and
+ pays several debts (`%Focus`, `%Owed`).  That rule decides *whether* a datum leaves `.c`.  It doesn't say what shape the
+  survivors have, and the bugs below are all survivors: things that rightly stay off the snap but were still wrong.
+
+### The bugs it made (each one already paid for)
+
+| bug | key | kind | what was missing |
+|---|---|---|---|
+| a Repli mutation across a reload splits into a visible twin (`Repli_design.md` §5) | `repli_sent_sc` | memory | a **lifetime**: the memory had to outlive the tab and couldn't |
+| a revoked friend still passes the door (memory `voucher-cache-outlives-revocation`) | `pier.c.voucher_ok` | memory | a **basis**: nothing linked the cache to the membership it was derived from |
+| a Cello inlay never re-fits until a cell switch (2026-10-14) | Cellui's `molds` Map (a `.c` by another name) | finger | **identity on teardown**: the old mount's destroy deleted the new mount's entry |
+| a Book reads the runner's own Supervisor and reds 5/5 (MusuRadioAim) | `radio_w` / `humdinger` | finger + overlay | **which world**: an edge to the live radio leaked into a replay |
+| a refusal is re-offered forever (merge organ, "What each half lacks") | `ra_missed`, `breach` | memory | a **snap policy**: what was declined has to be remembered like what was taken |
+
+Five bugs, five different missing properties, one cause: **an entry in an unlabelled bag carries no declaration**, so the
+ machine can't keep its promises for it.
+
+### The framing: spheres, aligned to the C
+
+The owner, 2026-08-05 (`Repli_design.md` §5 and §6): *"any mention of `.c.*` is likely meant to be another attached
+ sphere, hanging off the first D that an `n` finds"* and *"O and K are two other classes of information, layers,
+  overlaid on the original n. there's a weird space of deformity between the n\*\* sphere and a K\*\* sphere… it's all
+   really just graph data, not tree data per se."*
+
+Read against the table, that framing fits the kinds almost one to one:
+
+- **`n**`, the basis.**  The particles and their `sc`: the speech.
+- **`D**`, the alignment.**  What the machine believes the shape of `n` is right now: the resolved diff (`Selection`,
+   `resolve()`), mirroring `n` point for point.  This is the **seam**: every other sphere attaches *here*, not to `n`
+    directly, so that when `n` moves (a rename, a reload, a re-parse) the layers follow the alignment instead of falling
+     off.  That's the merge organ's rule 1 (declared identity) seen from the other side.
+- **`K**`, memory over time.**  "What was this key last beat / last send / last accepted": `repli_sent_sc`, `heard_at`,
+   `voucher_ok`.  Stitched at each D point.  A *sequence* of K trees slaved to one D basis is the multitude the owner
+    says Seem is waiting on.
+- **`O**`, overlays.**  Opinions *another organ* holds about the point: Vyto's placement and calm, the humdinger role,
+   the parked-ness of a want.  Each overlay has an owner who isn't the particle.
+- **Fingers aren't a sphere; they're the seams between spheres and between trees.**  `up` is the tree's own edge; the
+   rest (`source_n`, `radio_w`, `origin_mag`, the molds Map) are **graph edges the tree can't see**.  That's the "graph,
+    not tree": the C tree is a spanning tree of a larger graph, and `.c` is where the rest of the graph's edges were
+     hidden.
+- **Organs and run-cast stay outside the geometry.**  An organ is flesh (Statehome §5).  A run-cast is the scratch of
+   one run, and its sphere is the run, not the point.
+
+The **"space of deformity"** is then concrete: it's the difference between `n**` and a layer.  `K` minus `n` is *what
+ changed since I last looked*, which is exactly the "notice change" the serving box case study is missing (irritation 4).
+  `O` minus `n` is *where another organ disagrees with the particle*.  Both are drawable, which is the owner's wish for *"a
+   biological space where things float along and react"*: the glass could render the deformity, not just the basis.
+
+### What Atheory must therefore do
+
+1. **No anonymous bag.**  Every off-snap datum names its sphere.  A sphere is declared once (a name, an owner organ, a
+    lifetime, a snap policy, a basis).  `.c.anything` remains possible only as a counted, visible escape hatch.  The
+     1,234-key count is the baseline to drive down.
+2. **Layers attach to D, by declared identity.**  An entry lives and dies with its D point, so teardown is the
+    alignment's job, not each caller's: the stale registration can't happen because no one owns a raw Map entry.
+3. **Each sphere declares its lifetime and snap policy independently of its basis.**  `Repli_design` §6 ruling 3 asks
+    whether a sphere may snap while its basis is `%dontSnap`; the answer this case argues for is **yes, always
+     independently**.  K-shadows persist (no more reload twins), O-overlays live a session, run-cast lives a run, organs
+      never snap.
+4. **A derived entry names what it was derived from.**  When the basis changes, the derivation is stale *by
+    construction*: `voucher_ok` dies with the membership change that should have killed it.  This is the same
+     dependency record that would let a pass notice change instead of re-running (Perf §7), so one mechanism pays for
+      both.
+5. **Fingers become declared edges**, carrying which world they point into.  The Book/live leak becomes a type error,
+    not a 5/5 red: an edge into the live radio isn't reachable from a replay.
+6. **K is the merge organ's memory.**  Rule 3 of the organ ("key-level memory is a sphere, not a smear") is this case
+    study applied to Repli.  Build the sphere once, in the Seem porcelain, not in `Repli.g` (`Repli_design.md` §5,
+     "whether this generalises").
+
+### Still the owner's (don't guess)
+
+- **The names.**  `K**` and `O**` are the owner's working letters.  This doc reads K as memory over time and O as
+   overlays; that reading is offered, not ruled.
+- **One sphere per organ, or one per kind?**  Vyto alone holds a dozen overlay keys.  One `O` per organ (Vyto's, the
+   Supervisor's) matches "an owner who isn't the particle"; one per kind is simpler to snap.
+- **Cost.**  A node per key per particle is a lot of nodes (`Repli_design` §5).  A sphere may store one node per point
+   carrying a was-map, and that's an engine choice, not a model one.
 
 ## The merge organ — LE and Repli each hold half of it (expanding the retired Tend §7, 2026-10-15)
 
@@ -357,7 +511,7 @@ So the old "port Repli onto i_Seem/o_Seem first" is dropped.  The successor (cal
     `repli_want` (pull the offsets you lack) is the seed of this, but it only knows "pages of one record".
 - **Distributable.**  A fracture is valid from whoever holds it, not only its author.  It is authenticated by its own
    signature, not by the road it came on.  That's the same move as the signed call (`Signed_call_todo.md` §3) and the WT session
-    keys (`Trust_audit_handover.md` §0.3).  SoundPooling already distributes audio this way; Merge does it for state.
+    keys (`Trust_todo.md` §1.3).  SoundPooling already distributes audio this way; Merge does it for state.
 - **Streams.**  It applies as it arrives, in any order the parents allow.  No "whole catalog every 60 s" (Perf §7: R4c).
 - **Candidate + policy + provenance** (rules 2–4): arriving fractures are candidates; a per-kind policy accords them; every
    decision, and every refusal, leaves its `by/rule/why`.

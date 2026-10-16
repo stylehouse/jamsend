@@ -29,13 +29,15 @@ Four independent cluster sweeps (Radio, Transport, Sharing, Heist) hit the **sam
 - The share glue (`Swarm_share_up/loop/beat`) is `[LIVE]`-wired from `InvitePanel.svelte:57`
    but has **only ever run over loopback**.
 - Production WebRTC is a **deliberate black-hole** — `Tribunal.g`'s PeerJS carrier drops
-   every frame; real `RTCDataChannel` exists only in the retired prototype `Peerily`. **The
+   every frame; real `RTCDataChannel` existed only in the prototype `Peerily` (deleted 2026-09-16). **The
     working cross-machine carrier is the relay websocket** (`Socket_real`), already carrying
      editor↔runner traffic daily. Direct P2P is a later optimization, not the near path.
 - Per-frame transport crypto is a **mock**: only the society layer (Swarm grants/vouchers)
    and editor↔runner control frames are really ed25519-signed. `header.sign` on the transport
     envelope is `[OWED]`; `hear_hello` = `startsWith(pub)`, `hear_trust` = no-op, `body_hash`
-     unkeyed. The crypto **"unblocks the moment any flow crosses the relay."**
+     unkeyed. The crypto **"unblocks the moment any flow crosses the relay."** (Written 2026-07-27,
+      predates the 2026-10-13 relay from-check, which closed `header.from` spoofing for the music
+       plane without touching per-frame body signing — current status: `Trust_todo.md` §1.)
 
 **The forcing move:** port the husk→preview→stream repli flow from `Lake_link` onto
  `Socket_real`, seal two real tabs, watch bytes cross. Streaming, heist rung-2, multicast,
@@ -119,7 +121,7 @@ Everything in §3 sits behind #1. So: **stand up the prod compose on a domain (s
 ## 5. Beyond the music path (the wider horizon)
 
 Owed work the sweep found outside the music clusters — real, but **not on the 24 h path**:
-- `[OWED]` **P7 collapse-the-cursor** (`Lies_handover §7`) — retire `%Spotlight`/the `{LE:1}`
+- `[OWED]` **P7 collapse-the-cursor** (`Lies_attention_todo §7`) — retire `%Spotlight`/the `{LE:1}`
    singleton/the double cursor wire; the big attention-machine simplification.
 - `[OWED]` **Stemdex v2** — region-partitioned scan + `%Errand` reindex (v1 search is `[LIVE]`).
 - `[OWED]` **Engage editor half** — `to:<prepub>` dispatch, hosted-identity registry,
@@ -161,7 +163,7 @@ Design docs written alongside this map:
 - **`Sharing_design.md`** ← Swarm_spec + settled todos + Cluster_spec §2/§3.2a. ⚠
    `Covenant_design.md`/Tyrant is a **parallel** trust arch the shipping spine does **not**
     use — do not read it as the live path.
-- **Transport:** fold durable facts into `Peeroleum_spec.md`; `Trust_audit_handover.md` owns
+- **Transport:** fold durable facts into `Peeroleum_spec.md`; `Trust_todo.md` §1 owns
    crypto status; **`Wire_spec.md` is a false friend** — it's a render/reactivity doc, not the
     transport wire.
 

@@ -1,3 +1,9 @@
+> **HISTORY (retired 2026-10-15).** This was the wire-crypto audit of the `.g` comms suite against the Peerily
+>  reference — what's cryptographically real on the wire (society layer: real; transport per-frame signing: mock)
+>   and the session-key-per-era plan (WT1–4) to close it. It has been merged into `Trust_todo.md`, which now holds
+>    the wire audit as §1–§2 and the WT1–4 plan in §0/§1.3, alongside the separate "trust as substrate" question
+>     (§3) this doc never covered. Read `Trust_todo.md`, not this file, for the live truth.
+
 # Trust_audit_handover.md — audit the `.g` production crypto against the Peerily reference
 
 A continuation brief. Destination + the one correction + the next move.

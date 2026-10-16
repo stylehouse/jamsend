@@ -1,4 +1,4 @@
-# Lies_handover — the LiesLang attention machine, on one page
+# Lies_attention_todo — the LiesLang attention machine, on one page (was `Lies_handover.md` until 2026-10-15)
 
 **What it serves.** A person does two things with Wafts: *consume* them (tour what's there) and
 *make* them (author new). Both run through the cursor — moving it is the buzz, and everything else
@@ -25,6 +25,16 @@ resume, `req:Langoer` (the focus arbiter), and the P4 cutover that made Langoer 
 never one particle; its legs live distributed (§4).
 
 ---
+
+## 0. What to get on with next
+
+- **P7, collapse the cursor** (§7) is the build, and it's still open: two wires still move attention
+   (`e:Lang_lango` → `workon.c.src`, and the Cursor's `req:Langoer`). `examining/Spotlight` is deleted last.
+- **§8's decisions are the owner's**, and come before P7 builds.
+- **`LakeRace.spec.ts` was red on 2026-09-07** (the last section): it guards the one-round-lag fix. Re-check it first.
+- **§6 item 1 is out of date.** The `{LE:1}` branch of `LE_spawn` isn't dead: it's now the deliberate "Interest" reason in a
+   multi-reason scheme (`LangHold.svelte`, near `LE_spawn`). Rewrite that item from the code before acting on it.
+- §6 item 3 (the `'checkout'` fallback key colliding) is still true.
 
 ## 1. The one move, and the four roles
 

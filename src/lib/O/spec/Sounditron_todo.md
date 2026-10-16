@@ -429,7 +429,7 @@ DONE so far this session:
 - **HEIST ("figure it all out") — the whole engine works but the valuable half is disk-blocked.**
    `Ghost/M/Heist.g` (1357 lines) has the full arc — census→job→offer→vouch→beat→**land**, plus the soft
     wish→ask→match→leads→condense arc — ALL of it real, byte-faithful, but driven ONLY by the test Book
-     `Heistation.g`. The live app's ONLY reachable Heist call is `HeistFace`'s "take"→`Heist_condense`
+     `HeistTesting.g`. The live app's ONLY reachable Heist call is `HeistFace`'s "take"→`Heist_condense`
       (stamps `at`/`chose`, never kicks a pull). Sounditron's `%Caper` is a decorative mock; its 4th Need
        "the pull itself" latches on ORDINARY STREAMING (`Sounditron_pulled` = any friend chunk-0 present),
         not a real grab. **The reality:** the PULL-to-memory (Repli whole-record `Ra_pull_beat` over the

@@ -168,7 +168,7 @@ So it is neither of the two shapes I offered: **the nav learns a MOUNT TABLE.** 
       that go through it.
 
 **One defect this nearly shipped, worth knowing:** `Heist.g:689`, `Heist.g:3003` and
- `Heistation.g:414` probe `typeof nav.bin_append` / `bin_writer` / `read_range` **path-blind**, to
+ `HeistTesting.g` probe `typeof nav.bin_append` / `bin_writer` / `read_range` **path-blind**, to
   choose a download strategy before they have a path to route on. A class method always answers
    `"function"` — so an un-narrowed wrapper would promise Heist a streaming landing and then
     silently no-op the append: every downloaded track a zero-byte file, nothing thrown. `MountNav`
@@ -390,7 +390,7 @@ The handover's standing item: *"Mine, Theirs, VytoCrush, VytoDepth, VytoMemo, Vy
  dige:lie or fixture-less. Six green gates that gate nothing."* Worked through overnight.
 
 **First correction: `dige:lie` means NOT YET RECORDED, not "deliberately un-gated"**
- (`Musuation.g:6`: *"real seq, lie diges till a run records them"*). These Books had simply never
+ (`MusuTesting.g`: *"real seq, lie diges till a run records them"*). These Books had simply never
   been recorded. And they were not green — every step read `ok:0`, because with no recorded dige
    there is nothing to match.
 
@@ -432,9 +432,9 @@ The handover's standing item: *"Mine, Theirs, VytoCrush, VytoDepth, VytoMemo, Vy
 | the fold's size gate `members.length > budget` | computed `budget_for(800,450)` from QUANTUM 118 / PACK 0.46 | **12**, and the rig has 20 — gate passes |
 | `bucket_key_of` picks the partitioning key | ran the pure function against the rig's exact sc shapes | returns **`"genus"`**, groups `oak:8 pine:7 birch:5`, all ≥2 — exactly what the assertion wants |
 | is `Vyto_fold` even called? | `Vyto.g:239` | **yes**, it is in `Vyto_stir`'s sequence |
-| does the commission flag reach the world? | `Vytonation.g:566` → `Vyto.g:128` | `commission.sc.folded = 1` → `w.c.folded = req.sc.folded ? 1 : 0` — wired |
+| does the commission flag reach the world? | `VytoTesting.g` → `Vyto.g:128` | `commission.sc.folded = 1` → `w.c.folded = req.sc.folded ? 1 : 0` — wired |
 
-⚠ **Two comments in the tree are stale and will mislead the next reader**: `Vytonation.g:1435`
+⚠ **Two comments in the tree are stale and will mislead the next reader**: `VytoTesting.g`
  (*"Vyto_fold is the display refactor's stub (uncalled)"*) and `Vyto.g:500` (*"`Vyto_fold` above
   stays a stub until…"*). It is neither a stub nor uncalled. Classic
    [[comments-assert-unmeasured-properties]] — and worth fixing while in there.
@@ -528,9 +528,9 @@ Everything touched overnight, re-checked against its expected state:
 The handover's standing item named six hollow Books. Chased to the end 2026-08-12:
 
 - **`Mine` and `Theirs` are not Books at all.** They are **particle types** — `%Mine,pub:…`
-   is the stock-shelf census convention (`Swarmation.g:755`) and `%Theirs` is a friend's shelf that
+   is the stock-shelf census convention (`SwarmTesting.g`) and `%Theirs` is a friend's shelf that
     Sounditron grapples. There is no `wormhole/Story/Mine/` because there was never a Book to have
-     one. `Swarmation.g` in fact defines **eleven** Swarm Books (SwarmBlotter · SwarmChain · SwarmDisk
+     one. `SwarmTesting.g` in fact defines **eleven** Swarm Books (SwarmBlotter · SwarmChain · SwarmDisk
       · SwarmDoor · SwarmGot · SwarmInvite · SwarmPolicy · SwarmShare · SwarmSpoof · SwarmSteal ·
        SwarmWire), all with fixtures — the discovery layer IS covered.
    The error came from a session memory written 2026-08-06 that named two Books which have since been

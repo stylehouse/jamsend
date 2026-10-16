@@ -190,7 +190,7 @@ w:Atlas
             `req_instrumentation`).  A `.g`/stho file is provably untouched (`def_spans` stays empty on
              that branch): `Heist.g` unchanged at 159 defs / 337 calls before and after.
 
-**DONE 2026-09-06: `AtlasStaple` — the Book that swears the DRIVE.**  `Ghost/L/Atlantation.g`
+**DONE 2026-09-06: `AtlasStaple` — the Book that swears the DRIVE.**  `Ghost/L/AtlasTesting.g`
  (naming: Voro→Voronation, Vyto→Vytonation, Atlas→Atlantation).  Green ×2 on the live runner,
   `ok_pct:1, caveat:0` — 4 steps: load-on-demand, converge on a frozen fixture corpus
    (`Ghost/L/test_corpus/Sample.g`, never Atlas.g's own directory — editing Atlas.g will keep
@@ -202,7 +202,7 @@ w:Atlas
          Atlas-specific):
 1. **The hollow-1-step trap, twice over.**  The documented fix (`if (run.sc.mode==='new')
     run.sc.total = N`, the Vytonation/VytoCrest idiom) is necessary but was not sufficient here —
-     the REAL first cause was that `Ghost/L/Atlantation.g` (the file DEFINING `AtlasStaple`) had
+     the REAL first cause was that `Ghost/L/AtlasTesting.g` (the file DEFINING `AtlasStaple`) had
       never itself been `ghost_load`ed onto the runner.  Story silently ran an empty step and
        settled at n:1 with **no** `req:wrangle` particle even minted — do_fn_for found no handler.
         **A new Book's OWN `.g` file must be `ghost_load`ed before `run`, same as any other L/
@@ -227,7 +227,7 @@ w:Atlas
 
 **DONE 2026-09-06: the three added kinds — `%elvisto`, `%mint`, `%proves`.**  Verified headless
  against real files and live on the runner (Atlas's own census, `ATLAS_MAPPER='m6'`):
- `Vytonation.g` → 7 `elvisto` rows (`Vyto/Vyto::Vyto_commission`, matching the 2026-09-05 census),
+ `VytoTesting.g` → 7 `elvisto` rows (`Vyto/Vyto::Vyto_commission`, matching the 2026-09-05 census),
   80 `proves` (deduped from 160 raw — see the bug below), 70 `proves,desc:1`; `Vyto.g` → 27 `mint`
    rows, `Organ` present, the `A`/`H` housing-shelf false positive excluded.
 
@@ -251,7 +251,7 @@ w:Atlas
    already-collected `def` words of EITHER branch.**  Sound because a `.g` method sits at column 0
     and its body runs to the next column-0 def — defs never nest (a class's own members are separate
      `def` words with their own line) — so "the nearest def above" is always the true enclosure, on
-      both dialects, with no new tree-walk.  Verified 100% coverage both ways: `Vytonation.g`'s 7
+      both dialects, with no new tree-walk.  Verified 100% coverage both ways: `VytoTesting.g`'s 7
        `elvisto` rows attribute to **7 different enclosing beats**
         (`VytoStaple_commission, VytoCell_commission, Vyto_commission_on, VytoFreeze_stand,
          VytoSeek_stand, VytoWeb_focus, VytoWeb_release`) — each Book's own commission call, correctly
@@ -340,7 +340,7 @@ w:Atlas
     Book drive idiom `if (n === 2) this.Beat(w)` — was never recorded; the orphan lint listed every
      Book beat as uncalled.  Fixed in `compile.ts` with a whole-document `CALL_GAP` sweep (stho only,
       dedup by offset, via + region_path from the enclosing def).  `atlas_callers AtlasStaple_seed` now
-       answers `Atlantation.g:33 via AtlasStaple_drive`.
+       answers `AtlasTesting.g via AtlasStaple_drive`.
 - **`atlas_lint` (+ `--sees`)** — three answers over what is held, no new state:
    `missing` (a `file:line` whose target file is in no living root — 18 real ones after the widening:
     `Ghost/M/Jam.g` ×6 (deleted 2026-09-04), `Interest.svelte`, `BigQualand.svelte`, `Housing.svelte`
@@ -348,7 +348,7 @@ w:Atlas
       cited line past its end), `orphans` (2084, a scan aid: do_fns named after their world, UI handlers
        wired in markup and `this[name]` dispatch all read as orphans; `IMPORT` and `req_/e_/Run_A_`
         excluded), and with `--sees` **`unproven`: 137 of 242 authored `%see` sentences are in NO Book
-         fixture** — Voronation.g 68, Swarmation.g 28, Vytonation.g 25, Radiation.g 11.  Reads every
+         fixture** — Voronation.g 68, SwarmTesting.g 28, VytoTesting.g 25, RaTesting.g 11.  Reads every
           numbered snap of every Book (~1000 reads, ~12s — sentences do NOT strictly accumulate across a
            Book's snaps, VytoStaple's 006 holds 4 and 007 holds 3, so the union is the truth).
 - **`AtlasStaple` re-recorded at 6 beats, and the lint caught that the old 4-beat fixture was hollow
@@ -414,7 +414,7 @@ w:Atlas
 **DONE 2026-09-06 (owner's own call): `SwarmCohort` given its first real recording, and a genuine
  bug found in the process, not just a missing fixture.**  `wormhole/Story/SwarmCohort/toc.snap` had
   never recorded past step 1 (`001.snap`, zero `see:` lines) though `SwarmCohort_drive` dispatches
-   five real beats (2–6, `Swarmation.g:1972`); it never set `run.sc.total` on a fresh run — the exact
+   five real beats (2–6, `SwarmTesting.g`); it never set `run.sc.total` on a fresh run — the exact
     `hollow-book-1step-green.md` trap.  Fixed with the same `if (run.sc.mode==='new') run.sc.total=6`
      idiom this same file already uses on `SwarmReboot_drive` a few hundred lines up.  Re-recording
       surfaced a real bug the hollow fixture had hidden since authorship: beat 2's witness checked

@@ -23,7 +23,7 @@ A **capture doc, not yet a plan** (the `Atheory_todo`/`Trust_todo` pattern — a
      %Flow,of:<callee>,n,ms,max` (`%Flow` not `%Edge` — Swarm owns `%Edge`).  Arm/disarm coat and uncoat
       every function in the ghost bag (`top.ghosts`), the raw kept on the coat as `__electrode`; off by
        default.  CLI: `runner_ask electrode [top|arm|disarm|reset|reduce|hangs|film]`.  Book:
-        `Ghost/L/Electrodation.g` → `ElectrodeStaple` (6 beats) — GREEN 2026-09-08: recorded 6/6, contract of
+        `Ghost/L/ElectrodeTesting.g` → `ElectrodeStaple` (6 beats) — GREEN 2026-09-08: recorded 6/6, contract of
          10 installed, check-mode ×2 at `caveat:0`, 10/10 sworn, 0 gaps.  Sabotage owed at the next
           runner-reload boundary (an already-imported `.go` needs a reload to re-import).
          First live numbers + what they already say: **`Wordland_todo.md §4`** (the land doc is where the

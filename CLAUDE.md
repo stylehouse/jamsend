@@ -206,7 +206,7 @@ Show the arc, not just the diff.
 
 ## Docs: specs, todos, and the history/ shelf
 
-`src/lib/O/spec/` holds the design docs. Two naming stances and one shelf:
+`src/lib/O/spec/` holds the design docs; **`spec/DocIndex.md` is their front door** (the ~20 topics, one doc to open for each). Two naming stances and one shelf:
 
 - **`*_todo.md` is the default working doc.** A topic gets **one** todo (e.g. `Radio_todo.md`), not a
    litter of handovers. Every `*_todo.md` opens with a **`## 0.`** section a fresh session reads to learn

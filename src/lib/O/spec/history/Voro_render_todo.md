@@ -1,3 +1,9 @@
+> **HISTORY (retired 2026-10-15).** The render-wave / three-layer detail subordinate to `Voro_todo.md §0`:
+>  the three-layer engine decision (grasp decides WHAT, pure derivations decide WHERE, Cytui shrinks to
+>   wiring+paint — never completed for Voro), Slices A–D (text stretch-ups, grasp weighing, region washes,
+>    the I/C/S/O arc-rivers), and the Slice-D build notes (`letter_of`, `river_order`, `catmull_d`). The
+>     arc-river engineering and the north-star quotes moved to `Glassbeast_todo.md` §0.6 item 1.
+
 # Voro render — the grasp-fed stained glass (text stretch-ups → I/C/S/O rivers)
 
 > **Led by `Voro_todo.md §0`** — this doc is the render-wave / three-layer DETAIL.  The arc, the

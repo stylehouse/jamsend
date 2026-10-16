@@ -3,7 +3,7 @@
 > **Name note (2026-07).** The `LiesEnd` module was renamed **`LangHold`** (D7); `%LE` keeps its
 > tag. `LE` = *LiesEnd* = the **accept-tour hold** described here — two Seems, a tour of the
 > Understanding's UPoints, a vote via `U%unaccepted`, then a push. The consolidated map of where LE
-> sits among the cursor / Interest / Keep is **`Lies_handover.md`**.
+> sits among the cursor / Interest / Keep is **`Lies_attention_todo.md`**.
 
 ## What this is
 

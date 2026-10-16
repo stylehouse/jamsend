@@ -12,7 +12,7 @@ loads/creates it), and the `Lies_keep_*` helpers (`_boot`/`_reopen`/`_resume_waf
 ~1000–1140) already write and replay it — just **bolted onto the event handlers**, not
 owned by any req. This doc is the *driver* that consolidates them, plus the spine
 refactor that gives the focused-and-remembered workspace one owner. The Keep noun's
-fuller shape lives in `Cluster_design.md`.
+fuller shape lives in `Cluster_spec.md` (the `Cluster_design.md` cited here was deleted, never shelved).
 
 **This is where Lang/Interest state resumes from.** Focus, the cursor, and the open-set
 are no longer session-only — they persist through the Keep ledger and replay on boot
@@ -38,7 +38,7 @@ of time (playback). Time is the Cursor's, not Lies'.
 ## The bigger frame — Lies ↔ Interest ↔ Lang
 
 > The consolidated one-page map of this whole model (the cursor's four roles, the redundancy census,
-> the glossary, the P7 collapse) now lives in **`Lies_handover.md`** — the design home. This spec
+> the glossary, the P7 collapse) now lives in **`Lies_attention_todo.md`** — the design home. This spec
 > keeps the `req:Keeping` build detail; where they overlap, the handover is canonical. (`LiesHold` is
 > now `LangHold`; `req:Keeping` was built *distributed*, not as one particle — see the "built
 > distributed" section below.)
@@ -327,7 +327,7 @@ alongside, not after. (timemachine's hidden complexity is the argument *for* thi
   "look-at-this, move the show here" signal — mostly fired from Lies on a UI:Waft click —
   naming no Interest; Keeping resolves one. **The term `%Lango` is now in code** — this
   push-what's-focused event is `e:Lang_lango` (2026-06-29).
-- **D4 — doc home:** standalone `Keeping_spec.md`; borders `Cluster_design.md`.
+- **D4 — doc home:** standalone `Keeping_spec.md`; borders `Cluster_spec.md`.
 - **D5 — name:** `req:Keeping` confirmed.
 - **D6 — kind-table home:** on the **Waft**, realized as `{capability flags + an
   autovivified Funkcion}` (the Funkcion is the kind's startup pathway). `%Interest` is a

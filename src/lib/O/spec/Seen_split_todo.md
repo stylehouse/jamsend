@@ -151,7 +151,7 @@ The build order is DONE.  **The declare door is BUILT too (2026-07-19, the human
               Phantom reverted, runner released.
 - **2026-09-08 — `AtlasStaple` + four Swarm Books converted IN ONE BATCH.  READ THE CAVEATS: this pass
    broke two of this doc's own rules, and one Book is left in an unconfirmed state.**
-  - `AtlasStaple` (Ghost/L/Atlantation.g) — FULL conversion, the clean one.  All 10 sentences were
+  - `AtlasStaple` (Ghost/L/AtlasTesting.g) — FULL conversion, the clean one.  All 10 sentences were
      happened-facts; `i %see:` → `this.story_swear(w, …)`.  10 `Assertion:` lines under their latch
       steps, fixtures re-installed from the red run's `got_snap` (never Accept).  **GREEN 6/6 caveat:0,
        declared 10 / sworn 10 / gaps 0, and SABOTAGE-PROVEN**: removing `doc.sc.warm = 1` from
@@ -170,7 +170,7 @@ The build order is DONE.  **The declare door is BUILT too (2026-07-19, the human
           (memory `toc-surgery-verify-counts`).  Renamed the second to `key-never-moved` and it ran
            first time.  **Slugs must be unique per step; the join is still on the sentence.**  Check
             after any toc surgery: `grep -o 'Assertion:[^,]*' toc.snap | sort | uniq -d` must be empty.
-  - **Born sworn, same night: `ElectrodeStaple`** (`Ghost/L/Electrodation.g`, the Electrode tap's Book) —
+  - **Born sworn, same night: `ElectrodeStaple`** (`Ghost/L/ElectrodeTesting.g`, the Electrode tap's Book) —
      authored on `story_swear` from the first line, recorded 6/6 in `mode:new`, its 10-line contract
       installed by hand, check-mode ×2 green at `caveat:0`, and SABOTAGE-PROVEN without a runner reload
        (`ghost_load --swap` of a broken `Electrode.go` → `phase:failed` with exactly the two "closes"
@@ -183,7 +183,7 @@ The build order is DONE.  **The declare door is BUILT too (2026-07-19, the human
      `%see` are *"genuine per-beat observations, kept"*.  Judged fresh, all five read as happened-facts
       and *"identity is not address"* is quoted in §5 as a prime `%seen` candidate — but the earlier
        ruling was not consulted before converting, which is precisely the failure this sweep documents.
-        **The owner should rule.**  Reverting is one regex away (`Swarmation.g.bak` shape).
+        **The owner should rule.**  Reverting is one regex away (`SwarmTesting.g.bak` shape).
 
 - **`SwarmGot` — NOT migrated, and DO NOT re-record it: it is PRE-EXISTING RED.**  Measured both ways
    on 2026-09-08: `ok_pct:0.33, caveat:1` on the migrated code AND `ok_pct:0.33, caveat:1` on the
@@ -210,7 +210,7 @@ The build order is DONE.  **The declare door is BUILT too (2026-07-19, the human
 Three concrete moves, sized honestly:
 
 1. ~~**Add the `%seen` writer + the assertion roster on ONE Book, isolation-first.**~~ **DONE.**
-    Chosen Book: `SwarmSteal` (the 5 sentences live in `SwarmSteal_witness`, `Ghost/Story/Swarmation.g`
+    Chosen Book: `SwarmSteal` (the 5 sentences live in `SwarmSteal_witness`, `Ghost/Story/SwarmTesting.g`
      ~L383 — the earlier `:159-184` cite was `SwarmStaple`). Two `%seen` stand BESIDE the existing
       `%see` (both kept): `theft-contested` (latches beat 4 on the `%Stolen` husk) and
        `identity-not-address` (latches beat 6). The roster is a `The/Assertions` bucket authored in
@@ -241,7 +241,7 @@ Three concrete moves, sized honestly:
     `%see:'sentence'` assertions across the ~25 Books (§5 inventory) to `%seen` + a roster line,
      re-record each LIVE, and diff the assertion SET against the prior fixture before Accept
       (`accept-drops-proof-in-entropy-zone`). The legacy `%witnessed:step_N` latches
-       (`Lake_witness`/`Lake_proof_witness`, `Peregrination.g`) become roster entries too — they were
+       (`Lake_witness`/`Lake_proof_witness`, `PeerTesting.g`) become roster entries too — they were
         always latched facts, just opaque ones; the roster gives them a sentence. Per-Book recipe
          (`SwarmSteal` is the worked example): (a) add `i %seen:'sentence'` beside each happened-fact
           `%see` — judge by TENSE, a live census stays `%see`/`%log`; (b) add the `Assertion:` line(s)
@@ -291,7 +291,7 @@ There are TWO unrelated uses of the key `see` in the machine — do not conflate
 
 **Where it is emitted.** Inside a Book's per-step handler, guarded idempotent against re-firing
  within a pass: `if (<n-gate> && <live truth> && !(oa %see:'sentence')) i %see:'sentence'` — see
-  `Ghost/Story/Swarmation.g:159`, `Radiation.g:150`, `Peregrination.g:1047`. The `!(oa %see:…)`
+  `Ghost/Story/SwarmTesting.g`, `RaTesting.g`, `PeerTesting.g`. The `!(oa %see:…)`
    guard only prevents a double-emit inside ONE pass; it does NOT make the claim persist across
     beats.
 
@@ -411,12 +411,12 @@ Inventory (live, 2026-07-12 — the assertion emitters, distinct from the runner
 
 | Source | count | notes |
 |---|---|---|
-| `Ghost/Story/Swarmation.g` | 42 | SwarmSteal/Wire/Door/Got/Policy/Invite/Staple — identity + crypto facts, prime `%seen` candidates |
-| `Ghost/Story/Radiation.g` | 39 | MusuRa* family (Cast/Chase/Stock/Stream/Term) — streaming facts |
+| `Ghost/Story/SwarmTesting.g` | 42 | SwarmSteal/Wire/Door/Got/Policy/Invite/Staple — identity + crypto facts, prime `%seen` candidates |
+| `Ghost/Story/RaTesting.g` | 39 | MusuRa* family (Cast/Chase/Stock/Stream/Term) — streaming facts |
 | `Ghost/Story/Voronation.g` | 17 | VoroScape/Mitosis/Clinic/Radio |
-| `Ghost/Story/Musuation.g` | 5 | MusuReplica/MusuReco/MusuHeist — INCLUDES the `folded>=24` proof that died in the entropy zone |
-| `Ghost/Story/Peregrination.g` | 3 | PereProof steps 31-33 (the combinatory braid) |
-| `Ghost/N/Tyrant.g` | 1 | the `yyyyar!` idiom |
+| `Ghost/Story/MusuTesting.g` | 5 | MusuReplica/MusuReco/MusuHeist — INCLUDES the `folded>=24` proof that died in the entropy zone |
+| `Ghost/Story/PeerTesting.g` | 3 | PereProof steps 31-33 (the combinatory braid) |
+| `Ghost/N/Tyrant.g` (deleted 2026-09-16) | 1 | the `yyyyar!` idiom |
 
 Fixtures carrying prose `see:` lines (the recorded evidence, by Book, top of the list):
  MusuRaChase 55, MusuRaStream 39, MusuHeist 29, Understandication 14, Understandium 13, HohoNets 12,
@@ -431,7 +431,7 @@ Fixtures carrying prose `see:` lines (the recorded evidence, by Book, top of the
     not address", "the Idzeug is single-use" = facts → `%seen`; "1 doc · 2 Wafts" = a value → `%log`).
 
 **`%witnessed:step_N` legacy → roster entries.** `Lake_witness`/`Lake_proof_witness`
- (`Peregrination.g`) latch opaque `step_N` markers. They were always facts-that-happened, just without
+ (`PeerTesting.g`) latch opaque `step_N` markers. They were always facts-that-happened, just without
   sentences. Convert each to a `%seen:'sentence'` + a `The/Assertions` line; the sentence is the
    documentation the `step_N` never carried. Keep the already-recorded ones as gates until re-recorded
     (they still ride the snap-fixture diff).

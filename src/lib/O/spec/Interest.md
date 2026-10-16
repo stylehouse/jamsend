@@ -124,7 +124,7 @@ Real Waft **stances** (input to `interest_stance_of`):
       its Ting read top-then-bottom in one viewport.
 
 **Phase C — polish.** Distinct doc per giver (`Interestily`→`Peeroleum.g`, `Interestily2`→
- `Peregrination.g`, so foregrounding Interestily2 visibly switches the active dock). Drop-a-gone-Interest
+ `PeerTesting.g`, so foregrounding Interestily2 visibly switches the active dock). Drop-a-gone-Interest
   one step later (the ghost row), Lang-side and **gated on a roster EPOCH, not do_fn invocation** (the
    do_fn re-drives every settle tick with the same roster; bump `languinio.c.roster_epoch` only on a real
     push, stamp `it.c.gone_epoch ??= epoch` on freshly-gone rows, drop a row whose `gone_epoch < epoch`).
@@ -220,7 +220,7 @@ The through-line: a surprise_read (external edit conflict on an open Doc) **pops
    Per-Interest LE: `Lang_active_interest` / `Lang_active_LE` (Lang.svelte) are the foreground resolvers
     everything reads through; `Lang_set_interest` owns each giver's `c.LE`; `LE_for()` (LiesHold, was LiesEnd) returns
      the active LE for the bare reason. Gate Book: `wormhole/Story/HohoSurprise/` (11 Preps + `step=`
-      lines; fixtures Interestily→Peeroleum.g, Interestily2→Peregrination.g). Elvis names must match
+      lines; fixtures Interestily→Peeroleum.g, Interestily2→PeerTesting.g). Elvis names must match
        handlers verbatim ([[elvis-handler-name-verbatim]]).
 
 ## FUTURE

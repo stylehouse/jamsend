@@ -1,3 +1,10 @@
+> **HISTORY (retired 2026-10-15).** Self-declared spent at the time (STATUS 2026-07-13): F1/F2/F6/F7 were
+>  BUILT + live-proven, and F3+F8 (cells vanish/re-pop) were traced to the identity/`resolve` linearity
+>   root, not a render bug — fixed by the model layer's persistent fold-sphere (`w:Voronoiology`). Kept as
+>    the fault-diagnosis map (ROOT-A the render-gate race, ROOT-B the paint rebuild) if a fault regresses
+>     on a Voro descendant. Companion `Voro_todo.md` and `Voro_render_todo.md` retired the same day to
+>      `Glassbeast_todo.md` §0.6 item 1.
+
 # Voro_render_faults — the render|animate pipeline fault catalog
 
 > **Led by `Voro_todo.md §0`** — this catalog is subordinate detail.  STATUS at 2026-07-13:

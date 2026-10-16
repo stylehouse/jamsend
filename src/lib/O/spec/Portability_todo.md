@@ -1,23 +1,41 @@
 # Portability_todo.md
 
-Account portability — one **soul**, many **bodies**: carry an identity to a second device, let
- each body do the work it is placed to do, and hand authority around without corrupting the
-  ledger or doubling yourself on the wire. The two bodies that matter are the **Captain** (the
-   phone in your hand) and the **Cave** (the deep, stable, disk-bearing machine at home).
+**What portability means here.** One person, living across more than one device, without losing the
+ thread. In practice that means a phone that owns no folder at all — OPFS and Dexie only, the social
+  hand, where invites are redeemed and a link is proposed in person by QR — and a **Cave**, a station
+   with a real filesystem, where the library lives and a Heist actually lands. A folderless body can
+    hold and play a **SoundPool** (small lofi listening copies in OPFS), mint and redeem invites, and
+     carry the account's trust ledger; it cannot hold an Original, run a transcode, or serve a Heist to
+      a friend — that needs a Cave. **The account moves between devices by Crew LINKING, never by
+       copying the soul's key.** Each body mints its OWN keypair the first time it needs one
+        (`Swarm_body_key_ensure`, `Ghost/S/Swarm.g`); it becomes crew when the Captain hands it a signed
+         `Grant:Crew` — a credential that body **PRESENTS** to prove membership, never an authority it
+          confers on itself ("a Grant:Crew is a credential I PRESENT, not an authority I confer on
+           myself" — `Swarm_crew_grant`'s comment). The soul's own secret key is not the thing that
+            travels; the credential is. This is the **cert-crew** model — `Crew_todo.md` §1–§6 has the
+             mechanics (keys as particles, the ledger as the mutex, the LinkDevice/ferry ceremony); this
+              doc works the phone / listen-only / Cave-portability questions that sit on top of it.
 
-> Status: working `_todo`. **The calm, linear statement of the design now lives in
+> Status: working `_todo`. **The calm, linear statement of the design lives in
 >  `Portability_doc.md`** (rewritten 2026-08-27 at the owner's ask — no yelling, "graft"
->   renamed to division, the Repli foundation chased and written up as its §5). This file
->    keeps the working status: §0 (candidates, verification ledger, what landed) is the part
->     to read fresh; the design prose below §0 is superseded by the doc where they differ.
+>   renamed to division, the Repli foundation chased and written up as its §5) — **but as of this
+>    pass (2026-10-15), parts of BOTH docs still described the PRE-cert-crew account model** (an
+>     account Waft "grafted" wholesale onto a device, logged on a `%Sibling` family register) and
+>      have been corrected below to the Crew model; look for the "superseded by Crew" notes at §1,
+>       §2, §7, §8. §0 (candidates, verification ledger, what landed) is still the part to read
+>        fresh for day-to-day status; the design prose below §0 is superseded by the doc, and now by
+>         `Crew_todo.md`, wherever they differ.
 >
-> Sibling docs: **`Onboard_todo`** owns the first-run funnel. **`Daemon_todo`** owns the
->  phone-commands-station-executes verb arc (pokes, `PLAYER_OPS`). **`Identity_persist`** owns
->   the account mirror + disk write-lease mechanics this doc leans on (§7.4 especially).
->    **`Cluster_spec` §3** owns the relay. (`MobilenoFSA_todo` was folded here 2026-08-26 and
->     deleted; its dated rulings — the LinkDevice ceremony 2026-08-14, the listening-only
->      wire — live on below and keep their dates; its serial-block-lease ruling was
->       SUPERSEDED 2026-08-27 by Captain-only invites, §2C.)
+> Sibling docs: **`Crew_todo`** owns the account model itself — keys as particles, the ledger as
+>  the mutex, the LinkDevice/`Grant:Crew` ceremony (its §1–§6; read it, don't edit it from here).
+>   **`Onboard_todo`** owns the first-run funnel. **`Daemon_todo`** owns the
+>    phone-commands-station-executes verb arc (pokes, `PLAYER_OPS`). **`Identity_persist`** owns
+>     the account mirror + disk write-lease mechanics this doc leans on (§7.4 especially).
+>      **`Cluster_spec` §3** owns the relay. (`MobilenoFSA_todo` was folded here 2026-08-26 and
+>       deleted; its dated rulings — the LinkDevice ceremony 2026-08-14, the listening-only
+>        wire — live on below and keep their dates; its serial-block-lease ruling was
+>         SUPERSEDED 2026-08-27 by Captain-only invites, §2C, itself re-expressed under cert-crew as
+>          "the Captain alone mints `Grant:Crew`" — Crew_todo §2.)
 
 ---
 
@@ -43,9 +61,12 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
    place, `<prepub>_1` a second body's place; Piers verify by `pub`, so a suffix costs routing,
     never recognition. `Swarm_next_suffix` / `Swarm_steal_back` / `Swarm_reinstate` exist.
      (§4, §11)
-- The **LinkDevice ceremony**, ruled (2026-08-14): a live self-Invite on the invite rails —
-   high-entropy, single-use, short-lived, both devices online, account frames encrypted under
-    a code-derived key, matching-emoji confirm. (§7)
+- The **LinkDevice ceremony**, ruled (2026-08-14), mechanics UNCHANGED under cert-crew (confirmed
+   live, `Crew_todo.md` §6: "the `?Iz` spine survives the model flip whole"): a live self-Invite on
+    the invite rails — high-entropy, single-use, short-lived, both devices online, the exchange
+     sealed under a code-derived key (the secret rides the URL fragment, never the relay), matching-
+      emoji confirm. What it LANDS as is now a signed `Grant:Crew` for the new body's OWN key, never
+       an account-Waft graft onto a `%Sibling` roster — see the superseded note at §7. (§7)
 - The **Captain-only invite ruling** (2026-08-27, superseding the earlier block-lease
    design): the Captain takes care of all Invites; Tier C has one writer by role, so there
     is no spend-merge problem at all. (§2C)
@@ -91,7 +112,7 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
    > **⚠ THE LIVE WIRING GAP (audited 2026-08-28).** The press ECONOMY is fully built and
    >  Book-proven — `Ra_press` (v1 byte-copy + v2 ogg128), `Ra_quarter` (goal/diff/cap) and
    >   `Ra_quarter_serve` (the dispose loop: press + evict under cap) all live in `Ghost/M/Ra.g`.
-   >    But their ONLY callers are `Ghost/Story/Heistation.g` (the Book). **Nothing in the LIVE
+   >    But their ONLY callers are `Ghost/Story/HeistTesting.g` (the Book). **Nothing in the LIVE
    >     flow calls them** — not `Radio.g` (play), not `Heist.g` (pull/land). So today, befriending
    >      a Cave/Daemon lets a phone STREAM its library (the radio dials the share and pulls tracks
    >       to play), but no LOFI copy ever lands in the phone's OPFS SoundPool during real listening.
@@ -110,11 +131,15 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
 4. **The pool exchange** — phone↔phone LOFI swap, live, no Cave required — possibly the
     majority transport (§0). (§5)
 5. **The smuggle** — Captain→Cave backup of the SoundPool *and* the account. (§5)
-6. **`%Invite:MyCave`** — the role invite on the existing %Idzeug rails (rails audited generic;
-    %Invite autovivify landed ✅), plus the graft ceremony around it. (§7)
-7. **The adoption handoff** — how a daemon takes over cleanly. (Its old first half, the
-    quick/still LEASE, was RETIRED by the §2C Captain-only ruling — there is nothing to lease;
-     §6 records the retirement.) (§6, §8)
+6. ~~**`%Invite:MyCave`**~~ SUPERSEDED by cert-crew (§7): the role-invite-plus-account-graft design
+    this item scoped was never built past the audit; what landed instead is `Grant:Crew` on the
+     SAME generic invite rails the audit found (Crew_todo §2–§3) — no serve-layer retrofit needed,
+      because crew membership never touches the music-serve sites at all. %Invite autovivify (✅)
+       stands, unaffected — it is how ANY invite (music or crew) renders as a particle.
+7. ~~**The adoption handoff**~~ SUPERSEDED by cert-crew's "resume" (§8): the still/quick LEASE
+    protocol this item scoped is gone — not retired to "nothing to lease" as the §2C note below once
+     put it, but replaced outright by a single signed role-flip (`Swarm_crew_captain`, Crew_todo
+      §4/§4a) any surviving crewmate can call. (§6, §8)
 8. **The Door dialogue** — Invite-yourself in the Door, opening the portability explainer.
     (§9)
 9. **The phone push, in flight** (ruled arc — "at least it does radio", 2026-08-19):
@@ -165,7 +190,7 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
 - ✅ **Door surfaces** (DoorFace + new InviteYourself.svelte): the bodies line (this body's
    place + primary + siblings, null when unremarkable), the Invite-yourself dialogue (explains
     portability, LinkDevice QR stubbed honest), and %Invite rows (arrived/redeeming visible).
-- ⚠️ **SwarmCohort Book** (Swarmation.g) — **its green is HOLLOW; do NOT trust or gate it as-is
+- ⚠️ **SwarmCohort Book** (SwarmTesting.g) — **its green is HOLLOW; do NOT trust or gate it as-is
    (caught 2026-08-27).** The `.g` authors 5 real beats (2–6: Swarm_sibling recognition,
     Swarm_note_theft family-vs-foe, Swarm_next_suffix berth, %Invite autovivify + idempotency +
      state-walk), each with a live `%see` witness — but the recorded Story **Plan is a 1-step
@@ -222,7 +247,7 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
         (goal `f1 o1 o2` → shift `f1 o1 o3`, the o2 press drops); `Musu_float` cross-ghost is
          ten-Book precedent. First LIVE proof is the recording pass itself.
 - COMPILE-GREEN, not yet run (2026-08-27, the LinkDevice crypto trilogy at the model layer, all
-   in Swarmation.g): **SwarmSeal** (Sealbox secrecy — seal/unseal/tamper/wrong-code fails-closed),
+   in SwarmTesting.g): **SwarmSeal** (Sealbox secrecy — seal/unseal/tamper/wrong-code fails-closed),
     **SwarmFerry** (the sealed account crossing — export{secret}→seal→unseal→import→re-export
      byte-identical), **EmojiConfirm** (the SAS authenticity gate — `Emojiconfirm.ts` folds the
       sorted-pubs+salt transcript to an emoji row; honest sides AGREE, an interposed pub DIVERGES,
@@ -246,7 +271,7 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
       the wants a LONE body can honour: `press` (library-held → v1 copy into the pool), `evict`
        (stale pooled → drop), and LEAVES `pull` standing (it needs the Cave/friend flow). Dormant —
         NO live caller yet, inert exactly like the pool landing it feeds, so zero regression. Proven
-         by the new **MusuSteward** Book (Heistation.g tail): setup a lib holding o1/o2 + a pool
+         by the new **MusuSteward** Book (HeistTesting.g tail): setup a lib holding o1/o2 + a pool
           holding stale z9 + a Jam scoring o1/o2/f1 → serve yields `{pressed:2, evicted:1,
            deferred:1, fails:0}`, pool ends `o1 o2` byte-faithful, the f1 pull stands; re-serve is
             idempotent (0 pressed, 0 evicted, no twin). Hand-traced the diff→serve arithmetic; LocalGen
@@ -262,7 +287,7 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
       `%Upgrades` — a legible fetch-queue the heist flow (Flow 1) later serves. A copy whose Original IS held
        draws none (pure backup); a bare record (no of/grade) is filtered. Idempotent the Ra_quarter way (oai per
         of:, drops an upgrade once its Original arrives — the queue follows the hoard). It queues; the heist
-         disposes — the propose-side twin of the steward. Proven by the new **MusuSmuggle** Book (Heistation.g
+         disposes — the propose-side twin of the steward. Proven by the new **MusuSmuggle** Book (HeistTesting.g
           tail): lib holds o1, backup holds L1(of:o1) + L2(of:o2) + junk → scan yields `{queued:1, held:1}`
            (only o2 queues), stable on re-scan, and the o2 upgrade DROPS when o2's Original lands. Hand-traced;
             LocalGen green; smoke-fired live (mode:new, caveat:0). **Lane A grows to eleven: record MusuSmuggle
@@ -310,7 +335,7 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
       a holding (`Ra_holding_keys` exclusion). Per-frame gossip signing is HARDENING, NOT a
        pool-exchange ship-blocker (the old "land before pool exchange" is withdrawn). ✅ The one
         invariant owed a Book — `%Theirs` never promotes off-vouch — is now GATED by **MusuFloor**
-         (Heistation.g tail): its structural-floor beat pins `Ra_holding_keys()` to `Record` alone
+         (HeistTesting.g tail): its structural-floor beat pins `Ra_holding_keys()` to `Record` alone
           with the gossip mainkeys (Theirs/Mine/Jam/Card/Caper/Spin/Like/Grab) held OUT, and
            its fails-closed beat refuses a by-with-no-sig husk fired from inside a REAL Ra_home_them
             crate. (Compile-green; awaits the Lane-A recording pass like the other new Books.)
@@ -395,7 +420,7 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
      each snap showing `req:wrangle,eternal,ok`) — the runner holds tonight's gen and every
       Book fn dispatches and drives clean. The recording passes are de-risked.
 2. ~~**`Supervisor_cull_orphans` model Book**~~ **AUTHORED 2026-08-27 — `SuperCull`**
-    (Errchannelation.g tail, LocalGen compile GREEN, gen diff pure addition; on the Credence
+    (ErrchannelTesting.g tail, LocalGen compile GREEN, gen diff pure addition; on the Credence
      board beside ErrChannel): stand (2) — a scratch House wearing `top_House` on the top House
       + a watch AND a dial against a subject inside it + a null-subject milestone CONTROL;
        drop (3) — the corpse window (alive reads 0, rows still stand); cull (4) — the sweep
@@ -404,7 +429,7 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
           infra, caveat:0 expected. **Lane A grows by one: record its Plan — `?B=SuperCull`,
            Resume ×3 (steps 2→4), Accept-All, check → `n:1..4`.**
 3. ~~**The Quartermaster (pool-steward) v1**~~ **BUILT 2026-08-27** (Ra.g Quartermaster
-    region + `MusuQuarter` Book at Heistation.g tail; both LocalGen GREEN, pure-addition gen
+    region + `MusuQuarter` Book at HeistTesting.g tail; both LocalGen GREEN, pure-addition gen
      diffs; on the Credence board beside MusuPress): `Ra_quarter_tally` (Jam-ledger taste —
       Like 3 · Grab 2 · Spin 1), `Ra_quarter_goal` (cap-sized, score-desc-then-id-asc,
        deterministic), `Ra_quarter_diff` (press when held / pull when reputation-only / evict
@@ -415,7 +440,7 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
             Occasions (when to sit) + the Door face are v2 wiring. **Lane A grows again:
              `?B=MusuQuarter`, Resume ×4 (steps 2→5), Accept-All, check → `n:1..5`.**
 4. ~~**`%Theirs` never-promotes-off-vouch invariant Book**~~ **AUTHORED 2026-08-27 —
-    `MusuFloor`** (Heistation.g tail, LocalGen GREEN; on the board beside MusuBreach). Scoped
+    `MusuFloor`** (HeistTesting.g tail, LocalGen GREEN; on the board beside MusuBreach). Scoped
      to the two genuinely un-Booked planks (MusuBreach already drives the swapped-manifest
       door refusal): (a) the STRUCTURAL floor — `Ra_holding_keys()` pinned to exactly
        `['Record']` with every gossip mainkey (Theirs/Mine/Jam/Card/Caper/Spin/Like/
@@ -430,7 +455,7 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
        wearing an ogg name). It lands via the SAME `Heist_catalog_land` tail through a synthetic
         `{sc}` rec carrying `lofi:1` + the ogg `body_hash`, so the pool branch mints id = the
          lofi enid (≠ the Original's — identity is per-shelf), `of:origId`, `grade:'ogg128'`,
-          `.ogg` path. `MusuPressLossy` (Heistation.g, 4 beats, LocalGen GREEN, both press Books
+          `.ogg` path. `MusuPressLossy` (HeistTesting.g, 4 beats, LocalGen GREEN, both press Books
            smoke-fire clean so v1 didn't regress): asserts the different-thing-joined shape, the
             ogg name, RENDER-faithfulness (the pool holds exactly what the renderer returned —
              pins the render, never the non-reproducible transcode), and the twin-control (re-
@@ -441,7 +466,7 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
 6. **The LinkDevice ceremony proper** (doc §10) — PHASED BUILD PLAN (grounded against the
     code 2026-08-27; each phase lands + Books separately, 0 and 1 are buildable now):
    - ~~**Phase 0 — Feature-generic invites**~~ **PROVEN 2026-08-27 — `SwarmRole`**
-      (Swarmation.g tail, LocalGen GREEN, smoke-fired live; on the board after SwarmCohort).
+      (SwarmTesting.g tail, LocalGen GREEN, smoke-fired live; on the board after SwarmCohort).
        The audit found the rails ALREADY generic end-to-end — `Swarm_mint_invite/mint_idzeug/
         token_n/redeem/accept` all carry the Feature through (the token's `to:` leg, the
          reciprocal derived from the claim) — so Phase 0 needed a PROOF, not surgery: 3 beats
@@ -459,7 +484,7 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
       confirmed Idento (Y.svelte.ts) is ed25519+SHA-256 ONLY, so `src/lib/O/Funk/Sealbox.ts`
        (NEW, beside Grant.ts, its secrecy-side twin) is the one symmetric brick: `seal`/`unseal`
         = WebCrypto AES-GCM under an HKDF-SHA-256 key, hex frame `iv‖ct‖tag`, non-extractable
-         key, domain-separated info string, zero deps. `SwarmSeal` (Swarmation.g tail, imports
+         key, domain-separated info string, zero deps. `SwarmSeal` (SwarmTesting.g tail, imports
           it via IMPORT(); LocalGen GREEN, gen import resolves in the runner module graph, pure-
            addition gen diff): 2 beats, 4 witnesses — roundtrip, fresh-nonce (two seals differ
             yet both unseal — the only snapped number is the fixed frame length, never a byte),
@@ -472,7 +497,7 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
    - **Phase 2 — the beacon**: the Cave-to-be boots unclaimed showing QR = address + ephemeral
       vessel pub; Captain scans and ISSUES (the secret never leaves the pair); typed
        short-code fallback.
-   - **Phase 3 — the transfer**: CORE PROVEN 2026-08-27 — `SwarmFerry` (Swarmation.g tail,
+   - **Phase 3 — the transfer**: CORE PROVEN 2026-08-27 — `SwarmFerry` (SwarmTesting.g tail,
       LocalGen GREEN, boot-clean): composes Sealbox (phase 1) with the proven Swarm_export/
        import to carry the WHOLE account across a sealed channel — export {secret} → seal →
         (relay sees only the frame) → unseal → import → re-export byte-identical. 4 witnesses,
@@ -512,7 +537,7 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
      same cp shape a pool heist produces), catalogs through `Heist_catalog_land` with mardir `'pool'`
       (never a parallel minter; a `%press,of:<id>` job is the visible scaffolding and doubles as the
        no-op mir), stamps `body_hash` of the written bytes on the pool card. LocalGen compile GREEN.
-        **Its Book is AUTHORED too — `MusuPress` (Heistation.g tail, compile GREEN): 3 beats
+        **Its Book is AUTHORED too — `MusuPress` (HeistTesting.g tail, compile GREEN): 3 beats
          (setup 2 / press 3 / re-press twin-control 4) + 4 `%see` witnesses (one-door landing,
           byte-for-byte fidelity, of:/grade elision, no-twin)** — model-layer with an in-memory
            stub nav (bin_read serves fixture bytes, bin_write records the landing), so it runs on
@@ -543,28 +568,41 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
 
 ## 1. The vocabulary
 
-- **Soul** — the keypair. Immutable, key-derived, the thing `ident.sc.prepub` names. One soul
-   per account, however many devices hold it.
-- **Body** — a device (tab, phone, daemon) holding a soul. Bodies of one soul are `%Sibling`s
-   when cooperative; an unrecognised body wearing your soul is a **theft** (`%Stolen`).
-- **SelfType** — what a body IS within its soul's tandem: `Captain` or `Cave` (more may come).
-   Not a job assignment but a station in life: which duties this body is placed to carry.
-    Rides beside the address on the %Peering (a body has one SelfType at a time); advertised
-     to peers so they can pick which body to talk to (§4).
-- **The helm** — the authority relation of the tandem: the Captain holds the helm; the Cave
-   serves it. Asymmetric on purpose (the phone is where the human is; the Cave obeys standing
-    orders), and named for the ship, not for the bedroom.
-- **Vessel key** — a body's own autogen keypair, born with the device before any soul lands
-   on it. What a body is addressable and encryptable-to *as itself*; the LinkDevice beacon's
-    ephemeral pub plays this role in the ceremony (§7). **Per-INSTANCE, quite specifically**
-     (ruled 2026-08-27): one vessel key per install (browser profile × origin × device) —
-      moving to a new Captain may deliberately FORGET the previous vessel, retiring its
-       cohort-roster row. A vessel is a place the soul has stood, not a possession it keeps.
-- **Instance memory** — the small store where a body remembers WHICH INSTANCE IT IS (its
-   vessel key, its SelfType, which souls it has held) — scoped to the instance, never to a
-    soul, so it cannot mix up when one browser holds two identities. Sits at the top of the
-     one slope of persistence (Dexie|FSA behind the same abstraction); largely still to make
-      up (§10).
+- **Soul** — the identity's NAME (`ident.sc.prepub`, key-derived). **Superseded premise, fixed
+   2026-10-15:** this entry used to call the soul "the keypair" and treat that keypair as the
+    thing every device ends up holding. Under cert-crew (`Crew_todo.md` §2, §4a) the soul is the
+     RELATION among a crew's bodies, not a shared secret: at any instant exactly one body's
+      `/Crew` row says `role:Captain` and wields the soul key; every other body holds its OWN key
+       and proves membership by a cert, never by holding the soul's secret. See "Body" and the
+        superseded note at §2 below.
+- **Body** — a device (tab, phone, daemon): `(store × soul)`, its own ed25519 keypair minted the
+   first time it needs one (`Swarm_body_key_ensure`, `Ghost/S/Swarm.g` — "only a husk mints one
+    here"), never the soul's. Bodies of one soul are **crew**: a `/Crew,mate:<prepub>` row
+     holding a `Grant:Crew` the Captain signed for THAT body's own key (Crew_todo §3) — never
+      `%Sibling`s wearing a shared soul key, and never admitted by a roster (§2, §7 below are
+       SUPERSEDED on this point). An unrecognised body wearing YOUR OWN key is still a **theft**;
+        a Cave that merely loses its own key to a thief is not theft of the soul — it is ejected
+         cleanly by a soul-signed `%NotGrant:Crew`, no rotation needed (Crew_todo §12.3; §10's
+          open question below is corrected to match).
+- **Post** (was "SelfType") — what a body IS within its crew: `Captain` or `Cave` (more may
+   come). Not a job assignment but a station in life: which duties this body is placed to
+    carry. Now the `role` on that body's `/Crew` row (Crew_todo §2–§3) — a signed ledger fact,
+     not a flag beside an address — advertised to peers so they can pick which body to talk to
+      (§4).
+- **The helm** — the authority relation of the crew: the Captain holds the helm (wields the
+   soul key, signs and hellos as it, alone mints `Grant:Crew`); every Cave serves it.
+    Asymmetric on purpose (the phone is where the human is; the Cave obeys standing orders), and
+     named for the ship, not for the bedroom.
+- **Body key** (was "vessel key") — a body's own ed25519 keypair, minted the first time the
+   device needs one (`Swarm_body_key_ensure`) — not a placeholder a soul later "lands on", but
+    the key the body signs and hellos with for its whole life, soul or no soul. **Per-body**,
+     quite specifically: one body key per (store × soul); moving to a new Captain may
+      deliberately FORGET a previous body, retiring its row. A body is a place the soul's crew
+       has stood, not a possession the soul keeps.
+- **Instance memory** — the small store where a device remembers WHICH BODY IT IS (its own key,
+   its Post, which souls' crews it belongs to) — scoped to the device, never to a soul, so it
+    cannot mix up when one browser holds two identities. Sits at the top of the one slope of
+     persistence (Dexie|FSA behind the same abstraction); largely still to make up (§10).
 - **Cohort** — the bunch of your device limbs currently standing: every live body of the
    soul, wherever it stands. Three faces, stacked: the cohort is the SET; "am I alone?" is
     the boot question a limb asks of it (Swarm_cohort_stand) before touching the wire; and
@@ -572,13 +610,19 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
       limb at the bare name at a time, every other limb at a suffix, all verified by the same
        key. Detection radius grows by layer: the v1 census sees one browser profile (Web Lock
         + BroadcastChannel); the filesystem beats widen it to the machine; the relay hellos
-         widen it to the world.
-- **The cohort roster** — the cohort's MEMORY (ruled 2026-08-27): the limbs this soul has
-   met, standing or not — a Tier-B shelf of instance rows (vessel id, SelfType, last
-    address, last seen). This is "the something parameterised on the Cave end of the
-     Account": each body's replica carries its own instance stamp, and the roster is the
-      union of the stamps. The %Sibling machinery is its seed; the roster is %Sibling made
-       durable and replicated.
+         widen it to the world. (§4's addressing still holds as written — the audit re-confirmed
+          it 2026-10-15 — this entry is current, not superseded.)
+- **The crew ledger `/Crew`** (was "the cohort roster") — **superseded premise, fixed
+   2026-10-15:** this entry used to describe a `%Sibling`-derived "cohort roster" as the
+    cross-device MEMBERSHIP record. Under cert-crew, membership is never a roster lookup — it is
+     the `Grant:Crew` cert each body holds, checked fresh at every friend's door
+      (`Swarm_voucher_ok`; Crew_todo §5: "membership is proven at the door by the voucher, never
+       by the roster"). `/Crew` (Crew_todo §3) IS the durable record — one row per mate, its
+        role, its own pub, its cert, any ejection — and it is what travels (soul-signed, gossiped
+         whole; Crew_todo §4). The separate `%Body` roster that does exist is explicitly a
+          **cache**: contact-learned, "popped up by whoever you manage to talk to," read for
+           ROUTING convenience only — a stale or wiped `%Body` roster never admits or refuses
+            anyone (project memory: "Crew answers, not the roster").
 - **Captain** — the soul's home body, most likely the phone: no FSA (`showDirectoryPicker` is
    desktop-Chromium-only — the one hard fact of the phone arc), storage in OPFS/Dexie only.
     The social hand: in-person QR, invites, the human's presence. Holds the helm.
@@ -593,17 +637,20 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
           market-flavoured for what is really a hoard.)
 - **Quick / still** — a body is **quick** when it may write the consumable ledger; by the
    2026-08-27 ruling that is **the Captain, by definition** (§2C, §6) — so quick/still has
-    collapsed from a lease into a synonym for the role split, kept in the vocabulary only
-     because the wire-transition rule still needs the words: a body going still must unbind
-      its address, not just stop writing (§6).
-- **SoulInvite / LinkDevice / `%Invite:MyCave`** — the invite whose redemption makes you, not
-   befriends you. "LinkDevice" is the ruled ceremony name (2026-08-19, after Signal/WhatsApp);
-    `%Invite:MyCave` is how it meshes with the standing invite system: today's invites carry a
-     Music Feature (`%Invite:Music` — *what I will serve you*); this one carries a ROLE
-      Feature (*what you will be to me*). The role transcends the Music part of the system.
-       One mechanism; the human may settle one word. A `%Invite` PARTICLE also now exists by
-        ruling — the URL's token data autovivifies into one (§7), so the thing everyone
-         thinks in has a body in the tree.
+    collapsed from a lease into a synonym for the role split. Under cert-crew that role split
+     is simply `role:Captain` on the `/Crew` row (Crew_todo §4a): "quick" is a row value, flipped
+      by `Swarm_crew_captain`, never a leased state. Kept in the vocabulary because the wire-
+       transition rule still needs the words: a body going still must unbind its address, not
+        just stop writing (§6).
+- **LinkDevice / `Grant:Crew`** (was "SoulInvite / `%Invite:MyCave`") — **superseded framing,
+   fixed 2026-10-15:** this entry described a role-Feature INVITE (`%Invite:MyCave`) whose
+    redemption would graft the account onto the new device (§7, now superseded). What is ruled
+     and live is narrower and simpler: the same `?Iz=` ceremony (§7; Crew_todo §6) ends with the
+      Captain signing a `Grant:Crew` for the new device's OWN key — a credential, not a role-
+       Feature invite that needs its own serve-layer plumbing. "LinkDevice" stays the ceremony's
+        user-facing name. The `%Invite` PARTICLE (the URL's token data autovivified into a
+         lifecycle-bearing particle, §7) is unaffected — it is how ANY invite, music or crew,
+          renders as a thing with a lifecycle.
 - **Original** — the HIFI holding: a `%Record` in a real-filesystem `%Library`, the Cave's
    charge, the librarian's object of interest.
 - **SoundPool** — a body's OPFS audio shelf: LOFI listening copies pressed from Originals or
@@ -611,7 +658,10 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
 - **LOFI / HIFI** — the fidelity axis (§3). A pool copy is LOFI by station; an Original is
    the HIFI it points at.
 
-Notation follows `CLAUDE.md`: `%Sibling`, `%Stolen`, `%Idzeug`; a property as `Peering%address`.
+Notation follows `CLAUDE.md`: `%Idzeug`, `/Crew`, `%Body`; a property as `Peering%address`.
+ (`%Sibling` / `%Stolen` are the PRE-cert-crew names for the family roster and the theft alarm —
+  kept only where a passage below is explicitly marked superseded; the live names are `%Body`
+   (a routing cache, never membership) and `%NotGrant:Crew` (an ejection).)
 
 ---
 
@@ -624,8 +674,12 @@ Five id families, each with its own lifetime and its own verifier. Every bug in 
 ### The soul's derivation chain (one person)
 
 ```
-key (ed25519 private) ──── SECRET. `.c.keys` at runtime; IN CLEAR in
- │                          .jamsend/account/<prepub>/toc.snap; Dexie identities row.
+key (ed25519 private) ──── SECRET. A PARTICLE now (`/Crew/Key,pub,secret` — Crewkeys.ts,
+ │                          Crew_todo §4), never `.c` (`ident.c.keys` is retired); IN CLEAR
+ │                          in .jamsend/account/<prepub>/toc.snap; Dexie identities row.
+ │                          Each body mints its OWN key (`Swarm_body_key_ensure`) — the key
+ │                          that derives the rest of THIS chain is whichever row currently
+ │                          wields the soul (role:Captain), not a key every device shares.
  ▼ derives
 pub (full public key) ──── the VERIFICATION truth. Rides %Page in frames,
  │                          %Grant.by / %Grant.for, vouchers. Never routes anything.
@@ -712,8 +766,20 @@ SelfType ────── Captain|Cave. ADVERTISORY, not enforcement: every bo
 Portability is a merge problem, and an account is three tiers that merge differently. The
  tier boundaries are what make "the Cave may Heist but not spend" precise rather than a vibe.
 
-**Tier A — immutable (the soul).** The keypair. Never merges because it never changes;
- replication is the one-time secure ceremony of §7.
+**Tier A — the soul's name, and its one wielder.** **Superseded premise, fixed 2026-10-15:** this
+ used to say "the keypair... replication is the one-time secure ceremony of §7" — i.e. the secret
+  key itself is the thing that travels, once, at the graft. Under cert-crew (`Crew_todo.md` §2,
+   §4a) that is backwards: **each body mints its OWN keypair**
+    (`Swarm_body_key_ensure` — "only a husk mints one here"); becoming crew means receiving a
+     signed `Grant:Crew` for that body's OWN key — a credential it PRESENTS, never an authority it
+      confers on itself (`Swarm.g`, the `Swarm_crew_grant` comment) — and the soul's own secret
+       stays put, wielded by whichever one row says `role:Captain` (the mutex is a RULE on the
+        ledger — "or data gets munted" — not a lock on the key). The one place the soul's secret
+         DOES cross a wire is the ferry/resume path (Crew_todo §4): a Cave MAY carry the whole
+          `/Crew` tree, Keys included, sealed in transit — held but not wielded, so that body
+           *could* later become Captain if asked to resume. That is a deliberate backup
+            capability, not how ordinary linking works, and it is not a "ceremony" in the old §7
+             sense (§7 below is itself superseded).
 
 **Tier B — grow-only (friendships, grants, Heisted tracks, the newlyadded berth, the pool
  ledger).** Append-mostly sets keyed by stable identities. Two bodies each befriending
@@ -735,7 +801,9 @@ Portability is a merge problem, and an account is three tiers that merge differe
         allocator to design. Caves replicate the ledger read-only (they must SEE spends to
          refuse a revoked peer) and never write it. The block-lease design (per-body serial
           ranges) is retired to this parenthesis: it re-enters only if a future ever wants
-           two Captains, which nothing currently does.
+           two Captains, which nothing currently does. (Still true under cert-crew — restated as
+            `Crew_todo.md` §2: "Captain — the ONE holder of the soul key... Alone controls the
+             crew ledger: minting a `Grant:Crew` takes the soul key.")
   What no tier gets for free: per-field last-writer-wins by *causal* time. A snap carries no
    vector clock; the fold decides by part order on disk. Fine for a nickname; not fine where
     "which edit truly came later" is load-bearing.
@@ -1153,13 +1221,17 @@ The division of labour, stated once: **the Captain holds the helm; the Cave keep
 
 This section used to carry a two-shape lease design (quick/still bodies, serial block
  leases). The Captain|Cave split retired it (§2C, 2026-08-27): **the Captain is the one
-  invite processor, by definition of the helm.** What remains worth stating:
+  invite processor, by definition of the helm.** Cert-crew (`Crew_todo.md` §2, §4a) re-expresses
+   this as a ledger fact rather than a lease: minting a `Grant:Crew` or an `%Idzeug` invite takes
+    the soul key, which only the row wearing `role:Captain` wields — "quick" is that row value,
+     not a permission bit a body is handed. What remains worth stating:
 
 - A Cave reads everything, Heists freely, and writes its own Tier-B replica (tracks landed,
    pool ledger) — it is forbidden exactly one thing: writing the consumable ledger. That is
     what makes a Cave useful while safe.
-- The ledger replicates TO Caves read-only, continuously (§7's mutual backup) — a Cave must
-   *see* spends and revocations to refuse a cut-off peer at serve time.
+- The crew ledger (`/Crew`) replicates to every mate continuously, soul-signed, last-writer-
+   wins (Crew_todo §4: "any Crew online falls in line") — a Cave must *see* ejections
+    (`%NotGrant:Crew`) and revoked grants to refuse a cut-off peer at serve time.
 - **Standing down is a wire transition, not a permission bit.** A body ceasing its duties
    must actually unbind/re-dial its address (§4) — as long as it stays bound at a contested
     name it keeps receiving and answering the soul's fan-out, doubling streams regardless of
@@ -1167,113 +1239,93 @@ This section used to carry a two-shape lease design (quick/still bodies, serial 
 
 ---
 
-## 7. The graft — `%Invite:MyCave`
+## 7. The graft — superseded by Crew (`Crew_todo.md` §3–§6)
 
-**The mesh with the standing invite system.** jamsend already has one way trust moves: an
- `%Idzeug` invite — a serial drawn off an issuer, carried as a compact QR token, redeemed
-  once, verified by presig, landing as a `%Grant`. Today the only Feature is Music
-   (`%Invite:Music` — *I will serve you music*). The graft is the same machinery carrying a
-    ROLE Feature — **`%Invite:MyCave`** (*you will be my Cave*) — because the role transcends
-     the Music part of the system but has no reason to transcend its rails.
-  **Audited 2026-08-26, and the news is unusually good: the rails are ALREADY generic.**
-   `Swarm_iz_issuer` takes any `{Feature, ...params}` and stores `to:<mainkey>`; the token
-    codec, redeem parse, hello/accept doors, and `mint_grant` all carry the Feature through
-     without inspecting it; `mint_revoke` / `Swarm_pier_live` / the `%NotGrant` machinery
-      take the feature as a parameter. **Minting, redeeming, and revoking `%Invite:MyCave`
-       needs zero changes to the invite/grant/revoke layer.** What DOES need surgery is the
-        SERVE layer, which hardcodes `'Music'`: six `Swarm_pier_live(p, 'Music')` call sites
-         (Swarm.g:658, 716, 2371, 2471, 2586, 3130), a `'Music'` fallback in
-          `Swarm_reaccept_incomplete` (~1363), and the legacy-token transcoder (~830, which
-           may stay Music-only — see the `Old garden` note: that prototype is to be deleted
-            once this doc captures its designs, so nothing new should cite it). Plus the
-             mint UI, which never asks which Feature. That is the whole touch-list.
+**What this section proposed (through 2026-08-27).** A device became a Cave by redeeming a
+ ROLE-Feature invite, `%Invite:MyCave` (*you will be my Cave*), on the same `%Idzeug` rails as
+  a music invite. Redemption made the body a Cave two ways at once: it **grafted** the
+   Captain's account Waft (`Identity,key` + `Peering`, with `%Idzeug` issuer state riding read-
+    only) onto the new device, and it wrote the new body into the Captain's **`%Sibling`
+     roster** — the roster being how the 👥 theft-tripwire told family from a stranger. The six
+      `Swarm_pier_live(p,'Music')` serve-layer call sites would then need a Feature-generic
+       retrofit to carry a role rather than only Music.
 
-**What the Cave concretely is.** At first: a Chrome tab with FSA on the user's computer — the
- same Big*land page, opened at home, granted the music folder. At its most cave-like: the
-  always-on daemon on that machine. Often both across a day — the tab does the interactive
-   work, and the adoption handoff (§8) is how the daemon takes the Cave's duties over. A body's
-    SelfType (§1) says which duties it carries; the graft is what bestows them.
+**Why it changed.** The design conflated two things cert-crew keeps apart: BECOMING crew
+ (which needs only a signed credential for a key the new body already has) and the Captain's
+  authority over that credential. `Crew_todo.md`'s model (§1–§4a, settled 2026-09-03) separates
+   them: **a body mints its own key first** (`Swarm_body_key_ensure` — "a keyed identity
+    already HAS its body key; only a husk mints one here"); the Captain signs it a `Grant:Crew`
+     cert — "a credential I PRESENT, not an authority I confer on myself" (`Swarm.g`, the
+      `Swarm_crew_grant` comment) — and THAT is what makes it crew, checked fresh at every
+       friend's door (`Swarm_voucher_ok`). No account Waft is grafted onto anything; no
+        `%Sibling` roster is written as the membership record (the `%Body` roster that does
+         exist is a contact-learned CACHE, never consulted to admit or refuse anyone — "Crew
+          answers, not the roster"). `%Invite:MyCave` as a standalone role-Feature invite was
+           never built past the audit below; it is retired in favour of the LinkDevice/`?Iz=`
+            ceremony landing a `Grant:Crew` directly (Crew_todo §6).
 
-**The ceremony** (ruled 2026-08-14/19, kept in force, restated Cave-ward):
+**What still holds, carried forward:**
+- **The invite rails really were already Feature-generic** — the 2026-08-26 audit's finding
+   (the issuer, token codec, redeem/hello/accept doors, grant minting and revocation all carry a
+    `Feature` parameter without inspecting it: `Swarm_iz_issuer` takes any `{Feature,...params}`
+     and stores `to:<mainkey>`) turned out to be exactly right, and is WHY `Grant:Crew` could
+      ride the very same `mint_grant`/`verify_grant` primitive a friendship uses (Crew_todo §2:
+       "the SAME grant primitive friendships use") with **no serve-layer surgery at all** —
+        because crew membership never touches the music-serve `Swarm_pier_live` sites in the
+         first place (a separate door, `Swarm_voucher_ok`, decides crew). The six-site retrofit
+          this section scoped turned out not to be needed.
+- **The ceremony mechanics are unchanged and now LAW** (ruled 2026-08-14/19, confirmed live in
+   Crew_todo §6: "the `?Iz` spine survives the model flip whole"): an invite whose redemption
+    makes you, not befriends you — high-entropy, single-use, short-lived (minutes), never
+     posted; both devices online so the exchange can be sealed under a code-derived key (the
+      secret rides the URL FRAGMENT, never the relay — assume the relay is read by an
+       eavesdropper) with both screens showing a matching-emoji confirm before anything moves;
+        the carry is a QR beacon (the Cave-to-be's address + an ephemeral pub) with a typed
+         short-code fallback for no camera.
+- **What the Cave concretely is** stands unchanged: at first a Chrome tab with FSA on the
+   user's computer, at its most cave-like the always-on daemon on that machine, often both
+    across a day. A body's Post (§1, was SelfType) says which duties it carries; what BESTOWS
+     the Post is now a signed `Grant:Crew` + the row's `role`, never an invite redemption event.
+- **The `%Invite` particle** (the URL's token data autovivified into a lifecycle-bearing
+   particle, `arrived → redeeming → sealed|refused`) is real and unaffected — it is how the
+    human thinks about ANY invite, music or crew, and the issuer's own record remains the law.
+- **It answers at its own address.** A new body still takes its own place on the relay (§4) —
+   collision-avoidance there is unaffected by how the body became crew.
 
-- An invite **whose redemption makes you, not befriends you** — same rails as any invite,
-   inverted consequence. Therefore: high-entropy, **single-use, short-lived (minutes), never
-    posted**.
-- **Both devices online is a feature**: the account travels as relay frames **encrypted under
-   a code-derived key** (the relay is an unauthenticated fan-out forwarder — assume an
-    eavesdropper), and liveness lets both screens show a **matching confirm** (same emoji
-     pair) before key material moves.
-- **The carry**: (a) the Cave-to-be shows its beacon (its address + an ephemeral pub — its
-   vessel key doing its job) as a QR; the Captain scans it and issues — the secret never
-    touches a third party, the camera does the carry. Build this. (b) a typed short code as
-     the no-camera fallback — tolerable only because single-use + short-lived.
-- **What moves**: the account Waft — `Identity,key` + `Peering` — with `%Idzeug` issuer
-   state travelling READ-ONLY (§2C: the ledger stays the Captain's to write, wherever it is
-    replicated).
-
-**What a freshly grafted body is.** Three plain facts, each with its own reason:
-- **It has no invite authority — and never gains it as a Cave.** Invite processing is the
-   Captain's alone (§2C); a grafted Cave heists and replicates from day one and never
-    spends. Invite authority moves only when a new CAPTAIN is grafted (`%Invite:MyCaptain`,
-     below) — the helm changes hands whole, never splits.
-- **The Captain writes it into the family register.** At issue time the Captain records the
-   new body on its `%Sibling` roster. This is what keeps the alarm honest: when a frame later
-    arrives from your own key, the tripwire checks the roster — family is co-presence,
-     everyone else is a thief. A graft that skipped this step would trip its own alarm.
-- **It answers at its own address.** The new body takes `<prepub>_N` on first bind (§4), so
-   it never collides with the Captain on the relay. The bare name stays with whoever already
-    holds it.
-
-**The %Invite particle — autovivify what the human already thinks (ruled 2026-08-27).**
- Today no `%Invite` particle exists: an invite is smeared across the issuer's `%Idzeug`, the
-  token string in a URL/QR, and the landed `%Grant` — yet everyone THINKS in invites. Ruled:
-   the data read from an invite URL **autovivifies into a `%Invite` particle** in the live
-    tree — token legs on `sc` (prepub, serial, n; presig on `.c` if it shouldn't snap), a
-     state that walks `arrived → redeeming → sealed|refused`, and the landed grant/pier
-      backlinked on `.c`. The mental model gets a real particle: the Door and the glass can
-       show an invite as a thing with a lifecycle, instead of a string that vanishes into
-        machinery. (The issuer's record remains the law — the %Invite is the visitor's copy
-         of the claim, never a second source of truth.)
-
-**Replication is continuous — they all back each other up.** The graft's account transfer is
- not a one-shot ceremony payload: it BOOTSTRAPS a standing replication stream among the
-  soul's bodies, riding the same class of machinery a Heist rides (chunked, resumable,
-   grant-gated repli transfer — the gears exist). From then on the bodies back each other up
-    continuously: Tier B unions flow as they grow, the Tier-C ledger flows Captain→Caves
-     read-only (§6), and the smuggle (§5 Flow 4) is just this stream's pool-ledger lane. A
-      body that was offline catches up the way a heist resumes — same door, same discipline.
-
-**Migration and backup are the same move, in either direction.** A soul is not revocable
- (§10) — but **either role can mint the other**: a Captain grafts a new Cave
-  (`%Invite:MyCave`), and a Cave can graft a new Captain (`%Invite:MyCaptain` — the phone
-   died, stand at the Cave, scan, walk away whole). That bidirectionality plus the continuous
-    mutual backup above IS the whole backup story: as long as one body of the soul survives,
-     the tandem can be rebuilt from it, current to its last stream. The adoption handoff (§8)
-      is this same move performed on a live pair.
-
-Distinct in kind from a music `%Idzeug`: that grants *what you'll serve*; this grants *who
- you are to me* — the most dangerous token the system can mint, handled accordingly.
+Distinct in kind from a music `%Idzeug` even now: that grants *what you'll serve*; `Grant:Crew`
+ grants *who you are to me* — the most dangerous cert the system mints, handled accordingly
+  (Crew_todo §2, and §12.3's scoping note: "`Grant:Crew` is total impersonation").
 
 ---
 
-## 8. The adoption handoff
+## 8. The adoption handoff — superseded by Crew's "resume" (`Crew_todo.md` §4, §4a)
 
-The owner's arc: the Captain runs with a laptop Cave for a while; later "spins up a daemon to
- do everything, using the laptop's latest replica, and perhaps telling any body online at that
-  point what's up." As a protocol:
+**What this section proposed.** The owner's arc: the Captain runs with a laptop Cave for a
+ while; later "spins up a daemon to do everything, using the laptop's latest replica, and
+  perhaps telling any body online at that point what's up." The protocol scoped for it: the
+   daemon boots **still** and **adopts the freshest replica** (a wholesale take of Tier A plus
+    a union of Tier B, since the laptop's copy was freshest); it announces and waits for acks;
+     the standing Cave **stands down** — stops fulfilment, unbinds its address; the daemon
+      **binds** and takes up fulfilment, and any Tier-C block the old Cave held transfers or
+       retires.
 
-1. The daemon boots as a **still** body and **adopts the freshest replica** — a wholesale
-    take of Tier A + a union of Tier B (the laptop was the working Cave, so its copy is
-     freshest; adoption is a copy-and-union, never a live merge).
-2. The daemon announces it will take the Cave's duties; online bodies ack.
-3. The standing Cave **stands down**: stops fulfilment, unbinds its address (§6).
-4. The daemon **binds** and takes up fulfilment; any Tier-C block the old Cave held (Shape 2
-    only) transfers or retires.
+**Why it changed.** There is no replica to adopt and no lease to hand over under cert-crew:
+ every crewmate already carries the whole `/Crew` tree (Crew_todo §4: "EVERY crewmate carries
+  this WHOLE tree"). "Taking over" collapses to a single signed act, **`Swarm_crew_captain`**:
+   flip the `role` on two rows (new body → Captain, old → Cave) and gossip the ledger — "grant
+    Captain" from a live Captain and "resume" from any surviving Cave after the Captain is gone
+     are **the same call** (Crew_todo §4a). No key material moves, because every body already
+      holds what it needs; no account copy precedes it; the ledger itself is the mutex ("at
+       most one row says Captain — a RULE, not crypto").
 
-Ordered with an ack, the two-body window at any one address is a controlled instant; skipped,
- it is the doubled-stream disease on purpose — which the 👥 tripwire will catch and say so.
- `Swarm_reinstate`'s disk-wins hold guards the bare name specifically: a body taking it back
-  must re-read disk before it may write, so a stale adopter cannot clobber a fresher ledger.
+**What still holds, carried forward:** the operational caution underneath the old protocol is
+ still real — two bodies briefly believing they hold the helm is exactly the doubled-stream
+  disease (§4), so a deliberate flip-and-gossip beats a silent one, and `Swarm_reinstate`'s
+   disk-wins hold (whoever claims a contested bare name must re-read disk before writing)
+    still guards against a stale device clobbering a fresher ledger during the window. **Live
+     owed** (Crew_todo §4): the station re-dial under a new Captain's name at the next standup
+      is not built, and the stash/account directory keyed by the old prepub is not migrated —
+       so a resume today is clean at the ledger layer and incomplete at the wire/disk layer.
 
 ---
 
@@ -1286,13 +1338,15 @@ The Door (DoorFace) is already the identity surface: who am I, sealed friends wi
 - **Invite someone** — the standing gesture: mint `%Invite:Music`, show the QR, a friendship
    seals. Unchanged.
 - **Invite yourself** — the new gesture beside it: opens a small dialogue that explains
-   portability in a few sentences (this doc's §0 destination paragraph is the long-form it
-    links toward), then runs the graft ceremony (§7) — beacon shown or scanned, emoji
-     confirm, done. The dialogue is also the honest place for the phone's mortality whisper
-      (§0 item 9c) and, later, the place a body's SelfType and address are visible.
+   portability in a few sentences (this doc's opening paragraph is the long-form it links
+    toward), then runs the LinkDevice ceremony (§7 — the ceremony mechanics carried forward
+     unchanged; the mint lands a `Grant:Crew`, not an account graft) — beacon shown or
+      scanned, emoji confirm, done. The dialogue is also the honest place for the phone's
+       mortality whisper (§0 item 9c) and, later, the place a body's Post and address are
+        visible.
 
-The Door also inherits the tandem's status surfaces as they land: which bodies stand where
- (address + SelfType per %Sibling), the 👥 alarm it already has, and eventually the handoff
+The Door also inherits the crew's status surfaces as they land: which bodies stand where
+ (address + Post per `/Crew` mate row), the 👥 alarm it already has, and eventually the handoff
   controls (§8's announce/stand-down as buttons rather than console verbs).
 
 A standing want recorded while we are here (the owner): **better UI lego for displaying and
@@ -1343,30 +1397,42 @@ A standing want recorded while we are here (the owner): **better UI lego for dis
             body, silent on an idle one) or adds a tiny `.jamsend/liveness/beat` written on
              the mirror's own seam (cheap, honest even when idle). Design owed; both halves
               are small.
-- **Is a tab a whole Identity, or an address + a SelfType?** Today every tab autogens its own
-   identity unless it restores one; the sibling roster is the local we-are-one-user glue. The
-    multipliable addresses (`<prepub>_N`) soften the old reason for per-tab identities: a tab
-     could instead be *a pointer to a part of the main Identity's business* — an address plus
-      a SelfType saying which duties it carries. Undecided; the answer decides what %Sibling
-       rows contain (identities vs addresses) and what the LinkDevice graft actually mints for
-        a same-house second tab.
-- **%Grant revocation — audited 2026-08-26: the rails hold, with two eyes-open caveats.** A
-   soul cannot be revoked (a stolen body IS the soul — the only remedy is rotation: new
-    keypair, signed succession, friends re-seal; undesigned, rare, accepted). A *grant*,
-     though, revokes cleanly: `Swarm_revoke` mints a signed `%NotGrant` atom
-      (`mint_revoke`), stashes it AND forces an account settle before returning (durable
-       immediately), `Swarm_pier_live` consults it at **every** use, rehydrate re-creates
-        the `%NotGrant` on every standup, and `Swarm_seal` dedups grants by `to+by` — so a
-         stale snap or berth fold **cannot resurrect a revoked grant**. The role grants of
-          §7 ride these exact rails with zero changes (the feature is a parameter all the
-           way down) — so a defected Cave is cut off the same way a defriended peer is.
-            The caveats, recorded so nobody over-trusts: (1) revocation is **lazy** — no
-             wire frame tells the revoked party; they discover it when the next
-              `Swarm_pier_live` check refuses them. (2) **in-flight streams finish** — only
-               the next request sees the `%NotGrant`. Both are acceptable-by-design for
-                Music; for a revoked CAVE (which holds your whole account) they mean: cutting
-                 off a Cave stops its *service*, not its *knowledge* — what it already
-                  replicated, it keeps. Only rotation truly un-knows a body.
+- **Is a tab a whole Identity, or an address + a Post?** Today every tab autogens its own
+   identity unless it restores one; under cert-crew the `/Crew` ledger (not a sibling roster)
+    is the local we-are-one-user glue. The multipliable addresses (`<prepub>_N`) soften the
+     old reason for per-tab identities: a tab could instead be *a pointer to a part of the
+      main Identity's business* — an address plus a Post saying which duties it carries.
+       Undecided; the answer decides what `%Body` rows contain (identities vs addresses) and
+        what LinkDevice actually mints for a same-house second tab.
+- **`%Grant` revocation — corrected 2026-10-15 for cert-crew; the 2026-08-26 audit's grant-
+   revocation mechanics still hold, its SOUL claim does not.** This bullet used to say "a soul
+    cannot be revoked (a stolen body IS the soul — the only remedy is rotation)" as a blanket
+     fact. Under cert-crew that is now **case-split, not universal** (`Crew_todo.md` §12.2–
+      §12.3): an ORDINARY crew member — a Cave that holds only its own key plus a `Grant:Crew`
+       cert, never the soul's secret — is NOT the soul, and stealing it is not stealing the
+        soul; the Captain ejects it cleanly with a soul-signed `%NotGrant:Crew`, no rotation
+         needed. The blanket claim is still TRUE only for a body that was additionally handed
+          the soul's own secret via the ferry/resume path (§2's superseded note; a body kept
+           around *for* future resume capability) — THAT device in a drawer, stolen, is a
+            "permanent full-soul compromise" (Crew_todo §12.2) because key rotation genuinely
+             does not exist in the code today (no rotate verb; re-signing every grant and re-
+              sealing every friend pier is unbuilt). So: most Caves are cheaply revocable now;
+               a body deliberately entrusted with resume capability is not, and that is the
+                remaining open risk, not a universal one.
+  **The grant-revocation mechanics themselves are unchanged and still audited-true:**
+   `Swarm_revoke` mints a signed `%NotGrant` atom (`mint_revoke`), stashes it AND forces an
+    account settle before returning (durable immediately), `Swarm_pier_live` consults it at
+     **every** use, rehydrate re-creates the `%NotGrant` on every standup, and `Swarm_seal`
+      dedups grants by `to+by` — so a stale snap or berth fold **cannot resurrect a revoked
+       grant**. `Grant:Crew` rides these exact rails (Crew_todo §4: "the role grants of §7 ride
+        these exact rails with zero changes" is itself confirmed, just renamed). Two eyes-open
+         caveats, still real: (1) revocation is **lazy** — no wire frame tells the revoked
+          party; they discover it when the next `Swarm_pier_live` check refuses them (and,
+           per `Crew_todo` §12.3, an ejection **does not yet gossip to FRIENDS** — "local only
+            — revocation does not travel yet" — so an offline friend keeps trusting a revoked
+             Cave until it hears otherwise; owed). (2) **in-flight streams finish** — only the
+              next request sees the `%NotGrant`. For a revoked Cave: cutting it off stops its
+               *service*, not its *knowledge* — what it already replicated, it keeps.
 - **At-rest encryption — RULED not yet (2026-08-27).** Any body can pop the admin console
    for the cohort it belongs to — that is democracy among your own bodies, and it is the
     point. A crypto layer (account wrapped under the vessel key at rest) goes in there some
@@ -1379,8 +1445,8 @@ A standing want recorded while we are here (the owner): **better UI lego for dis
      call — recorded because two readers have now tripped on it.
 - **The no-shared-anything bound** (`Identity_persist` §7.4i). Two bodies sharing neither
    filesystem nor relay have no common point to reconcile at; no lease covers them. Either
-    full Tier-B/C sync or the house rule "one soul, one home at a time." A graft that is born
-     still (§7) keeps the default on the right side of this.
+    full Tier-B/C sync or the house rule "one soul, one home at a time." A newly-linked body
+     that is born `role:Cave` (not Captain, §7) keeps the default on the right side of this.
 - **The friend-side pier seam — RULED SOLVED IN PRINCIPLE (2026-08-27), verify in code.**
    The ruling: a friend holds one %Pier **per body** — multiple %Pier rows sharing one
     %Identity, each keyed by the address it talks to (`<prepub>` and `<prepub>_1` are two
@@ -1389,23 +1455,24 @@ A standing want recorded while we are here (the owner): **better UI lego for dis
        PLURAL (`Swarm.g:1013`). What remains: verify the repli window and era state actually
         key off the per-body row and not a first-match, and note that the protocols being
          built will refer to Captain|Cave subtly — a Pier should know its counterparty's
-          SelfType, not just its address.
-- **The graft's transport — RULED (2026-08-27): it rides the Heist machinery,
-   continuously.** The account stream is chunked, resumable, grant-gated repli transfer —
-    the gears exist — and it is a STANDING stream, not a ceremony payload: the bodies all
-     back each other up, continuously (§7). Remaining design is just the lane naming (what
-      shelf-set flows on which cadence) — no new transport.
-- **Vessel-key mortality — SPECIFIED (2026-08-27).** The vessel key is per-instance (§1);
-   a re-grafted device is a NEW instance with a new vessel, and the human may forget the old
-    one — forgetting retires its cohort-roster row. What remains: the roster's aging story
-     for vessels that vanish WITHOUT being forgotten (a ghost row should fade, not linger as
-      a permanent 👥 suspect).
+          Post, not just its address.
+- **The crew ledger's transport — RULED (2026-08-27 as "the graft's transport"; re-expressed
+   under cert-crew, §7) — it rides the Heist/repli machinery, continuously.** The `/Crew`
+    stream (rows + certs + ejections, soul-signed, last-writer-wins) is chunked, resumable,
+     grant-gated transfer — the gears exist — and it is a STANDING stream, not a ceremony
+      payload: the bodies all back each other up, continuously (§7). Remaining design is just
+       the lane naming (what shelf-set flows on which cadence) — no new transport.
+- **Body-key mortality — SPECIFIED (2026-08-27 as "vessel-key mortality"; re-expressed §1).**
+   A body key is per-(store × soul); a re-linked device is a NEW body with a new key, and the
+    human may forget the old one — forgetting retires its `/Crew` row. What remains: the
+     `%Body` cache's aging story for bodies that vanish WITHOUT being forgotten (a ghost row
+      should fade, not linger as a permanent 👥 suspect).
 - **Instance memory — more to make up.** Where a body remembers which instance it is (§1):
    instance-scoped, at the top of the one slope of persistence (Dexie|FSA behind one
     abstraction), never mixed across souls. Undesigned: its exact home (a Dexie table keyed
-     by nothing? a reserved OPFS file?), what it holds beyond vessel+SelfType+souls-held,
-      and how the one-body-many-souls case (a family's shared daemon — the daemon boots one
-       `I=` today) reads it. V1 stance: one soul per Cave; revisit deliberately.
+     by nothing? a reserved OPFS file?), what it holds beyond body-key+Post+souls-held, and
+      how the one-body-many-souls case (a family's shared daemon — the daemon boots one `I=`
+       today) reads it. V1 stance: one soul per Cave; revisit deliberately.
 - **Pool quota numbers** (§3). A cap, an eviction order, the persist() request (§0 item
    9b) — small, but someone must own the numbers.
 
@@ -1413,7 +1480,12 @@ A standing want recorded while we are here (the owner): **better UI lego for dis
 
 ## 11. Primitive inventory (what the code already gives us)
 
-Verified at the time of writing; re-check before relying (a named symbol may have moved).
+Verified at the time of writing; re-check before relying (a named symbol may have moved). ⚠
+ **`Swarm_sibling`/`Swarm_is_sibling`/`Swarm_note_theft`/`Swarm_stolen` below are the PRE-
+  cert-crew layer** — same-browser-profile cohort/theft detection, not account membership.
+   They still exist and still fire, but membership itself is now `Swarm_crew_grant` +
+    `Swarm_voucher_ok` (`/Crew`, `Grant:Crew`); see `Crew_todo.md` §3–§5 and the superseded
+     notes at §1/§2/§7 above.
 
 - **identity ≠ address** — `Ghost/S/Swarm.g` §region "places" (~3559): `Swarm_address`
    (address ?? name), `Swarm_next_suffix` (`<prepub>_N` from `_1`), `Swarm_steal_back`

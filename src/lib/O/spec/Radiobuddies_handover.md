@@ -9,7 +9,7 @@ Companions: `Radio_todo.md` (the M-cluster living doc), `Radio_spec.md` (the 9 p
 
 > **Orienting header (2026-07-27) — kept, not retired (human).** Read this doc in two halves.
 >  **DONE / historical:** the §5 REGROUP has largely landed — `Ghost/M/Sound.g` and `Ghost/N/Repli.g`
->   exist (the two slabs were extracted from `Musuation.g`); the audio pipeline has since been reborn
+>   exist (the two slabs were extracted from `MusuTesting.g`); the audio pipeline has since been reborn
 >    *again* into `Ghost/M/Ra.g` (`rastock→racast→raterm`), which postdates this doc, so the §3 family
 >     table's `Radiola`/`Sound_*` names have partly diverged from the shipped `Ra_*`.
 >  **STILL LIVE and why it's kept:** §0-1 — the name **Radiobuddies** and the destination *"the app
@@ -38,7 +38,7 @@ The system has never had a name. The triad in the memory is `Cluster` (how runs 
    lives *inside* it and the product would not boot without the test file. That is the inversion to
     correct.
 
-Concretely, `Ghost/Story/Musuation.g` (3812 lines) contains two slabs its own comments mark as
+Concretely, `Ghost/Story/MusuTesting.g` (3812 lines) contains two slabs its own comments mark as
  **real, shared, not-scaffolding** software:
 
 - `//#region reality` (L28–299) — the **audio engine**: `Musu_synth` / `Musu_silence` /
@@ -51,10 +51,10 @@ Concretely, `Ghost/Story/Musuation.g` (3812 lines) contains two slabs its own co
     real software, first user below"* — the first user being the `MusuReplica` / `MusuReco` Books
      further down the same file.
 
-The destination is: **those two slabs in family homes, `Musuation.g` reduced to pure scenarios, and
+The destination is: **those two slabs in family homes, `MusuTesting.g` reduced to pure scenarios, and
  the spine composable into the real app without loading a single Book.** The precedent already
   happened once and proves it works — `Voro_crush_scan` / `_walk` / `_crushable` moved *out* of
-   `Musuation.g` into `Ghost/V/Voro.g` (Radio_spec §8), and the Books that use it now call it
+   `MusuTesting.g` into `Ghost/V/Voro.g` (Radio_spec §8), and the Books that use it now call it
     cross-ghost. We are finishing that same migration for the two slabs that are still trapped.
 
 ---
@@ -126,7 +126,7 @@ Three layers. Ideas enter at the top and *graduate* down; the product is the bot
 
 - **Layer 2 — the scenario (a Book).** Where an idea is born, because it is the cheapest place:
    `Story_subHouse` stands up a world, a `%req:wrangle` drives beats, a witness asserts each one, and
-    Cyto draws it for free. One Book proves **one rung**. This is `Ghost/Story/Musuation.g` and its
+    Cyto draws it for free. One Book proves **one rung**. This is `Ghost/Story/MusuTesting.g` and its
      siblings. Cheap, watchable, disposable.
 - **Layer 1 — the spine (a family ghost).** When a rung is proven, its *mechanism* graduates into
    `Ghost/M|N|S|V/*` as pure verbs — no `%req` self-install, no scenario, no `%witnessed`. The Book
@@ -152,14 +152,14 @@ Three layers. Ideas enter at the top and *graduate* down; the product is the bot
 
 1. **Sound.** Cut `//#region reality` → `Ghost/M/Sound.g`; rename `Musu_synth`→`Sound_synth` etc.;
     ghost-compile on `:9091`; add the `CREDULER_GHOSTS` line; re-point every `this.Musu_synth` caller
-     in `Musuation.g` (and `Mixer.g`, which reuses the synth-with-a-beat); **re-run the real-audio
+     in `MusuTesting.g` (and `Mixer.g`, which reuses the synth-with-a-beat); **re-run the real-audio
       Books live** (MusuSignal/Glide/Tune/Radio/Mix/Edge/Pier). Reversible; do it alone.
 2. **Repli.** Cut `//#region repli` → `Ghost/N/Repli.g` (see §3 open call); same compile→enroll→
     re-point dance; **re-run MusuReco + MusuReplica live** — these are the integrity/paging Books, so
      watch the `body_hash` gate specifically (it is the correctness contract, per the last session's
       MusuReco diff — the recent-ring *view* slimmed, but the hash is still stamped and verified;
        don't let the move drop the verification).
-3. **Reduce.** `Musuation.g` is now pure scenarios. Retire the redundant probes; leave the mature
+3. **Reduce.** `MusuTesting.g` is now pure scenarios. Retire the redundant probes; leave the mature
     integration Books. Register `Sound.g` + `Repli.g` on the Credence board (`Funkcion:Storying` is
      for Books — these are *spine*, so they belong under the `Waft:Ghost/Music/Ality` overlay map, not
       Credence's Book list) and Point the Ality map at their verbs.

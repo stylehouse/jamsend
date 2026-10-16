@@ -1,3 +1,11 @@
+> **HISTORY (retired 2026-10-15).** The grind list for the Voronoi stained-glass layer (`Ghost/V/Voro.g` +
+>  `Cytui.svelte`): the crush/model/render waves, the VoroTest roster, the Se process doctrine, and the
+>   8-rule render metaphysics. Superseded by Vyto, which never completed waves ③/④ (geometry into `Voro.g`,
+>    Cytui shrinking to wiring+paint — Cytui instead grew to ~5,878 lines). The metaphysics, the owner's
+>     taste quotes, the arc-river engineering, and what of Vtuffing is still live code all moved to
+>      `Glassbeast_todo.md` §0.6 item 1. Companion docs `Voro_render_todo.md`, `Voro_render_faults_todo.md`,
+>       `Voro_vtuffing.md` retired alongside it the same day, to the same section.
+
 # Voro_todo — the stained-glass grind list
 
 Task list for the Voronoi luxury layer. Written to be picked up COLD, one task at a

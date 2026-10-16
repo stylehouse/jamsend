@@ -40,7 +40,17 @@ Next moves (ripe first):
 - **Owner-eyes tuning**: off-edge spill geometry (scale 1.9/dx -60 — reasoned, not seen), drift
    amplitudes, Layer B feel.  Don't guess-tune; wait for critique.
 - **The residual lens** (Cello_synthesis_todo.md): ink∝surprise as a LENS Cello's cells wear —
-   the deeper meditation, deliberately NOT in Cello yet; lives as the Residual scheme meanwhile.
+   built and live at `/ink` (`ResidualMote.svelte`) and `/ink/islands` (`InkSurprise.svelte`,
+    see `InkSurprise_todo.md`), just not wired into Cellui's own cells yet. The open move is
+     wiring surprise-driven opacity/bloom onto Cello's main+satellite cells, not building a 9th
+      scheme.
+- **Navigation-at-scale — Cello has none.** The retired Weave strike (`history/Cello_universal_scheme_3_todo.md`,
+   scraped into `Cello_synthesis_todo.md`'s durable core) left one idea Cello never picked up:
+    ancestry as a left-edge COLOUR BRAID — one thread per ancestor, stacked, widest at the root and
+     narrowing per level — plus a canvas-edge minimap of 1px-per-tile colour bars. Cello's
+      satellites hover around ONE main cell with no way to see or jump to anything outside that
+       neighbourhood; the braid is a cheap lineage/navigation channel that could ride the edge of
+        Cello's canvas with no new layout physics (same `cello_blob` charm, same Matstyle colour).
 - Note the pose seam split: Cello WRITES pose (its output to Faces) so it reads the commissioner's
    belly intent from `stage_want` only — deliberately diverging from Vytui's pose-first ladder
     (Vytui:791-812) because reading pose back would be reading our own writes.
@@ -109,7 +119,7 @@ The owner, on learning the Pooling cell was pushed by one gate and dropped by an
 | 23 | Cellui:612 main effect | main = `insistent` (stage_want, not refused) → commissioner focus → keep current → `resting_main` (Radio→Door→non-Supervisor) | stage_want, focus | view | a SECOND fmain ladder, roughly the same order |
 | 24 | Cellui:705 `satellites` | permanent (Door, Radio, +Pooling 09-13) always; extras capped at **2** unless a Heist/HeistBar cell stands; order Door, Radio, then mint order | heisting | view | *"one or two minicells"* |
 | 25 | Cellui:720 switcheroo | tap bud → `set_focus(mk)` → Sounditron_focus_to → re-commission | — | view→hd | the promote-swap |
-| 26 | Cellui:497 `TAKEOVER` = {Heist, HeistBar} → off-edge main; :812 `NARROW_FLOOR` 640px → sats under | mk, stage_w | view | the belly look; narrow embeds |
+| 26 | Cellui:497 `TAKEOVER` = {Heist, HeistBar, Wikipedia} → off-edge main; :812 `NARROW_FLOOR` 640px → sats under | mk, stage_w | view | the belly look; narrow embeds |
 | 27 | Sounditron.g:1240 `Screen_decide` (fullscreen authority) | dominant = ceremony / thin / arrival / gaveup / glass, published on `MH.c.screen`; read by Butler only | link_fresh, `Supervisor_arrived` (Supervisor.g:625, now world-agnostic 09-13), listen_only, guts | hd | "one place, one decision" — beside, not inside, the roster |
 
 ### (b) Contradictions and dead paths

@@ -13,7 +13,7 @@
 
 - **T0** (§6): move the daemon's HTTP routes into a verb registry behind one dispatcher. No behaviour change, and no
    Book can see it. Start here.
-- Then **T1 → T2** (the signed call over HTTP, plus a CLI). They're independent of the wire work in `Trust_audit_handover.md`.
+- Then **T1 → T2** (the signed call over HTTP, plus a CLI). They're independent of the wire work in `Trust_todo.md` §1.
 - **T3** (the wire door) after T2 has run for a day. **T4** (the grant) and **T5** (the face) last.
 
 ---
@@ -75,7 +75,7 @@ A call is ONE flat object of strings, signed with `signHeader` (`src/lib/cluster
 Then `hwm[from] = +seq`. Only after verify does anything look at the verb.
 
 **Why sign the call and not the road.** The wire's sender proof today is a per-era voucher, which a relay could
- replay onto a forged body (see `Trust_audit_handover.md` §0.1). HTTP has no identity at all. A self-signed envelope is
+ replay onto a forged body (see `Trust_todo.md` §1.2). HTTP has no identity at all. A self-signed envelope is
   immune to both: it binds verb + args + target + time to one key. Every door becomes a dumb pipe, and the wire
    hardening can proceed on its own schedule.
 

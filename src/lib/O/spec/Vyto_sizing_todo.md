@@ -26,13 +26,13 @@ Candidate next moves (vague on purpose):
 - **then `vyto_workingouts/processes.md`** (2026-07-21) — the whole arc broken into C→C engines:
    the joints (local geometry × global S · the floor law · the crush's voice · nest-solve ·
     reframe), the risk register, and the five-Book build order.  The re-entry doc for this arc;
-- **the floor law is Book-proven** (`Floorlaw`, Voronation.g, 2026-07-21 — green ×3 + red-gated):
+- **the floor law is Book-proven** (`Floorlaw`, Ghost/Story/VoroTesting.g, 2026-07-21 — green ×3 + red-gated):
    a family below the floor is superseded by its `Stuff_distil` crest; one-directional per pass at
     the exact re-admission point (the flutter defused); un-crush across passes by frame (the surf
      kernel) and by importance.  Owed: the tenancy into the stir order (processes.md §6 step 2);
 - **②/③ Stuffing landed** — the distiller + a new cross-key `vein` leg are re-said in stho and
    Book-proven (`Stuff_todo.md`); the re-home into `Vyto_fold` (`Vyto.g:294`) is owed;
-- **④ Typescale landed** — the global scale `S` is Book-proven in isolation (`Voronation.g`
+- **④ Typescale landed** — the global scale `S` is Book-proven in isolation (`Ghost/Story/VoroTesting.g`
    `//#region Typescale`; green + adversarially gated on the live runner): global ratio · order ·
     frame-spent · floor-fold · re-breathe, `φ=√` as a first cut. OWED: the wire into `Vyto_express`
      (⑤, replacing dose) + the taper (⑥), and your preen of the `φ`|area|floor model;
@@ -214,7 +214,7 @@ The read confirmed §1 against code and sharpened it into **three structural fac
 
 - **① Scan** — *live* (`Vyto.g:178`). Mirror the grappled sources into `w.c.mirror` (off-snap).
 - **② Fold · Gang** — *fill the stubs* (`Vyto.g:294,298`) with the ported crush (governor + gang rules)
-   AND **`Stuff_distil`** (this session — `Voronation.g`; the re-home target). Each surviving pane gets
+   AND **`Stuff_distil`** (this session — `Ghost/Story/VoroTesting.g`; the re-home target). Each surviving pane gets
     its distilled `%Vtuffing`. **Importance is BORN here, and the two channels merge:** shared-ness (a
      value carried by many = a fact/vein) and count (`n`/`fold_n`) are the SAME signal read two ways —
       the grammar of compression already computes them (Springcore §the grammar). One number per thing:
@@ -253,13 +253,13 @@ The read confirmed §1 against code and sharpened it into **three structural fac
   `IOing` flock (§7) is exactly the shape for "N reaches that must resolve together," so the global-`S`
    station is the concrete tenant that un-parks the Sunpit. Prove ④ in isolation the way Stuffing proved
     ②: a Book that feeds importances and asserts the solved `S` + per-text sizes, no glass. **DONE
-     (2026-07-21) — the `Typescale` Book** (`Voronation.g` `//#region Typescale`; Credence `What:Voro`)
+     (2026-07-21) — the `Typescale` Book** (`Ghost/Story/VoroTesting.g` `//#region Typescale`; Credence `What:Voro`)
       proves exactly this: global ratio · order · frame-spent · floor-fold · re-breathe, φ=√ as a first
        cut, green + adversarially gated (linear φ → red) on the live runner. What ④ still owes: the wire
         into `Vyto_express` (⑤, replacing dose) and the taper (⑥); and the human's preen of the φ|area|
          floor model this first cut committed to.
 
-**⑤ WIRE LANDED — the `VytoBreathe` Book (2026-07-27, `Vytonation.g`; Credence `What:Vyto`; GREEN×2
+**⑤ WIRE LANDED — the `VytoBreathe` Book (2026-07-27, `Ghost/V/VytoTesting.g`; Credence `What:Vyto`; GREEN×2
  + full Vyto* regression green).**  The wire into `Vyto_express` is in, model-side, OPT-IN (a PRICED
   commission — `w.c.priced`, default off, so every existing Book stands byte-identical).  **A reframe
    this build FORCED and the human should note:** the §9-draft's literal *frame-share* (`env_area =

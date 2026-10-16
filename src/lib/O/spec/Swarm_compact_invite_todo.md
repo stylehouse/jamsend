@@ -127,18 +127,18 @@ Safe ordering (verified): the nonce SPEND (:720) depends only on the token being
     proof (the F3-flood defense) — PRESERVED.
 - **SwarmSpoof re-expressed**: Mallory holds a real compact invite, crafts a `pier_hello` with
    `page={pub:Mallory, prepub:Victim}` → still `hello_spoofed`, invite stays UNSPENT, Victim hears nothing
-    (Swarmation.g:1577,1581). Same asserts, new invite shape.
+    (SwarmTesting.g). Same asserts, new invite shape.
 
 ---
 
 ## 5. The Book re-record list (the regression surface — all to the compact form)
 
-Seal Books (`Ghost/Story/Swarmation.g`): **SwarmStaple** (the model, :182 mutual-grant-both-ends moves to
+Seal Books (`Ghost/Story/SwarmTesting.g`): **SwarmStaple** (the model, :182 mutual-grant-both-ends moves to
  after frame 3), **SwarmWire** (:302), **SwarmSteal**, **SwarmInvite** (:440 the QR parse — the token shape
   changes most here), **SwarmDoor** (first-contact), **SwarmGot**, **SwarmPolicy** (ttl goes away — no
    `time`!), **SwarmShare**, **SwarmChain** (:1291 — chain keeps full sign, but shares the seal), **SwarmBlotter**
-    (:1440), **SwarmSpoof** (RE-EXPRESS, :1577/1581). Plus `Radiation.g`: **MusuRaStream**/**MusuRaChase**/**MusuBuddy**;
-     `Heistation.g`: **MusuHeist** (:551 mutual-grant-gates-heist). Each: reset toc dige→lie, rm snaps, run→red,
+    (:1440), **SwarmSpoof** (RE-EXPRESS, :1577/1581). Plus `RaTesting.g`: **MusuRaStream**/**MusuRaChase**/**MusuBuddy**;
+     `HeistTesting.g`: **MusuHeist** (:551 mutual-grant-gates-heist). Each: reset toc dige→lie, rm snaps, run→red,
       re-declare asserts as needed, accept, rerun green×2. **SwarmPolicy needs rethinking** (its whole subject,
        the ttl door, is being removed).
 
@@ -462,7 +462,7 @@ No **chains** — see §10, the owner's ruling of 2026-08-09. No Tyrant / third-
 
 **The good news: adopting it costs nothing.** A survey of every `Swarm_mint_idzeug` call site
  (2026-08-09) found the fifth `chain` argument passed in exactly ONE place in the whole repo —
-  `Ghost/Story/Swarmation.g:1263`, inside Book **SwarmChain**. No UI mints a chain:
+  `Ghost/Story/SwarmTesting.g`, inside Book **SwarmChain**. No UI mints a chain:
    `InvitePanel.mint()` → `Swarm_invite_url` → plain serial; the blotter sheet (§6.2, and now with a
     face — see below) mints plain serials *by construction*. So the live door has always been
      origin-only, and this ruling **confirms the built behaviour rather than changing it**. Nothing to

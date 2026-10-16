@@ -26,7 +26,7 @@ The owner, 2026-09-04: *"think long and hard about the datasplatter behind Radio
     **no phone→laptop frame**; `Mag:heard` **replaces `radio.c.heard`**.
 
 **The new ghost: `Ghost/M/Heard.g`** (registered in `LiesLies.svelte`'s GhostList where `Jam.g` was; compile
- with `GFILES="Ghost/M/Heard.g Ghost/M/Heist.g Ghost/M/Radio.g Ghost/M/Ra.g Ghost/S/Swarm.g Ghost/N/Repli.g Ghost/Story/Heistation.g Ghost/Story/Radiation.g Ghost/Story/Swarmation.g Ghost/Story/Sounditron.g"`
+ with `GFILES="Ghost/M/Heard.g Ghost/M/Heist.g Ghost/M/Radio.g Ghost/M/Ra.g Ghost/S/Swarm.g Ghost/N/Repli.g Ghost/Story/HeistTesting.g Ghost/Story/RaTesting.g Ghost/Story/SwarmTesting.g Ghost/Story/Sounditron.g"`
   or LocalGen silently skips it; esbuild-parse each `.go` after; reload the runner before trusting a red).
 - **the Mag** — `Heard_home/_mag/_mag_at/_mag_find/_mag_near` (find vs find-or-create kept strictly apart:
    the dial reads this on every pump tick and a reader built on `oai` mints by being asked),
@@ -79,7 +79,7 @@ The owner, 2026-09-04: *"think long and hard about the datasplatter behind Radio
 
 **ONE red is ours, and it is the gate working.** `MusuBuddy` declared an assertion naming the deleted
  ledger — *"the jam ledger reads spin like grab in order…"* — which deleting `%Jam`/`%Spin`/`%Like`/`%Grab`
-  made unmeetable. Beat 11 already SWEARS the replacement (`Radiation.g:1196`); only the toc line was stale,
+  made unmeetable. Beat 11 already SWEARS the replacement (`RaTesting.g`); only the toc line was stale,
    and it has been rewritten to that sentence verbatim. ⚠ **`MusuBuddy` is still red for an unrelated,
     upstream reason**: it stamps `jam_fail:nothing heard` because `w.c.term` is never set — this diff
      touches neither `term` nor `pick_id` — and the tell is that it runs all 14 steps in **27 seconds**,

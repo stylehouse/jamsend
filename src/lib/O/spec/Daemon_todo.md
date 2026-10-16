@@ -845,7 +845,7 @@ The Wormhole has *four* interchangeable backends behind one nav contract
    its own export snap — keypair embedded, the human's ruling that keys ride the snap — to
     `.jamsend/account/<prepub>/toc.snap` via `nav.write_file`; `Swarm_boot_seed` reads it at boot,
      concretes the identity and **mirrors the row back into Dexie** so the next boot is a plain
-      Dexie hit. Book: `SwarmDisk` (`Ghost/Story/Swarmation.g:1637`). Doc: `Identity_persist_todo.md`.
+      Dexie hit. Book: `SwarmDisk` (`Ghost/Story/SwarmTesting.g`). Doc: `Identity_persist_todo.md`.
 - **Heist.** The magazine *"lives in `.jamsend` as well as Dexie"* — `Heist.g:2258`, and the reason
    in the same breath: *"Dexie state is lost very easily, `.jamsend` survives it."*
     `Heist_defaults_rehydrate` is the read-back for a fresh Dexie with an existing disk.
@@ -1989,7 +1989,7 @@ So the daemon dug the entire collection, learned every path barren, and reported
   `typeof dl.deleteEntry !== 'function'` is a guard **six** places use, and all six were inert on the
    daemon: `Ra_stock_drop` + `Ra.g:1569` (stock housekeeping), `Heist.g:292` (drop one landed file),
     `Heist.g:3006`/`3035` (`Heist_sweep` — recursive removal of a landing tree), and
-     `Heistation.g:3181`. So a jamserve doing phone-sync heists was never cleaning up after itself
+     `HeistTesting.g`. So a jamserve doing phone-sync heists was never cleaning up after itself
       either. **Adding `deleteEntry` turns all six ON at once**, `Heist_sweep`'s recursion included.
        Two things bound it and both are load-bearing: every path still resolves through `writeAbs`, so
         a read-only mount (`music`) **throws** rather than deletes; and `deleteEntry` refuses a
@@ -2011,7 +2011,7 @@ So the daemon dug the entire collection, learned every path barren, and reported
    `MusuRaStock` — the direct Book over `Ra_stock_one` — runs **green, `caveat=0`**, meaning the
     browser-stocked card's dige is byte-identical to its fixture. `MusuRaStream` is red, and it was red
      before this work: step 1's *only* divergence is `w:MusuRaStream,now=1751980010`, which
-      `Radiation.g:78` (`w.sc.now = 1751980000 + 10*n`, the pinned swarm clock) writes and the fixture
+      `RaTesting.g` (`w.sc.now = 1751980000 + 10*n`, the pinned swarm clock) writes and the fixture
        predates; steps 20/40 then cascade off it as `self,round=46` vs `70`. Known baseline —
         [[radiation-books-red-at-baseline]]. **Stated as strong evidence, not proof: no controlled
          revert was run.** If someone wants the proof, revert `Ra.go`, recompile, rerun, compare diges.
@@ -2085,7 +2085,7 @@ Ra_native_continuation(w, rec, nat)      # Ra.g, new
   **THE CAUSE, confirmed — it is the Book gate.** `Stoker_tour`'s only prod caller is
    `Swarm_share_beat` (`Swarm.g:1973`), and the beat's pump is started by `Swarm_share_up`, which
     `Stoker_ensure` gates with `if (!w.sc.w && …)` — a named Book run-world wears `w.sc.w`, and the
-     gate exists so a Book never starts a wall-clock pump (Swarmation.g:1000, correctly). jamserve
+     gate exists so a Book never starts a wall-clock pump (SwarmTesting.g, correctly). jamserve
       boots `B=Sounditron`, so **the world holding its Stoker reads `{"w":"Sounditron"}`** — one `/c`
        query, since `w` is an `sc` key. The gate is false, `Swarm_share_up` never arms, no beat, no
         tour. The 16 cards that DID appear are the Book's own muse stocking once, not a conveyor

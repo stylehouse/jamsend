@@ -916,7 +916,7 @@ Each of these needs a person, because each is a decision about what is TRUE rath
      what actually crosses, and the `'Music'` bundle it names is a picture waiting to be drawn — one grant
       covering streaming, gossip, routing and work-booking is exactly the kind of thing a glass makes obvious.
 
-**Known reds you did NOT cause:** `LakeRace` (real, unguarded compile fix — `Lies_handover.md`), `Presence`
+**Known reds you did NOT cause:** `LakeRace` (real, unguarded compile fix — `Lies_attention_todo.md`), `Presence`
  (needs a relay). Everything else on the unit shelf is green. Diff the snap before alarming.
 
 **The arc:** the social substrate (identity · pier · grant · presence · transport) is a *platform*,

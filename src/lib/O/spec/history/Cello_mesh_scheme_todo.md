@@ -1,5 +1,15 @@
 # Cello Mesh — the decodable-field renderer
 
+> **HISTORY (retired 2026-10-15).** This was strike 2 of 8 in the Cello rendering tournament
+>  (`Cello_synthesis_todo.md`, Task #42): a depth-band × mainkey-cluster field where every
+>   particle is an atom glyph (mainkey pill + sc pebbles + `.c` feather stubs), receding to a
+>    mote at field zoom. Design-only — none of its mechanisms were ever built. It survived
+>     farthest of the eight (its mote is "the closest any strike comes to a residual") but still
+>      sank: a mote costs ink per particle. Its atom vocabulary is the direct ancestor of the
+>       built `ResidualMote.svelte`/`InkSurprise.svelte` (at `/ink`, `/ink/islands`) — see
+>        `InkSurprise_todo.md`'s "Prior art" section and `Cello_synthesis_todo.md`'s scorecard
+>         footnote [^2] and durable core.
+
 A sibling scheme to Cello (the main+satellites template renderer). Where Cello asks
  "which one thing are we looking at right now?", Mesh asks "what is the whole field of
   matter, in full, at once?" — and answers by rendering it as a dense, demarcated,

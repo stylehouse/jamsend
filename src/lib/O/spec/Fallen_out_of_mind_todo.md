@@ -340,7 +340,7 @@ What keeps a pile legible is `history/Reqdrop §0` (your 07-14 bet): "leave in t
  Bounding rules already stated: `Story_hygiene §0` — "a verification sweep cannot currently be trusted, and
   it fails SILENTLY GREEN" (you: "please push a TODO for that nondeterministic runner problem"); `history/
    Backbone_plan` — every Hoho* green was a headless bubble, "no Hoho* gate is trustworthy" until re-run
-    live; `Heistation.g:4309` — "all these Musu* tests really didn't prepare us too well for the clusterfuck
+    live; `HeistTesting.g` — "all these Musu* tests really didn't prepare us too well for the clusterfuck
      of them all together" → **MusuNeGrind is a missing test LEVEL asserting invariants, not another
       scenario**; `Sounditron.g:2966` — a gate that latches on a row EXISTING swears nothing; `Ra.g:1326` —
        "the camera is the instrument": make state snap-visible rather than instrument the code. And the
@@ -387,7 +387,7 @@ What keeps a pile legible is `history/Reqdrop §0` (your 07-14 bet): "leave in t
      strip face · `history/Robustness_plan` **Organ 3 authoritative absence** (ruled app-wide, archived
       without lifting to CLAUDE.md — canonical nowhere) · `history/Supervisor_buildlog` the prosthetic
        wormhole ("a real user's share has no wormhole/ in it") · `Statemap §0` predictable structure ·
-        `Onboarding §A` the `.c` offender list · `Lies_handover` P7 collapse-the-cursor · `LiesEnd` push_dirty
+        `Onboarding §A` the `.c` offender list · `Lies_attention_todo` P7 collapse-the-cursor · `LiesEnd` push_dirty
          fault particle · `Keeping` #7/#8 · `Backbone` P4/P7 · `CodeReview` replace() serialisation · PWA on
           one HTTPS origin · `Consolidation_todo` awaiting approval since 09-02 · Atlas edges · `Hovercraft
            §7` subscriptions.
@@ -457,7 +457,7 @@ Lift these and the ledger below can mostly be struck.
    **DONE**: landed as `%SoundPooling,pub` with all four compartments under it; `SoundPooling_todo §0`.
 
 **Social**
-- `Swarmation.g:2528` *"people have to be looking for a certain role"* — **LAW** (whittled #2). The Book
+- `SwarmTesting.g` *"people have to be looking for a certain role"* — **LAW** (whittled #2). The Book
    proves it with a made-up role, which is the discrimination; nothing states it in prose.
 - `Swarm.g:2922` *"it's an Invite, but it doesn't birth a Grant"* — grantless device links. **DONE** in code
    (the mint-stop; the stamp is the record, `pier_accept` carries `link:{post,serial}`). ⚠ the crew memory
@@ -497,9 +497,9 @@ Lift these and the ledger below can mostly be struck.
     still owed). Reader 11's "no doc carries this" is wrong.
 
 **Testing**
-- `Heistation.g:4365` *"far too much is ending up in Musu"* — **LAW — lift to `Story_hygiene_todo`.** A
+- `HeistTesting.g` *"far too much is ending up in Musu"* — **LAW — lift to `Story_hygiene_todo`.** A
    naming convention that lives in one Book header is a convention the next Book will not follow.
-- `Heistation.g:4309` *"all these Musu* tests really didn't prepare us too well for the clusterfuck of them
+- `HeistTesting.g` *"all these Musu* tests really didn't prepare us too well for the clusterfuck of them
    all together"* — composition is a test LEVEL. **SUBSTANCE-DOCUMENTED**: §6 above carries it.
 - `Sounditron.g:2966` *"is that really what's happening there?"* — a gate latching on a row EXISTING swears
    nothing — and `Sounditron.g:8`, fixture-checking AND the assertion contract, both. **SUBSTANCE-DOCUMENTED**:
@@ -629,7 +629,7 @@ Spine: `Homethink_todo` · `Coding_guide` · `NOTATION`. Data: `Cstructures_todo
   `Crew_todo` · `Pier_todo` · `Presence_todo` · `Reach_todo` · `Trust_todo` · `Covenant_design` ·
    `history/Division_todo` · `history/CrewLink_todo`. Wire: `Peeroleum_spec` · `Repli_design` ·
     `Repli_idspace_todo` · `Backpressure_todo` · `Wire_spec`. Attention: `Hovercraft.design` ·
-     `Datalayer_todo` · `history/Reqdrop_todo` · `Interest` · `Keeping_spec` · `Lies_handover` ·
+     `Datalayer_todo` · `history/Reqdrop_todo` · `Interest` · `Keeping_spec` · `Lies_attention_todo` ·
       `Error_channel_todo`. Seeing: `Vyto_spec` · `Vyto_todo` · `Cello_synthesis_todo` · `InkSurprise_todo`
        · `Voro_render_faults_todo` · `history/Tend_todo` · `Stemdex_todo`. Testing: `Story_hygiene_todo` ·
         `Story_future*` · `EntropyArrest` · `Social_demarcation_todo §7`. App: `Radio_circuit_todo` ·

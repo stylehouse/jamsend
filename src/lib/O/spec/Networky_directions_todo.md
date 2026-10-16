@@ -31,7 +31,7 @@ Ranked by leverage-per-line, RE-ORDERED for the WebRTC-unreliable reality above:
 1. **[cheap, mine to land] Gossip off the shared serial inbox.** Add `ive_got` to the ephemeral
    receive-bypass (`Peeroleum.g:664`) so a boast never books an inbox `%req:unemit` + O(depth) rollup and
     can never starve Invite/LinkDevice handshakes. **Blocker, already scoped:** `SwarmGot` asserts on the
-     boast being *booked*, not *delivered* — land it WITH a `Swarmation.g` rewrite that asserts on the
+     boast being *booked*, not *delivered* — land it WITH a `SwarmTesting.g` rewrite that asserts on the
       `%IveGot` fact appearing (delivered) regardless of lane. That is the whole cost, and it finally
        settles the booked-vs-delivered question parked at `Peeroleum.g:665-674`. (The 2026-08-29
         `swarm_gossip_hi_ms` hi-boast throttle is correct triage but treats the symptom; this is the root.)
@@ -53,7 +53,7 @@ Ranked by leverage-per-line, RE-ORDERED for the WebRTC-unreliable reality above:
    silently.** Today overload is signalled *implicitly*: the backstop `console.log`s and drops the oldest
     frame (`Peeroleum.g:495`), which looks identical to loss, so the sender's 4s timer RE-ASKS and
      amplifies. Replace the silent drop with a structured `%error,kind:flood,pier,depth,retry_ms` that
-      rides the same error channel every other Cluster error uses (`Errchannelation.g` / `%error`),
+      rides the same error channel every other Cluster error uses (`ErrchannelTesting.g` / `%error`),
        so it appears identically at BOTH ends and in the HUD/Brink (the human 2026-08-30: "the Cluster
         should have unified errors"). Detect on `pier.c.inbox_depth` over the drainbound ceiling for K
          ticks (depth already measured, §0-item-drainbound). **Rate-limit the error itself** — one quench
@@ -82,7 +82,7 @@ Your live Invite/LinkDevice tests didn't freeze on invite code — they froze on
      won't fix this — the fusion is the serial inbox, not the object model.
 
 Hard coupling worth knowing: **§0-item-1 (gossip off the shared serial inbox) IS the SwarmGot
- re-record.** Item 1 must land WITH a `Swarmation.g` rewrite that asserts on the `%IveGot` fact
+ re-record.** Item 1 must land WITH a `SwarmTesting.g` rewrite that asserts on the `%IveGot` fact
   appearing (**delivered**), not on the inbox `%req:unemit` being **booked** — which finally settles
    the booked-vs-delivered question parked at `Peeroleum.g:665-674` AND greens `SwarmGot`
     (`Swarm_compact_invite_todo.md` §5). So do not re-record `SwarmGot` off its current `state:redeeming`

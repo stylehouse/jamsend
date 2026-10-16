@@ -1,5 +1,13 @@
 # Cello Universal Scheme 6 — the Woven Membrane
 
+> **HISTORY (retired 2026-10-15).** This was strike 8 of 8 in the Cello rendering tournament
+>  (`Cello_synthesis_todo.md`, Task #42): warp stripes per sc key (width ∝ value length) and
+>   weft-depth hairlines at the cell's left rim. Design-only — none of its mechanisms were ever
+>    built. Ranked worst of the eight by ink-efficiency — one stripe per sc key per particle
+>     guarantees `O(particles × keys)` ink, the stripe-forest cliff. Named (and dismissed) in
+>      `Cello_synthesis_todo.md`'s scorecard footnote [^8]; no mechanism of its own survives into
+>       the durable core.
+
 ## 0. What to get on with next
 
 This doc is design-only. No code exists yet. Read it to understand the visual philosophy before

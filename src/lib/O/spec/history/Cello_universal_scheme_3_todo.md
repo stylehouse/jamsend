@@ -1,5 +1,14 @@
 # Cello Universal Scheme 3 — The Weave
 
+> **HISTORY (retired 2026-10-15).** This was strike 5 of 8 in the Cello rendering tournament
+>  (`Cello_synthesis_todo.md`, Task #42): tiles with mainkey-warp / sc-weft / `.c`-count zones,
+>   NOT indented — ancestry read instead as a stacked left-edge colour braid (one thread per
+>    ancestor, widest at depth 0, narrowing per level) plus a canvas-edge minimap. Design-only —
+>     none of its mechanisms were ever built. Ranked 3rd of 8: "the braid is the best idea here
+>      and it drowns" — a better-indexed scroll is still a scroll. The braid + minimap is scraped
+>       as Cello's missing navigation-at-scale story into `Cello_todo.md`'s "Next moves" and into
+>        `Cello_synthesis_todo.md`'s durable core and scorecard footnote [^5].
+
 *One substrate. One reading. Every layout is a fold of the same cloth.*
 
 ## 0. What to get on with next

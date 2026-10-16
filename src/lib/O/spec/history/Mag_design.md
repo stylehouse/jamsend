@@ -1,5 +1,13 @@
 # Mag_design.md — the holdings model (2026-07-27)
 
+> **HISTORY (retired 2026-10-15).** This was the "settled statement" of the Mag holdings model,
+>  written 2026-07-27 to be read-and-preened. Its Mag-kind vocabulary (`shuffle | lineup | faves |
+>   culture`) went FALSE the same era it was written, superseded by `Mag_todo.md`'s own 2026-08-05
+>    ruling (one kind, `%Mag:shuffle`). Its durable content — the `Mag : Waft :: Cloud : What`
+>     lineage, the settled-design call-site list, the GC-invariant carve-out from `Radio_spec.md`
+>      §2.4, and the `[LIVE]/[BOOK]/[OWED]` verification convention — now lives in `Mag_todo.md` §1,
+>       "The settled model". Read that instead.
+
 Consolidates `Mag_todo.md` §1 (the model), the still-true carve-outs from
  `Mag_vs_flatstock_preen.md`, and `Radio_spec.md` §2.4's GC invariant. Written for read +
   preen; not self-blessed spec. `Mag_todo.md` remains the working doc for the forward items

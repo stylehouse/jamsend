@@ -1,5 +1,9 @@
 # Heist_design.md — keeping a copy of what you're hearing (2026-07-27)
 
+> **Relation to `Heist_todo.md`.** That doc states how heisting works NOW (§0: "What heisting is");
+>  this doc is the design history underneath it — the rulings, the rejected scope, and why today's
+>   shape won. Read `Heist_todo.md` §0 first; come here for the reasoning.
+
 Heist = **you're listening to a track, and you want to keep it** (and probably the rest
  of the directory it came from). This assembles the design so you can read + preen before
   a build. Not self-blessed spec.
@@ -12,7 +16,7 @@ Heist = **you're listening to a track, and you want to keep it** (and probably t
      good for now").
 
 **Verification basis:** `[LIVE]` = real caller in shipped `.g`/`.svelte`; `[BOOK]` = green in
- `Heistation` only, no live caller; `[OWED]` = not built.
+ `HeistTesting.g` (né `Heistation.g`, renamed 2026-09-09) only, no live caller; `[OWED]` = not built.
 
 ---
 
@@ -52,9 +56,20 @@ Heist = **you're listening to a track, and you want to keep it** (and probably t
 
 ## Scope A — the simple directory heist (production) — "RaHeist?"
 
-**The gesture:** while the radio plays a track, one control says *keep this* — and keeping it means
- grabbing the **directory it came from** into your own collection, with a chooser so you take what
-  you want and skip what you don't.
+> **SUPERSEDED 2026-10-07 — the chooser below never shipped and now never will.** The owner: *"it only
+>  downloads one track when I clicked yay? we want the whole album"*; *"lets ignore our ability to
+>   change the path… just downloading whole albums is fine."* A ♥ keep takes the WHOLE album with no
+>    directory chooser and no path choice (`Heist_keep_take_go`, `Ghost/M/Heist.g`; `Heist_defaults.one`
+>     is the only way back to a single track, and it carries no chooser either). `Heist.g` itself calls
+>      the code this section describes "**the dormant chooser path**" — `HeistSetup.svelte`, the
+>       `choosing`/`committing` states, and the never-built `%places` checkbox tree below are orphaned,
+>        not merely unfinished. See `Heist_todo.md` §0 for what actually ships, and §11 ("Parked") for
+>         the retirement note. Kept below for the reasoning: why a chooser was the plan, and what made
+>          the whole-album default win instead.
+
+**The gesture, as first designed (now superseded — see above):** while the radio plays a track, one
+ control says *keep this* — and keeping it meant grabbing the **directory it came from** into your own
+  collection, with a chooser so you took what you wanted and skipped what you didn't.
 
 **The precedent is real and worked:** `src/lib/ghost/Pirating.svelte` (legacy `lib/ghost`, the old
  🏴 replication station — **reference behaviour, not code to revive**; production lives in `.g` now).
@@ -76,14 +91,17 @@ Heist = **you're listening to a track, and you want to keep it** (and probably t
     `body_hash`, `bin_write`s under the chosen path, catalogues via `Ra_rec_home`. Resume/partial-file
      handling was in the old `check_existing_downloads`; the new landing side is `[LIVE]`-ready.
 
-**What's already built vs. owed for scope A:**
+**What's already built vs. owed for scope A, as it stood before the 2026-10-07 ruling above:**
 - *Built (`[BOOK]`/`[LIVE]`):* the pull want-loop (`Ra_pull_beat`), landing (`Heist_land` — re-hash,
    verify, `bin_write`, catalogue, kid-safe non-audio skip `Crate.g:389`, FSA stale-handle self-heal),
-    dedup-at-door (`Heist_held`), the Berth persistence.
-- *Owed (`[OWED]`):* (a) the **directory-inflate** step in `.g` (the `descripted` walk of a source
-   folder — the old `rapiracy_descripted` drift), (b) the **chooser face** (the `%places` checkbox
-    tree), (c) the **wiring from the playing track's provenance** to a directory-scoped job, (d) the
-     **live pull driver** (see Frontier — Heist has no `Heist_share_up` analogue yet).
+    dedup-at-door (`Heist_held`), the Berth persistence. These stayed built and now serve the
+     whole-album path too — the engine never depended on the chooser existing.
+- *Owed, then SUPERSEDED — never built and no longer planned:* (a) the **directory-inflate** step in
+   `.g` (the `descripted` walk of a source folder — the old `rapiracy_descripted` drift), (b) the
+    **chooser face** (the `%places` checkbox tree), (c) the **wiring from the playing track's
+     provenance** to a directory-scoped job. (d) the **live pull driver** is NOT superseded —
+      `Heist_keep_beat`'s plain ~600ms share-loop beat became that driver (`Heist_todo.md` §3); only
+       the chooser-specific wiring around it died.
 
 **The caveat that dominates all of it:** the source folder lives on *someone else's machine*, so real
  bytes crossing is blocked on the **same `Socket_real` crossing as streaming** (`Frontier.md §1`). Over
@@ -93,7 +111,7 @@ Heist = **you're listening to a track, and you want to keep it** (and probably t
 
 ## Scope B — klepto / point-at-a-Pier (BUILT, PARKED until after production)
 
-The heavier engine already green in `Heistation`. Kept here as the map for later; **not the near build.**
+The heavier engine already green in `HeistTesting.g`. Kept here as the map for later; **not the near build.**
 
 **Hard arc** (`Ghost/M/Heist.g`, engine): `Heist_census` (source walks files → `%Record` + `%Body,seq`,
  full-file `body_hash`) → `Heist_job(w, at:<pier>, filings)` (mint the job, artist→genre believe/disbelieve)
@@ -162,19 +180,25 @@ The heavier engine already green in `Heistation`. Kept here as the map for later
 
 ## The frontier — what a scope-A build actually needs
 
-The engine verbs it would call all **exist**; three things must be **written**, plus one chooser face:
+> **Items 1–2 are superseded, same ruling as above.** The directory-inflate step and the chooser face
+>  were never written and now never will be — a ♥ takes the whole album, nothing to choose. Item 3
+>   resolved a different way than written here: Heist got a live pull driver, but it is
+>    `Heist_keep_beat` riding `Swarm_share_loop` (`Heist_todo.md` §3), not a hand-driven `Heistation`
+>     loop wired to a chooser's directory-scoped job.
 
-1. `[OWED]` **The directory-inflate step in `.g`.** Port the old `descripted` walk: given the playing
-    track's source uri, ask the source to describe the surrounding folder → `%places` tree. (Old ref:
-     `Pirating.svelte` `rapiracy_descripted` + `cytotermi_pirating_descripted`.)
-2. `[OWED]` **The chooser face** — a `.g` glass face over the `%places` tree with the per-level
-    keep/skip/rename/`only_categories` toggles. The single genuinely-missing UI. *(Not HeistFace — that's
-     the klepto wish UI.)*
-3. `[OWED]` **The live pull driver** — Heist's missing analogue of `Swarm_share_loop`. Nothing arms
-    Repli, builds the quarantine mirror, and beats `Heist_beat → Heist_land` until the directory-job
-     drains, then `Heist_flatten`. In `Heistation` this is hand-driven (`Heist_drive`/`Heist_flow`,
-      Book-only). *Exists:* `Heist_beat`, `Heist_land`, `Heist_flatten`, `Ra_pull_beat`, `Repli_offer`.
-       *Write:* the loop driver + the gesture that mints the directory-scoped job from the chooser.
+The engine verbs it would call all **exist**; three things were thought to need **writing**, plus one
+ chooser face — as it looked before the whole-album ruling:
+
+1. `[OWED]`, superseded — **the directory-inflate step in `.g`.** Port the old `descripted` walk: given
+    the playing track's source uri, ask the source to describe the surrounding folder → `%places`
+     tree. (Old ref: `Pirating.svelte` `rapiracy_descripted` + `cytotermi_pirating_descripted`.)
+2. `[OWED]`, superseded — **the chooser face** — a `.g` glass face over the `%places` tree with the
+    per-level keep/skip/rename/`only_categories` toggles. The single genuinely-missing UI, as it was
+     thought at the time. *(Not HeistFace — that's the klepto wish UI.)*
+3. **The live pull driver — DONE, differently.** The plan here was Heist's missing analogue of
+    `Swarm_share_loop`, hand-driven in `HeistTesting.g` (`Heist_drive`/`Heist_flow`, Book-only) until
+     written. What actually arms it is `Heist_keep_beat` riding the real `Swarm_share_loop` beat — no
+      directory-scoped job, no chooser gesture to mint one from.
 4. **And the gate:** all of the above over loopback proves nothing about the wire; real bytes from a
     friend's folder are blocked on the same `Socket_real` crossing as streaming (`Frontier.md §1`).
 
@@ -239,7 +263,7 @@ Written 2026-08-13 because the owner said the quiet part: *"it's suspicious that
 - `Radio_todo.md` — §9 (Pier reality ~L754), §10 (Klepto ~L886), §10.1 (honest wire ledger ~L929),
    §10.2 (as-built ~L942), §11.7 (the Berth ~L1295), §12.5 (~L1621), cp-landing ~L1459.
 - `Radio_spec.md` — §4 Heist (built/gate-owed + cp-landing ~L453), §5A culture ladder, §5 Pier.
-- `Ghost/M/Heist.g` (engine + `//#region soft`/`//#region berth`), `Ghost/Story/Heistation.g`
+- `Ghost/M/Heist.g` (engine + `//#region soft`/`//#region berth`), `Ghost/Story/HeistTesting.g`
    (`MusuHeist`/`MusuSoft`/`MusuBerth`/`MusuBreach`/`MusuBay`/`MusuLossy`), `src/lib/O/ui/HeistFace.svelte`
     + `glass_kinds.ts:25`, `Ghost/M/Ra.g` (landing), `Ghost/M/Crate.g` (kid-safe census),
      `Ghost/S/Swarm.g` (`Swarm_share_*`, the live share analogue).

@@ -249,7 +249,7 @@ stock/
      collects a `%Record`'s `%Preview|%Stream` packets in seq order and muxes them into a real RFC-7845
       Ogg/Opus stream (OpusHead BOS + OpusTags + audio pages, RFC-3533 CRC un-reflected, granule = cumulative
        48k samples incl. preskip), `nav.bin_write`s the file, and mints `%Blob,id,grade:ogg128` with `sc.path`
-        (never the bytes — the file IS the artifact). Proven by Book **MusuOgg** (`Ghost/Story/Heistation.g`):
+        (never the bytes — the file IS the artifact). Proven by Book **MusuOgg** (`Ghost/Story/HeistTesting.g`):
          stock one track → drive the transcode to the end → export → every page CRC re-reads · OpusHead facts
           match the card → a real `OfflineAudioContext.decodeAudioData` round-trips the file to the track
            duration (bar the opus end-pad a player trims to the granule). The export is r3's home-in-waiting;
@@ -415,7 +415,7 @@ Legend: **[built]** real data/logic flows through it; **[done]** a specific refi
   `Heist_census`), a `cids[]` manifest in the `.jam` header, verified per-chunk at `Heist_land` (a localized
    breach ahead of the whole-file gate — and it now records `job.sc.breach_seq`, so the breach NAMES the
     offending chunk the way `body_hash` never can). **MusuHeist** re-recorded 22/22 GREEN with the additive
-     `cid` rows on every `%Body`. **MusuBreach** (`Ghost/Story/Heistation.g`, green ×2) is the adversarial
+     `cid` rows on every `%Body`. **MusuBreach** (`Ghost/Story/HeistTesting.g`, green ×2) is the adversarial
       twin: it lands an honest record clean (the control — the gate discriminates) then flips one byte of a
        middle chunk LEAVING its cid and proves the gate FIRES — breach, no land, file unlinked mid-stream,
         record retained, and the gate's own `breach_seq` matches the poisoned seq. The Ra-path
@@ -444,7 +444,7 @@ Legend: **[built]** real data/logic flows through it; **[done]** a specific refi
      a card loads the `%Record`; `%Stream` only in the live copy. **The container dissolve LANDED
       (2026-07-17):** `Ra_home_self`/`Ra_home_them` (`Ghost/M/Ra.g`, §2.4 as-built) replace the flat
        `%Library,pier:` node with a per-identity home + `stock` shelf; ~35 call sites converted by
-        side-judgment across `Ra.g`/`Heist.g→Heistation.g`/`Radiation.g`/`Musuation.g`/`Swarmation.g`/`Repli.g`,
+        side-judgment across `Ra.g`/`Heist.g→HeistTesting.g`/`RaTesting.g`/`MusuTesting.g`/`SwarmTesting.g`/`Repli.g`,
          the census walk `Swarm_music_census` (`Ghost/S/Swarm.g`) walking the new home. Green ×2 on the core
           six (MusuVend 11/11 · MusuHeist 22/22 · MusuBreach 10/10 · MusuOgg 6/6 · MusuReap 4/4 · MusuBuddy
            14/14) + MusuReco/MusuReplica; the fixture diff was ONLY the re-shelving (`Library,pier:X` →
@@ -517,7 +517,11 @@ Legend: **[built]** real data/logic flows through it; **[done]** a specific refi
 
 ### 5B — The audio ladder (the nine stages)
 
-### 1 — Collection  *(Books: MusuGenerateTestsMusic writes · MusuReco reads · Ghost/M/Crate.g)*  **[built]**  *(MusuCrate retired 2026-07-05 — redundant, folded into MusuReco+MusuGlide)*
+*(Relabelled 2026-10-15, applying `Radio_design.md`'s own ruling: every stage below is Book-green
+ over the loopback wire (`Lake_link`), not live cross-machine — read **[BOOK]** where this table
+  used to say `[built]`. None of these nine stages has a live caller outside its own Book.)*
+
+### 1 — Collection  *(Books: MusuGenerateTestsMusic writes · MusuReco reads · Ghost/M/Crate.g)*  **[BOOK]**  *(MusuCrate retired 2026-07-05 — redundant, folded into MusuReco+MusuGlide)*
 Walk a music library into a track list. Real today by DISCOVERING it through the Wormhole nav: `Crate_nav_paths`
  BFS-walks `dir_at().expand()` → `{directories,files}`, `Crate_nav_payload` reads bytes via `bin_read` +
   OfflineAudioContext decode. Backend-agnostic across the FSA share / OPFS cloud / editor-proxied runner. No
@@ -532,7 +536,7 @@ Walk a music library into a track list. Real today by DISCOVERING it through the
 - [caveat] discovery awaits the nav INLINE — fine for local navs, but a remote `atime_async` nav must route
    via the rw_op actor (see the caveat in Crate.g `Crate_nav`). Fleet-path TODO.
 
-### 2 — Rastock  *(Book: MusuReco · Crate.g)*  **[built]**  *(MusuCrate + its Crate_rastock helpers retired 2026-07-05)*
+### 2 — Rastock  *(Book: MusuReco · Crate.g)*  **[BOOK]**  *(MusuCrate + its Crate_rastock helpers retired 2026-07-05)*
 Desire `want` records and fill from the collection, visibly: issue a `%reading` → it comes back → a
  `%record` is made. `rastock_start/issue/read_into/harvest`.
 - [done] the preview→stream split: `Crate_transcode_begin/release` — decode ONCE, release the frontier
@@ -551,7 +555,7 @@ Desire `want` records and fill from the collection, visibly: issue a `%reading` 
 - [todo] idle-reap: drop a replicated Record once a consumer has left it idle — via the stream's OWN wear
    (a goner in the Se — §9.6 "wear makes the mirror a cache"), NOT a `%Good` eviction.
 
-### 3 — Player  *(Books: MusuSignal / MusuGlide / MusuTune)*  **[built]**
+### 3 — Player  *(Books: MusuSignal / MusuGlide / MusuTune)*  **[BOOK]**
 Decode + play + cope. Real Audiolet voice; Glide rate-slew; OfflineAudioContext render + measure.
 - [done] gap-detector: the **coverage** model — uncovered playback time is the dropout; musical quiet
    ignored.
@@ -561,14 +565,14 @@ Decode + play + cope. Real Audiolet voice; Glide rate-slew; OfflineAudioContext 
 - [todo] crossfade-on-seam concealment (the third rung) + wire concealment into the live Glide path.
 - [todo] audible real-time playback through the online voice (gesture-gated).
 
-### 4 — LiveEdge  *(Book: MusuEdge · Radiola.g LiveEdge_decide)*  **[built]**
+### 4 — LiveEdge  *(Book: MusuEdge · Radiola.g LiveEdge_decide)*  **[BOOK]**
 Stay a safe margin behind the live broadcast frontier.
 - [done] stay-behind margin off a live production clock — outrunning the edge = a stall.
 - [done] throttle 0.8 near the edge — holds safe low latency, where a fast-chase overruns 145× / 48 gaps.
 - [todo] wire the margin to a **real** broadcast cursor over the Pier — the production clock is modelled,
    not socket-fed.
 
-### 5 — Pier  *(Book: MusuPier · Ghost/N/Peeroleum.g)*  **[built]**  *the synapse*
+### 5 — Pier  *(Book: MusuPier · Ghost/N/Peeroleum.g)*  **[BOOK]**  *the synapse*
 Stream peer-to-peer over the real transport. The one piece every other Book used to LARP.
 - [done] cast → listen REAL `%audiochunk` frames over the Peeroleum transport (`w.c.on.audiochunk`),
    in order, on the same deliver→inseq→retransmit path PereProof proves.
@@ -578,7 +582,7 @@ Stream peer-to-peer over the real transport. The one piece every other Book used
 - [todo] wire the real audio payload into the Player/Glide on the listener side (currently bytes only —
    reconstruct the PCM and play it).
 
-### 6 — Mixer (cells)  *(Book: MusuMix · Ghost/M/Mixer.g)*  **[built]**
+### 6 — Mixer (cells)  *(Book: MusuMix · Ghost/M/Mixer.g)*  **[BOOK]**
 The cellular world — many sound-sources at once, pitch/rate-bent to mix.
 - [done] N Cells render-summed into one OfflineAudioContext — they add at the destination.
 - [done] beat detection (onset envelope + autocorrelation) + beatmatch — bend B by bpmA/bpmB, proven by
@@ -587,7 +591,7 @@ The cellular world — many sound-sources at once, pitch/rate-bent to mix.
 - [todo] live online voice: N real Audiolets summing in real time (gesture-gated), not just offline.
 - [todo] per-Cell expected-play timeline — coverage/gaps judged per Cell, not globally.
 
-### 7 — DJ-cue  *(Book: MusuCue · Mixer.g Mix_align)*  **[built]**
+### 7 — DJ-cue  *(Book: MusuCue · Mixer.g Mix_align)*  **[BOOK]**
 Live `C**` replication to a phone — the headset deck: monitor + sync before the mix.
 - [done] a phone replica holds the cell descriptors and re-renders the off-air deck from synced state
    (no chunks cross — just the descriptor).
@@ -596,14 +600,14 @@ Live `C**` replication to a phone — the headset deck: monitor + sync before th
 - [todo] real `C**` sync over the Pier transport — the descriptor replication is modelled, not
    socket-backed.
 
-### 8 — Mesh (replicas + edges)  *(Book: MusuMesh · Ghost/M/Mesh.g)*  **[built]**
+### 8 — Mesh (replicas + edges)  *(Book: MusuMesh · Ghost/M/Mesh.g)*  **[BOOK]**
 The whole platform as one sync seen in several places, with the edges between.
 - [done] `%node` replicas + an `%edge` per link (peer/relay, each a cost) — the graph model.
 - [done] content routes the cheapest edges — Dijkstra picks a 2-hop peer path over a costly relay.
 - [todo] real `C**` state replication over the transport — the model is deterministic, not yet
    socket-backed.
 
-### 9 — Stretch (multicast over the mesh)  *(Book: MusuMesh)*  **[built]**
+### 9 — Stretch (multicast over the mesh)  *(Book: MusuMesh)*  **[BOOK]**
 A relay-only peer sends once; a webrtc-peered client forwards locally so the uplink stays quiet.
 - [done] min-cost broadcast tree: the relay edge is crossed ONCE, then webrtc-forwarded.
 - [done] the cafe stays quiet: naive uplink = N clients, but the stretch uplink stays 1 at any crowd
@@ -616,7 +620,7 @@ A relay-only peer sends once; a webrtc-peered client forwards locally so the upl
 
 ## 6. The test family (where each stage is proven)
 
-All under `Ghost/Story/Musuation.g`, dispatched per-beat off `step_n`, witnessed by idempotent
+All under `Ghost/Story/MusuTesting.g`, dispatched per-beat off `step_n`, witnessed by idempotent
  `%witnessed:*` latches; the snap-fixture diff is the gate. Verify on the live runner
   (`scripts/runner_ask.mjs run <Book> --watch` → `snap <n>` → `accept`), never headless.
 
@@ -692,7 +696,7 @@ Where §1-7 build the *stream*, the **scape** is the *view*: the whole thing as 
     *Session-continuation brief for this whole area: `Radio_scape_handover.md`.*
 
 **The crush is now a decoupled luxury layer.** The fold that turns a big graph into a few Stuffing chunks
- (`Voro_crush_scan / _walk / _crushable / _clear`) MOVED out of `Musuation.g` into its own family home
+ (`Voro_crush_scan / _walk / _crushable / _clear`) MOVED out of `MusuTesting.g` into its own family home
   **`Ghost/V/Voro.g`**, enrolled in `CREDULER_GHOSTS` (runner-only — the editor never loads it, so ◈ imposition
    stands down there). Every stamp is **c-side and snap-blind**: `c.stuff` = the fold (Cyto suppresses descent
     past it), `c.stuffy` = the crushed skin — NOTHING is written to `.sc`, so a Story that folds records exactly

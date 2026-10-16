@@ -1,5 +1,18 @@
 # Mag v1.0 — handover (2026-08-05)
 
+> **HISTORY (retired 2026-10-15).** A continuation brief from the 2026-08-05 v1.0 push: the two
+>  "bombs" (`Ra_home_them`'s self-guard, the `Repli_loc_keys` name-guessing heuristic), the overnight
+>   census and fix, the Book-suite staleness diagnosis, and the six verification traps. Its load-
+>    bearing content now lives in `Mag_todo.md`: the identity-table ruling and its "LANDED, and what
+>     it cost" account are already at `Mag_todo.md` §0.2 (the table is `Repli_identity_keys` +
+>      `Repli_loc_for` in `Ghost/N/Repli.g`); the still-NOT-LANDED `Mag,pub` wire-identity key and its
+>       one-line stamp are called out in `Mag_todo.md` §0's "still open" list (as of 2026-10-15 the
+>        comment above `Ra_mag_shuffle` in `Ghost/M/Ra.g` still points here by name — that pointer now
+>         resolves to `spec/history/Mag_v1_handover.md`). The verification traps (outer vs `outcome.ok`,
+>          `run --watch` blocking, never recording from the first run after a compile, FSA-live-only
+>           Books) are general runner lessons; the closest living home is `Coding_guide.md`'s "verify a
+>            timing fix by re-running" and `runner_ask.mjs`'s own usage notes — no single doc owns them,
+>             so read this file's "Book state" section if a Mag-adjacent Book runs stale on you again.
 Continuation brief. Written at a resting point mid-push; **production is a week late**, so the
  organising question for everything below is *does this lose a user's music, or merely disappoint
   them?* Only the first kind is v1.0.

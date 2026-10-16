@@ -517,7 +517,7 @@ Three rungs of very different cost. One is nearly built, one is a wording proble
     measurement would read 0 — every analyser-based witness would break."* `sample()` returns real
      time-domain PCM. **So a muted runner can witness sound.** The rig was built for exactly this.
 
-Its users were `Sound.g:254` (the synthetic stream rig) and `Musuation.g:1212/2395/2398` (Books). The
+Its users were `Sound.g:254` (the synthetic stream rig) and `MusuTesting.g` (Books). The
  live radio never tapped at all.
 
 **The plumbing is already proven on a real runner.** `runner_ask probe` → `Lies_audio_probe()`
@@ -600,8 +600,8 @@ Split this in two before touching it, because the halves cost wildly different a
 **History — collides, and needs the owner.** *"they gave me these 12 tracks"* is **provenance**, and
  provenance is forbidden by standing law: `Heist.g:12` — *"PROVENANCE IS NOT PERSISTED — dedup is by
   CATALOG identity (artist+title), never by source; the newlyadded log never names where music came
-   from"*. It is not just a comment: it is **enforced** (`Heistation.g:459`) and **asserted in a
-    recorded fixture** (`Heistation.g:635`, `%see:'newlyadded logs each arrival with a fresh feeling
+   from"*. It is not just a comment: it is **enforced** (`HeistTesting.g`) and **asserted in a
+    recorded fixture** (`HeistTesting.g`, `%see:'newlyadded logs each arrival with a fresh feeling
      — and never a word about the source'`). Persisting a trafficker's history turns MusuHeist red
       on purpose.
 
@@ -609,9 +609,9 @@ So the question is narrow, and it is the owner's alone:
 
 > **Is the ban on provenance a privacy property, or an implementation convenience?**
 
-- **Privacy** ⇒ the trafficker view can only ever show LIVE traffic. No ledger, ever. `Heistation.g`
+- **Privacy** ⇒ the trafficker view can only ever show LIVE traffic. No ledger, ever. `HeistTesting.g`
    stands as written and this rung is finished the day 10.3's liveness half lands.
-- **Convenience** ⇒ `Heistation.g:635` gets rewritten, and sources become nameable.
+- **Convenience** ⇒ `HeistTesting.g` gets rewritten, and sources become nameable.
 
 **And that is the same question as the What Heisted ledger** (`Heist_todo.md` — a finished `%Caper`
  graduating into `%Haul` instead of being flattened away). Both features are blocked on one ruling.

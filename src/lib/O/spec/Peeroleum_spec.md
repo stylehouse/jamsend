@@ -7,7 +7,7 @@ The settled design for retiring `Peerily.svelte.ts` + `MachPeerily.svelte` and g
 
 **This spec carries only what the source can't tell you.** The live spine is the LangTiles
  ghosts `Ghost/N/Peeroleum.g` (the envelope + lifecycle + mock carrier), `Ghost/N/Tribunal.g`
-  (transport-trial carriers + real WS), and `Ghost/Story/Peregrination.g` (the Book + witness) —
+  (transport-trial carriers + real WS), and `Ghost/Story/PeerTesting.g` (the Book + witness) —
    they compile, they are content-addressed, they are the law. So this doc deliberately does **not**
     re-draw particle layouts or lifecycle state-walks that a fresh read of those `.g` files (or the
      `%req` engine in `Stuff.svelte.ts`) gives you truer. What it keeps is the non-inferrable: the
@@ -379,7 +379,7 @@ The `%req:waiting` demand-client + computed-max-global (`leave_running_until`) d
 
 ## 14. Observation is a Story Book (PereStaple), not a Mach layer
 
-`MachPeeroleum` was never grown — observation is `Ghost/Story/Peregrination.g`, acquired by the Creduler
+`MachPeeroleum` was never grown — observation is `Ghost/Story/PeerTesting.g`, acquired by the Creduler
  runner. What survives from the Mach idea:
 - **Assertions are particle-existence queries**, not `.c.inst` polling (`Lake_witness` does `q.o(...)` on
    the right particle).
@@ -408,7 +408,7 @@ Built (`Peeroleum.g` + the wrangler's port-pairing). The two things that make it
 - **No timestamps reach particles**, so snaps are stable with no munging. The meddle hook (heading 6, **still
    unbuilt** — §14.1) is *designed* to sit on the mock `%active_transport` exactly as it will on real ones, so
     corruption tests written against the mock will port straight across. (Today's corruption proofs hand-craft a
-     bad `body_hash` on the receive side instead — `Peregrination.g`; the send-side meddle-wrap is the open piece.)
+     bad `body_hash` on the receive side instead — `PeerTesting.g`; the send-side meddle-wrap is the open piece.)
 
 ---
 
@@ -429,6 +429,24 @@ Tracked rung-by-rung in `Peeroleum_handover.md` (the `[x]`/`[~]`/`[ ]` checklist
 - `// <` reaping `%faulty` — kept until `reset_handshake`; if a Pier accumulates faults without
    disconnecting, a whittle on `%faulty` may be wanted (decide when corruption volume exists).
 - relay forwarding — **RESOLVED**: the `from`+`to`-on-header design carries it (§5).
+
+### 17.1 The floor and what stands on it (parked alternative, from `history/Covenant_design.md`)
+
+The owner's image: **Peeroleum is the *Linoleum* on the floor**, the transport you stand on and never see. Everything
+ else is *cabinetry* (identity, trust, the door you're admitted through) and *partying* (introductions, the social
+  graph living) over the top. The rule that image carries still holds: a society layer emits *through*
+   `Peeroleum_send` / `hear_<verb>` and owns no carrier code.
+
+Covenant sketched the cabinetry as its own ghost (`Tyrant.g`, built as M1+M2, deleted 2026-09-16 with the old
+ prototype) on a minima ladder:
+- **M0**, the emit/ack core, reused and not rebuilt;
+- **M1**, trust as a first-class acked exchange over given identities, yielding a `%trust,grants` particle;
+- **M2**, meeting, proof, and **policy-gated admission**: a `%req:join` whose `finished` is the conjunction of
+   policy leaves, so you're "on the network" only when that req is signed finished;
+- **M3**, cultivation (pruning dead Piers).
+What shipped instead is `Swarm.g`'s grant model (invites, `Grant:Crew`, per-era vouchers; `Trust_todo.md`
+ §1). The `%req:join`-as-conjunction-of-policies shape is the idea worth keeping if admission ever grows rules
+  beyond "holds a valid invite".
 
 ---
 

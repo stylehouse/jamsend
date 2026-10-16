@@ -3,7 +3,7 @@
 **The front door for an app (Radio above all) that wants Vyto to host its UI — the way
  Cyto+Voro do today, but with real-DOM faces and no overlay-sync seam.**  Every claim
   here is checked against the live code named beside it (`Ghost/V/Vyto.g` ·
-   `Ghost/V/Vytonation.g` · `src/lib/O/Vytui.svelte` · `Ghost/Story/Sounditron.g` ·
+   `Ghost/V/VytoTesting.g` · `src/lib/O/Vytui.svelte` · `Ghost/Story/Sounditron.g` ·
     `src/lib/V/BigSoundland.svelte`), 2026-07-27.
 
 **Unpreened — a working doc, not yet a spec.**  The human promotes a doc to `_spec` after
@@ -59,14 +59,14 @@ SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
  `Vyto`).  `i_elvisto` maps the method name to its handler verbatim
   (`Vyto_commission → e_Vyto_commission`).  *(The old `client.md` §1 wrote
    `elvisto('V/Vyto', …)` — that address is wrong; this is the live one, per
-    `Ghost/V/Vytonation.g` and `Ghost/Story/Sounditron.g`.)*
+    `Ghost/V/VytoTesting.g` and `Ghost/Story/Sounditron.g`.)*
 
 The commission is **deferred** — it lands a tick LATER, when the pump reaches `w:Vyto`.
  That is why §6's `c.up` stamp is load-bearing, and why the seat/board stand a beat after
   you call.  You never wait on it from a live page; a Book waits with a `board_wait`.
 
 There is also a **client kit** that wraps all of the above —
- `Vyto_commission_on(w, cogs, fresh, priced, nested, folded)` in `Vytonation.g`.  It stands
+ `Vyto_commission_on(w, cogs, fresh, priced, nested, folded)` in `Ghost/V/VytoTesting.g`.  It stands
   or re-derives the world, builds the req, and dispatches.  Read it as the canonical
    example; the Vyto* Books all drive through it.
 
@@ -257,7 +257,7 @@ BigSoundland also carries a **glass badge** (`◇ VYTO` / `◈ CYTO`) and a **VY
 
 ## 8. Living examples & onward
 
-Working Books (all green×2 on the live runner — `Ghost/V/Vytonation.g`):
+Working Books (all green×2 on the live runner — `Ghost/V/VytoTesting.g`):
 - **VytoStaple** — commission / watch / mirror / moment spine.
 - **VytoCell** — cells: express by dose, the solve, no-motion fixed point, pin+release.
 - **VytoWeb** — gang / relate / focus.

@@ -1,3 +1,5 @@
+> **⚠ Read with this (2026-10-15).** `Tyrant.g`, called "BUILT" throughout below, was deleted 2026-09-16 with the old prototype (`c04544d5`); its design is `history/Covenant_design.md`, and its one idea worth keeping is in `Peeroleum_spec.md` §17.1. `Peerily`/`MachPeerily`, whose retirement this checklist tracks, are deleted too. What is cryptographically real on the wire today: `Trust_todo.md` §1.
+
 # Peeroleum handover
 
 The living checklist for retiring `Peerily`/`MachPeerily` and growing `Peeroleum` against
@@ -38,7 +40,7 @@ engine-facts, the heading-10 settled design, and the §7/§8 lifecycle bombs wer
 **Latest — PereProof steps 31–33, the three correctness braids, + the `%see` assertion doctrine.** All three
  braids landed green + committed; PereProof now runs **1–33**. The doctrine is a way-of-working the next
   instance MUST adopt:
-- **Braid 1 (step 31, `Lake_corrupt_redial_arm` in `Peregrination.g`): corruption DURING a re-dial.** Composes
+- **Braid 1 (step 31, `Lake_corrupt_redial_arm` in `PeerTesting.g`): corruption DURING a re-dial.** Composes
    `reset ∘ verify ∘ ordering`: fresh lossy link Cyn/Dax, deliver s1 (cursor→s1), gap-buffer s3/s4 with s2
     MISSING, `Peeroleum_reset_handshake(DaxPier)` (clears `c.held` + `c.inseq.buffered`, keeps `%Ud` + cursor
      `last`), then **re-supply s2 CORRUPT** (bad `body_hash` → sha256 verify faults, burns its slot), then s3/s4
@@ -72,12 +74,12 @@ engine-facts, the heading-10 settled design, and the §7/§8 lifecycle bombs wer
    node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs scripts/CredRunner.spec.ts`); LocalGen
     compile clean. The exact-vs-forgiven split (e.g. `forgiven: [1..31,33]`) is just `self,round` munge noise and
      varies run-to-run — only `match: N/N, surprises: []` is the gate.
-- **COMMITTED** (host committed between sessions, from `ef3bfaee` on): `Peregrination.g`,
-   `src/lib/gen/Story/Peregrination.go`, and `wormhole/Story/PereProof/{toc,031,032,033}.snap` are all in HEAD
+- **COMMITTED** (host committed between sessions, from `ef3bfaee` on): `PeerTesting.g`,
+   `src/lib/gen/Story/PeerTesting.go`, and `wormhole/Story/PereProof/{toc,031,032,033}.snap` are all in HEAD
     and consistent (the committed gen carries the three `%see` sentences). No loose step 31–33 state to re-record.
 - **`ghost-compile` may still be owed for a LIVE :9091 runner.** The gen `.go` is committed (a fresh boot picks it
    up), but a long-lived runner that was up before the commit needs `npm run ghost-compile -- Ghost/Story/
-    Peregrination.g` (editor open on :9091) to HMR the new gen in.
+    PeerTesting.g` (editor open on :9091) to HMR the new gen in.
 - **RECORDING-A-NEW-STEP GOTCHA (cost a churn-revert this session — read before adding any step):** CredRunner
    `ACCEPT=1` re-records ALL steps — it rewrites every fixture's volatile `self,round` field AND writes the RAW
     per-Step dige into `toc.snap`, which DIFFERS from the committed CANONICAL diges → it silently CORRUPTS the
@@ -107,7 +109,7 @@ engine-facts, the heading-10 settled design, and the §7/§8 lifecycle bombs wer
     from ONE entry at `w`, so heading 3's "re-pump MUST live in the wrangler, below reqdo's w-reach" is
      SUPERSEDED. `Lake_pump_handshakes` is KEPT (belt-and-braces, pumps each Peering) but is no longer the only
       driver. **`oai` wires `Peering.c.up=w` and `Pier.c.up=Peering`** — the hand-stamped `.c.up` is gone.
-- **The Book (`Peregrination.g`) reads clean.** A peer is `Lake_peer(w,name,pub)`; a link is `Lake_link(w,a,b)`
+- **The Book (`PeerTesting.g`) reads clean.** A peer is `Lake_peer(w,name,pub)`; a link is `Lake_link(w,a,b)`
    (the whole of "two peers talking"). The ~30-line per-side `A:/w:/Peering/c.up/transport/arm/pair` boilerplate
     the human flagged collapses to ONE line per step. The whittle arms ONCE on `w:PereStaple` (its sweep iterates
      every Peering, so heal/stall peers added at later steps are swept with no re-arm — and no per-pair arm-lag).
@@ -119,7 +121,7 @@ engine-facts, the heading-10 settled design, and the §7/§8 lifecycle bombs wer
 - **Blast radius held to 3 `.g` files.** `Reliable.g` untouched (the lossy partner delegates to the wrapped
    port's `recv`). `Tribunal.g`: the six TEST trial fns (PeerJS/Socket/pair/hand/fall/reputation) take a Peering;
     production `Socket_real`/`Tribunal_activate_websocket` stay on `w`. **No Lies / svelte / Relay-Brink edits.**
-- **Status: PROVEN GREEN on :9091 (Peregrination.go @ 349080831f4af54d).** One run witnessed the WHOLE arc —
+- **Status: PROVEN GREEN on :9091 (PeerTesting.go @ 349080831f4af54d).** One run witnessed the WHOLE arc —
    `req:handshake,finished` + `Ud` both Piers, hello+trust said/acked/heard both ways, `got_binary` (no `faulty`),
     and all eight `witnessed:step_2,step_3,step_4,step_5,step_6,send_binary,heal,stall` (heal = ivy noop dropped→retx→jon;
      stall = kim noop blackholed→`%stalled,reason:no-ack` latched). Clean: one `w:PereStaple`, six Peering/Pier flocks,
@@ -225,7 +227,7 @@ source, compile-verified, with regen/refreeze HELD** so it doesn't disturb the l
             frozen heartbeat must never be silent again. (Latent twin: `rollup_faulty`'s nested `faulty.i(…)` — same
              pattern, fine, but untested; heading 6.) **Lesson: after a ghost-compile, a long-lived runner may keep a
               STALE gen — reload it before trusting a run (the nested-vs-flat snap shape is how this was caught).**
-- **The heal verifier — `Peregrination.g` step 8 `Lake_heal_arm` (2026-06-25, PROVEN GREEN on :9091).**
+- **The heal verifier — `PeerTesting.g` step 8 `Lake_heal_arm` (2026-06-25, PROVEN GREEN on :9091).**
    A FRESH isolated pair (Ivy/Jon) on a clean mock carrier, with the adversary (`make_lossy_partner, {drop:[s]}`)
     slipped onto the Ivy→Jon path; one `noop` seq s sent. A noop is admitted+acked pre-handshake, so no handshake is
      needed (isolated + fresh-seq=1). The drop leaves Ivy's emit un-acked → `Peeroleum_retx_sweep` re-sends at the step
@@ -235,7 +237,7 @@ source, compile-verified, with regen/refreeze HELD** so it doesn't disturb the l
          `%acked` (live / `%recent`). toc.snap carries `step=8..11` (lie diges). The carrier's `drop` is now drop-ONCE
           (transient → retransmit heals); a new `blackhole` knob is the drop-every-transit permanent-fault case. This is
            the FIRST end-to-end exercise of Lossy + retransmit + inseq.
-- **The stall verifier — `Peregrination.g` step 11 `Lake_stall_arm` (2026-06-25, PROVEN GREEN on :9091).**
+- **The stall verifier — `PeerTesting.g` step 11 `Lake_stall_arm` (2026-06-25, PROVEN GREEN on :9091).**
    The heal's twin: a FRESH isolated pair (Kim/Lee), the adversary on a **`blackhole`** (every transit lost) Kim→Lee,
     a **tight `Kimw.c.retx_policy = {base:1,factor:1,max_attempts:2,cap:1}`** so the death lands in two logical ticks,
      one `noop` Kim→Lee. Lee never hears it and no resend lands → `Peeroleum_retx_sweep` marks the emit `%dead`, rolls
@@ -366,7 +368,7 @@ syntax-gates its output (esbuild). Write-up in `LangCompiler_TODO.md`. Both fixe
 **Test status (transport trial, steps 2–6):** steps 2–5 proven in-app; **step 6 was BROKEN, now FIXED.**
 `Lake_trial_confirm` re-checked `probe.sc.acked` on the relay-probe emit, but the step-5→6 boundary cull had
 moved it to `%outbox/recent`, which STRIPS `%acked` — so it bailed and never stamped
-`%reputation:good`/`%witnessed:step_6`. Fix (`Ghost/Story/Peregrination.g`): presence in `%recent` IS the ack
+`%reputation:good`/`%witnessed:step_6`. Fix (`Ghost/Story/PeerTesting.g`): presence in `%recent` IS the ack
 proof (the cull moves ONLY acked emits there); a still-live emit must still carry `%acked`. `lang-compile`
 clean. **Re-run to confirm step 6 goes green, then Accept/Resnapture steps 2–6.** Then heading 6 (corruption).
 `req_transport_select` is GONE for the test — the trial is wrangler-driven (`Tribunal.g`); the req version is
@@ -396,7 +398,7 @@ Every behaviour claim in this file ends "browser-unverified, verify on :9091" be
          `inseq_admit` / `Tribunal_pair_websocket` / `Tyrant_grant` / `Run_A_PereStaple` live). `scripts/CredRunner
           .spec.ts` drives the WHOLE Book: acquire prelude (creduler Lies + `Creduler_ensure` crank till spine live)
            → stand up `w:Story,Book:PereStaple` → the proven Story_cli drive loop + pile/diff/ACCEPT. **PereStaple
-            runs end-to-end with ZERO browser.** (Musuation.go doesn't enrol → `%Creduler_pending` lingers; orthogonal
+            runs end-to-end with ZERO browser.** (MusuTesting.go doesn't enrol → `%Creduler_pending` lingers; orthogonal
              music-cluster gap, PereStaple's spine is full.)
 - **Tier 1 `[~]` WORKING — self-record the gate; the equivalence contract now has TEETH.** CredRunner emits the
    pile, diffs each step vs the locked fixture (spay-forgiving the `round=N` age-mung), and has the ACCEPT re-record
@@ -439,7 +441,7 @@ is **GONE** — the runner now **ACQUIRES the live spine via the Creduler**: `Cr
 `%Creduler_pending` flag on H, set in `Auto.svelte`) loads every ghost in the `CREDULER_GHOSTS` manifest
 (`LiesLies.svelte`) live, compiling+including each before the Story is allowed to start. The `.g` IS the Book.
 
-- `Run_A_PereStaple` (in `Ghost/Story/Peregrination.g`) is the Run recipe — lays `A:PereStaple/
+- `Run_A_PereStaple` (in `Ghost/Story/PeerTesting.g`) is the Run recipe — lays `A:PereStaple/
    w:PereStaple` and guards the `runner` role. (Mirrored by `Run_A_Editron`.)
 - per beat, `PereStaple(A,w)` installs `%req:wrangle,eternal` whose do_fn `await`s `Lake_drive(w, req)`.
 - `Lake_drive` is the inner-step dispatch (step 2 `Lake_sides_up`, 3 `Lake_handshake`, 4/5/6 `Lake_trial_*`),
@@ -535,7 +537,7 @@ run records them.
 
 ### 3 — hello+trust under mock → `%req:handshake,finished`  `[x]`  PROVEN in-app at step 3  (rung 2)
 The four leaf do_fns + say/hear exchange + frame dispatch (`Peeroleum.g`), plus the wrangler's per-pass
-re-pump + step-3 witness (`Peregrination.g`). Mechanism (leaf existence-checks, say/hear, dual-init,
+re-pump + step-3 witness (`PeerTesting.g`). Mechanism (leaf existence-checks, say/hear, dual-init,
 cross-side short-circuit) is **spec §8**; the c.up bomb is **spec §8**. Status-only bombs that stay here:
 - **Re-pump — SUPERSEDED by the swarm refactor (see Status).** With `%Peering` now a typed req, `w.do()`
    cascades `req_Peering`→`req_Pier`→handshake, so the ambient reqdo_sweep reaches the WHOLE flock from `w` —
@@ -552,7 +554,7 @@ cross-side short-circuit) is **spec §8**; the c.up bomb is **spec §8**. Status
    sanctions `noop` pre-Ud), so the hello is sent exactly once, at step 3.
 
 ### 4 — outbox/inbox lifecycle + acks + whittle  `[x]`  PROVEN in-app at step 3  (rung 3)
-Written into `Peeroleum.g` + `Peregrination.g`; both `lang-compile` clean, the in-app step-3 diff matched the
+Written into `Peeroleum.g` + `PeerTesting.g`; both `lang-compile` clean, the in-app step-3 diff matched the
 expected shape exactly. **Mechanism is now spec §7** (outbox `created→sent→acked`, light acks, serial inbox
 `queued→handling→verified→done`, whittle to `%recent`; the query-safe-delete invariant; cull-after-snap). The
 realised helpers: `Pier_next_seq` (monotone per-Pier on `.c`), `Peeroleum_send`/`_pump_inbox`/`_take_ack`/
@@ -628,7 +630,7 @@ a tweaked hello-sign. Spec §4.2, §15.
    message (`binaryType='arraybuffer'`); the relay (relay.ts) routes a binary message by reading the header
     line's `to` and forwards it whole (buffer opaque) — covered by `scripts/relay-test.ts` (local + cross-relay,
      buffer-intact). The mock/in-process carrier is by-reference, unchanged.
-- **Exercise:** `Lake_exercise_binary` (Peregrination.g) runs as wrangler step 7, witnessed
+- **Exercise:** `Lake_exercise_binary` (PeerTesting.g) runs as wrangler step 7, witnessed
    `%witnessed:send_binary`. The first of the transport-agnostic exercise set (same body runs over mock or the
     real-ws carrier). Built; lang-compile clean; **browser-unverified** — run on :9091, eyeball the lifecycle,
      Accept/Resnapture steps 2–7.
@@ -735,7 +737,7 @@ Creduler acquire, which already loads a `CREDULER_GHOSTS` manifest.)
   - `relay.ts` — `claims` map + `handleControl` claim/subscribe/unsubscribe; **subscribe reuses `bind`+
      `deliverLocal`** (already a fan-out over the addr's Set), so routing is UNCHANGED; `drop()` releases a
       socket's subs + claims on close.
-  - `Peregrination.g` — `Lake_multicast_arm` (step 53): Pab claims `@radio`, Sib subscribes via the
+  - `PeerTesting.g` — `Lake_multicast_arm` (step 53): Pab claims `@radio`, Sib subscribes via the
      `stream_offer` HANDOVER, Sob/Sub subscribe directly, Pab publishes ONE frame → all three land `%mcast`
       exactly once. `Lake_witness` stamps `%witnessed:multicast`.
 - **:9091-VERIFIED (the human ran it live):** the browser pile showed `pab/owns:@radio`, `sib2|sob|sub` each
@@ -769,7 +771,7 @@ PereStaple had grown to 54 linear steps; the human asked to split it so the two 
      2–30 by `Lake_proof_witness` (`%witnessed:*`), asserted 31–33 by `Lake_proof_see` (`%see:'sentence'`).
       Fixtures `wormhole/Story/PereProof/001–033.snap` recorded headless (it has NO handshake, so no step-3
        residual — fully deterministic). CredRunner: **33/33, surprises: []** (re-confirmed this preen pass).
-- **Mechanics + gotchas.** Both Books live in the SAME `Peregrination.g` (already a CREDULER_GHOST — no manifest
+- **Mechanics + gotchas.** Both Books live in the SAME `PeerTesting.g` (already a CREDULER_GHOST — no manifest
    change); the `Lake_*` ARM methods are SHARED, only the dispatch + witness split. The world MUST be named
     `w:PereProof` (the per-beat handler `PereProof(A,w)` is dispatched BY THE W-NAME — the same footgun the
      `w:PereStaple` rename hit). `Lake_order` was generalised to float `w.sc.w`'s actor (not a hardcoded
@@ -819,7 +821,7 @@ ghosts, Garden.g + Tyrant.g.
 ## Files in play
 - `Ghost/N/Peeroleum.g` — the spine (compiled; the mock carrier + envelope + lifecycle).
 - `Ghost/N/Tribunal.g` — the transport-trial carriers (webrtc/websocket mocks + `Socket_real`/relay client).
-- `Ghost/Story/Peregrination.g` — the Book + wrangler: `Run_A_PereStaple`, `PereStaple(A,w)` installs
+- `Ghost/Story/PeerTesting.g` — the Book + wrangler: `Run_A_PereStaple`, `PereStaple(A,w)` installs
    `%req:wrangle`, `Lake_drive`/`Lake_witness`/`Lake_sides_up`/`Lake_trial_*`. (Acquired by the Creduler —
     `Creduler_ensure` / `CREDULER_GHOSTS` in `Lies.svelte`/`LiesLies.svelte`; no hand-written loader.)
 - `src/lib/server/relay.ts` — the real `/relay` WS server (`attachRelay`) + its `configureServer` vite plugin.

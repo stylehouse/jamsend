@@ -118,7 +118,7 @@ The working doc for the DELIBERATE SoundPool experience — the owner (2026-08-2
        ONE door for every landing, however the bytes travelled — which is why the siphon
         composes `Ra_press` and never mints its own catalog row.
 
-**3. Book anatomy (Ghost/Story/Heistation.g `MusuPress` @~4741 — the family the Siphonation
+**3. Book anatomy (Ghost/Story/HeistTesting.g `MusuPress` @~4741 — the family the Siphonation
  Book copies):**
 - No `Run_A_` recipe: the world MUST be named `<Book>` — `do_fn_for` dispatches by `w.sc.w`
    (Housing.svelte.ts:1533) or the wrangle silently never fires.
@@ -139,7 +139,7 @@ The working doc for the DELIBERATE SoundPool experience — the owner (2026-08-2
   Book run headless with only its own ghost dies with `this.Ra_rec_find is not a function` in
    the Errlog (seen on this Book's first run).  The `INCLUDE=` shim is the door: mount the gen
     components directly (`scripts/Siphon_include.svelte` mounts Ra.go / Heist.go / Heard.go /
-     Musuation.go + the two new gens; each only calls `H.eatfunc`, so the spec's M shim serves
+     MusuTesting.go + the two new gens; each only calls `H.eatfunc`, so the spec's M shim serves
       as H).  (`Jam.go` — `Jam.g` was deleted 2026-09-04; `Heard.go` is its replacement, see
        `Radio_circuit_todo.md`.)  Fixture "mismatches" against the placeholder toc are baseline noise — the headless
        verdict is boot-green + the %testing notes + the sworn shelf
@@ -151,7 +151,7 @@ The working doc for the DELIBERATE SoundPool experience — the owner (2026-08-2
    `Siphon_tags/tag_def/tag_apply/tag_unapply/playlist` (a %Tag once on the %Tags shelf;
     `%Tagged,of:` children; the playlist IS the child walk in application order) and
      `Siphon_home` + `Siphon_pull(w, shelf, pool, lib, origId, nav)`.
-- **`Ghost/Story/Siphonation.g`** (→ `gen/Story/Siphonation.go`) — the Book: setup (2), tags (3
+- **`Ghost/Story/SiphonTesting.g`** (→ `gen/Story/SiphonTesting.go`) — the Book: setup (2), tags (3
    — def twice / apply twice to one track), unapply ×2 (4), siphon o1 (5), re-siphon (6); six
     `%see` claims, `%testing` notes pinning every truth.
 - **`wormhole/Story/Siphonation/toc.snap`** — a placeholder 6-step skeleton, every step carrying
@@ -175,8 +175,8 @@ The working doc for the DELIBERATE SoundPool experience — the owner (2026-08-2
    would re-read + re-write the same bytes; the Book's write-ledger claim discriminates this.
 
 **Verification (headless only — the live tabs were the human's all evening):**
-- LocalGen (`GFILES="Ghost/M/Siphon.g Ghost/Story/Siphonation.g"`): both compile clean, wrote
-   `gen/M/Siphon.go` (8138c) + `gen/Story/Siphonation.go` (10585c).
+- LocalGen (`GFILES="Ghost/M/Siphon.g Ghost/Story/SiphonTesting.g"`): both compile clean, wrote
+   `gen/M/Siphon.go` (8138c) + `gen/Story/SiphonTesting.go` (10585c).
 - esbuild parse of both gen script blocks: clean.
 - `BOOK=Siphonation INCLUDE=Siphon_include` Story_cli run: **6/6 steps walked, Errlog clean**;
    final snap shows the lib, the pooled card (`Record,id:o1,path:a/one.wav,…,body_hash:…` in the
@@ -196,10 +196,10 @@ The working doc for the DELIBERATE SoundPool experience — the owner (2026-08-2
         'Ghost/M/Siphon.g',             // the deliberate SoundPool act — tags-as-playlists + Siphon_pull (Siphon_todo.md; composes Ra_press, never the ambient §3/§4 economy)
 ```
 
-and after the `'Ghost/Story/Errchannelation.g',` line:
+and after the `'Ghost/Story/ErrchannelTesting.g',` line:
 
 ```ts
-        'Ghost/Story/Siphonation.g',    // the Siphon* tests — Siphonation: a tag is a playlist + the idempotent whole-thing siphon
+        'Ghost/Story/SiphonTesting.g',    // the Siphon* tests — Siphonation: a tag is a playlist + the idempotent whole-thing siphon
 ```
 
 (No GhostList edit is needed: `wormhole/GhostList/toc.snap` is the dirlist Funkcion's own walk —

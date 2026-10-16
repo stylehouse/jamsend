@@ -1,5 +1,13 @@
 # Cello Universal Scheme 4 — the fibre-bundle reading
 
+> **HISTORY (retired 2026-10-15).** This was strike 6 of 8 in the Cello rendering tournament
+>  (`Cello_synthesis_todo.md`, Task #42): the three-zone blob — rim=mainkey, strata=sc (one
+>   horizontal band per k:v pair), waterline=.c count — plus the TWIST token honesty channel
+>    (absence is a guarantee, presence is an announcement). Design-only — none of its mechanisms
+>     were ever built. Ranked 4th of 8 — its BUNDLE and HONESTY primitives are the two ideas the
+>      synthesis keeps outright, but ink grows with sc-richness and nesting. Scraped into
+>       `Cello_synthesis_todo.md`'s durable core and scorecard footnote [^6].
+
 ## 0. What to get on with next
 
 The design is COMPLETE — this is a pure design document, no code is changed.

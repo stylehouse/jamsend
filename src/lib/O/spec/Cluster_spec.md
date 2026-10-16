@@ -327,7 +327,7 @@ Turning on enforcement = setting `CLUSTER_TRUSTED_PUBS`. The moment it's set, th
 This is deliberately coarse, and right for now: the flock is a handful of keys the human controls
  (editor / runner / claude today). The near-term direction is **a real cluster soon, still with no
   tokens** — just knowing the sender and verifying their signed emissions. If a finer per-action grant is
-   ever wanted, it belongs as **app-level particles** in the Tyrant ghost — `Ghost/N/Tyrant.g` already
+   ever wanted, it belongs as **app-level particles** in the Tyrant ghost — `Ghost/N/Tyrant.g` (deleted 2026-09-16; see `history/Covenant_design.md`) already
     models trust the garden way (`%trust,grants` + maz-ordered `%req:policy` leaves), crypto deferred —
      **not** a new privileged frame and **not** certs. Until then: trusted = trusted.
 

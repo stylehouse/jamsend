@@ -1,6 +1,6 @@
 # Radiation_determinism_todo.md — why the Ra* Books cannot be re-recorded yet
 
-Scope: the `Radiation.g` Book family (**MusuRaStream**, MusuRaChase, and the retired-into-MusuBuddy
+Scope: the `RaTesting.g` Book family (**MusuRaStream**, MusuRaChase, and the retired-into-MusuBuddy
  siblings). Written 2026-08-08 from three back-to-back live-runner runs of MusuRaStream at one
   unchanged build. It exists because a re-record was approved and then **blocked**, and the next
    person needs to know exactly what blocks it.
@@ -42,10 +42,10 @@ Runner **a67a5d04a04fd334**, courted with `runner_ask.mjs ping --runner=…` fir
     started (only the latest run's snaps survive).
 
 Build was verified unchanged across the three: `Ghost/M/Ra.g` last written 23:17 → compiled 23:24;
- `Ghost/Story/Radiation.g` last written 23:36 → compiled 23:37; both untouched during R1–R3.
+ `Ghost/Story/RaTesting.g` last written 23:36 → compiled 23:37; both untouched during R1–R3.
 
 **Correction to an inherited premise.** Earlier evidence in this session compared a 23:07/23:16
- capture against a 00:08 one and called them "the same build". They are not — `Ghost/Story/Radiation.g`
+ capture against a 00:08 one and called them "the same build". They are not — `Ghost/Story/RaTesting.g`
   was recompiled at 23:37, between them, and `Ghost/M/Ra.g` at 23:24. The only sound within-build
    comparison in that older set is `a.txt` vs `b.txt` (both 23:16), which diverge at **step 14** —
     and that agrees exactly with what R1–R3 show below. The "step 2 varies" claim was a build
@@ -105,7 +105,7 @@ What actually varies at step 14 — R1 vs R2, everything else identical:
 Same cause as §2: `MusuRaStream_drive` advances the playhead **once per step** but runs
  `peering.do()`, `Ra_transcode_pump(w)` and `MusuRaStream_flow(w)` **once per pass**. R2 got 4 belief
   rounds inside step 14 (round 31→35); R1 got 2 (32→34). Twice the pump, and the whole continuation
-   arrived a step earlier. `Radiation.g:123-145` already names this exact mechanism.
+   arrived a step earlier. `RaTesting.g` already names this exact mechanism.
 
 ### 3.1 It is not merely a phase shift — it changes the measured audio
 
@@ -142,7 +142,7 @@ The recorded fixture `040.snap` has `fed:A,at_head=18,held=4`, `switched,at_head
 
 **Read that carefully before assuming a regression.** It is equally consistent with the fixture
  having been recorded on a machine (or a headless boot) fast enough to win the race — which is what
-  `Radiation.g:137` already warns about ("two clean accepts still verified 0.33 and 0.23"). Either
+  `RaTesting.g` already warns about ("two clean accepts still verified 0.33 and 0.23"). Either
    way it is a product question, not a fixture question.
 
 ---
@@ -158,7 +158,7 @@ With `now=` and `self,round=` normalised out, the residue against the recorded f
     step 40 : 229
 
 Step 1 normalising to **zero** confirms the inherited diagnosis exactly: the fixtures predate
- `Radiation.g:78`'s `w.sc.now = 1751980000 + 10*n`.
+ `RaTesting.g`'s `w.sc.now = 1751980000 + 10*n`.
 
 Two further stale-fixture causes, both source changes the fixtures never saw:
 
@@ -201,7 +201,7 @@ An earlier capture in this session (23:07) showed `Record,…,total=25,pv_off=14
    the next run has a ~50% chance of contradicting it — which is precisely the "two clean accepts
     still verified 0.33" history the Book's own header records.
 
-### Candidate fixes (proposals only — all are `.g` edits, and `Ghost/Story/Radiation.g` is mode 664,
+### Candidate fixes (proposals only — all are `.g` edits, and `Ghost/Story/RaTesting.g` is mode 664,
 ### i.e. a concurrent agent's file. **Not applied. The human's call.**)
 
 1. **Make the crossing hold actually hold on the thing that matters.** `req:crossing` currently
@@ -212,7 +212,7 @@ An earlier capture in this session (23:07) showed `Record,…,total=25,pv_off=14
 2. **Decouple the pumps from the pass count.** Give `Ra_transcode_pump` a per-step work quota rather
    than letting it run once per belief pass, so a step's transport progress stops being a function of
     how many rounds happened to fit. Bigger change; more likely the right one long-term, since the
-     same race is what `Radiation.g:123-145` says reds MusuRaChase at 13-of-56.
+     same race is what `RaTesting.g` says reds MusuRaChase at 13-of-56.
 3. **If the starve turns out to be the honest product truth** (the encoder simply cannot keep ahead of
    a 2 s/segment playhead at this cap), then the assertions are wrong, not the world — `b_heard <= 3`
     and the `fed:` claim need re-tuning against measured reality, and *that* is a re-record the

@@ -17,7 +17,102 @@ This file is the destination + the bombs + the next move. Keep it current; it is
 
 ---
 
-## 0. Latest handover — fold into the sections below as it's absorbed
+## 0. What Radio is
+
+*(The owner, 2026-10-15: prefer permanent, uncreased descriptions of a field's wider scope over
+ wave-of-work narration. This section states how Radio IS and WHY, not a changelog; §0.1 below
+  keeps the 2026-08 log for the arc.)*
+
+### 0.a What Radio is
+
+Radio is jamsend's listen-to-your-friends'-music engine. It is a family of ghosts on Housing+req —
+ `Ghost/M/{Ra,Radio,Pool,Heard,Heist,Booth,Mesh,Mixer,Crate,Orig,Siphon,Sound,Radiola}.g` — not a
+  bespoke subsystem: a particle, a req, a Story snap works the same way here as anywhere else in
+   the machine.
+
+- **The conveyor.** `Stoker_tour` (Radio.g) meanders the filesystem — one FSA random-walk, never a
+   scan — and digs tracks into on-disk radiostock, widening a moving WINDOW (default 40 tracks;
+    `w.c.tour_window`) rather than filling once and freezing. It RESTS when `Stoker_has_audience()`
+     is false — no pier of the live self heard in the last 10 minutes (600000ms) — because rotating
+      a full shelf for nobody is pure heat (one whole-file read + an ffmpeg pass per track, every
+       round). Filling a short shelf is never gated; only rotating a healthy one is.
+- **The heart.** `Radio_like` (Radio.g) is the one control this whole circuit ever asks a person to
+   touch. A press stamps `take`/`hearted_at` on the track's Card in the presser's own `%Mag:heard`
+    (Heard.g) — durable the instant it lands, nothing to wait for. **There is no unlove, anywhere**
+     (the owner's ruling, 2026-09-15): a second press RE-AFFIRMS (re-arms the gave-up clock,
+      outdates a stale verdict); it never un-loves. `Heard_take`'s own comment is unambiguous —
+       "always loves — there is no unlove" — though `Radio_like`'s header comment still narrates an
+        earlier, superseded 2026-09-10 ruling ("the heart is a toggle… a stray tap CAN unlove"); that
+         framing is stale code commentary, not the shipped behaviour (a comment to fix next time
+          that file is open, not a doc fact). `Radio_nay` is the other reaction: bars a track from
+           the pool and evicts its own pool copy on the next steward pass — a heisted (possessed)
+            file is never touched. Both superseded the old `%Jam` ledger (`%Jam/%Spin/%Like/%Grab`,
+             `Jam.g`), deleted 2026-09-04 — the owner called it *"cursed … a big cancer."*
+- **The resident serving body.** `scripts/daemon/main.ts` (jamserve) is a node process that boots
+   the whole machine headless and stays up — a peer with no tab-reload lifetime, serving the
+    Radiobuddies listen+heist experience. In production it answers at
+     `wss://djamsend.duckdns.org:9999` (Caddy in front of this box's own relay).
+- **⚠ The wire crosses real machines in prod — it is not loopback-only.** The music plane's
+   `repli_*` frames (catalog lines, audio pages, wants, parked/missed) ride `Peeroleum_send`
+    straight onto the production relay, and friends' browsers on their OWN physical machines dial
+     the daemon over it. The 2026-08-21 identity-split incident is the evidence, not a theory: `no
+      Pier for {pulse,ive_got,swarm_hi,pier_accept,repli_ready} from=eed831f1 to=7950f300 —
+       DROPPED`, logged on the real `wss://djamsend…:9999` production relay, between a real
+        friend's browser and the daemon (`Daemon_todo.md`). The relay's `fromGate`
+         (`src/lib/server/relay.ts`, landed 2026-10-13) exists for exactly this reason: it closes
+          `header.from` spoofing on that same real wire, because a stranger really could inject
+           catalog/audio/want frames onto it. **`Radio_design.md`'s "Remaining frontier #1" — "nothing
+            has crossed between two physically separate machines" — is stale against this and is an
+             owed edit there (out of scope here: that doc's edit list is "Settled design" only).**
+              The narrower claim that IS still true: per-frame cryptographic signing (beyond the
+               per-era sender voucher) is still owed — `Trust_todo.md` §1 is the live
+                truth of what's real on the wire today.
+- **Remote heist.** A heart need not be hauled by the body that pressed it. `Heard_magnet` (the 🧲,
+   Heard.g) decides which crew body hauls a given heart, over the pier-less Reach call layer
+    (`Swarm_reach_vouched`, Swarm.g) — a `%Remote,heist` handle opened on the station world
+     (`RemoteHeist_todo.md`'s G0/G1/R1). Live-only by construction: `Heard_magnet` returns `''`
+      inside a Book, so a Book never routes a heart remotely.
+
+### 0.b Where the parts are written
+
+| doc | what's there |
+|---|---|
+| `Radio_spec.md` | the stage/destination map — §5A culture ladder, §5B audio ladder, §7 open frontiers |
+| `Radio_design.md` | the consolidated statement — settled design + the ranked remaining frontier |
+| `Radio_circuit_todo.md` | the Heard/♥ circuit — the wire behind the reactions, haggled to one shape |
+| `Love_todo.md` | the ♥ rulings — the one intent, three roads, the ledger |
+| `Radio_future.md` | the imagination ledger — what the machine knows about listening, and what it could become |
+| `Radio_multicast_todo.md` | the swarm design — unbuilt (P0-P4) |
+| `Radio_lowlevel.md` + `Radiobuddies_handover.md` | archaeology the owner chose to keep (2026-07-27 override) — the instance-by-instance ladder and the regroup handover |
+| `RemoteHeist_todo.md` | remote heisting — Captain forms it, a Cave runs it, the 🧲 decides who |
+| `SoundPooling_todo.md` | the pool — press + reach into it, pool-first radio out, cells over it |
+| `Daemon_todo.md` | the daemon as a process with no lifetime — boot, GC debt, the production incidents |
+
+### 0.c Still open (verified unbuilt, 2026-10-15)
+
+- **No cross-pub radiostock budget.** `Ra_stock_gc` caps one identity's shelf at `Ra_stock_cap()`
+   (256 files) — "the after-a-build sweep of ONE Peering's shelf" (Ra.g). Nothing bounds the SUM
+    across many distinct friends' pubs on a long-running daemon.
+- **Multicast swarm.** `Radio_multicast_todo.md` P0-P4 (content-hash, advertise, discover, serve,
+   full webrtc swarm) — "nothing built yet," confirmed current.
+- **The Booth taste organ + the `%Musica` stimuli machine** — the programme-director layer.
+   `Ghost/M/Booth.g` exists and compiles but is deliberately UNWIRED + UNENROLLED (the human vetoed
+    it, then softened: "maybe I was too harsh"). §11-12 below are forward design, not built.
+- **Per-frame signing/AEAD on the music plane.** The 2026-10-13 relay from-check closes
+   `header.from` spoofing; per-frame integrity and privacy (WT1/WT2 in `Trust_todo.md`
+    §0.3) are still owed.
+- **Real-time wire playback.** The live radio plays only locally-stocked bytes — `Ra_term_stream_beat`
+   / `Ra_pull_beat` (the wire-pulled decode path) have callers only in Book ghosts, never in the
+    live brain. Nobody has heard a track decoded live off a wire pull.
+- **Daemon GC debt.** No lease/reap mechanism for `%parked_want`s or caster registrations on a
+   process with no tab-reload lifetime to clean up after it (`Daemon_todo.md` §11).
+
+---
+
+## 0.1 log (2026-08, kept for the arc)
+
+Fold into the sections below as it's absorbed — this is the arc's own record, kept for continuity;
+ it is not a current statement of the field (see §0 above for that).
 
 ### 2026-08-24 — THE LOOP THAT NEVER GIVES UP, AND THE FILENAME THAT CAN NEVER SERVE
 
@@ -285,7 +380,7 @@ Three runs, three independent `seq` spaces, one record. A run's mainkey says WHI
 1. **The mainkey-blind walks become mainkey-AWARE.** Every one of these takes a run kind:
     `Ra_chunk_map` (Ra.g:2625), `Ra_chunk_have` (Ra.g:2642), `Ra_chunk_heads` (Ra.g:2706),
      `Radio_map` (Radio.g:3190), `Repli_chunk_at` (Repli.g:198), plus the incidental counters
-      `Radio.g:1391`, `Swarm.g:2549`, `Heistation.g:2632`, and (replacing `Jam.g:93`'s `Jam_grab`
+      `Radio.g:1391`, `Swarm.g:2549`, `HeistTesting.g`, and (replacing `Jam.g:93`'s `Jam_grab`
        chunk-copy loop, gone with `Jam.g` 2026-09-04) `Ra_rec_copy`'s chunk-copy loop
         (`Ghost/M/Ra.g:912`) — see `Radio_circuit_todo.md`.
 2. **A `run` argument replaces `hbase` arithmetic.** `Radio_map` stops concatenating with an offset
@@ -1509,7 +1604,7 @@ Simulated the algorithm rather than guessing at it (scratchpad `meander_sim.mjs`
      `wormhole/Story/<Book>/` exists before counting it as evidence.
  · **MusuRaStream / MusuRaChase were red for a month and nobody noticed.** Not a code fault: their
     fixtures were last recorded 2026-07-08 and had missed three later, intended changes — the swarm
-     clock pin (`w.sc.now`, Radiation.g:78, commit 7935704a), seq becoming a STRING everywhere (so a
+     clock pin (`w.sc.now`, RaTesting.g, commit 7935704a), seq becoming a STRING everywhere (so a
       literal query never trips the `{k:1}` presence wildcard), and `repli_want` no longer booking an
        inbox unemit (the documented want-bypass). Every one of those is already green in MusuBuddy,
         MusuMag, MusuHeist and MusuBay — `grep -ho "unemit[=:]" wormhole/Story/<B>/0*.snap` dates any
@@ -1536,7 +1631,7 @@ Simulated the algorithm rather than guessing at it (scratchpad `meander_sim.mjs`
        offers its stock AND never registers an rx for the friend's cast. It can neither send music nor
         receive it while looking perfectly healthy: sealed, Music-granted, happily playing its own
          local shelf. Cure: arm it in `Stoker_ensure`, at the instant the precondition becomes true,
-          Book-gated on `w.sc.w` (the share starts a wall-clock pump; `Swarmation.g:1000` forbids that
+          Book-gated on `w.sc.w` (the share starts a wall-clock pump; `SwarmTesting.g` forbids that
            in a Book). Plus `Swarm_share_no` — the refusing verb now names which guard failed.
  3. **The serve MISS never travelled.** `Repli_serve_miss` logged on the SOURCE; its own comment
      conceded it — *"if a sink stalls, look at the friend's console for this"*. The sink was told
@@ -1607,7 +1702,7 @@ Simulated the algorithm rather than guessing at it (scratchpad `meander_sim.mjs`
   failure mode with a comment on it. Grep for the other write-only latches before trusting one.
 **MusuRaChase/MusuRaStream ARE RED FOR A DULLER REASON — STALE FIXTURES, NOT A REGRESSION (2026-08-06).**
  Chased as a §5.x backpressure regression, then as a knock-on of the decoder corpse above. It is
-  neither. `MusuRaChase_drive` (`Radiation.g:378`) pins the swarm clock — `w.sc.now = 1751990000 + 10*n`,
+  neither. `MusuRaChase_drive` (`RaTesting.g`) pins the swarm clock — `w.sc.now = 1751990000 + 10*n`,
    the same determinism cure MusuBuddy got — and that pin landed **2026-08-05 in `7935704a`
     "reductionistic Repli?"** *without a re-record*. **No MusuRaChase fixture carries `now=` at all**
      (`grep -l 'w:MusuRaChase,now=' … | wc -l` → 0). The world-root line is in EVERY snap, so every one
@@ -1619,7 +1714,7 @@ Simulated the algorithm rather than guessing at it (scratchpad `meander_sim.mjs`
     saved two sessions of suspicion. Corollary: a determinism pin is a fixture-invalidating edit —
      re-record in the same commit or the Book is dark until someone does.
  **THE CLAIM IS FINE — that scare is dead.** `%see:'the playhead crossed the first boundary…'`
-  (`Radiation.g:719`) is PRESENT in the live snaps at 14, 30 and 56, exactly as in the fixtures. The
+  (`RaTesting.g`) is PRESENT in the live snaps at 14, 30 and 56, exactly as in the fixtures. The
    earlier "a claim went missing" reading came from a comparison already invalid at step 1; it was
     wrong, and nothing is lost. Two consecutive runs also produced identical diges (`edd9f464`,
      `37e6902f`, …), so the pin achieved what it was for: the Book is deterministic again.
@@ -1661,7 +1756,7 @@ Simulated the algorithm rather than guessing at it (scratchpad `meander_sim.mjs`
      binary-framed (`[header JSON]\n[raw buffer]`), auto-reconnect, carrying editor↔runner DAILY; friends
       already seal live tab-to-tab over it (2026-07-07, SwarmDoor manual). The gap is narrow: **the
        music-repli flow has only EVER run over `Lake_link`**, an in-process by-reference loopback that is a
-        Story-test mock (`Peregrination.g:202` — its "Lake" name a Peregrination theme, UNRELATED to the
+        Story-test mock (`PeerTesting.g` — its "Lake" name a Peregrination theme, UNRELATED to the
          HohoTiles Lies/Lang family; genuinely rename-worthy). No Book installs `Socket_real`; Sounditron
           alone touches the real relay and only proves channel *capability* ("frames CAN cross"), not a
            round-trip. **THE NON-OBVIOUS RISK:** every music Book settles frames "over post_do between beats"
@@ -1789,7 +1884,7 @@ Simulated the algorithm rather than guessing at it (scratchpad `meander_sim.mjs`
              (fixed + non-regressing; adversarial station-Book proof optional/owed); **R1** — `Repli_attach_page`
               gained the rung-0 `sha256(bytes)===cid` gate on chunk arrival, mirroring Heist's landing check so a
                chunk streamed for live playback can't decode tampered bytes silently (Book **RaBreach**, green×2).
-                NOT touched: F5 voucher-era freshness — the [[Trust_audit_handover]]-retracted wrong-layer item.
+                NOT touched: F5 voucher-era freshness — the [[Trust_todo]]-retracted wrong-layer item.
                  Full record: memory `swarm-seal-prepub-binding-hole`.
 
 **STORY GATES YOUR ORGANS NOW (2026-07-19) — a cross-thread brief from the Story side.**
@@ -1909,7 +2004,7 @@ Simulated the algorithm rather than guessing at it (scratchpad `meander_sim.mjs`
     the next track (design seam for deck-UI × invite).
 
 **Posited unknowns (the final figure-out):**
- - **The wire crypto audit → `Trust_audit_handover.md` (rewritten 2026-07-26).**  The `.g` comms suite
+ - **The wire crypto audit → `Trust_todo.md` (rewritten 2026-07-26).**  The `.g` comms suite
     (`Swarm.g`/`Peeroleum.g`/`Tribunal.g`) IS the production wire (not a sim — an earlier note here mislabelled
      it; corrected).  Its crypto is **split-personality**: the **society** layer (`Swarm.g` invites/grants/
       reinvites/vouchers) is **real ed25519** and Book-green (single-use spend + blotter + chain all built); the
@@ -1920,6 +2015,11 @@ Simulated the algorithm rather than guessing at it (scratchpad `meander_sim.mjs`
            per-connect rebuild scaffolding — `reset_handshake` keeps `%Ud` — is already correct).  The detached
             per-era voucher is per-era link-auth by design, not a forgery bug.  (Heist-landing `id`-homing is a
              fine hardening IF records auto-merge — but "eyeball incoming music" is the intended model anyway.)
+   > **⚠ UPDATED 2026-10-15** (`Trust_todo.md` §1, re-read 2026-10-13). `Tyrant.g` — the
+   >  mock-era ghost this split-personality read predates — was deleted 2026-09-16. Since then: sender
+   >   proof on every Swarm frame is REAL, per era (the station voucher, `Swarm_voucher_ok`); the
+   >    relay's `fromGate` (landed 2026-10-13) closes `header.from` spoofing on the music plane's
+   >     `repli_*` frames too. Per-frame signing/AEAD (WT1/WT2) is still owed — see that doc's §0.3.
  - BootGate on a device whose AudioContext never inits: the gate stands forever; fingers-check.
  - watch_c migration for face reactivity (today faces poll H.version + a 1s tick).
  - Scale seams: FSA names-only expand (3000-file dirs); whole-stock husk re-offers want the
@@ -1974,7 +2074,7 @@ Known-real problems found in passing that we deliberately DON'T stop the mainlin
      deliberate source change (see §0's four-cause MusuRaChase autopsy — a clock pin, a `path:` stamp, a
       `String()` and an ephemeral reclassification, none of them regressions), and it says nothing about WHAT
        the Book proves. Where a Book crosses a boundary a human can name, name it. The model is
-        `Radiation.g:719` — `%see:'the playhead crossed the first boundary onto chunks transcoded on demand'`,
+        `RaTesting.g` — `%see:'the playhead crossed the first boundary onto chunks transcoded on demand'`,
          gated on `fed.sc.held > 0`: a once-noticed, self-describing claim that survives re-records because it
           is about MEANING, not bytes. Obvious pointables owed one: the `%Preview`→`%Stream` seam (the
            encode boundary Radio drains and re-opens a decoder across), first-sound, the resume cursor landing
@@ -1984,7 +2084,7 @@ Known-real problems found in passing that we deliberately DON'T stop the mainlin
      act of faith. Every one added makes the next re-record cheaper and the next autopsy shorter.
    NOT a sweep — do a few whenever you are already inside a Book for another reason. No commas in the
     sentence (the peel parser splits on them; use an em-dash).
-- ✓ **RESOLVED for the goner-delete (MusuFreeze — Heistation.g:2081).** `Musica_recast_offer` now computes
+- ✓ **RESOLVED for the goner-delete (MusuFreeze — HeistTesting.g).** `Musica_recast_offer` now computes
    `allowed = this.Repli_allowed(w, to, from)` and gates BOTH goner emissions — the cloud delete (Heist.g:1136)
     and the record delete (Heist.g:1150) — so a revoked follower's mirror is frozen, not remotely deletable.
      RESIDUE: the raw `Repli_retire` primitive (Repli.g:308) is still ungated, but gating a Repli **core**
@@ -2184,7 +2284,7 @@ One file per Record: **`<ts>-<pub>-<enid>.jamsend_radiostock`** — preview wind
 
 ### 1.5 The Books that gate it (and their discipline)
 
-Five Books in `Ghost/Story/Radiation.g` (24 + Chase's 15 `%see`) — re-record any time the Record shape moves:
+Five Books in `Ghost/Story/RaTesting.g` (24 + Chase's 15 `%see`) — re-record any time the Record shape moves:
  - **MusuRaStock** (5 steps) — mint shape + idempotent re-pass; **MusuRaCast** (12) — offer →
     preview pull → boundary ask → parked-want transcode → revoke via `repli_allow`, `body_hash`
      pins byte identity; **MusuRaTerm** (12) — local decode honesty (gain survives the round
@@ -2200,7 +2300,7 @@ Five Books in `Ghost/Story/Radiation.g` (24 + Chase's 15 `%see`) — re-record a
      `at:`) every re-run — `tol:any` tolerates, it does not canonicalize. Stream ≈37, Cast ≈9,
       Stock ≈2, Term ≈0. Do not chase caveat:0; each Book's count is its stable signature.
  - **Accept discipline:** `runner_ask accept` only (never CredRunner-auto for %see Books);
-    pre-pin the set (`grep -aoE "%see:'[^']*'" Ghost/Story/Radiation.g`), confirm every sentence
+    pre-pin the set (`grep -aoE "%see:'[^']*'" Ghost/Story/RaTesting.g`), confirm every sentence
      present after. Immediate redispatch after an accept can hit the engaged begun-wedge —
       `release`, wait ~8s, redispatch; no tab reload needed.
 
@@ -2210,8 +2310,8 @@ Five Books in `Ghost/Story/Radiation.g` (24 + Chase's 15 `%see`) — re-record a
 
 ```
 Ghost/M/Radiola.g              spine — the reusable mechanism (req_cast, the window)
-Ghost/Story/Musuation.g        the Musu* Books (Story ghosts are grouped under Ghost/Story/,
-                                like Peregrination.g — the file is the artifact, MusuStaple is
+Ghost/Story/MusuTesting.g        the Musu* Books (Story ghosts are grouped under Ghost/Story/,
+                                like PeerTesting.g — the file is the artifact, MusuStaple is
                                  the Book identity)
 wormhole/Ghost/Music/Ality/toc.snap   the overlay Waft (Musicality) — curates the cluster,
                                         the twin of wormhole/Ghost/Net/Easy
@@ -2224,7 +2324,7 @@ Names mirror the `Pere*`/`N`/`Net/Easy` family so the parallel reads at a glance
 | network (the template) | music (this project) |
 |---|---|
 | `Ghost/N/Peeroleum.g` (spine) | `Ghost/M/Radiola.g` (spine) — *working name; rename freely* |
-| `Ghost/Story/Peregrination.g` | `Ghost/Story/Musuation.g` |
+| `Ghost/Story/PeerTesting.g` | `Ghost/Story/MusuTesting.g` |
 | Book `PereStaple` | Book `MusuStaple` |
 | `Waft:Ghost/Net/Easy` | `Waft:Ghost/Music/Ality` |
 | `Lake_*` (the scenario verbs) | `Musu_*` (the scenario verbs) |
@@ -2244,7 +2344,7 @@ Names mirror the `Pere*`/`N`/`Net/Easy` family so the parallel reads at a glance
     (Ra.g — proven, even a trivial method) wedges the live runtime: spine edits go through
      **LocalGen** instead — `GFILES='Ghost/M/Ra.g' [CHECK=1] npx vitest run -c
       scripts/Story_cli.vitest.config.mjs scripts/LocalGen.spec.ts` (browserless, writes the
-       gen; space-separated GFILES for several). Leaf Book ghosts (Radiation.g) compile live fine.
+       gen; space-separated GFILES for several). Leaf Book ghosts (RaTesting.g) compile live fine.
 
 **BOMB — a brand-new Book runs Prep-only (`total:1`).** The runner runs the Book it ACQUIRED
  AT BOOT and clobbers a mid-session disk `toc.snap` seed: seed
@@ -2260,7 +2360,7 @@ Names mirror the `Pere*`/`N`/`Net/Easy` family so the parallel reads at a glance
 **BOMB — don't bump outside the cluster.** Cyto and Matstyle auto-discover by mainkey
  (`cyto_scan` + `cytyle_classify`; Matstyle autovivifies a `matstyle:<key>`), so new
   particle types appear in the graph with swatches and *no* view-code edits. That is the lever
-   that keeps this project inside `Ghost/M/` + `Ghost/Story/Musuation.g` + the two snaps + this
+   that keeps this project inside `Ghost/M/` + `Ghost/Story/MusuTesting.g` + the two snaps + this
     doc, plus the single deferred `CREDULER_GHOSTS` line.
 
 ---
@@ -2364,7 +2464,7 @@ The tiny aspect proofs become `Radio_lowlevel.md` material as `Ra*` goes green �
  stop at Ra*: the three standalone Ra* PRODUCT Books proved stock|cast|play in a configuration the
   destination never runs — a stream with no catalog naming it — so once **MusuBuddy** (§0, the
    magazine-driven pipeline where the stream is BORN from a browsed `%Musica` card) stood LIVE-GREEN ×2,
-    **MusuRaStock / MusuRaCast / MusuRaTerm were DELETED** (Book code in `Radiation.g`, their fixtures,
+    **MusuRaStock / MusuRaCast / MusuRaTerm were DELETED** (Book code in `RaTesting.g`, their fixtures,
      their Credence + Ality rows). The same discipline governed it: nothing deleted until its re-draw
       stood green. What is NOT redundant and STAYS: **RaStream / RaChase** (the streaming-race — park at
        the boundary, feed past it, the village dial — which the static catalog cannot express),
@@ -2616,7 +2716,7 @@ The PROTOCOL is real — frames, seq, inseq/retransmit, sha256 `body_hash` per p
 
 ### 10.2 The heist as built — rung 1's edge, and the `<` unbuilt (map, 2026-07-12)
 
-Rung 1 (loopback) is BUILT and live-gate-pending: `Ghost/M/Heist.g` (the pure engine) + `Ghost/Story/Heistation.g`
+Rung 1 (loopback) is BUILT and live-gate-pending: `Ghost/M/Heist.g` (the pure engine) + `Ghost/Story/HeistTesting.g`
  (Book **MusuHeist**). This is the honest map of where the real machine STOPS — read it as the roadmap.
   Legend: **`<`** marks an unbuilt edge — the `// <` lack-of-development mark, carried into prose.
 
@@ -2687,7 +2787,7 @@ Rung 1 (loopback) is BUILT and live-gate-pending: `Ghost/M/Heist.g` (the pure en
            per-heist poke-out = the MANIFEST gesture (deselect before a byte moves); durable
             per-relationship narrowing = the §9.2 `%Share` match (the negative space of the match);
              taste bans = the Booth IF a surface ever wants them. Rip checklist = §11.5's migration
-              checklist re-purposed (DELETE at each site, not rename); Heistation.g loses the retomb
+              checklist re-purposed (DELETE at each site, not rename); HeistTesting.g loses the retomb
                scene (~steps 20-30), one toc re-seed + reload + re-record.
 - **The FSA reload caveat — self-heal BUILT.** A dead directory handle in `WormholeNav._cache` (a `mkdirp`
    walking a stale entry) throws `NotFoundError` on landing. `bin_write` now catches a stale-handle error
@@ -2731,7 +2831,7 @@ Born from the %Tombstone post-mortem (built unexplained, named in graveyard-spea
 
 **STATUS (2026-07-13, the human's rulings — read BEFORE building anything in this section):**
  - **%Tombstone STAYS in the engine.** The Ban rename was built then REVERTED by the host
-    ("you're just changing the name") — Heist.g/Heistation.g/LiesLies are back on the tombstone
+    ("you're just changing the name") — Heist.g/HeistTesting.g/LiesLies are back on the tombstone
      baseline. `Ghost/M/Booth.g` exists, compiles, and is deliberately UNWIRED + UNENROLLED — the
       human vetoed it then softened ("maybe I was too harsh"): the likely revival is Booth's door
        probe over §11.7's Waft:Taste (the document as the store), NOT the line-ledger. Still: no
@@ -2784,7 +2884,7 @@ Every opinion-fact points at music the SAME way: a **`tune:`** scalar holding th
  Accepted cost: "every ban by artist X" is a scan-and-split over `o({Ban:1})`, since `o()` matches
   literally (no prefix match); opinion-facts are few, the scan is fine. Verified encode-safe: an
    em-dash is not in `encode_stringies`' unsafe set, and ` — ` already round-trips live in %see
-    sentences. Namesake to hold: lowercase `tune` is a live MAINKEY in Musuation.g test-result
+    sentences. Namesake to hold: lowercase `tune` is a live MAINKEY in MusuTesting.g test-result
      particles (`{tune:1, kind:'result'}`, :1253) — different world, no query overlap with the
       Booth facts, but grep before assuming `tune:` is fresh anywhere.
 
@@ -2875,7 +2975,7 @@ Every opinion-fact points at music the SAME way: a **`tune:`** scalar holding th
 **spins + skips — `<` t3.** Monotone lifetime tallies on the %Record (`spins:`/`skips:`), never
  reset, dying with their record. raterm bumps `spins` when a play crosses half the track (a guess
   — radio counts at air, streaming at 30s; tune at build), `skips` when the listener bails before
-   that. Precedent: Musuation.g:1350 already tallies `sc.spins` on a radio particle. Legitimate stored
+   that. Precedent: MusuTesting.g already tallies `sc.spins` on a radio particle. Legitimate stored
     state (a tally is not derivable from anywhere once the moment passes) — but it must stay
      independent truth, never a cache of the airplay log, or the two drift.
 
@@ -2925,7 +3025,7 @@ Every opinion-fact points at music the SAME way: a **`tune:`** scalar holding th
  - `Ghost/M/Heist.g`: `Heist_feel`'s inline mint → `Booth_ban`; `Heist_beat`'s door →
     `Booth_bans`; `job.sc.tombstoned` → `job.sc.banned`; DELETE `Heist_tombstoned`; comment
      sweep (:95-101, :150-157, :254, :270-278).
- - `Ghost/Story/Heistation.g`: `retomb` → `encore` (phase flow comment :96, :110, :118-119;
+ - `Ghost/Story/HeistTesting.g`: `retomb` → `encore` (phase flow comment :96, :110, :118-119;
     bundle :223-229; flow :270, :275, :301, :316; witness :486, :493) + `Tombstone:1` query →
      `Ban:1` (:494) + `ht.sc.tombstoned` → `banned` + BOTH see sentences reworded to (pinned here
       as the quality bar — no commas, radio-land):
@@ -3344,6 +3444,13 @@ Expect this section to want an ironing-out pass of its own before long (owner, 2
 
 ### 13.1 The two views, and the ActionButtons (owner, 2026-08-05)
 
+✅ **FIXED, in place — the ask itself landed 2026-08-30.** `BigSoundland.svelte`'s sprawl view now
+ carries a per-House `scape-house-acts` rack (no `show_actions`/cog gate, no `active`-only
+  restriction) beside every House heading, exactly the owner's ask below; the old triple-gated
+   `scape-panel` rack (`sprawl && show_actions && active`) still exists alongside it for a
+    different job (the single focused-House panel). The rest of this entry is kept for its
+     reasoning about the two-views split, which is still unsettled.
+
 **The ask: show the ActionButtons for each H automatically — "they are too useful."** Today the rack is
  triple-gated at `BigSoundland.svelte:247` — `{#if sprawl && show_actions && active}` — so it needs the ▦
   sprawl, then the ⚙ cog, and even then shows only the *active* House's actions. Ungating it to
@@ -3562,7 +3669,7 @@ Lefto's ring is the mirror image (seal +20.5s, share-up +28.0s, true advertise +
        the real ones.  Paren-match from `post_do(` to its close and test the tail.  Doing that over
         all 333 files of `src/ Ghost/ scripts/` found **10 genuinely untagged sites**, now tagged:
          `Swarm.g` (`swarm_share_beat` — the suspect), `Tribunal.g` ×2, `Peeroleum.g` ×2,
-          `Peregrination.g` ×2, `Swarmation.g` ×2, `MachPeerily.svelte` (`keygen_<side>`).
+          `PeerTesting.g` ×2, `SwarmTesting.g` ×2, `MachPeerily.svelte` (`keygen_<side>`).
            Five `.g` ghost-compiled, 5/5 ✓.
   **AND A TRAP WORTH THE TRIP: `src/lib/pinned_stable/{Peeroleum,Tribunal}.go`.**  A deliberately
    FROZEN copy of the spine, still untagged and left that way on purpose.  `Lies_transport_up`

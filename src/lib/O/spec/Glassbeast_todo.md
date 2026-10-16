@@ -39,7 +39,7 @@ One page of state.  Everything under it is trail: read `## 0′` for how a thing
 | `Vyto_sizing_todo.md` | the type-scale algebra (φ, AREA_BASE, the floor) | reference |
 | `Cstructures_todo.md` · `UI_seams_todo.md` | the readable-C** language · wire capabilities the glass never showed | reference |
 | `vyto_workingouts/` | appendices: calm · pile · pelt · shapes · spool · commission · client · processes | reference |
-| `history/Voro_*` · `history/Vyto_perf_todo.md` | Voro's design (the stained glass) · the absorbed perf handoff | history |
+| `history/Voro_*` (incl. `Voro_svg_stuffing`, merged not just moved) · `history/Cytui_cleave_todo.md` · `history/Vyto_perf_todo.md` | Voro's design (the stained glass, scraped → §0.6 item 1) · the Cytui migration map Vyto superseded (scraped → §0.6 item 2) · the absorbed perf handoff | history (retired 2026-10-15) |
 | **`scripts/glass_sketch.mjs`** + `static/vyto/sketch.json` | the headless sketch loop (§0.8) | live |
 | **`scripts/vyto_code_sketch.mjs`** → `static/vyto/code_sketch.json` | the REAL CODE as a sketch, for Book VytoCodeCave | live — regenerate as code moves |
 
@@ -105,10 +105,74 @@ One page of state.  Everything under it is trail: read `## 0′` for how a thing
 ### 0.6 Open, in order
 1. **The look — Voro's stained glass into Vyto.**  The lettering molded to each cell (Voro's Stuffing) is the
     thing the owner calls beautiful and Vyto lacks (`Vyto_todo` gap list, §12).  Effect-side: typography,
-     the eye's.  Put the two side by side first (Voro films are in the shots).
+     the eye's.  Put the two side by side first (Voro films are in the shots).  Carried forward from the Voro
+      docs retired 2026-10-15 (`history/Voro_todo.md`, `Voro_render_todo.md`, `Voro_render_faults_todo.md`,
+       `Voro_vtuffing.md`, `Voro_svg_stuffing.md`):
+    - **The metaphysics, standing.**  Cyto/fcose is the layout engine; Voro only interprets its result —
+       pixel geometry never pushes back into layout.  Nothing render-side is ever snapped (`n.c.*`/`$state`
+        only); the ONE sanctioned snap is `w:Voronoiology`, the fold's own process-trace, a sibling world,
+         never render pixels.  The crusher alone mints `c.stuff`/`c.stuffy` (`Ghost/V/Voro.g`).  DOM-measure
+          feedback must be damped (settle cadence + hysteresis) or the tessellation oscillates.  Verify
+           render work with eyes on a live runner — headless is a bubble, no Book gates pixels.  (`Voro_todo`
+            §The metaphysics, 8 rules — the direct ancestor of this doc's own "causes are matter, effects are
+             recomputed" law, §0.1.)
+    - **The taste, verbatim.**  The owner: *"restore the stained glass; where's this teal from?"* (a fold's
+       cell must carry its dominant KIND's hue, not one grey-teal default border); *"use a phi spiral like
+        the seeds in a sunflower to grid things up"* (the list row's Vogel-spiral chip layout); *"big text
+         stretch-ups"* with a hard 14pt floor (loud properties grow, universal facts recede below it);
+          *"zen-garden trails of lined up tuples … a river of some type of debris through another.
+           landscapey"* (Wes-Wilson poster lettering warped along a drawn arc).  The render faces evolved
+            through six ▦ passes in one day (`063fb214`, face 6 "the gem") are SAVED as SVGs + a commit
+             ledger in `spec/voro_modes/` (left in place, not retired) — revive any face via
+              `git show <commit>:src/lib/O/Cytui.svelte`.
+    - **The arc-river engineering.**  Cells regroup into a few continuous washed regions (≈3–5, above the
+       crush's own ~9-pane governor) by a family-hull merge of the per-cell tessellation; a region's fold
+        order is then walked by PCA projection (a streak) or angle-around-centroid (a wrap: ≥4 cells,
+         flatness `l2/l1>0.55`, no angular gap `≥0.9π`) and classified into a letterform (`letter_of`: tiny
+          total bend ⇒ I, ≥2 turn-sign-flips ⇒ S, one steady bend ⇒ C, closes back near itself ⇒ O), drawn as
+           a Catmull-Rom spine with the family's shared trait riding it as tangent-rotated text chips
+            (110px spacing).  Stable per-key lanes (`vein_of`) answer "which value is the year" so a river
+             doesn't reshuffle frame to frame.  Built render-only behind the ▧ toggle, byte-identical when
+              off; tuning (riverbed width, chip density, wrap-vs-streak thresholds) is eyes-on only — pixels
+               never round-trip a fixture.
+    - **Vtuffing's north stars and built design — STILL LIVE, not retired with the doc.**  `Vtuff_build`
+       and the free-`C**` cache it writes to `f.src.c.vtuffing` (`Ghost/V/Voro.g`) are LIVE CODE today,
+        feeding every molded pane — retiring the design doc does not retire the engine.  The built split:
+         Voro.g owns MEANING (distils a fold's members into title|fact|spread|member|dip rows, extensible
+          per fold-kind via `Vtuff_of_<kind>`); Cytui owns GEOMETRY only (chord-fits rows into the convex
+           cell polygon, never reads member sc itself).  Colour resolves kind → an authored Matstyle swatch
+            → else a golden-angle hue registry, so an un-styled kind still earns its own colour instead of
+             one default border.  Beyond what shipped, three north stars stayed north stars: the radio
+              (attention drifting the camera onto a focus pane, v1 built — `Voro_drift_tick`), the tunnel
+               (the graph re-projected onto a cylinder wall, v1 skeleton built), and A:Tunnel (the compute
+                growing its own non-Story home — architecture only, never built).  All three are
+                 effect-side and eyes-on, none Book-gateable.
+    - **Voro_svg_stuffing's cross-wall row alignment — THE OPEN TASK.**  Vtuffing fits each pane's rows
+       INDEPENDENTLY to its own cell; the unbuilt next layer makes NEIGHBOURING panes' rows EDGE TOGETHER
+        across a shared wall — matched rows (scored by same key/value/kind) gravitating to the wall and
+         lining up, so the glass stops being panes-with-labels and becomes one worked window.  The design
+          rides ON Vtuffing's existing row model (no rebuild): a stable `rid` per row, a per-shared-wall
+           greedy match over the family-hull adjacency that already exists (`edge_src`), deterministic
+            placement (matched rows to a wall band, unmatched to the centre), SVG `<text>` paint with
+             monospace metrics (no DOM measurement — frees it from the HTML path's measure→re-tessellate
+              feedback, §6 of the metaphysics above).  Never built; awaits agreement before any code.
 2. **The hand's gaps**: nested cells · the spine/grid regimes (make `spineScroll` a cause — it is the cave's
     one unproven organ, still a Svelte Map) · a lift gesture · `op:'drag'` for Vyto (so Vyto can be filmed
-     moving, as Voro was).
+     moving, as Voro was).  **The `Cytui_cleave_todo` migration map** (retired 2026-10-15 to
+      `history/Cytui_cleave_todo.md`) **is the plan Vyto superseded rather than completed** — worth knowing
+       WHY, since nested cells will face the identical question.  It stratified Cytui.svelte's voronoi
+        region into three layers: A (~400 lines of pure geometry — chord/fit math, half-plane clipping, the
+         PCA/river/letterform/Catmull machinery, kind→colour lookups — zero reactive coupling, the clean
+          cut), B (stateful render orchestration reading `cy`/`node_src` and writing the `$state` arrays the
+           template renders), C (the `{#each}`-bound reactive surface itself, which stays by definition).
+            The plan: Layer A migrates INTO `Ghost/V/Voro.g` (never a sibling `.svelte.ts` — a 2026-07-12
+             ruling, despite LangTiles parse-storms on closure-heavy raw JS), Layer B shrinks as a model
+              takes over the diffing/census it hand-rolls, Layer C stays paint.  None of it landed for Voro —
+               Cytui grew to ~5,878 lines instead.  The carried-forward lesson is the doc's own §5 verdict:
+                don't cleave a render component as a standalone tidiness task — the shrink falls OUT of a
+                 model-first move (this doc's law 1), and the one thing NOT to do is lift a reactive region
+                  into a child component (fake decoupling: `$state` doesn't cross a prop boundary cleanly,
+                   and Svelte 5's semantics punish the attempt).
 3. **Story step nav does not drive the live glass** (§0′ 2026-09-11): Books run in ms and the glass draws
     after, so no mid-Book state can be photographed in BigShapeland.
 4. **Owner-open since 2026-09-23** (§0′ "OPEN, RULED BY THE OWNER"): overrun atoms dropped silently
@@ -1338,7 +1402,7 @@ Baseline (`deck=`): the wedge pie on the copper ground — Songs titled along th
    the Cog jewel) and **have a tok** (`Vyto.g` fold: `crest.c.tok = 'Vtuffing:' + ofk`) — both
     needed for a folded glass to show anything but grey. Both landed, uncommitted → now committed.
 - **Deleting a Book = three places**: its block in `Ghost/V/VytoTesting.g` (renamed from
-   `Vytonation.g` on 2026-09-09), `wormhole/Story/<Book>/`, AND its `Funkcion:Storying,of_Book:`
+   `VytoTesting.g` on 2026-09-09), `wormhole/Story/<Book>/`, AND its `Funkcion:Storying,of_Book:`
     row in `wormhole/Credence/toc.snap`. Miss the third and a phantom fixture dir reappears when the
      old tab runs it.
 - **The `springs` map in Vytui never forgets a world** — one dead world per Book run, stacked
@@ -1716,7 +1780,7 @@ VytoCrush  ok_pct 1    a green run of the racy Book (1-in-3; the pump may or may
 
 **Nothing regressed** across five touched files: `Vytui.svelte` (the film strip),
  `LiesFunk.svelte` (the two-renderer `why`), `runner_shot.mjs` (`printVyto`), `vyto_foam.ts` (the
-  fold ladder), `Vyto.g` (the ladder wiring + `Vyto_grasp`), `Vytonation.g` (`VytoKindfold`,
+  fold ladder), `Vyto.g` (the ladder wiring + `Vyto_grasp`), `VytoTesting.g` (`VytoKindfold`,
    `VytoGrasp`, the awaited truth test, the VytoCrush pump).
 
 **Built and gated tonight:**
@@ -2111,7 +2175,7 @@ Also proven: kind beats crowd where they disagree (three kinds sharing a `metal`
 
 ### ✅ AUTHORED 2026-09-09 — `VytoKindfold`, the Book the fleet was blind to
 
-Written into `Ghost/V/Vytonation.g`, plus one additive parameter on `Vyto_commission_on` (a `deck`
+Written into `Ghost/V/VytoTesting.g`, plus one additive parameter on `Vyto_commission_on` (a `deck`
  string landing on `w.sc.foamereo`, so a fixture records **which configuration the glass wore** —
   which is what makes a Vytocon Book-testable at all).
 

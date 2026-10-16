@@ -1,3 +1,9 @@
+> **HISTORY (retired 2026-10-15, merged).** The design for cross-wall row alignment — the unbuilt layer
+>  that would make neighbouring Voro panes' rows edge together across a shared wall, riding on Vtuffing's
+>   existing row model (tuple model, per-shared-wall greedy match, placement solve, SVG paint). Never
+>    built; still the open task. Merged into `Glassbeast_todo.md` §0.6 item 1, alongside its parent
+>     `Voro_vtuffing.md` (retired the same day).
+
 # Voro_svg_stuffing — the "single worked window": cross-wall row alignment (a LAYER on Vtuffing)
 
 > **Read `Voro_vtuffing.md` first — it is the BUILT engine.**  Vtuffing distils each

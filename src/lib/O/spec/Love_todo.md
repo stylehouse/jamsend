@@ -31,6 +31,20 @@ The front door for the road a person meets most: press ♥ on a track, and the m
 
 ## 0. What to get on with next
 
+**Two standing rules that survive "no unlove, anywhere" below** (`Radio_circuit_todo.md` §9.3/§9.4,
+ 2026-09-10/11 — read "unlove" there as whatever retracts a want today: a Haul row's ✕, or a Nay):
+- *"Unlove may free a cache, never a possession."* A pool copy is a CACHE — derived, re-fetchable,
+   sized by a budget the human set; freeing it is fine. The file in your music folder is a
+    POSSESSION — yours, in a folder you chose — and no reaction, retraction or reload should ever
+     reach into the library and delete it. The bite this guards against: love on the phone, the
+      laptop heists the real file, retract on the phone a week later — if that propagated as
+       "delete", a gesture on a device that never held the file would delete it from the device
+        that does.
+- *"Unlove does not propagate."* There is no frame for an untake across devices: a want not yet
+   landed can retract (the other side simply never starts), but a want already landed never
+    un-lands — the two ledgers are allowed to silently disagree. See §9.5 for the case of a keep
+     landing right as the retraction arrives.
+
 **Rulings 2026-09-15 (the owner):** ♥ is a REACTION a person indicates toward material — one of a vocabulary:
  **Yay** (♥ today; Love→Yay migrates later), **Nay** (evicts from SP and bars future draws; never deletes a
   heisted file), **Meh** (an early skip, written by the radio; the pool never draws it). **There is no unlove,

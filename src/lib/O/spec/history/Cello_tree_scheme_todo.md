@@ -1,5 +1,13 @@
 # Cello Tree — the bracket/groupology rendition of C** matter
 
+> **HISTORY (retired 2026-10-15).** This was strike 1 of 8 in the Cello rendering tournament
+>  (`Cello_synthesis_todo.md`, Task #42): nested wobbly blobs, 75%-per-level inset, containment as
+>   the layout itself. Design-only — none of its mechanisms were ever built. The adversarial pass
+>    ranked it last of the eight (depth drives cells below the legibility floor in ~4 levels: "you
+>     navigate, you never SEE"). Its scrapeable ideas — the always-shown `.c` strip (`c0` even when
+>      empty) and the `kid_cap` truncation cell (`… N more`, never a silent cut) — live on in
+>       `Cello_synthesis_todo.md`'s scorecard footnote [^1] and durable core.
+
 ## 0. What to get on with next
 
 This doc designs the TREE renderer: a sibling to Cello (main+hovering blobs, see

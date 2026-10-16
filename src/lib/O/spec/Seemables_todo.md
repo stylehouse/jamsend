@@ -394,7 +394,7 @@ Everything below is the original codebase survey: the eight places the last-beat
    anything; leave the queue mechanics.
 
 **Risk.** CORE (the IO pump) with a loose Seem fit → LOW priority. `o-elvis-bootstrap-race`,
- `Lies_handover.md`.
+ `Lies_attention_todo.md`.
 
 ---
 

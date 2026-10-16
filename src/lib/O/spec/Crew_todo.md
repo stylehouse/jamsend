@@ -57,7 +57,7 @@ The owner linked a real second device and pasted ten minutes of its console. Eve
     `%Assertion`s never fire**: `a-blank-device-offers` (step 2), `the-soul-seals-across` and
      `the-device-consents-to` (step 3), `the-ceremony-fails-closed` (4), `the-account-ferries-over` (5).
  **Why:** four of those five sentences no longer exist anywhere in `Ghost/` — `git log -S` puts their
-  removal in **`4f3ce9cb`**, the very commit that retired the adopt road, and `Swarmation.g:4249` says as
+  removal in **`4f3ce9cb`**, the very commit that retired the adopt road, and `SwarmTesting.g` says as
    much in its own header (*"re-authored 2026-09-03 when the adopt road retired"*). The re-author took the
     ceremony out of the code and **left its oaths declared in the toc**. The fifth sentence survives, but
      in `InvFerry.g` — a different Book.
@@ -360,7 +360,7 @@ The grant-cert core is BUILT + PROVEN (committed `063d790c "Grant:Crew"`): minte
         bookings survive a reload, terminal ones stay buried. Without it "book it and walk away" — the whole
          SoundPooling premise — was false on a phone. The rehydrate finds-or-creates on the same triple
           (to · of · for) `Swarm_reach_book` uses, so it can never double a live booking.
-     - **`SwarmReboot`** (Swarmation.g, 5 beats, 6 sworn, recorded live): populate a lived-in account →
+     - **`SwarmReboot`** (SwarmTesting.g, 5 beats, 6 sworn, recorded live): populate a lived-in account →
         restash into a scratch stash → **WIPE** the tree → run the rehydrate ladder → swear the crew ledger
          + cert, the roster + my post, and the standing booking came back, that a settled reach did NOT, and
           that a second ladder pass doubles nothing. The first fixture that has ever touched the stash.
@@ -640,7 +640,7 @@ THE CREW  = the bodies that CARRY S.  Exactly one WIELDS it at a time (Captain =
       stands down too and re-signs the ledger so the others learn its new name. Live owed: the station re-dials
        under the new name at the next standup (in-place re-dial not built); the stash/account dir keyed by the
         old prepub is not migrated.
-- **Gate: SwarmHelm** (Swarmation.g, 5 beats, 7 sworn): held-not-wielded · eject travels · the ejected leaves · the
+- **Gate: SwarmHelm** (SwarmTesting.g, 5 beats, 7 sworn): held-not-wielded · eject travels · the ejected leaves · the
    friend refuses it and still admits a mate · the helm passes with no key moved · a fresh device resumes and the
     three ledgers agree byte for byte · the soul secret survives a reload through the stash.
 
@@ -654,6 +654,65 @@ THE CREW  = the bodies that CARRY S.  Exactly one WIELDS it at a time (Captain =
    pier**. Stateless otherwise. Forgery-hammered in `crew-cert-test.ts`.
 
 **Dial-in:** `runner_ask crew --player=<id>` now reports `key · soul · soul_held · wields` on `self`.
+
+### Why the issuer is `%Idzeug` — an invite is an instance, not a row (scraped from the retired `Onboard_todo.md`)
+
+The owner, reading his own account file and finding 279 `%Idzeug` rows in it: *"issuing an Invite just winds
+ up a number of the Idzeug that issued the invite"* (2026-08-12), and *"the Idzeug has a number that we omit
+  from the invite datagram if it is one."* On the per-invite bookkeeping that used to exist: *"the %Blotter
+   doesn't hang around at all, the Serial is simply wound past them all, and their Invites wander off into
+    the world. we have no idea they're a group, ongoingly."*
+
+`%Idzeug` is not an invite — it is **the scheme behind an invite, its class**. An Invite is an *instance*: a
+ serial drawn off an Idzeug, wandering off into the world carrying nothing but its number and a MAC:
+
+    Idzeug:1,to:Music,next:280,claimed:3-5~9~14
+
+This is free, cryptographically, because `Swarm_presig` is a deterministic ed25519 **MAC, not a
+ third-party signature** — only the issuer's key makes it, and regenerating it IS the door's check, so
+  verification stores nothing. The per-invite record was only ever doing three jobs, and the issuer does all
+   three without a row each: "we issued this" becomes `i < next`; the mint params become the issuer's own
+    `to` + Feature params; spend state becomes the `claimed` run-list. **`next` IS the issuer tell** — an
+     issuer always carries it, and no legacy per-invite row (`to`/`ttl`/`chain`/`holder`/`spent`/`blotter`
+      plus Feature params) ever does, so the shape alone tells reader from writer. ⚠ the run-list uses `~`,
+       never `,` (`claimed:3-5~9~14`): `encode_stringies` forces the whole line to a JSON blob on any comma,
+        which would silently defeat the point — the file staying readable by eye.
+
+A **blotter is a range mint**: wind `next` past N, hand out N tokens; nothing records the group. Labelling a
+ group of invites was looked at and shelved — *"almost but not quite for v1.0"* (owner, 2026-08-12) — so a
+  label, when it comes, rides the range; it is never a resurrected `%Blotter` with one row per member.
+
+**Chain invites are the one shape that cannot fold into the issuer**, and were deliberately left out: a
+ `chain:1` invite tracks a *moving holder*, mutable per-invite state that no counter represents
+  (`Swarm_reinvite_ok` rewrites it every hop). Folding it would delete the feature, not shrink it. Plain
+   invites fold into the issuer; a chain keeps its own record, untouched (`SwarmChain` stays green over it).
+
+Verbs, all in `Ghost/S/Swarm.g`: `Swarm_iz_issuer` (find-or-create) / `Swarm_iz_issuer_of` (find-only — a
+ read path that called the find-or-create instead minted an issuer by merely asking, inside a Book's own
+  witness pass, so the split is load-bearing, not cosmetic) / `Swarm_iz_wire` / `Swarm_iz_find` /
+   `Swarm_claimed_has` / `Swarm_claimed_add` / `Swarm_iz_spent` / `Swarm_iz_claim` / `Swarm_mint_invite` /
+    `Swarm_issued`. A live token is `<prepub16>*<serial>*<n>*<presig16>`; the presig always signs the
+     CANONICAL `z.i` serial (the short form when `z==1`) so one crypto domain covers every spelling.
+
+**Why the old music-server's links still work, unmigrated.** The owner handed over the old pre-Swarm
+ `Trust`/`Tyranny` account and asked for it *"migrated into the data store,"* with its Idzeug serial
+  starting at **22,222** — *"because I already made lots of them"* (owner, 2026-08-12). That number is the
+   whole story: Tyranny's own `Upper_Number`, wound forward in bursts, and its own words — *"we only need to
+    remember they need $n between some range and not be in the answered set"* — are `next` and `claimed`,
+     independently arrived at five years apart. **The migration is one file, no code**: drop the old
+      account's `toc.snap` with one `Idzeug:1,to:Music,next:22222` row into the data store, boot it with
+       `?I=<prepub>`, and every link the old garden ever posted resolves through `Swarm_iz_find` untouched
+        (`i < next`) — no legacy ledger, no Dexie import, no second spend-state. What differs is only the
+         MAC, and it is the same *kind* of MAC (old: `ed25519(<prepub>-<advice>)` truncated 16; new:
+          `signHeader` over sorted-key JSON truncated 16 — same curve, same "regeneration IS the check"), so
+           `Swarm_hello` grew one branch (`Swarm_legacy_presig`) and nothing about the spend, the grant mint,
+            or the seal moved. ⚠ **The tooth:** a relic's `{advice, sign}` pair verifies *on its own*, so
+             without binding `advice.n === token.serial` one genuine old link is an unlimited pass — its
+              holder can offer it beside serial 9, then 8, then 7, ticking off every unclaimed number in the
+               issuer's space. Mutation-tested both ways; this comparison is not a redundancy to simplify
+                away. What the old link `granted` stays `'ftp'` on the parse — what the old garden honestly
+                 promised — while a redemption mints whatever OUR issuer says today (`Music`): *"all Invites
+                  are just for the entire Music thing"* (owner). The maker's own record is the law.
 
 ---
 
@@ -761,6 +820,33 @@ THE CREW  = the bodies that CARRY S.  Exactly one WIELDS it at a time (Captain =
  forgive efficacy; name-gate + silent-serial-refusal (land with the features); cross-wire races
   (live-only). Verify on the LIVE runner, never headless Story_cli; Books prove *inert*, only the live
    runner proves *works*.
+
+### Hard-won lessons — the invite-robustness audit (three door holes, scraped from the retired `Onboard_todo.md`)
+
+Asked once, directly — *"is the invite totally robust?"* — the honest answer was that the happy path was
+ proven and the edges were not. Three defects turned up, all one shape: **a real invite that the door
+  failed to recognise as one.**
+
+1. **A relic was invisible to anyone who already had a friend.** An old-garden invite lives in the URL
+    *fragment*, so the boot-param reader can't see it, and the ordinary landing check (which reads `?Iz=`)
+     comes back false for one. A brand-new person got the door anyway, by the accident of being friendless;
+      everyone else followed an old link and the app said nothing at all. Fix: `SwarmStandup` stamps
+       `door_relic` (alongside `door_friends`) and the door is shown at the **offer** rung — never at the
+        hold rung, because a relic cannot resolve there yet and a hold on one would never end. Offer, not
+         gate.
+2. **Pasting an old link said "that link's invite did not parse — ask for a fresh one"** — which reads as
+    "you mistyped it" about a perfectly well-formed link. Fix: `paste_load`/`paste_try` (`InvitePanel.svelte`)
+     fall through to the legacy parser and name the sender instead of rejecting.
+3. **The URL parser got two real link shapes wrong**: `…?Iz=<tok>#anything` returned the token with the
+    fragment glued on (messengers append them on share), and `…#frag?Iz=x` read a `?Iz=` living *inside* a
+     fragment as a query param. `location.search` — what the live door actually reads — has neither
+      problem, so the parsing helper (`Swarm_iz_of_url`) carried both faults alone while its own comment
+       called it "the boot handler's core."
+
+The lesson outlives the fix it prompted: **a green happy-path Book proves the mint→scan→redeem→seal arc; it
+ proves nothing about a link arriving in a shape the door didn't expect** (fragment vs query, an old vs new
+  token grammar, a friendless vs befriended landing). Any future change to an invite's shape wants a
+   deliberate pass over those axes, not just a green regression Book on the canonical one.
 
 ---
 
@@ -990,9 +1076,9 @@ The owner, 2026-09-03: *"everything basically wants to be snappable, unless it's
 
 ### 3. Migration — counted, ordered, gated
 
-`.c.keys`: **154** touches over 6 files (Swarm.g 86, Swarmation.g 54, Auto.svelte 5, InvFerry.g 4,
- InvWalk.g 3, daemon/main.ts 2). `.c.bodykey`: **59** over 5 (Swarm.g 20, Swarmation.g 28,
-  Heistation.g 6, TwoFounder.spec.ts 4, InvWalk.g 1) — all of which **delete**. Production surface
+`.c.keys`: **154** touches over 6 files (Swarm.g 86, SwarmTesting.g 54, Auto.svelte 5, InvFerry.g 4,
+ InvWalk.g 3, daemon/main.ts 2). `.c.bodykey`: **59** over 5 (Swarm.g 20, SwarmTesting.g 28,
+  HeistTesting.g 6, TwoFounder.spec.ts 4, InvWalk.g 1) — all of which **delete**. Production surface
    113; the rest Books. Inside Swarm.g the touch spreads over **≈44 verbs**: `Swarm_signas`,
     `Swarm_page`, `Swarm_is_cave`, `Swarm_crew_tidy`, `Swarm_voucher_mint`, `Swarm_station_up`,
      `Swarm_hello/_accept/_confirmed`, `Swarm_charter_sign`, `Swarm_export/_import`,

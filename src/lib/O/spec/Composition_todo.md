@@ -234,7 +234,7 @@ This doc exists because the failures below have **no other home**. Each subsyste
 
 | fork | landed | proven by | still owed |
 |---|---|---|---|
-| **A** `MusuNeGrind` | `Heistation.g` + `.go` + fixture | **green ×5 + all six claims broken on purpose**; one was theatre until that pass | the disclaim `%see` (needs the scene routed through `Ra_restock_beat`) |
+| **A** `MusuNeGrind` | `HeistTesting.g` + `.go` + fixture | **green ×5 + all six claims broken on purpose**; one was theatre until that pass | the disclaim `%see` (needs the scene routed through `Ra_restock_beat`) |
 | **B** the two sweeps | `SupplyGuards.spec.ts` | **15/15, 6s** — dial sweep *and* the frontier-name sweep, the latter a documented NEGATIVE result | nothing |
 | **C** the uncovered landings | `KeepMemoDurable.spec.ts` (**untracked — `git add` it or it is not in the commit**) | **8/8, 6s** — lofi across the seams, `keep_memo` durability, rehydrate, A3 rendition | `Ra_pcm_admit`'s floor went into **B's** file, not C's; covered once, not where §0c said |
 | **D** Cluster canonicity | `LiesFunk.svelte` | **half-measured** — a runner is provably no longer a writer; the editor has not been seen to write at all | one new runner tab, 30 seconds — see §0.1b |
@@ -286,7 +286,7 @@ This doc exists because the failures below have **no other home**. Each subsyste
 
 **Territory as of the 2026-08-08 handover:** `relay.ts` / `relay-test.ts` belong to the security
  session — **do not touch, hand over rather than edit** (§0.4b's fix lives there). The handing-over
-  session held `Ra.g`, `Radio.g`, `Swarm.g`, `Repli.g`, `Heist.g`, `Heistation.g`, `Vytui.svelte`,
+  session held `Ra.g`, `Radio.g`, `Swarm.g`, `Repli.g`, `Heist.g`, `HeistTesting.g`, `Vytui.svelte`,
    `Matstyle.svelte`, `scripts/` — **all at a clean stopping point, all compiled, nothing staged.**
 
 ### 0c. Four forks, with disjoint file ownership
@@ -574,7 +574,7 @@ And the corollary, which ties this to §2.1: the discovery layer is not merely u
  `told`, to a caller that discarded it — the facts existed for one stack frame and were never once seen.
   That is §2's pattern one more time, in the discovery layer's most-complained-about path.
 
-**What the verification runs then exposed, unprompted.** `Swarmation.g` defines exactly two Books,
+**What the verification runs then exposed, unprompted.** `SwarmTesting.g` defines exactly two Books,
  `MusuSelf` and `MusuThem`. Both ran green — and both were **vacuous**: neither had *any* recorded
   fixture in `wormhole/Story/`, and the snaps the run auto-wrote were six lines whose entire content
    was `self,round`. So the swarm layer's own two Books assert **nothing**, and a green from them is
@@ -586,7 +586,7 @@ And the corollary, which ties this to §2.1: the discovery layer is not merely u
    these two fixtures are *empty files*, which states the truth out loud instead of dressing a hollow
     Book in a plausible-looking snap.
  ⚠ **STALE AS WRITTEN (noted 2026-09-04) — kept because the finding still stands, but neither name nor
-  the count survives.** `Swarmation.g` now defines eleven-plus Books (`SwarmStaple`, `SwarmWire`,
+  the count survives.** `SwarmTesting.g` now defines eleven-plus Books (`SwarmStaple`, `SwarmWire`,
    `SwarmSteal`, `SwarmInvite`, `SwarmDoor`, `SwarmGot`, `SwarmPolicy`, `SwarmShare`, `SwarmChain`,
     `SwarmBlotter`, `SwarmSpoof`, …), and `MusuSelf`/`MusuThem` are gone twice over: the two hollow Books
      were retired, and the *particle mainkeys* of the same names were renamed **`MusuSelf`→`Mine`,
@@ -859,8 +859,8 @@ Three phases at **zero**, one at up to **29.7 seconds**, against a 600ms cadence
 
 **The protocol had a delete half, and it was wired only in Books.** `Repli_sent_se` (`Repli.g:1228`)
  resolves goners and fires `repli_on_goner` → `Repli_retire` (`Repli.g:457`, one `op:delete` line), and
-  **every caller in the tree was `Ghost/Story/Musuation.g`.** Same for the heist-side
-   `Musica_stand`/`Musica_recast_offer` (callers only in `Heistation.g`). The live offer path,
+  **every caller in the tree was `Ghost/Story/MusuTesting.g`.** Same for the heist-side
+   `Musica_stand`/`Musica_recast_offer` (callers only in `HeistTesting.g`). The live offer path,
     `Ra_offer_stock`, is upsert-only — zero delete lines ever crossed.
 
 **Meanwhile three live mechanisms remove records from a source's shelf:** `Stoker_tour` (the conveyor,
@@ -950,10 +950,10 @@ With the cull detached, the steady-state arithmetic is fine: the lead pass lays 
 >      is not evidence about the code until you have seen its claims go red.** The mutation table below
 >       is now the load-bearing part of this section; the design notes are history.
 
-**Where it is.** `Ghost/Story/Heistation.g`, appended after `MusuDoor` — modelled line for line on
+**Where it is.** `Ghost/Story/HeistTesting.g`, appended after `MusuDoor` — modelled line for line on
  `MusuVend`'s scaffold as §0 instructs. It went into an existing `.g` rather than a new one for one hard
   reason: a new ghost file needs a `CREDULER_GHOSTS` line in `LiesLies.svelte`, and this session was
-   barred from `.svelte`. `Heistation.g` is already in that manifest, so the Book is live to a runner the
+   barred from `.svelte`. `HeistTesting.g` is already in that manifest, so the Book is live to a runner the
     moment it compiles. Credence row: a new top-level **`What:MusuNe`** group (the human: *"far too much
      is ending up in Musu"*) — composition Books go there, one mechanism-in-a-quiet-world Books do not.
 

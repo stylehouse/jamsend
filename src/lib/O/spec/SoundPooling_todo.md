@@ -1784,7 +1784,7 @@ Under it, the framing: *"just whether they want surprise music in their daily pl
 
 See also **** — likes → heists → batch per holder, what berth is actually for, and the `take:'recent'` acquisitions input the owner asked for.
 
-See also **`Acquisition_todo.md`** — likes → heists → batch per holder, what berth is actually for (three caches, one of them the music-tree Census), and the `take:'recent'` acquisitions input.
+See also **`history/Acquisition_todo.md`** — likes → heists → batch per holder, what berth is actually for (three caches, one of them the music-tree Census), and the `take:'recent'` acquisitions input.
 
 **Next (in order):** the live walk on the Cave (declare 300 MB from crew, listen, watch `🏊` lines, flip the
  source chip to pool, hear it play offline); the "later" half of the Like (a Cave with a disk reading the
@@ -1893,7 +1893,7 @@ See also **`Acquisition_todo.md`** — likes → heists → batch per holder, wh
   were authored-but-never-recorded (no wormhole dir); all four recorded live + verified green in
   check mode (each %see-asserted, single-beat).  The press/steward/upgrade model is now regression-
   fenced, not just smoke-green.
-- **P1 registered**: Siphon.g + Siphonation.g in LiesLies CREDULER_GHOSTS.
+- **P1 registered**: Siphon.g + SiphonTesting.g in LiesLies CREDULER_GHOSTS.
 
 **Owner-testable NOW (reload both tabs for the 388834c+ build):** tap the source chip under the
  player → it flips to "♪ SOUNDPOOL"; the ShuffleFace shows your pool (empty until pressed) + the
@@ -1916,7 +1916,7 @@ See also **`Acquisition_todo.md`** — likes → heists → batch per holder, wh
    the crew mirror into MY pool through the same one door (the pool branch lights, byte-faithful,
     body_hash); no mirror / no readable nav → the reach STANDS 'arrived' as visible awaiting-transport
      state, never a fake landing.
-- **Book-gated** — MusuPoolFill (Ghost/Story/Heistation.g, 6 beats, recorded live, 2× green, 4 %see):
+- **Book-gated** — MusuPoolFill (Ghost/Story/HeistTesting.g, 6 beats, recorded live, 2× green, 4 %see):
    book → road → live-doer serve → ack → byte-faithful pool %Record on the Captain → graduate — plus
     the honest refusal receipt standing on both sides.
 - **What stays live-only (the named owed seam):** the real cross-device BYTE transport.  Live, the
@@ -1954,7 +1954,7 @@ See also **`Acquisition_todo.md`** — likes → heists → batch per holder, wh
    the copy retired, the Original wearing the pool's provenance.
 9. **MusuPoolDaemon** — the same ceremony with the daemon as the Cave (Crew_todo §0.3): a headless crew member
    serving reaches while the phone sleeps. Needs the %Ferry-only ceremony state (Crew_todo §0.0 "half-spined").
-Each: Heistation.g (the Musu* home), recorded on the LIVE runner, wormhole dir committed with toc + snaps.
+Each: HeistTesting.g (the Musu* home), recorded on the LIVE runner, wormhole dir committed with toc + snaps.
  Verify a fill by `runner_ask snap <n>` + the 🏊 seek, never by log lines.
 
 **A BOOKING NOW SURVIVES A RELOAD (2026-09-03).** `%Reach` became the sixth stash pillar
@@ -1985,7 +1985,7 @@ Each: Heistation.g (the Musu* home), recorded on the LIVE runner, wormhole dir c
    anyone shares with me — humdinger-gated so every Sounditron fixture stays byte-identical): the compartments
     (name · take · cap · wanted · 🔀 reshuffle · ✕), the wants per pool with their holders, "＋ random from
      everyone" / "＋ what I liked" presets, a define form, and the two knobs (steward · fills) + "sit down".
-- **Gate: MusuPoolRandom** (Heistation.g, 4 beats, 5 sworn): 8 reachable from 2 holders → 3 pull-wants naming
+- **Gate: MusuPoolRandom** (HeistTesting.g, 4 beats, 5 sworn): 8 reachable from 2 holders → 3 pull-wants naming
    holders, never my own shelf · the same draw twice, a new salt a new draw · the wants book toward their
     holders (crewmate at its body name, friend at its pier), idempotent · the friend road admits Cap, refuses a
      stranger, reports back over the pier · resize / list / drop / fall back to the anonymous pool.
@@ -2033,7 +2033,7 @@ Each: Heistation.g (the Musu* home), recorded on the LIVE runner, wormhole dir c
       question is resolved (read Portability_todo §3 first; do not guess the lib mapping).
 2. **Record the pending Books** — MusuPress/MusuSteward/MusuSmuggle/MusuQuarter are smoke-green but
     unrecorded. These are Lane-A recording passes (runner_ask.mjs), not code work.
-3. **Apply Siphon_todo P1** — register Siphon.g + Siphonation.g with the Creduler (LiesLies.svelte),
+3. **Apply Siphon_todo P1** — register Siphon.g + SiphonTesting.g with the Creduler (LiesLies.svelte),
     then P3 (the recording pass for Siphonation).
 4. **Apply Siphon_todo P2** — the RadioFace source chip — only after `Radio_source_next` exists (§4 below).
 5. **The pool-source Radio rung** — the dial consulting pool records when `sc.source === 'pool'`.
@@ -2378,7 +2378,7 @@ Three belly cells alongside Door/Radio/Link (the Sounditron organ ladder + Cellu
 
 ## 6. The smallest demonstrable first slice
 
-**Do this first to prove it works:** apply Siphon_todo P1 (register Siphon.g + Siphonation.g),
+**Do this first to prove it works:** apply Siphon_todo P1 (register Siphon.g + SiphonTesting.g),
  do the P3 recording pass, then wire `Radio_source_next(n)` as a three-state cycle and test it
   live: with a friend's share open, tap the source chip, confirm `radio.sc.source` flips in the
    snap (`runner_ask snap 1`), and confirm `Radio_dial_pool_local` returns records from the pool

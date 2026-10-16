@@ -1,3 +1,5 @@
+> **HISTORY (retired 2026-10-15).** A 2026-09-03/04 snapshot table of every 8+-word UI string, for the owner to chop. The `chop?` column was never filled and the file:lines drifted. The method is kept in `UI_seams_todo.md` Appendix C; regenerate fresh rather than reviving this table.
+
 # Speeches to chop
 
 A table of the more wordy speeches we make around the place — the owner's ask: "a table of the more wordy speeches we make around the place, I bet I could chop them down nicely."

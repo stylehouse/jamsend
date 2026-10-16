@@ -40,7 +40,7 @@ Scope is the transport spine — `Heist` / `Ra` / `Repli` / `Peeroleum` / `Tribu
          in a quiet world. The human's own verdict: *"all these Musu\* tests really didn't prepare us
           too well for the clusterfuck of them all together."* Correct, and structural.
 
-    **Shape** (copy `MusuVend`'s scaffold, `Heistation.g:653` — `Lake_link` loopback, two Piers, no FSA,
+    **Shape** (copy `MusuVend`'s scaffold, `HeistTesting.g` — `Lake_link` loopback, two Piers, no FSA,
      `Musu*` naming convention so `do_fn_for` dispatches by `w.sc.w`):
      - Origin holds a %Library of a FEW records with MANY chunk particles each (enough that pages tile
         and `Ra_pull_beat` runs over many beats — the single-page Books never exercise the pull loop).
@@ -67,7 +67,7 @@ Scope is the transport spine — `Heist` / `Ra` / `Repli` / `Peeroleum` / `Tribu
     **BUILD PLAN (2026-08-28, terrain mapped by two exploration passes — anchors inline; the human asked
      for this before a long build session).** The map changed the shape in one way worth stating up front:
       **`make_lossy_partner` already exists** (`Reliable.g:91-125` — per-Pier `drop`/`dup`/`delay:{seq:ticks}`/
-       `blackhole`, deterministic, already worn across `Peregrination.g`). So a loopback Book with injected
+       `blackhole`, deterministic, already worn across `PeerTesting.g`). So a loopback Book with injected
         latency+loss is **no longer the zero-latency mock** that makes the control loop inert cargo (§5.5/§5.6):
          a seeded `delay:` gives non-zero RTT `s`, a seeded `drop:` exercises the tail probe and the ack-clock's
           re-issue. That splits the work into two rungs that prove DIFFERENT things — build Tier 1, checkpoint,
@@ -75,9 +75,9 @@ Scope is the transport spine — `Heist` / `Ra` / `Repli` / `Peeroleum` / `Tribu
 
     **TIER 1 — `MusuNeGrind`, deterministic bench (loopback + lossy wrapper).** NOT the throwaway item 00
      once feared: it is the DETERMINISTIC, fixtured reproducer of both the flood and the control loop.
-     Template is `MusuHeist` (`Heistation.g:51-399`) — two Piers sealed by Idzeug over one %Station world,
+     Template is `MusuHeist` (`HeistTesting.g`) — two Piers sealed by Idzeug over one %Station world,
       pinned clock+seed, `Crate_nav_paths` census, Repli jobs. Copy that scaffold and:
-     1. **Inject the wire.** At the `Lake_link` call (`Heistation.g:176`) wrap one direction's port with
+     1. **Inject the wire.** At the `Lake_link` call (`HeistTesting.g`) wrap one direction's port with
          `make_lossy_partner(port, schedule)` (`Reliable.g:91`). A heist's `repli_page` seqs are DYNAMIC, so
           the old explicit-seq schedule (`drop:[s]`/`delay:{seq:N}`) can't name them — so **2026-08-28 added
            PATTERN keys to `make_lossy_partner` (LANDED, additive, PereProof/PereComplain/PereReborn still
@@ -112,13 +112,13 @@ Scope is the transport spine — `Heist` / `Ra` / `Repli` / `Peeroleum` / `Tribu
       `w.c.repli_allow` (`:2764`), `Repli_arm`, `?B=<Book>&I=<tag>` boot (`Otro.svelte:34`),
        `Lies_become_book_drive` (`LiesFunk.svelte:1976`). Swarm.g needs NO change (it is already relay-complete —
         and it is another agent's file this stage). The missing pieces:
-     1. **`Relay_link(w, pubA, pubB)`** beside `Lake_link` (`Peregrination.g:202`): instead of pairing two
+     1. **`Relay_link(w, pubA, pubB)`** beside `Lake_link` (`PeerTesting.g`): instead of pairing two
          in-process ports, return two ports each **relay-bound under a signed hello** — each dials `:9091/relay`,
           the relay binds `prepubOf(pub)→socket`, pull frames route `to:<prepub>`. Repli's handlers are unchanged;
            ONLY the port origin changes. This is the load-bearing new primitive.
      2. **A two-tab coordination wrangle** (runs in BOTH tabs' worlds — two Houses, two `w:` instances, no shared
          %Account tree): each tab mints its %Identity off `?I=<tag>`, seals via an Idzeug redeemed over the relay
-          (SwarmStaple `Swarmation.g:33-150` proves the in-memory seal; here it crosses the wire), and ELECTS
+          (SwarmStaple `SwarmTesting.g` proves the in-memory seal; here it crosses the wire), and ELECTS
            source/sink by **prepub ordering** (lower serves) so no master is needed. Each tab knows the other's
             `?I=` from the Book's own seed and derives its prepub; rendezvous by polling a witness row.
      3. **A two-runner driver:** `runner_ask.mjs` insists on ONE runner (`--runner=<pub>`, no failover —
@@ -135,9 +135,9 @@ Scope is the transport spine — `Heist` / `Ra` / `Repli` / `Peeroleum` / `Tribu
        line). Makes even the REAL relay repeatable so a Tier-2 red reproduces instead of vanishing. Both behind
         knobs unset in production (the `heist_selfclock` stance).
 
-    **COLLISION CHECK before starting:** the other agent has touched `Swarm.g`/`Supervisor.g`/`Swarmation.g`/
-     `Siphonation.g`. Tier 2 lands in `Peregrination.g` + `Heistation.g` (+ `Reliable.g`'s existing wrapper) and
-      needs NO Swarm.g edit — but confirm `Heistation.g`/`Peregrination.g` are clear, and read `Swarmation.g`'s
+    **COLLISION CHECK before starting:** the other agent has touched `Swarm.g`/`Supervisor.g`/`SwarmTesting.g`/
+     `SiphonTesting.g`. Tier 2 lands in `PeerTesting.g` + `HeistTesting.g` (+ `Reliable.g`'s existing wrapper) and
+      needs NO Swarm.g edit — but confirm `HeistTesting.g`/`PeerTesting.g` are clear, and read `SwarmTesting.g`'s
        seal wrangle for the Idzeug idiom rather than editing it.
 
 0. **READ §3.1b FIRST (found + fixed 2026-08-06).** Every pull loop tested the *stride-aligned
@@ -908,7 +908,7 @@ Ephemeral is the *correct* class here, not merely the safe one, and the FRAME RE
       back to the ordinary timer. `w.c.ra_parked` rides beside `ra_wanted`/`ra_want_ts`, cleared
        together on rebirth (`Swarm_note_era`).
 
-*Proven:* MusuReco (Musuation.g) grew a `witnessed:parked_signalled` / `%see:` pair keyed on
+*Proven:* MusuReco (MusuTesting.g) grew a `witnessed:parked_signalled` / `%see:` pair keyed on
  `w.c.ra_parked` — the SINK's own record, written only off an arrived frame, so it proves the
   signal crossed rather than merely that the source counted a park. Re-recorded live and run
    robustly green 3/3 (`ok_pct:1` each). MusuHeist/MusuPier/MusuDoor/MusuReplica re-ran clean with
@@ -928,7 +928,7 @@ Ephemeral is the *correct* class here, not merely the safe one, and the FRAME RE
                  rather than to change the parking semantics.
 
 *Prove:* the transcode-outrun path already has witnesses (`repli_parked`/`repli_unparked` counts,
- `witnessed:outran_then_served`, `Musuation.g:2964`) — extend that Book with a
+ `witnessed:outran_then_served`, `MusuTesting.g`) — extend that Book with a
   `%see:'the sink stopped re-asking while the want was parked'` off the sink's want counters, and
    re-record it live. The negative control is today's behaviour: ~30 re-asks across a two-minute
     park.

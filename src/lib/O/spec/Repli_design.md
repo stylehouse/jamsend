@@ -389,13 +389,13 @@ The asymmetry that shows it's an oversight: the OUTBOX got two bounds in that pa
  real 100MB library pull is thousands, permanent, per Pier.
 
 **Genuine counter-argument, not dismissed:** the reused-seq collision guard (`Peeroleum.g:642`) *depends*
- on finished unemits staying put, and `Peregrination.g:1096` documents a Book that deliberately doesn't
+ on finished unemits staying put, and `PeerTesting.g` documents a Book that deliberately doesn't
   whittle for exactly that reason. So "never cull" is defensible. "Never cull AND never cap AND full-scan
    per frame" is not.
 
 ### 8.2 MusuReplica alone never drains — and the sweep's `try/catch` is why nobody saw it
 
-`MusuReplica_setup` arms the whittle (`Musuation.g:2647`), yet its inbox grows monotonically
+`MusuReplica_setup` arms the whittle (`MusuTesting.g`), yet its inbox grows monotonically
  (`003=3, 006=12, 007=16, 013=17, 014=17`) and `%inbox/recent` **never appears in any step**. Across
   seven Books checked, it is the ONLY one that arms and still fails:
 
@@ -448,7 +448,7 @@ This is the evidence for the human's read that `%Fill` says nothing interesting.
 
 ### 8.4 `landed:1` is asserted but has no writer — a Book gate that stopped meaning anything
 
-`Musuation.g:2744`:
+`MusuTesting.g`:
 
 ```js
 let stuck = rx ? rx.o({ req: 'awaitbuf' }).some(r => !r.oa({ landed: 1 })) : false
@@ -538,7 +538,7 @@ The owner's brief: *"everything else there sounds munted, can you do a big job f
     `Crate_transcode_release` now advances `fill.sc.have`, so a transcoded record no longer snaps
      `nchunks=240 … have=0`. Book assertions that compared `have` to `Fill.total` now compare against
       `Record.nchunks`.
-- **The vacuous gate says what it means** (`Musuation.g`). `!r.oa({landed:1})` — a marker with no writer
+- **The vacuous gate says what it means** (`MusuTesting.g`). `!r.oa({landed:1})` — a marker with no writer
    — became `rx.o({req:'awaitbuf'}).length > 0`, which is what it had silently degraded to.
 - **Orphaned awaitbufs are swept two ways** (`Repli.g`). The BUFCAP page-drop now also drops the matching
    req and its `pier.c.awaiting` entry (they could never be served — the re-ask returns under a fresh
@@ -720,9 +720,9 @@ see:the next track played its capped cycle clean — the transcoder kept ahead o
 see:the playhead crossed the boundary onto transcoded chunks that arrived on demand
 ```
 
-Conditions are `s.b_heard <= 3` and `fed.sc.held > 0` (`Radiation.g:301,309`) — and in a live run the
+Conditions are `s.b_heard <= 3` and `fed.sc.held > 0` (`RaTesting.g`) — and in a live run the
  `fed` / `stream_want` particles are **absent entirely**, so the streaming chase never reaches that stage.
-  `Radiation.g` is untouched by this work.
+  `RaTesting.g` is untouched by this work.
 
 **Causation is NOT established, and should not be assumed either way.** What is known:
 - These two Books have been un-re-recordable since **2026-07-29** (the `repli_want` bypass), while their

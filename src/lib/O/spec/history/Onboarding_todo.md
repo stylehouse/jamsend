@@ -1,3 +1,12 @@
+> **HISTORY (retired 2026-10-15).** This was the live doc for the boot→share→name→(link) arc (consolidated
+>  2026-08-31), absorbing `Onboard_todo.md`'s overlap. Owner, 2026-10-15: "onboarding seems like it could be
+>   rolled into App or something." Its living content moved: §2–§6 (OPEN SHARE, the folder question, noFSA,
+>    name-via-Door) → `spec/App_todo.md §0.7`, which also notes what Onboard's own §0.0/audit items spawned
+>     in `spec/Crew_todo.md §4` (why the issuer is `%Idzeug`) and `§7` (the invite-robustness audit). §A
+>      (state belongs in C particles, not `.c` flags) was already doctrine — see `spec/Statehome_todo.md`
+>       and the live build in `spec/Arrival_todo.md §2`. §1 (the identity model) had already landed as
+>        `spec/Crew_todo.md §2`/`§5`.
+
 # Onboarding_todo — OPEN SHARE, the folder question, identity, and naming
 
 The boot→share→name→(link) arc. Consolidated 2026-08-31 during the device-ferry live-testing session,

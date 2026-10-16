@@ -1,5 +1,13 @@
 # Mag vs flat-stock — where audio holdings live (preen doc)
 
+> **HISTORY (retired 2026-10-15).** A decision-ready preen resolving a contradiction between
+>  `Radio_spec.md` §2.4 (flat stock) and `Mag_todo.md` §1 (branched stock): the branched model won
+>   because it's what the live code already did. Its recommendation was carried out — `Mag_todo.md`
+>    §1 is the promoted statement (not yet renamed `Mag_spec.md`) and carries the GC-invariant carve-
+>     out forward verbatim. Its §4 open question — does `Ra_recs`/`Ra_rec_find` recurse past one
+>      Cloud layer — was ruled and built 2026-07-26 (`Mag_todo.md` §0b); the one residual fixed-depth
+>       spot that finding left (`Ra_offer_stock`'s wire stamp) is tracked in `Mag_todo.md` §0's "still
+>        open" list.
 Two design docs rule contradictorily on where a `%Record` holding lives under a shelf.
  DOC A (`Radio_spec.md §2.4`) says the settled shelf is FLAT and Mags only refer in.
   DOC B (`Mag_todo.md §1`) says stock IS `%Mag/%Cloud/%Record` and explicitly supersedes §2.4.

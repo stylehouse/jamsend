@@ -1,3 +1,5 @@
+> **HISTORY (retired 2026-10-15).** The 2026-07-29→08-05 hunt for heist downloads that never landed (parallel pulls, the source holding ~3 GB, the reload-recovery era chain, the "bomb" of `replace()` publishing its empty half). All fixed and live. Its standing laws moved to `Heist_todo.md` §4.0; the era/`saw:` chain is in `Backpressure_todo.md` §5.9 ("the epoch"); `replace()`-starts-empty is in `reactivity_docs.md` (the Atime|UItime mutex).
+
 # Download stall — handover (2026-07-29)
 
 Continuation brief for the p2p music **heist DOWNLOAD** not working. Fold into `Heist_todo.md` /

@@ -45,6 +45,29 @@ The two together answer the owner's question about "the next Cello":
 
 ---
 
+## Prior art: the Mesh scheme's atom vocabulary
+
+InkSurprise's atom — a particle rendered as a mote that recedes or blooms by surprise — descends
+ directly from `Cello_mesh_scheme_todo.md` (one of the 8 Cello rendering strikes judged in
+  `Cello_synthesis_todo.md`; design-only, retired 2026-10-15 to `history/Cello_mesh_scheme_todo.md`).
+   Mesh designed, but never built, the atom glyph: a mainkey pill on the rim, `sc` k:v pairs as
+    pebbles in a flow grid, and dashed `.c` feather stubs below a separator — and named the
+     compression move InkSurprise completes: at field zoom the atom recedes to a MOTE (mainkey pill
+      + a coloured mass whose width still encodes sc-key-count), and particles CLUSTER by mainkey
+       within a depth band so a rank of expected `%req` reads as one motif rather than N separate
+        glyphs.
+
+`Cello_synthesis_todo.md`'s adversarial pass ranked Mesh the strike that survived farthest (the
+ mote is "the closest any strike comes to a residual") but still judged it short: a mote costs ink
+  per particle, however cheap. `ResidualMote.svelte` (the single-particle proof, at `/ink`) and
+   `InkSurprise.svelte` (the population field, at `/ink/islands`) — both shipped 2026-08-30 — are
+    the built descendants that close that gap: same mote vocabulary, same mainkey-clustering
+     instinct, but ink now runs off `surprise` (a distance from a learned prior) instead of off
+      zoom level. Mesh's atom supplied the FORM; the residual lens supplied the RULE for how much
+       of it to draw.
+
+---
+
 ## The ink-island model
 
 An **ink** is a continuous region of shared style/idea on the canvas.  It is NOT a layout

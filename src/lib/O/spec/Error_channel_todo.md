@@ -90,7 +90,7 @@ This is the systemic fix for the whole silent-failure class the download-stall h
    lines), imposed by mainkey (no snap byte to dress it).
 - `Storui.svelte` — the run-bar `✓/⛔/⚠ N` cell (reads `display.run_sc.err_n/warn_n` via the `story_analysis`
    run_sc spread).
-- `Ghost/Story/Errchannelation.g` (+ CREDULER_GHOSTS) — the `ErrChannel` proof Book (compiles; needs recording).
+- `Ghost/Story/ErrchannelTesting.g` (+ CREDULER_GHOSTS) — the `ErrChannel` proof Book (compiles; needs recording).
 
 ### (original design follows — its mint-location + always-empty-line guidance is superseded by the two notes above)
 Build order was: the ring + `Story_error` helper + `%Errlog` mint + drain in `Story.svelte` → the two Housing

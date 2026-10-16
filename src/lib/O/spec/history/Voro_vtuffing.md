@@ -1,3 +1,11 @@
+> **HISTORY (retired 2026-10-15).** The Voro system doc: Vtuffing (the pane-content engine, `Vtuff_build`
+>  in `Ghost/V/Voro.g`), the crush, the north stars (radio, tunnel, A:Tunnel, bamboo/Se — the `%Seem`
+>   fold-sphere design), and the pass-by-pass build log (§Relics). Superseded by Vyto as the live visual
+>    front — but `Vtuff_build` and the `f.src.c.vtuffing` cache it writes ARE STILL LIVE CODE, unaffected
+>     by this retirement. The taste quotes, the built split (Voro.g owns meaning, Cytui owns geometry),
+>      and what of the north stars shipped vs stayed aspirational moved to `Glassbeast_todo.md` §0.6 item 1.
+>       `Voro_svg_stuffing.md` (agenda item #9 here) merged into the same section as the one open task.
+
 # The Voro system — Vtuffing, the crush, the radio (system documentation)
 
 What began as a pane-content note is the system doc now (owner's ask).  Bottom-up:

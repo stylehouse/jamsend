@@ -1,3 +1,5 @@
+> **HISTORY (retired 2026-10-15).** The 2026-09-02 consolidation survey: which docs to retire and which to bless. Its retire verdicts (Onboard, the 8 Cello strikes + kept `Cello_meditation`, Everything — the last overruled: `Everything_todo` stays) were carried out on 2026-10-15 by `Spec_tidy_todo.md` §2. Its "bless toward `_spec`" list (Cello_synthesis, Homethink, Statehome, Network_procedures) is still the owner's to preen. The shelf's front door is now `DocIndex.md`.
+
 # Consolidation_todo — spec/ audit (2026-09-02)
 
 A READ-ONLY consolidation audit of the `~40` `*_todo.md` docs that accumulated over the last
@@ -49,8 +51,8 @@ Eleven Cello docs exist. They are **one built renderer + one design tournament o
 | Doc | Verdict | One-line reason |
 |---|---|---|
 | `Arrival_todo.md` | **LIVE** | Toplevel arrival state machine; "LIVE CONFIRMED" but multiple live-test items still open (Crew ceremony, eed wedge). Actively worked; adjacent to the skipped ceremony cluster. |
-| `Onboard_todo.md` | **SUPERSEDED** by `Onboarding_todo.md` | 2026-07-22 first-run funnel doc; mostly LANDED (invite/FSA-warning/funnel-into-glass all done). The 2026-08-31 `Onboarding_todo` re-owns the same boot→share→name→link arc with current state. Overlap is heavy; retire the old one. **Note the cross-ref debt:** `Portability_*`, `Solo_todo`, `Sharing_design` still cite `Onboard_todo` as the funnel owner — flip those to `Onboarding_todo` when retiring. |
-| `Onboarding_todo.md` | **LIVE** | Current first-run funnel doc (§0 has a live, PAUSED, greenlit-in-order plan). Keeper of the arc. |
+| `history/Onboard_todo.md` | **SUPERSEDED** by `history/Onboarding_todo.md` | 2026-07-22 first-run funnel doc; mostly LANDED (invite/FSA-warning/funnel-into-glass all done). The 2026-08-31 `Onboarding_todo` re-owns the same boot→share→name→link arc with current state. Overlap is heavy; retire the old one. **Note the cross-ref debt:** `Portability_*`, `Solo_todo`, `Sharing_design` still cite `Onboard_todo` as the funnel owner — flip those to `Onboarding_todo` when retiring. |
+| `history/Onboarding_todo.md` | **LIVE** | Current first-run funnel doc (§0 has a live, PAUSED, greenlit-in-order plan). Keeper of the arc. |
 | `Ferry_todo.md` | **RETIRED 2026-09-03** | Absorbed into `Crew_todo.md` (the owner-called crew-cluster consolidation); now `spec/history/`. |
 | `Ferry_rebuild_todo.md` | **RETIRED 2026-09-03** | Absorbed into `Crew_todo.md`; now `spec/history/`. |
 | `Inv_ferry_todo.md` | **RETIRED 2026-09-03** | Absorbed into `Crew_todo.md` (§6/§7); now `spec/history/`. `Network_procedures_todo` remains its parent recipe. |
@@ -71,7 +73,7 @@ Eleven Cello docs exist. They are **one built renderer + one design tournament o
 
 Highest-confidence, lowest-risk first:
 
-1. **`Onboard_todo.md`** — SUPERSEDED by `Onboarding_todo.md`; work mostly LANDED. ⚠ Before/at retire,
+1. **`history/Onboard_todo.md`** — SUPERSEDED by `history/Onboarding_todo.md`; work mostly LANDED. ⚠ Before/at retire,
     repoint the 4 external cites (`Portability_doc`, `Portability_todo`, `Solo_todo`, `Sharing_design`)
      from `Onboard_todo` → `Onboarding_todo`.
 2. **`Everything_todo.md`** — self-declared stale snapshot/index (2026-07-27/29), superseded by the

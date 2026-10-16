@@ -270,7 +270,7 @@ The census agent weighed `sc`-in-the-world, `H.stashed`, a new ghost, and Dexie.
 **`Heist_newlyadded_note` and `Heist_feel` now append one line instead of rewriting 43 KB.**
  Verified on the live runner: **MusuBerth 7/7**, **MusuHeist 22/22 ok**, **MusuVend 11/11 caveat 0**,
   and `git diff wormhole/Story/ | grep dige:` shows **no recorded step dige moved**. MusuHeist is the
-   real gate here, not a smoke test — `Heistation.g:634` asserts the cards read back at exactly
+   real gate here, not a smoke test — `HeistTesting.g` asserts the cards read back at exactly
     `uno===3 && duo===6` with their feelings intact and no word about the source, and :473–490 exercises
      the `Heist_feel` mutation, which is precisely the supersede path.
 

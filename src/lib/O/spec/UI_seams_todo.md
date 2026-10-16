@@ -147,7 +147,7 @@ Two things **do** genuinely leak into the *clean* glass, because they're dressed
 
 The engines below are all proven by recorded golden fixtures. But the human's commit
  `0662da0a "get it together"` changed six ghosts — `Ra.g`, `Radio.g`, `Swarm.g`,
-  `Swarmation.g`, `Vyto.g`, `Vytonation.g` — and re-recorded **some** dependent Books
+  `SwarmTesting.g`, `Vyto.g`, `VytoTesting.g` — and re-recorded **some** dependent Books
    but not all (same pattern that left PereProof stale-red). So:
 
 - **Fresh (re-recorded by the commit — trust these):** MusuMag, MusuHeist, MusuBuddy,
@@ -169,7 +169,7 @@ The engines below are all proven by recorded golden fixtures. But the human's co
 - **MusuSoft — RED at step 5**, and the absent assertion is a **Vyto foam scale/pricing
    claim** («uncoupled» — "the small cog holds a fixed base area whether or not a louder
     newcomer has joined"), i.e. a *Vyto-render* assertion downstream of the `Vyto.g` /
-     `Vytonation.g` churn in `0662da0a`. This is the predicted fixture-staleness, and it
+     `VytoTesting.g` churn in `0662da0a`. This is the predicted fixture-staleness, and it
       points squarely at the in-flight Vyto work — **not** at anything on the transport /
        Swarm path. I did not run the remaining suspects (each would need a fresh reload to
         rule out shared-runner bleed, and they're all yours to re-record anyway). I did
@@ -442,3 +442,10 @@ Verified against the live `src/lib/O/ui/RadioFace.svelte` (124 lines).
  degrades to `pub.slice(0,8)` when no `%Pier` matches (a non-friend source), so it's always
   renderable. Note `radio.sc.by` is *deleted* when the track is your own stock
    (`Radio.g:318`), so the tag simply won't render for your own music — correct.
+
+## Appendix C — chopping wordy speeches (the method, from `history/Speeches_todo.md`)
+
+The owner, 2026-09-03: *"a table of the more wordy speeches we make around the place, I bet I could chop them down
+ nicely."*  The table went stale (half its file:lines drifted within a month, and the `chop?` column stayed empty), so only the
+  method is kept: grep every user-visible string of **8+ words** in `src/lib/O/ui/` and the faces (text, `title=`,
+   `placeholder=`), sort **longest first**, and regenerate the table fresh when a chopping session is actually sat down for.

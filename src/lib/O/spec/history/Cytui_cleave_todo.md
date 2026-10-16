@@ -1,3 +1,11 @@
+> **HISTORY (retired 2026-10-15).** The migration map for shrinking `Cytui.svelte`'s voronoi region: the
+>  Layer A (pure geometry) / B (stateful orchestration) / C (reactive `$state` surface) anatomy, and the
+>   plan for A to migrate into `Ghost/V/Voro.g` as the three-layer engine's geometry wave. Never executed
+>    for Voro — Vyto superseded it as the live visual front before the wave landed, and Cytui grew to
+>     ~5,878 lines instead of shrinking. The Layer A/B/C map, as the plan Vyto superseded, moved to
+>      `Glassbeast_todo.md` §0.6 item 2 — it matters there because Vyto's nested-cell/spine work will face
+>       the identical pure-geometry-vs-stateful-orchestration question.
+
 # Cytui_cleave_todo.md — the migration map for shrinking Cytui.svelte
 
 Plan ONLY — no code moves in this doc. Cytui is ~3925 lines and half of it is one region (the

@@ -69,7 +69,7 @@ One slice at a time; each is: a spine mechanism + a `Musu*` beat or two + a witn
       `%aud` chain is marked `%stale`, fresh auds re-decode on the new record beside the husks.
 
 Keep `MusuStaple` as the staple end-to-end book; spin out focused books (`MusuStock`,
- `MusuWear`, …) under the same `Ghost/Story/Musuation.g` as slices land, exactly as the
+ `MusuWear`, …) under the same `Ghost/Story/MusuTesting.g` as slices land, exactly as the
   `Pere*` family piles books into one file.
 
 ---
@@ -99,7 +99,7 @@ The simulation is deterministic and headless-friendly: no clocks, no randomness 
 
 ## 6. Tests — the Musu* Books
 
-Built exactly like `Pere*` (read `Ghost/Story/Peregrination.g` as the canon):
+Built exactly like `Pere*` (read `Ghost/Story/PeerTesting.g` as the canon):
 
 - `Run_A_MusuStaple()` wires the Run (`H i A:MusuStaple/w:MusuStaple`); `MusuStaple(A,w)` installs
    the eternal `%req:wrangle` whose do_fn `Musu_drive` dispatches per **inner step** off
@@ -108,7 +108,7 @@ Built exactly like `Pere*` (read `Ghost/Story/Peregrination.g` as the canon):
    NAME (`do_fn_for` reads `w.sc.w`, `Housing.svelte.ts`), so `w:MusuStaple → MusuStaple(A,w)`. Name
     the world anything else (`w:Musu`, …) and the handler silently never fires — nothing seeds the
      wrangle, the Book no-ops with no error. Each future Musu\* book lays its own `w:<Book>`. (The
-      live `Peregrination.g` was mid-rename `w:Peers → w:PereStaple` during this session — re-read it
+      live `PeerTesting.g` was mid-rename `w:Peers → w:PereStaple` during this session — re-read it
        before copying, host/runner edits land underfoot.)
 - `Musu_witness(w)` polls every pass and stamps idempotent `%witnessed:<beat>` markers — the
    beat rides in the VALUE (`witnessed:filled`, not a key), since the snap reads them. The
@@ -264,11 +264,11 @@ RUNNER_URL=http://172.17.0.1:9091   # default; the runner dev server as seen fro
 **Slice 1 — DONE, ACCEPTED, green.**
 - `Ghost/M/Radiola.g` — `Radiola_window`, `req_cast` (the spool with backpressure). Compiled →
    `src/lib/gen/M/Radiola.go`.
-- `Ghost/Story/Musuation.g` — `Run_A_MusuStaple`, `MusuStaple`, `Musu_drive`, `Musu_sides_up`,
+- `Ghost/Story/MusuTesting.g` — `Run_A_MusuStaple`, `MusuStaple`, `Musu_drive`, `Musu_sides_up`,
    `Musu_go_live`, `Musu_play`, `Musu_pump`, `Musu_witness`, `Musu_order`. Compiled →
-    `src/lib/gen/Story/Musuation.go`.
+    `src/lib/gen/Story/MusuTesting.go`.
 - **Registered** in `CREDULER_GHOSTS` (`src/lib/O/LiesLies.svelte`): `'Ghost/M/Radiola.g'` +
-   `'Ghost/Story/Musuation.g'`. **On the Credence board** beside `What:Pere`. Overlay
+   `'Ghost/Story/MusuTesting.g'`. **On the Credence board** beside `What:Pere`. Overlay
     `Waft:Ghost/Music/Ality` resolves.
 - `wormhole/Story/MusuStaple/toc.snap` — real beat diges recorded, `TimeSpool` samples present.
    The four beats ran clean (link → fill-to-window hold@7 → slide-on-ack@10 → drain@12, all four
@@ -277,7 +277,7 @@ RUNNER_URL=http://172.17.0.1:9091   # default; the runner dev server as seen fro
 
 **Slice 2 — DONE, ACCEPTED, green.** The preview→stream handoff, all inside the cluster + the one
  (already-present) Credence/overlay touch — no new `CREDULER_GHOSTS` line (the book is new methods in
-  the already-enrolled `Musuation.g`). Both gen `.go` recompiled and HMR'd live; a 5-step run
+  the already-enrolled `MusuTesting.g`). Both gen `.go` recompiled and HMR'd live; a 5-step run
    reproduced every beat below to the chunk — `previewed` HELD at the gate (window had room, preview
     withheld 4..6), `wanted`+`streamed` landed TOGETHER in beat 4 (pump order took), `streamdrained`
      at 12. **Baked headless via `BOOK=MusuStream ACCEPT=1 … CredRunner` — 5/5 exact** (`toc.snap`
@@ -287,7 +287,7 @@ RUNNER_URL=http://172.17.0.1:9091   # default; the runner dev server as seen fro
     `req_streamability` (the listener arms `%want:stream` when the un-played preview tail drops to
      the `want_left` floor). The gate is inert without `preview`, so slice 1's `req_cast` path is
       byte-identical (no `kind`, no `bump`).
-- `Ghost/Story/Musuation.g` — Book `MusuStream` (`Run_A_MusuStream`, `MusuStream`,
+- `Ghost/Story/MusuTesting.g` — Book `MusuStream` (`Run_A_MusuStream`, `MusuStream`,
    `MusuStream_drive`/`_sides_up`/`_go_live`/`_play`/`_pump`/`_witness`/`_order`). Own world
     `w:MusuStream`, own witness names (`linked`/`previewed`/`wanted`/`streamed`/`streamdrained`) — no
      overlap with the staple. `MusuStream_pump` pumps the **terminal first** (streamability decides),
@@ -306,7 +306,7 @@ RUNNER_URL=http://172.17.0.1:9091   # default; the runner dev server as seen fro
     records produced ahead of the LEADING `%cursor` consumer, capped by the source. Minting nothing
      once the lead is satisfied or `made===cap` IS the backpressure. Independent of the slice-1/2
       caster path (its own mainkeys), so those accepted snaps are untouched.
-- `Ghost/Story/Musuation.g` — Book `MusuStock` (`Run_A_MusuStock`, `MusuStock`, `MusuStock_drive`/
+- `Ghost/Story/MusuTesting.g` — Book `MusuStock` (`Run_A_MusuStock`, `MusuStock`, `MusuStock_drive`/
    `_sides_up`/`_go_live`/`_serve`/`_drain`/`_advance`/`_pump`/`_witness`/`_order`). Own world
     `w:MusuStock`, own witness names (`stocked`/`primed`/`served`/`sourced`). One `%Stock` (12-record
      source) with two `%cursor` children (`fast`/`slow`) — the consumers,of=radiostock fan-out.

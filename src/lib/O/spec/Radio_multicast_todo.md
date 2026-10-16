@@ -235,7 +235,7 @@ Chunk-sharing must not become a consent bypass. **Forwarding a chunk to an ungra
    `%Grant,<feature>` child exists under the Pier AND no matching `%NotGrant` overrides it. The Feature is
     `%Music` — the permission every Idzeug invite grants; receiving it *is* becoming a Pier (Swarm_spec
      §6.1). The Book wires it in: `w.c.repli_allow = (peer) => { let p = …Pier,pub:peer; return
-      Swarm_pier_live(p,'Music') }` (Radiation.g:128). Repli never imports Swarm — the hook is the seam.
+      Swarm_pier_live(p,'Music') }` (RaTesting.g). Repli never imports Swarm — the hook is the seam.
 - **The tombstone is durable and negative.** A `%NotGrant` (`mint_revoke`, Swarm.g:548) is a signed
    negative-decision-fact kept *under the Pier it revokes*, never dropped by GC — because absence is
     ambiguous and `Swarm_pier_live` queries for it every time. If GC dropped a `%NotGrant`, an unfriended

@@ -7,6 +7,8 @@ Consolidates the settled parts of `Radio_todo.md` (the pipeline §1-3, the progr
     `Heist_design.md` owns the heist/klepto engine — this doc cross-references it, never
      duplicates it.
 
+> **⚠ 2026-10-15:** the "nothing has crossed between two machines" framing below dates from 2026-07-27 and is now false. The music plane (`repli_*` over Peeroleum, through the relay) runs cross-machine in prod: the jamserve daemon serves real listeners on other boxes. Still owed on that road is a *cross-machine Book* (a gate, not the crossing itself) and per-frame signing (`Trust_todo.md` §0). Read `[BOOK]` below as "Book-gated over loopback; live crossing is walked by hand".
+
 **Verification basis:** `[LIVE]` = a real caller in shipped `.g`/`.svelte`; `[BOOK]` = green in
  a Story Book only, no live caller; `[OWED]` = not built. Engines are `Ghost/M/Radio.g` (the
   listening brain) and `Ghost/M/Ra.g` (the stock/stream pipeline); line numbers current to
@@ -52,10 +54,16 @@ And a fourth, **planned** layer: an opportunistic WebRTC **multicast swarm** for
     the AudioContext (`Sound_gat`); mediaSession wires the lockscreen. Every loop is a detached
      `setTimeout` chain guarded by `c.era` — **nothing runs under `beliefs()`** (the mutex law) —
       so pause/skip/replay bump the era and the stale loop falls silent on its next look.
-- **The Stoker dig organ** `[LIVE]` — `Stoker_ensure`/`Stoker_wake`/`Stoker_look`/`Stoker_dig`.
-   `Radio_go` wakes it, StokerFace mounts it, InvitePanel can arm it. It resurrects standing
-    radiostock first (cheap), then meanders and stocks what the wander finds; it digs when
-     fresh-this-sitting tracks run low and churns faster when the set exhausts.
+- **The Stoker dig organ** `[LIVE]` — `Stoker_ensure`/`Stoker_wake`/`Stoker_look`/`Stoker_dig`/
+   `Stoker_tour`. `Radio_go` wakes it, StokerFace mounts it, InvitePanel can arm it. It resurrects
+    standing radiostock first (cheap), then meanders and stocks what the wander finds; it digs
+     when fresh-this-sitting tracks run low and churns faster when the set exhausts. `Stoker_tour`
+      widens the stock into a moving WINDOW (`w.c.tour_window`, default 40) rather than filling
+       once and freezing — a connected friend tours the whole crate instead of hearing its first
+        few rooms forever. **The audience gate** (`Stoker_has_audience`, added 2026-10-07): a full
+         shelf stops ROTATING — not filling, which is never gated — when no pier of the live self
+          has been heard in the last 10 minutes; rotating a healthy shelf for nobody is a whole-file
+           read + an ffmpeg pass spent on no one.
 - **The meander** `[LIVE]` — `Crate_nav_meander`, an FSA random-walk (one wander down, never a
    scan — the no-enumeration law), called at `Radio.g:852` inside `Stoker_dig`.
 - **The older blob variant** `[BOOK/dead]` — `Crate_meander`/`Crate_radiostock_from`; superseded
@@ -64,6 +72,22 @@ And a fourth, **planned** layer: an opportunistic WebRTC **multicast swarm** for
    `blat`, the one-button rifle of a collection), the dial-pool (`Radio_dial_pool`, unheard
     friend-crate previews whose bytes have begun to land), and the Faves pocket zine
      (`Radio_mag_pop`).
+
+### The heart + the Heard Mag (`Heard.g`)
+
+- **The heart** `[LIVE]` — `Radio_like` is the one control this whole circuit ever asks a person
+   to touch. A press stamps `take`/`hearted_at` on the presser's own `%Mag:heard` card. **There is
+    no unlove, anywhere** (the owner's ruling, 2026-09-15): a second press RE-AFFIRMS — re-arms the
+     gave-up clock, outdates a stale verdict — it never un-loves. (`Radio_like`'s own header
+      comment in `Radio.g` still narrates an earlier, superseded 2026-09-10 "the heart is a
+       toggle… a stray tap CAN unlove" framing; that is stale code commentary, not the shipped
+        behaviour — `Heard_take`'s own line is unambiguous: "always loves — there is no unlove.")
+         `Radio_nay` is the other reaction: bars a track from the pool and evicts its own pool copy
+          on the next steward pass; a heisted (possessed) file is never touched. Both superseded
+           the old `%Jam` ledger (`%Jam/%Spin/%Like/%Grab`), deleted 2026-09-04.
+- **The Heard Mag** `[LIVE]` — `Mag:heard,pub:<me> > Cloud,page:N > Card,id,pub` (`Heard.g`) is the
+   one durable ledger every road (heist / FSA / Cave / SoundPool) reads and writes a scalar on;
+    `Love_todo.md` is the map, not a second design.
 
 ### The stock dig on disk (`Ra.g`)
 
@@ -77,7 +101,7 @@ And a fourth, **planned** layer: an opportunistic WebRTC **multicast swarm** for
       shared `.jamsend` never lets one identity evict another's shelf); bounds PRODUCTION disk
        only, not test determinism.
 - **Whole-collection take-N** `[BOOK]` — `Ra_stock` (whole-collection provisioning); called only
-   from `Radiation.g`/`Heistation.g`. The live brain uses `Ra_stock_one`, not this.
+   from `RaTesting.g`/`HeistTesting.g`. The live brain uses `Ra_stock_one`, not this.
 
 ### The Opus stream pipeline (`Ra.g`)
 
@@ -96,20 +120,25 @@ And a fourth, **planned** layer: an opportunistic WebRTC **multicast swarm** for
     transcoded stock, one persistent AudioDecoder per encode, reset only at a `head` chunk (where
      an encode opens and its preskip is dropped).
 - **The paced cross-wire beats** `[BOOK]` — `Ra_term_stream_beat` (Ra.g:1784),
-   `Ra_term_decode_pulled`, `Ra_pull_beat` (Ra.g:1608). Callers live only in `Radiation.g`/
-    `Heistation.g`/`Heist.g`. **The live radio does NOT use them** — it plays local stock, never
+   `Ra_term_decode_pulled`, `Ra_pull_beat` (Ra.g:1608). Callers live only in `RaTesting.g`/
+    `HeistTesting.g`/`Heist.g`. **The live radio does NOT use them** — it plays local stock, never
      wire-pulled bytes. This is the seam the cross-machine crossing (frontier #1) lights up.
 
 ### Share glue + multicast
 
 - **The dial-pool** `[LIVE]` — the unheard friend-crate preview chooser, `Radio_dial_pool` off
    `Radio_dial` (Radio.g:444).
-- **The cross-wire share glue** `[LIVE-WIRED, loopback-only]` — `Swarm_share_up`/`loop`/`beat`
-   (Swarm.g:1378) → `Repli_arm`, `Ra_offer_stock` (Ra.g:743), `Ra_mag_warm`, `Ra_restock_beat`,
-    `Ra_transcode_pump`. Called live from `InvitePanel.svelte:57`, mounted in BigSoundland: stock
-     husk-casts to granted friends, per-friend `%Theirs` crates mint in the radio world, the
-      dial plays the pool. But it has **only ever run over `Lake_link`** — no cross-machine
-       round-trip is proven.
+- **The cross-wire share glue** `[LIVE-WIRED]` — `Swarm_share_up`/`loop`/`beat` (Swarm.g:1378) →
+   `Repli_arm`, `Ra_offer_stock` (Ra.g:743), `Ra_mag_warm`, `Ra_restock_beat`, `Ra_transcode_pump`.
+    Called live from `InvitePanel.svelte:57`, mounted in BigSoundland: stock husk-casts to
+     granted friends, per-friend `%Theirs` crates mint in the radio world, the dial plays the
+      pool. **⚠ This is NOT loopback-only** — the daemon (`scripts/daemon/main.ts`) runs this same
+       glue against real friends over the real production relay (`wss://djamsend.duckdns.org:9999`);
+        the 2026-08-21 identity-split incident (`Daemon_todo.md`) is a real `repli_*` frame in
+         flight between the daemon and a friend's browser on two separate physical machines, not a
+          sim. What is still unproven is a clean, ASSERTED two-tab round-trip under controlled
+           conditions — that is "Remaining frontier #1" below, and it is a narrower claim than
+            "never crossed a real network."
 - **The multicast swarm itself** `[OWED]` — advertise / discover / serve. "Nothing built yet"
    (`Radio_multicast_todo.md`). The routing *policy* exists as `Mesh_route`/`broadcast_stretch`/
     `cafe_spec` `[BOOK]` (MusuMesh green over the mock, no live multi-runner).
@@ -134,10 +163,10 @@ And a fourth, **planned** layer: an opportunistic WebRTC **multicast swarm** for
 ## Remaining frontier (ranked)
 
 The single axis: **loopback → a real carrier between two machines.** Almost everything above is
- built and green, but only over `Lake_link`. The music-repli flow has never crossed a real
-  network.
+ built and green, but only over `Lake_link`. The music-repli flow had never crossed a real
+  network (2026-07-27; it has since, in prod: see item 1).
 
-1. **`[OWED]` Cross-machine wire-crossing — THE frontier.** Port the husk→preview→stream repli
+1. **`[LIVE by hand, OWED as a Book]` Cross-machine wire-crossing.** *(2026-10-15: crossed. The prod relay carries the repli flow between real boxes daily; what stays owed is R2/R3 below, an asserted, Book-gated crossing, plus `header.sign`.)* Was: **`[OWED]` THE frontier.** Port the husk→preview→stream repli
     flow off `Lake_link` onto `Socket_real` (the real relay, `Tribunal.g:57`, already carrying
      editor↔runner traffic daily) between two real tabs, and land `header.sign` on emit + real
       `verify_trust` on the handshake. Three rungs: **R1** manual two-tab fingers-proof (needs

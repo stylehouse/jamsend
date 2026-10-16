@@ -103,7 +103,7 @@ ping / pong  either            liveness
 The runner does NOT compile or include inside its Story Run; it **acquires** what the editor shipped,
  bootstrapped from the top House.
 
-- **`Ghost/Story/Peregrination.g` IS the Book** `PereStaple` (no `Peregrination.svelte`; the
+- **`Ghost/Story/PeerTesting.g` IS the Book** `PereStaple` (no `Peregrination.svelte`; the
    `.g` filename stays, the runtime identity is PereStaple): it defines `Run_A_PereStaple()`
     (the Run recipe) and `PereStaple(A,w)` (the per-beat handler). No hand-written bootstrap, no
      call-through.
