@@ -4,8 +4,7 @@ story:MusuPoolBytes
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=1.174
-      sample=0.531,at=1790039859
+    TimeTotal:beliefs,avg=1.142
       sample=0.222,at=1790040311
       sample=0.192,at=1790043634
       sample=1.606,at=1790043867
@@ -15,8 +14,8 @@ story:MusuPoolBytes
       sample=2.773,at=1790728062
       sample=2.07,at=1790728081
       sample=0.381,at=1790980947
-    TimeTotal:step,avg=0.235
-      sample=0.106,at=1790039859
+      sample=0.213,at=1792134708
+    TimeTotal:step,avg=0.228
       sample=0.044,at=1790040311
       sample=0.038,at=1790043634
       sample=0.321,at=1790043867
@@ -26,6 +25,7 @@ story:MusuPoolBytes
       sample=0.555,at=1790728062
       sample=0.414,at=1790728081
       sample=0.076,at=1790980947
+      sample=0.043,at=1792134708
   step,dige:c2a03cd0fd442b8a
   step=2,dige:332438624c02d652
   step=3,dige:622d63e94af7e31d

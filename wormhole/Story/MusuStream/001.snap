@@ -1,7 +1,0 @@
-Snap:H
-  H:MusuStream,Run
-    A:MusuStream
-      self,round=7	{"mung":["age"]}
-      w:MusuStream
-        self,round=7	{"mung":["age"]}
-        req:wrangle,eternal,ok

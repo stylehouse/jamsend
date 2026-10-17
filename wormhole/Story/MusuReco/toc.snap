@@ -52,9 +52,7 @@ story:MusuReco
     dontSnapCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=3.339
-      sample=2.035,at=1788506309
-      sample=2.385,at=1788506326
+    TimeTotal:beliefs,avg=3.019
       sample=3.084,at=1788506342
       sample=3.463,at=1788506358
       sample=1.438,at=1788506372
@@ -63,9 +61,9 @@ story:MusuReco
       sample=1.424,at=1788507318
       sample=1.229,at=1788507331
       sample=15.608,at=1789114147
-    TimeTotal:step,avg=0.304
-      sample=0.185,at=1788506309
-      sample=0.217,at=1788506326
+      sample=0.719,at=1792135007
+      sample=0.506,at=1792135034
+    TimeTotal:step,avg=0.274
       sample=0.28,at=1788506342
       sample=0.315,at=1788506358
       sample=0.131,at=1788506372
@@ -74,6 +72,8 @@ story:MusuReco
       sample=0.129,at=1788507318
       sample=0.112,at=1788507331
       sample=1.419,at=1789114147
+      sample=0.065,at=1792135007
+      sample=0.046,at=1792135034
   step,dige:3dbd760e21c9003f
   step=2,dige:00d71f00bad2d690
   step=3,dige:d82aa5e7c954d8c0

@@ -181,7 +181,7 @@ Short sketches of what it could feel like. None of these exist yet.
 | **Unity** `Record,un_n,un_size,un_d` | `Ra_unity_stamp` (source side) | size of the folder a track came from | rides Repli | HeistFace |
 | **Track tags** | `Crate_meta_from_tags` (music-metadata) | `artist, album, title, genre, track, trackof, date` | only for stocked/landed files | ~ |
 | **Loudness** `Record,lufs,gain,capped` | `Ra_stock_one` | integrated LUFS + baked gain per stocked track | rides Repli | ✗ |
-| **Booth / Ban** `%Ban,tune:` · `%Ban,artist:` | `Ghost/M/Booth.g` (Radio_todo §11) | a do-not-play list at track **or artist** grain, keyed by `Tune_key` ('Artist — Title') | — | ⊘ no face calls it |
+| **Booth / Ban** (gone) | `Ghost/M/Booth.g`, deleted 2026-10-16 | was a do-not-play list at track **or artist** grain; it became Yay/Nay, and `Heard_nay` is the live track-grain bar (artist grain is unbuilt) | — | ✗ deleted |
 | **Suggest** `Pier > Suggest,by` + `suggest_got` | `Swarm_suggest` / `Swarm_suggested` | "you should hear this" sent to a sealed friend, acked, stashed | ✓ | ⊘ no face sends or shows one |
 | **Riffle** | `Riffle_*` (Radio.g) | a deck over a folder's subtree (`Riffle_paths`, path-parsed meta) — crate-digging | live | ~ cell exists |
 | **Lineup errors** | `Mag:Lineup > error,of,why,say`, `exhausted` | per friend why nothing is coming (`all_heard`…), pool standing in | live | ~ |
@@ -326,7 +326,7 @@ Owner, parked as *"a later listening-consciousness UX, a query over the stamps, 
 
 - **Album completeness** — `trackof` + catalogue + mirror unity → "2 of 11 · Grav has the rest" → one press heists the
    remainder (a keep with the folder's picks, the ordinary ⇊ road — on the album, not on the radio).
-- **Duplicates** — same `Tune_key` (or `enid`) at two paths; same track as original + LOFI.
+- **Duplicates** — same 'Artist — Title' key (or `enid`) at two paths; same track as original + LOFI.
 - **Provenance** — Newlyadded + `carried_by` + the holder → "arrived from Grav, Oct 4, via Inko". Lineage across friends
    needs the holder's consent; keep it to what *you* know.
 - **Sequencing** — `lufs` is already per track; the daemon has ffmpeg (`ra_native`) — tempo/key extraction would let the
@@ -341,6 +341,13 @@ Owner, parked as *"a later listening-consciousness UX, a query over the stamps, 
    "never remember this one" is the human form.
 - **Health** — unreadable files (`Crate_meta_from_tags` failures), missing tags, LOFI-only albums, a disk floor for
    unattended heisting (Heist_todo: honest-estimate-and-warn).
+- **Tags are playlists** — a `%Tag,name:` defined once, each application a `%Tagged,of:<id>` child, so playing the tag
+   walks its children (built once as `Siphon.g`, never given a face, deleted 2026-10-16).
+- **Follow a DJ** — a client takes an invite and becomes a dumb player mirroring a leader's stream, ideally the DJ's
+   private *monitor* (headphones) channel while the room hears the main mix; a `%Follow` grant beside the Music one.
+- **The phone as instrument** — the dial itself as a gesture surface: knobs, pushed streams, tags synced from the hand.
+- **The DJ deck** — beat/tempo detection, beatmatch by rate, crossfade, a monitored cue; proven once on synth beats
+   (`Mixer.g`, deleted 2026-10-16, see Radio_todo §0.d).
 - **Fairness as a promise** — the depth-priced fog makes "every track about equally likely" measurable (est% vs pick%);
    a face can show the promise being kept.
 
@@ -398,4 +405,4 @@ Owner, parked as *"a later listening-consciousness UX, a query over the stamps, 
 
 *Related: `Story_future.md` (the sibling ledger), `Love_todo.md`, `Mag_todo.md` (§4.1 rooms, §6b oblique, §11.3
  ledger-outlives-subject), `Census_todo.md`, `Heist_todo.md`, `RemoteHeist_todo.md` §0 + §4, `SoundPooling_todo.md`
-  §0.0, `Radio_todo.md` §11 (the Booth).*
+  §0.0, `history/Radio_todo_2026-08.md` (the Booth).*

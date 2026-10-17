@@ -1126,11 +1126,11 @@ Ra_upgrade_scan(w, lib, backup):
 //#region the POOL-FILL REACH — SoundPooling_todo §0.5 Flow 4 (Cave → Captain), the live doer binding
 // "Cave will have a huge library and Captain wants some at all times via SoundPooling" (owner
 //  2026-09-02).  The Captain BOOKS a standing %Reach (to:'Cave', for:'serve' — the boundary law:
-//   standing intent = Reach; bytes+doing = the Heist/Siphon doers; the POOL is the liquid
+//   standing intent = Reach; bytes+doing = the Heist/press doers; the POOL is the liquid
 //    destination) and the crew Cave's live doer serves it from its OWN library (the §3/§4
 //     lib-mapping tripwire honoured: never press-what-streams-through).  Every verb here BINDS
-//      proven parts — Swarm_reach_* (SwarmBody beats 10–23), Siphon_pull → Ra_press →
-//       Heist_catalog_land (MusuPress / Siphonation) — and invents no transport: the artifact
+//      proven parts — Swarm_reach_* (SwarmBody beats 10–23), Pool_press_one → Ra_press →
+//       Heist_catalog_land (MusuPress) — and invents no transport: the artifact
 //        crosses through a nav read (a crew-mirror lib the Captain's nav can read), which is the
 //         same seam the live Repli byte-lane will stand behind when it lands.  Book-gated by
 //          MusuPoolFill (Ghost/Story/HeistTesting.g).
@@ -1255,7 +1255,7 @@ Ra_pool_fill_homes(w, ident):
     //   file reads `ra_nav || Crate_nav()` (:839 :1304 :2058 :2726 :2790) — this one alone read `|| null`,
     //    so on BOTH live ends `homes.nav` was null: the daemon's Ra_pool_fill_serve `continue`d every
     //     serving reach (stuck `serving`, never `refused`, no line), and eed's Ra_pool_fill_land skipped
-    //      every arrival.  A silent skip on a missing nav is the worst shape — Siphon_pull already names
+    //      every arrival.  A silent skip on a missing nav is the worst shape — Pool_press_one already names
     //       `no nav` as a fail; let it get that far.
     out.nav = rw.c.ra_nav || (this.Crate_nav ? this.Crate_nav() : null)
     // PREFER A CAVE WE HAVE ACTUALLY HEARD FROM (2026-09-08 — Social_demarcation §1).  This exact line is
@@ -1317,9 +1317,31 @@ Ra_pool_fill_verdict(w, ident, reach):
     if (reach.c.fill_fail) { return { refuse: String(reach.c.fill_fail) } }
     return 0
 
+// Pool_press_one — press ONE track's whole body from `lib` into `pool`: Ra_press v1 through the one
+//  Heist_catalog_land door, then drop the served %press job Ra_press leaves on `mw` (an owner drops its finished
+//   transient reqs).  A track already pooled — by id, or by of: (a lofi rendition standing in) — answers with its
+//    standing card and moves no bytes.  Returns {card} | {fail:'why'}, no throw.  (Was Siphon_pull in
+//     Ghost/M/Siphon.g, deleted 2026-10-16 — the tag model it carried never got a caller.)
+async Pool_press_one(mw, pool, lib, of, nav):
+    let id = String(of || '')
+    if (!id) { return { fail: 'no id' } }
+    if (!pool || !lib) { return { fail: 'no pool or lib shelf' } }
+    if (!nav) { return { fail: 'no nav' } }
+    let standing = this.Ra_rec_find(pool, { Record: 1, id: id }) || this.Ra_rec_find(pool, { Record: 1, of: id })
+    if (standing) { return { card: standing } }
+    let r = await this.Ra_press(mw, nav, lib, pool, id)
+    if (r && r.card) {
+        if (mw) {
+            let jobs = mw.o({ press: 1, of: id }).slice()
+            for (const job of jobs) { mw.drop(job) }
+        }
+        return { card: r.card }
+    }
+    return { fail: (r && r.fail) ? String(r.fail) : 'press failed' }
+
 // Ra_pool_fill_serve — the CAVE-SIDE serve tick (the Reach_todo §0 "still owed" doer binding).
 //  For each inbound serving for:'serve' reach: make the asked track servable in MY OWN pool via
-//   Siphon_pull (idempotent — a standing card moves not one byte; the one Heist_catalog_land door
+//   Pool_press_one (idempotent — a standing card moves not one byte; the one Heist_catalog_land door
 //    mints the card), THEN run the one sync tri-state gate (Swarm_reach_serve + the verdict), THEN
 //     report each terminal inbound ONCE to its booker (reach_done over the sibling lane; wire-inert
 //      in a Book) and graduate the arrived copies — scaffolding, not ledger.  Returns the serve count.
@@ -1339,8 +1361,8 @@ async Ra_pool_fill_serve(w, ident):
             let standing = this.Ra_rec_find(homes.pool, { Record: 1, id: of }) || this.Ra_rec_find(homes.pool, { Record: 1, of: of })
             if (standing) { continue }
             if (!this.Ra_rec_find(homes.lib, { Record: 1, id: of })) { continue }
-            let r = await this.Siphon_pull(homes.mw, null, homes.pool, homes.lib, of, homes.nav)
-            if (r && r.fail && !String(r.fail).startsWith('already pulling')) { reach.c.fill_fail = String(r.fail) }
+            let r = await this.Pool_press_one(homes.mw, homes.pool, homes.lib, of, homes.nav)
+            if (r && r.fail) { reach.c.fill_fail = String(r.fail) }
         }
     }
     let n = this.Swarm_reach_serve(w, ident, (r) => this.Ra_pool_fill_verdict(w, ident, r))
@@ -1360,7 +1382,7 @@ async Ra_pool_fill_serve(w, ident):
 
 // Ra_pool_fill_land — the CAPTAIN-SIDE landing: an outbound for:'serve' reach acked 'arrived' means
 //  the Cave made the artifact servable — siphon it out of the crew mirror into MY OPFS pool (the
-//   same Siphon_pull → Ra_press → Heist_catalog_land chain; the pool branch lights on mardir 'pool')
+//   same Pool_press_one → Ra_press → Heist_catalog_land chain; the pool branch lights on mardir 'pool')
 //    and drop the fulfilled reach.  No mirror / no nav → the reach STANDS 'arrived' as visible
 //     awaiting-transport state (the live byte-lane is the named owed seam) — never a fake landing.
 async Ra_pool_fill_land(w, ident):
@@ -1399,7 +1421,7 @@ async Ra_pool_fill_land(w, ident):
         //   always meant to delegate to the one byte doer every landing already rides — a `%Heist,into:pool` keep,
         //    the exact shape Radio_pool_catch mints for what is playing.  Heist_keep_step routes it to the holder
         //     (Swarm_station_pier), registers Repli, pulls the %Body chunks and lands through Heist_catalog_land's
-        //      pool branch — which is where the preview carry lives.  Siphon_pull below stays as the BOOK's
+        //      pool branch — which is where the preview carry lives.  Pool_press_one below stays as the BOOK's
         //       stand-in only (MusuPoolFill's world has no pier, no Repli, no relay — its lib IS local), gated by
         //        the same `fill_mw` override Ra_pool_fill_homes reads; a live tab never takes that road again.
         if (!(ident && ident.c && ident.c.fill_mw) && homes.pool && homes.mw) {
@@ -1553,20 +1575,19 @@ async Ra_pool_fill_land(w, ident):
             continue
         }
         if (reach.sc.why) { delete reach.sc.why; reach.bump() }
-        let got = await this.Siphon_pull(homes.mw, null, homes.pool, from, of, homes.nav)
+        let got = await this.Pool_press_one(homes.mw, homes.pool, from, of, homes.nav)
         if (got && got.card) {
             landed = landed + 1
             if (homes.mw && homes.mw.c && homes.mw.c.pool_evicted && got.card.sc.path) { delete homes.mw.c.pool_evicted[String(got.card.sc.path)] }
             peering.drop(reach)
             continue
         }
-        // ⚠ AND A PULL FAILURE MUST NAME ITSELF TOO (2026-09-05).  `Siphon_pull` already hands back `{fail:'…'}`
-        //  on every dead end it knows about (no origId, no pool/lib shelf, no nav, already pulling) — this loop
+        // ⚠ AND A PULL FAILURE MUST NAME ITSELF TOO (2026-09-05).  `Pool_press_one` already hands back `{fail:'…'}`
+        //  on every dead end it knows about (no id, no pool/lib shelf, no nav, the press's own fail) — this loop
         //   was throwing that reason away and looping forever with the exact same silence the homes-miss fix
-        //    above was written to end.  `already pulling` is excluded: that is the NEXT pass about to succeed,
-        //     not a fault worth alarming the row over.
+        //    above was written to end.
         let why = got && got.fail ? String(got.fail) : 'pull returned nothing'
-        if (!why.startsWith('already pulling') && reach.sc.why !== why) { reach.sc.why = why; reach.bump(); console.log('🏊⚠ pool-fill cannot land ' + of.slice(0, 8) + ' — ' + why) }
+        if (reach.sc.why !== why) { reach.sc.why = why; reach.bump(); console.log('🏊⚠ pool-fill cannot land ' + of.slice(0, 8) + ' — ' + why) }
     }
     if (landed > 0) { console.log('🏊 pool-fill: landed ' + landed + ' pool cop' + (landed === 1 ? 'y' : 'ies') + ' from the crew mirror') }
     return landed
@@ -1603,6 +1624,11 @@ async Ra_pool_previews_heal(w, ident):
     let homes = this.Ra_pool_fill_homes(w, ident)
     if (!homes.pool || !homes.mw) { return 0 }
     let healed = 0
+    let encoded = 0
+    // THE POCKET ENCODES (2026-10-17): where the pool IS the music (Radio_pocket_why — no folder, or no relay) the carry
+    //  below has nothing to borrow from after a reload (no friend mirror, no chunks crossed this sitting), so every
+    //   resurrected card would sit preview-less and undialable.  Only there, the 2026-10-04 encode rung comes back.
+    let pocket = (typeof this.Radio_pocket_why === 'function') ? this.Radio_pocket_why(w) : ''
     for (const card of this.Ra_recs(homes.pool)) {
         if (healed >= 4) { break }
         if (+(card.sc.preview || 0) > 0) { continue }
@@ -1617,7 +1643,28 @@ async Ra_pool_previews_heal(w, ident):
             let src = this.Ra_pool_source_rec(homes.mw, String(card.sc.id || ''))
             if (src) { healed = healed + this.Ra_rec_previews_carry(card, src); continue }
         }
-        // NO ENCODE RUNG ANY MORE (owner 2026-10-04: "SoundPooling ISN'T available as Radio for now … we want to hear from
+        // …EXCEPT IN THE POCKET: encode this card's own preview from the file it holds (Ra_stock_one, base 'pool' — the
+        //  Stoker resurrect skips base:'pool' headers since 2026-10-04, so it can never be offered back out as mine).
+        //   ONE a pass, live only, and only when the file is actually on disk.
+        let top = this.top_House ? this.top_House() : null
+        if (pocket && top && top.c && top.c.humdinger && encoded === 0 && homes.nav && card.sc.path) {
+            let rel = String(card.sc.path)
+            let files = homes.mw.c.pool_files || []
+            if (files.includes(rel)) {
+                encoded = encoded + 1
+                let r = null
+                try { r = await this.Ra_stock_one(homes.mw, homes.pool, homes.nav, 'pool', rel) } catch (er) { console.log('🏊⚠ pool encode failed for ' + rel.slice(0, 40) + ' — ' + String(er).slice(0, 80)); r = null }
+                // Ra_record_from stamps path as 'pool/<rel>'; a pool card's path is pool-relative everywhere else.
+                let again = this.Ra_rec_find(homes.pool, { Record: 1, id: String(card.sc.id || '') }) || card
+                if (again && again.sc.path !== rel) { again.sc.path = rel; again.bump() }
+                if (r && +(again.sc.preview || 0) > 0) {
+                    healed = healed + 1
+                    console.log('🏊 pocket: ' + (r.stood ? 'resurrected the preview for ' : 'encoded a preview for ') + String(again.sc.title || rel).slice(0, 40) + ' — now dialable')
+                }
+            }
+            continue
+        }
+        // NO ENCODE RUNG ANY MORE outside the pocket (owner 2026-10-04: "SoundPooling ISN'T available as Radio for now … we want to hear from
         //  the Piers directly, to what they have in their collection proper").  It decoded the OPFS file, re-encoded a preview
         //   and wrote it to .jamsend/radiostock under MY pub — on-disk junk in the share, and the Stoker resurrect then stood
         //    those lofi copies on Mine and offered a friend's track back out as mine.  The pool plays only as the Lineup's

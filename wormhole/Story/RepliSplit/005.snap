@@ -10,15 +10,15 @@ Snap:H
             Cloud,page:1
               Card,id:a,title:First
               Card,id:b,title:Second
-          Spin,of:a,times:2
-          Spin,of:b,times:1
+          Reco,by:ann,note:still lovely
+          Reco,by:bo,note:loud
           gizmo,serial:g1,hue:blue
         mir
           Mag:shuffle
             Cloud,page:1
               Card,id:a,title:First
               Card,id:b,title:Second
-          Spin,of:a,times:2
-          Spin,of:b,times:1
+          Reco,by:ann,note:still lovely
+          Reco,by:bo,note:loud
           gizmo,serial:g1,hue:red
           gizmo,serial:g1,hue:blue

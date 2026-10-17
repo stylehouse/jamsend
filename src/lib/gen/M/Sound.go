@@ -10,12 +10,13 @@ import { SoundSystem } from "$lib/O/Audio.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Sound(): string { return 'e91d2b1e4cab4e48~g1' },
+    Ghostmeta_Ghost_M_Sound(): string { return 'd268520b99127556~g1' },
 
 // Sound.g — the AUDIO ENGINE.  Extracted from Ghost/Story/MusuTesting.g's //#region reality (the
 //  Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md §5): shared, real software,
-//   NO test scaffolding here, NO per-Book scenario.  The cursor spine is Radiola.g; THIS is the AUDIO
-//    (synth PCM / measure-entropy) + the rate-driven live-stream pump that actually STARVES.  A Book
+//   NO test scaffolding here, NO per-Book scenario.  THIS is the AUDIO (synth PCM /
+//    measure-entropy) and the real device.  (The cursor spine Radiola.g and the starving live-stream pump
+//     Sound_real_stream were deleted 2026-10-16 with their Books — Radio_todo §0.d.)  A Book
 //     composes these from the OUTSIDE (this.Sound_*); it never reaches inside them.  The verbs were
 //      Musu_*; that Musu_ prefix is SCENARIO vocabulary and stayed behind in the Book — a real verb
 //       loses it and takes its family: Sound_.
@@ -258,97 +259,28 @@ Sound_panic(radio) { const H = this;
     }
 
 },
-// Sound_real_stream — REALITY, now literal: play `total` synth chunks through the real voice and measure
-//  what the graph ACTUALLY produced.  A chunk is "delivered" every `deliver_ms` of WALL CLOCK and laid on
-//   the AudioContext timeline at max(timeline-end, now): deliver faster than a chunk plays and the stream
-//    is seamless; deliver slower and `now` overtakes the end — a REAL silent gap, the underrun, opened by
-//     the audio clock (no cursor anywhere).  An analyser tapped PRE-mute is sampled every ~20ms, so the
-//      measurement reads the true output (gaps and all) whether or not it is audible.  kind 'silence'
-//       feeds zero buffers — the negative control down the SAME pipe.  `glide` ON consults Glide_decide
-//        (Radiola.g) each tick (frontier = audio left ahead of the playhead) and plays the next chunk at
-//         that rate — backing smoothly away from the live edge instead of slamming into silence.  Returns
-//          the coarse signal readout PLUS the rate trajectory (min_rate / final_rate / flips) the controller drew.
-async Sound_real_stream(gat, kind, total, deliver_ms, mute, glide, stock) {
-    let AC = gat.AC
-    if (!AC) return { bits: 0, rms: 0, gaps: 0, played: 0, of: total, underran: 0, min_rate: 1, final_rate: 1, flips: 0 }
-    let aud = gat.new_audiolet()
-    let analyser = aud.tap()
-    if (mute) aud.mute()
-    let SR = 48000
-    let silent = (kind === 'silence')
-    let end = AC.currentTime
-    let scheduled = 0
-    let underran = 0
-    // the Glide trajectory — plain data the CALLER owns (the policy in Radiola.g is stateless): `rate` is
-    //  the live playback rate, min_rate/final_rate/flips are what the controller drew over the run.
-    let rate = 1
-    let min_rate = 1
-    let final_rate = 1
-    let flips = 0
-    let last_dir = 0
-    // deliver+schedule one chunk: a `now` past the timeline end means delivery fell behind playback, so
-    //  this chunk starts after a real silent gap — count it (never the first, which always starts at now).
-    //   The chunk plays at the current Glide `rate` (rate<1 stretches it, advancing the playhead slower).
-    let place_one = (seq) => {
-        let pcm = stock ? this.Sound_stock_chunk(stock, seq) : (silent ? this.Sound_silence() : this.Sound_synth(seq))
-        let buf = aud.pcm_buffer(pcm, SR)
-        let now = AC.currentTime
-        let at = Math.max(end, now)
-        if (scheduled > 0 && at > end + 0.0005) underran = underran + 1
-        end = aud.schedule(buf, at, rate)
-        scheduled = scheduled + 1
+//#endregion
+
+//#region glide — graceful live-edge rate control (moved here from Radiola.g when it was deleted 2026-10-16;
+//  MusuRadio/MusuTune's offline render still consults it).  A PURE decision, no state of its own: how much
+//   audio is left ahead of the playhead (`frontier`, seconds) → a playback rate.  Radios.svelte's old trick
+//    hard-set 0.8 near the edge and never recovered; Glide is that idea done right.
+// Glide_decide(frontier, cur, ended, p) -> rate in [FLOOR, 1].  `cur` is the current rate, the only "state",
+//  so the hysteresis band can hold.  Quick to back off (toward FLOOR), gradual to recover (climb by STEP once
+//   there's slack).  Schmitt band [LOW, HIGH] kills chatter.  ended -> full speed.  `p` overrides
+//    {low, high, floor, step} — the SAME pure curve a descent sweeps (MusuTune) to find least wreckage.
+Glide_decide(frontier, cur, ended, p) {
+    let LOW = (p && p.low != null) ? p.low : 0.12
+    let HIGH = (p && p.high != null) ? p.high : 0.30
+    let FLOOR = (p && p.floor != null) ? p.floor : 0.80
+    let STEP = (p && p.step != null) ? p.step : 0.05
+    if (ended) return 1
+    if (frontier < LOW) {
+        let want = FLOOR + (1 - FLOOR) * Math.max(0, frontier) / LOW
+        return Math.min(cur, want)
     }
-    let frames = []
-    let delivered = 0
-    let next_deliver = AC.currentTime
-    let sample_ms = 20
-    let guard = 0
-    let cap = Math.ceil((total * deliver_ms + 1500) / sample_ms) + 50
-    while (guard < cap) {
-        guard = guard + 1
-        let now = AC.currentTime
-        // recompute the rate BEFORE delivering, so this tick's chunk lands at the fresh rate.  frontier =
-        //  seconds of scheduled audio still ahead of the playhead; the controller slows as it nears zero.
-        if (glide) {
-            let frontier = end - now
-            let nr = this.Glide_decide(frontier, rate, delivered >= total)
-            if (nr < rate - 1e-9) {
-                if (last_dir >= 0) flips = flips + 1
-                last_dir = -1
-            }
-            if (nr > rate + 1e-9) {
-                if (last_dir <= 0) flips = flips + 1
-                last_dir = 1
-            }
-            rate = nr
-            if (rate < min_rate) min_rate = rate
-            final_rate = rate
-        }
-        while (delivered < total && now >= next_deliver) {
-            place_one(delivered)
-            delivered = delivered + 1
-            next_deliver = next_deliver + deliver_ms / 1000
-        }
-        // done once every chunk is delivered and the last has finished — break BEFORE this pass's sample
-        //  so post-stream silence never counts as a gap (leading silence is skipped too: the first sample
-        //   is taken AFTER the first await, by when a buffer is already sounding).
-        if (delivered >= total && now >= end - 0.03) break
-        await new Promise(r => setTimeout(r, sample_ms))
-        let f = new Float32Array(analyser.fftSize)
-        analyser.getFloatTimeDomainData(f)
-        frames.push(f)
-    }
-    aud.close()
-    let n = 0
-    for (const f of frames) n += f.length
-    let pcm = new Float32Array(n)
-    let o = 0
-    for (const f of frames) {
-        pcm.set(f, o)
-        o += f.length
-    }
-    let sig = this.Sound_measure(pcm)
-    return { bits: sig.bits, rms: sig.rms, gaps: sig.gaps, played: scheduled, of: total, underran: underran, min_rate: +min_rate.toFixed(3), final_rate: +final_rate.toFixed(3), flips: flips }
+    if (frontier > HIGH) return Math.min(1, cur + STEP)
+    return cur
 },
 //#endregion
 

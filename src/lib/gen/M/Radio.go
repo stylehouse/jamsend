@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '5dc4380222cc0d07~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '27dfeaa633edba4e~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -1290,22 +1290,6 @@ Radio_heard(radio) {
     if (!w) { return {} }
     return this.Heard_set(w, this.Radio_pub(w) || '')
 },
-// Radio_mag_cursor — the DERIVED per-Mag playhead (the human's ruling 2026-07-26: drop the
-//  browsing-history store; instead, given any Mag**, the 'cursor' is the last of its records that
-//   is in the bounded heard set — how far through this Mag the listener has got).  Pure read over
-//    the recursive census (Ra_recs_deep, Mag** at any depth); nothing stored, so it can never rot.
-//     Null = untouched Mag (nothing heard yet).  Mag_todo §8's durable cursor IS this now that the
-//      heard set itself is durable (Heard.g): the same derivation, over a set that survives a reload.
-Radio_mag_cursor(radio, mag) {
-    if (!radio || !mag) return null
-    let heard = this.Radio_heard(radio)
-    let last = null
-    for (const rec of this.Ra_recs_deep(mag, [])) {
-        if (heard[rec.sc.id]) last = rec
-    }
-    return last
-
-},
 // the supply loop: while the preview plays, transcode the %Stream continuation into being
 //  (the demand-driven encode, self-served — no Repli needed for one's own stock).  A record
 //   whose source is unreadable CAPS at its preview (the dead-source rule already dropped its
@@ -1654,6 +1638,51 @@ Radio_dial_pool_local(w, radio, retry) {
     if (retry) { return this.Ra_dial_next(w, shelf, {}) }
     return this.Ra_dial_next(w, shelf, { skip_ids: this.Radio_heard(radio) })
 },
+// Radio_pocket_why — is the SoundPool THE music on this body, rather than a chip below the friends?  '' when not;
+//  'norelay' when the relay socket has been down past a grace (nobody can reach us); 'nofolder' when the body has no
+//   FSA folder (`listen_only`: no picker, or thin by choice — a phone, an installed PWA) so its own shelf is empty.
+//  Both are TAB-WIDE live facts, so a Book never reads them (Story_replaying — the live-reads-leak scar).
+Radio_pocket_why(w) {
+    if (typeof this.Story_replaying === 'function' && this.Story_replaying()) return ''
+    if (this.Radio_relay_down()) return 'norelay'
+    let top = this.top_House()
+    if (top && top.c && top.c.listen_only) return 'nofolder'
+    return ''
+},
+// Radio_relay_down — the station socket (Socket_real on w:Swarm) has been unreachable for over 5s.  PROBED, never
+//  vivified: no station standing yet is "unknown", not down.  The grace keeps a reconnect blip from flipping the dial.
+Radio_relay_down() {
+    let A = this.top_House().o({ A: 'Clustation' })[0]
+    let sw = A ? A.o({ w: 'Swarm' })[0] : null
+    let port = sw ? sw.o({ transport: 1, type: 'websocket' })[0]?.c?.port : null
+    if (!port || !port.real || port.is_open()) return false
+    return !!port.down_since && Date.now() - port.down_since > 5000
+},
+// Radio_pocket_dial — the SoundPool, the way the pool source dials it: what stands; else rebuild the catalog from
+//  pool/ on disk (a folderless tab has no account snap, so its pool CATALOG dies on reload while the FILES do not)
+//   and heal previews, then dial again; else replay.  null = the pocket really is empty.
+async Radio_pocket_dial(w, radio) {
+    let prec = this.Radio_dial_pool_local(w, radio)
+    if (prec) { console.log('📻 next [pocket] ✓ ' + (prec.sc.title || prec.sc.id)); return prec }
+    if (typeof this.Ra_pool_owner === 'function') {
+        let powner = this.Ra_pool_owner(w)
+        if (typeof this.Ra_pool_resurrect === 'function') {
+            try { await this.Ra_pool_resurrect(w, powner) } catch (er) { console.log('🏊⚠ pool resurrect: ' + er) }
+        }
+        if (typeof this.Ra_pool_previews_heal === 'function') {
+            try { await this.Ra_pool_previews_heal(w, powner) } catch (er) {}
+        }
+        prec = this.Radio_dial_pool_local(w, radio)
+        if (prec) { console.log('📻 next [pocket] ✓ ' + (prec.sc.title || prec.sc.id) + ' (after the heal)'); return prec }
+    }
+    prec = this.Radio_dial_pool_local(w, radio, 1)
+    if (prec) {
+        radio.sc.replays = (+(radio.sc.replays || 0)) + 1
+        radio.bump()
+        console.log('📻 next [pocket] ↻ replay ' + (prec.sc.title || prec.sc.id))
+    }
+    return prec
+},
 // Radio_pool_steward — the AMBIENT STEWARD OCCASION (SoundPooling_todo §3.1): at a track advance (a
 //  natural session seam) sit the Quartermaster down over MY OWN library and let it press into the
 //   OPFS pool.  DEFAULT-OFF behind `top.c.pool_steward` (the backpressure-knob precedent — flip it
@@ -1945,14 +1974,32 @@ async Radio_dial(radio) {
     //    and went unwaited-for ("that start-playing-our-own-music situation… I actually want it to
     //     wait").  Both are bounded by the same five seconds and both fall through to the local rung
     //      when the clock runs out, so the worst case this can cost a solo listener is five seconds.
+    // THE POCKET (2026-10-17, the owner: *"it should switch to soundpool if no FSA"* + *"SoundPooling should be the go if the
+    //  relay is not reachable"*).  On a folderless body the own shelf below is empty by construction, and with the relay
+    //   down no friend can reach us at all — so the SoundPool is the music, not a chip the listener has to find.  NO RELAY
+    //    also skips the five-second hope: we are not expecting anybody we could hear.
+    let pocket = this.Radio_pocket_why(w)
     let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
-    if (sup && this.Supervisor_hoping(sup, 'swarm.arrival')) {
+    if (pocket !== 'norelay' && sup && this.Supervisor_hoping(sup, 'swarm.arrival')) {
         // same two events, same distinction as the give-up below: say which one we are waiting on.
         let waitnote = this.Supervisor_because(sup, 'swarm.arrival') === 'invite'
             ? 'waiting for someone to answer your invite'
             : 'looking for your friends'
         if (radio.sc.note !== waitnote) { radio.sc.note = waitnote; radio.bump() }
         return null
+    }
+    if (pocket) {
+        let prec = await this.Radio_pocket_dial(w, radio)
+        if (prec) {
+            // solo, like the mine rung: involuntary, still wishing for friends — so Radio_crossover cuts to a friend
+            //  the moment one is playable.  No relay is its own reason; a folderless body keeps the friend reason.
+            let pwhy = pocket === 'norelay' ? { tag: 'norelay', name: '' } : this.Radio_alone_why(w)
+            radio.sc.solo = pwhy.tag
+            if (pwhy.name) radio.sc.solo_by = pwhy.name
+            if (!pwhy.name) delete radio.sc.solo_by
+            radio.bump()
+            return prec
+        }
     }
     let mine = this.Ra_dial_next(w, shelf, { skip_ids: this.Radio_heard(radio) })
     if (!mine) {
@@ -2063,18 +2110,6 @@ Radio_watch_shelf(w) {
     }
     watch.c.walked = walked
     watch.c.memo = memo
-
-},
-// Radio_shelf_walked — how many directories the wander has stood in THIS session.  A counter Crate.g
-//  bumps at the visit itself (`meander_stood`), not `Object.keys(meander_learn).length` — which was
-//   the first cut and was wrong twice over.  The map is RESTORED at boot (Census.svelte), so on a warm
-//    page it reads in the thousands from the first tick: the note would claim we had walked the whole
-//     share before we had walked anything, and `moving` would never see it climb because a revisit
-//      adds no key.  The very memory that makes the search fast would have made the progress bar lie
-//       about it.  O(1) here, and not persisted — it measures this boot's looking, nothing else.
-Radio_shelf_walked() {
-    let TOP = this.top_House ? this.top_House() : null
-    return TOP ? (+(TOP.c.meander_stood || 0)) : 0
 
 },
 // Radio_shelf_fresh — DISTINCT directories stood in this session (Crate.g's `meander_fresh`).  The
@@ -2309,8 +2344,10 @@ Radio_alone_why(w) {
 
 },
 Radio_reason(w, radio) {
-    let why = this.Radio_alone_why(w)
-    let note = why.tag === 'gathering'
+    let why = this.Radio_pocket_why(w) === 'norelay' ? { tag: 'norelay', name: '' } : this.Radio_alone_why(w)
+    let note = why.tag === 'norelay'
+        ? 'cannot reach the relay — and nothing is in your pocket yet'
+        : why.tag === 'gathering'
         ? ('gathering music from ' + why.name + ' — nothing has arrived yet')
         : (why.tag === 'gaveup'
             ? (why.because === 'invite'
@@ -4398,11 +4435,6 @@ Riffle_close(ri) {
     delete ri.sc.note
     ri.sc.Riffle = 'shut'
     ri.bump()
-
-},
-// Riffle_clear — kept as an alias so any older caller (or an external verb) still resolves.
-Riffle_clear(ri) {
-    this.Riffle_close(ri)
 
 },
 // Radio_tune — the riffle's audition: play THIS record now.  The chosen-record skip: the pick

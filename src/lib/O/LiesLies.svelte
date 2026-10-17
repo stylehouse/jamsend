@@ -61,26 +61,20 @@
         'Ghost/N/Repli.g',              // paginated streaming C** replication — offer/pull/pages, above the transport spine (ex-Musuation reality)
         'Ghost/Story/PeerTesting.g',    // the p2p tests (né Peregrination.g) — first of a new kind; more pile on here
         
-        'Ghost/M/Radiola.g',            // music-piracy spine — the ACK-backpressure spool (slice 1)
-        'Ghost/M/Sound.g',              // audio engine — synth PCM / measure-entropy / the starving live-stream pump (ex-Musuation reality)
+        'Ghost/M/Sound.g',              // audio engine — synth PCM / measure-entropy / the real audio device (ex-Musuation reality)
         'Ghost/M/Crate.g',              // crate-digging — walk a music collection → records → the radiostock override
-        'Ghost/M/Mixer.g',              // cellular mixer — beat detection, beatmatch, multi-cell sum, crossfade (stage 6)
-        'Ghost/M/Mesh.g',               // the sync that sees itself — replicas/edges, cheapest-route, multicast stretch (8+9)
         'Ghost/M/Ra.g',                 // the PIPELINE spine — rastock: needles LUFS → baked gain → ONE opus encode cut into %Preview,seq chunk particles + demand-driven stream transcode
         'Ghost/M/Pool.g',               // the SP ISLAND — SoundPooling policy, pure: knobs/facts/policy/compare, split out of Ra.g 2026-09-17
-        'Ghost/M/Booth.g',              // the Booth — taste as standing facts: the tune: handle + the %Ban do-not-play list the heist door consults (Radio_todo §11)
         'Ghost/M/Heist.g',              // the heist engine — %Caper,at:<pier> moves ORIGINAL file bytes over Repli straight into the collection (newlyadded probation, catalog-identity dedup)
         'Ghost/M/Heard.g',              // the HEARD MAG — %Mag:heard,pub:<me> > %Cloud,page > %Card,id,pub: what I heard of whom (oblique) and what I took (♥); the heist is a query over it (replaced Jam.g, 2026-09-04)
         'Ghost/M/Orig.g',               // the %Original / grade-dispatch layer — the ogg128 export writes a real RFC-7845 Ogg/Opus container BACK (phone-sync ships .ogg) + its structural reader
         'Ghost/M/Radio.g',              // the RADIO — continuous listening: dial → stream-decode → AudioContext timeline → auto-advance; the %Radio face the glass mounts RadioFace on
-        'Ghost/M/Siphon.g',             // the DELIBERATE SoundPool act — tags-as-playlists + Siphon_pull, the one-track press into the OPFS pool (Siphon_todo rungs 2–3)
         // Test recipes are `<Name>Testing.g` (owner ruling 2026-09-09; src/lib/L/testing.ts is the one
         //  predicate every face styles them by).  Book NAMES did not move with the files — a Book is
-        //   named by its recipe do_fn, so `Siphonation`/`Radiation` fixtures under wormhole/Story/ stand.
-        'Ghost/Story/MusuTesting.g',    // the Musu* tests — MusuStaple; more pile on here
+        //   named by its recipe do_fn, so e.g. `Radiation` fixtures under wormhole/Story/ stand.
+        'Ghost/Story/MusuTesting.g',    // the Musu* tests — MusuTune, MusuRadio, MusuPier, MusuBounce, MusuReplica, MusuReco, the Repli bare-protocol Books
         'Ghost/Story/RaTesting.g',      // the Ra* PRODUCT tests — RaStock; racast/raterm Books pile on here
         'Ghost/Story/HeistTesting.g',   // the Heist* tests — MusuHeist rung 1; the cohort + cafe rungs pile on here
-        'Ghost/Story/SiphonTesting.g',  // the Siphon* tests — tag model + the pull press through the one landing door (Siphon_todo rung 4)
         'Ghost/Story/BerthTesting.g',   // the Berth* tests — MusuBerth: the persistence door round-trips a doc through disk and resets with the Story (§11.7)
         'Ghost/Story/ErrchannelTesting.g',// the Story ERROR CHANNEL test — ErrChannel: a captured throw rides w/%Errlog/%Err into the fixture and gates it (spec/Error_channel_todo.md; needs a live runner to record + declare)
 

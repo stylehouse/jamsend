@@ -586,9 +586,6 @@ Heard_verdict_field(key):
     if (key === 'unvouched') { return 'offer_unsigned_at' }
     if (key === 'landfail') { return 'landing_failed_at' }
     return ''
-// Heard_verdict_keys — the wire vocabulary (unchanged) plus `why`, still what Heard_untake forgets.
-Heard_verdict_keys():
-    return ['held', 'unvouched', 'landfail', 'why']
 // Heard_listing_keys — what a taken Card clones off the friend's answer (§1, stage 2).
 Heard_listing_keys():
     return ['title', 'artist', 'dir', 'path', 'bytes', 'body_hash', 'keep']

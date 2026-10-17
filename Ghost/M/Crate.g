@@ -26,19 +26,6 @@ IMPORT()
 
 //#region crate
 
-// Crate_open — root a %Crate at a collection directory.  Two ways in: an INJECTED handle (a test fixture
-//  or an override collection — pass it) or the modern picker.  Headless / no-API → null (the caller skips).
-//   oai keeps it idempotent; the handle rides .c.
-async Crate_open(w, handle, name):
-    if (!handle) {
-        if (typeof window === 'undefined' || !window.showDirectoryPicker) return null
-        handle = await window.showDirectoryPicker({ mode: 'read' })
-    }
-    let crate = w.oai({ Crate: 1, name: name || handle.name || 'collection' })
-    crate.c.up = w
-    crate.c.handle = handle
-    return crate
-
 // Crate_walk — expand ONE level: iterate the node's directory handle, classify each entry as a %dir (its
 //  own handle on .c) or, if its extension is audio, a %blob.  Everything else is skipped.  Lazy — call
 //   again on a %dir to descend.  Idempotent (oai by name); marks the node walked so meander won't re-scan.
@@ -111,44 +98,6 @@ async Crate_meander(crate):
     }
     return null
 
-// Crate_decode — modern record build: read a %blob's file, decode it, slice channel 0 into CHUNK-sized
-//  mono Float32Array pieces, derive a coarse RMS loudness + filename metadata, and stamp a %PCM on the
-//   blob.  Decoded chunks ride .c; scalars snap.  Decode uses an OfflineAudioContext (no gesture needed,
-//    deterministic).  Headless / undecodable → null.
-async Crate_decode(blob):
-    if (typeof OfflineAudioContext === 'undefined') return null
-    let handle = blob.c.handle
-    if (!handle || !handle.getFile) return null
-    let file = await handle.getFile()
-    let raw = await file.arrayBuffer()
-    let ctx = new OfflineAudioContext(1, 1, 48000)
-    let decoded = await ctx.decodeAudioData(raw)
-    let data = decoded.getChannelData(0)
-    let CHUNK = 2400
-    let chunks = []
-    let i = 0
-    while (i < data.length) {
-        chunks.push(data.slice(i, Math.min(data.length, i + CHUNK)))
-        i = i + CHUNK
-    }
-    let sumSq = 0
-    let j = 0
-    while (j < data.length) {
-        sumSq += data[j] * data[j]
-        j = j + 1
-    }
-    let rms = Math.sqrt(sumSq / Math.max(1, data.length))
-    let meta = this.Crate_meta_from_name(blob.sc.name)
-    let rec = blob.oai({ PCM: 1, name: blob.sc.name })
-    rec.c.up = blob
-    rec.c.chunks = chunks
-    rec.sc.artist = meta.artist
-    rec.sc.title = meta.title
-    rec.sc.loudness = +rms.toFixed(4)
-    rec.sc.seconds = +decoded.duration.toFixed(2)
-    rec.sc.nchunks = chunks.length
-    return rec
-
 // Crate_meta_from_name — cheap metadata: split "Artist - Title.ext" on the first " - ".  Real tags
 //  (music-metadata) come with the bigger Records→ghost conversion.
 Crate_meta_from_name(name):
@@ -165,16 +114,6 @@ Crate_radiostock(rec):
     let chunks = rec && rec.c.chunks
     if (!chunks || !chunks.length) return null
     return { kind: 'records', chunks: chunks }
-
-// Crate_radiostock_from — the one-call entry: meander to a track, decode it, hand back a radiostock source.
-//  `H.c.radiostock_override = await this.Crate_radiostock_from(crate)` re-grounds every audio Book on real
-//   music.  null if nothing playable was found / it couldn't decode.
-async Crate_radiostock_from(crate):
-    let blob = await this.Crate_meander(crate)
-    if (!blob) return null
-    let rec = await this.Crate_decode(blob)
-    if (!rec) return null
-    return this.Crate_radiostock(rec)
 
 // ── nav discovery (the gesture-free real path, via the Wormhole) ────────────────────────────────────
 //  DISCOVER a filesystem full of music through the Wormhole nav — the one disk abstraction that spans

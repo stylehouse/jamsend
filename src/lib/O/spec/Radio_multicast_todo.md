@@ -49,7 +49,8 @@ Radio_spec §1 already frames the whole platform as **one replicated `C**` sync 
    through the relay."* This layer is the concrete realisation of that sentence for audio chunks. It is
     not a new framing — it is the fill for a hole the platform doc already cut.
 
-**The routing is already modelled, deterministically, in `Ghost/M/Mesh.g`.** That file holds the REAL
+**(2026-10-16: `Ghost/M/Mesh.g` and its Book MusuMesh were deleted. This paragraph is now the design record of
+ that model, not a pointer to live code; see `Radio_todo.md` §0.d.)** **The routing was modelled, deterministically, in `Ghost/M/Mesh.g`.** That file holds the REAL
  algorithms the live system will use, exercised on a mock (no sockets) so the policy is single-runner
   testable:
 - `Mesh_route(graph, from, to)` (Mesh.g:41) — Dijkstra cheapest path over edge costs; returns

@@ -41,7 +41,6 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:Ghost/Story/MusuTesting.g,name:MusuTesting,noticed_at=1789553697102
     Doc:Ghost/Story/PeerTesting.g,name:PeerTesting,noticed_at=1789553697102
     Doc:Ghost/Story/RaTesting.g,name:RaTesting,noticed_at=1789553697102
-    Doc:Ghost/Story/SiphonTesting.g,name:SiphonTesting,noticed_at=1789553697102
     Doc:Ghost/Story/Sounditron.g,name:Sounditron,noticed_at=1789553697102
     Doc:Ghost/Story/SwarmTesting.g,name:SwarmTesting,noticed_at=1789553697102
     Doc:Ghost/Story/VoroTesting.g,name:VoroTesting,noticed_at=1789553697102
@@ -260,15 +259,10 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/vyto_seat.ts,name:vyto_seat,noticed_at=1789553697102
   open_dir:Ghost/M
   group:Ghost/M,dir:Ghost/M
-    Doc:Ghost/M/Booth.g,name:Booth,noticed_at=1789553697102
     Doc:Ghost/M/Crate.g,name:Crate,noticed_at=1789553697102
     Doc:Ghost/M/Heard.g,name:Heard,noticed_at=1789553697102
     Doc:Ghost/M/Heist.g,name:Heist,noticed_at=1789553697102
-    Doc:Ghost/M/Mesh.g,name:Mesh,noticed_at=1789553697102
-    Doc:Ghost/M/Mixer.g,name:Mixer,noticed_at=1789553697102
     Doc:Ghost/M/Orig.g,name:Orig,noticed_at=1789553697102
     Doc:Ghost/M/Ra.g,name:Ra,noticed_at=1789553697102
     Doc:Ghost/M/Radio.g,name:Radio,noticed_at=1789553697102
-    Doc:Ghost/M/Radiola.g,name:Radiola,noticed_at=1789553697102
-    Doc:Ghost/M/Siphon.g,name:Siphon,noticed_at=1789553697102
     Doc:Ghost/M/Sound.g,name:Sound,noticed_at=1789553697102

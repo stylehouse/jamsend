@@ -1,7 +1,0 @@
-Snap:H
-  H:MusuLive,Run
-    A:MusuLive
-      self,round=7	{"mung":["age"]}
-      w:MusuLive
-        self,round=7	{"mung":["age"]}
-        req:wrangle,eternal,ok

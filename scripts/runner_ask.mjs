@@ -11,10 +11,10 @@
 //
 //  Usage:
 //    node scripts/runner_ask.mjs ping                    # liveness {role,channel,running}
-//    node scripts/runner_ask.mjs run MusuLive            # kick a run (returns immediately)
-//    node scripts/runner_ask.mjs run MusuLive --watch    # kick + poll state until done|failed
+//    node scripts/runner_ask.mjs run MusuRadio            # kick a run (returns immediately)
+//    node scripts/runner_ask.mjs run MusuRadio --watch    # kick + poll state until done|failed
 //    node scripts/runner_ask.mjs runners                 # list the Waft:Cluster registry (prepub  ★fav)
-//    node scripts/runner_ask.mjs run MusuLive --runner=49dee9   # court ONE runner by prepub|prefix and
+//    node scripts/runner_ask.mjs run MusuRadio --runner=49dee9   # court ONE runner by prepub|prefix and
 //                                                          #  INSIST: retry IT on busy/silence (never failover);
 //                                                           #   no --runner ⇒ AUTO-COURT: ping the flock, pin ONE
 //                                                            #    (our-lease ▸ free ▸ first ack) — never the raw

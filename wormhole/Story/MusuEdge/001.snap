@@ -1,7 +1,0 @@
-Snap:H
-  H:MusuEdge,Run
-    A:MusuEdge
-      self,round	{"mung":["age"]}
-      w:MusuEdge
-        self,round	{"mung":["age"]}
-        req:wrangle,eternal,ok

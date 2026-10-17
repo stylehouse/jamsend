@@ -7,7 +7,7 @@
 //   (Story_future.md), pointed at the LIVE runner instead of the headless pile.
 //
 //  Run:   node scripts/story_repl.mjs            (RUNNER_URL overrides the relay origin)
-//  Then:  story› run MusuLive --watch
+//  Then:  story› run MusuRadio --watch
 //         story› diff 2
 //
 //  After a run lands, the runner HANGS IN THERE holding it as a uid-addressable record (it pins the

@@ -1,7 +1,0 @@
-Snap:H
-  H:Siphonation,Run
-    A:Siphonation
-      self,round	{"mung":["age"]}
-      w:Siphonation
-        self,round	{"mung":["age"]}
-        req:wrangle,eternal,ok

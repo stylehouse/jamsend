@@ -61,6 +61,16 @@
     //       scaffolding — a Book verifying against Cello instead of its commissioned glass is a silent lie.
     const critique_surface = !boot_param('B')
 
+    // THE POCKET PLAYER'S SHELL (2026-10-17, the owner: *"I want to use this as a music player"*).  Only the genuine
+    //  player (no ?B=, the same gate as above) tells the service worker it may keep this page's files, so the shell
+    //   boots with the box unreachable and the radio plays the SoundPool; runner, editor and hacker tabs are never
+    //    cached (stale gen in a dispatch tab would be a silent lie).  And ask the browser to keep our storage — the
+    //     pool and the identity live there on a folderless body (granted automatically once the PWA is installed).
+    if (critique_surface && typeof window !== 'undefined') {
+        try { navigator.serviceWorker?.ready.then((r) => r.active?.postMessage({ jamsend: 'music_page' })) } catch (e) {}
+        try { navigator.storage?.persist?.() } catch (e) {}
+    }
+
     //#region H:Mundo — the shared boot lives in BigQualand now (the aufheben's common bit): this
     //  scape supplies only its knobs — a music Book, the runner role (run it so the graph forms and
     //   crush-folds to glass) — and reads H + houses back.  The OOM trap is baked in over there.

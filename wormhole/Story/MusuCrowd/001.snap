@@ -1,7 +1,0 @@
-Snap:H
-  H:MusuCrowd,Run
-    A:MusuCrowd
-      self,round=7	{"mung":["age"]}
-      w:MusuCrowd
-        self,round=7	{"mung":["age"]}
-        req:wrangle,eternal,ok

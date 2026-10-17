@@ -275,4 +275,3 @@ Library
     TimeSpool
       TimeTotal:beliefs,avg=0.005
         sample=0.005,at=1782375812
-  Book:MusuStaple,active,ok_pct=0,done=5,last_run_ms=1782375816.782

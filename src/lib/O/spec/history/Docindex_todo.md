@@ -1,0 +1,1110 @@
+> **HISTORICAL — retired 2026-10-16.** This was the off-tab doc index's working doc (2026-09-10 → 09-17): the index Waft the
+>  dev server writes, the SuperMap, the push, the watch desk, the Waft retake, and the long "why is opening a doc slow" hunt that
+>   ended in two root causes (the room had no heartbeat; the disk queue was queue-wide). Its living content was rolled into
+>    `spec/Wordland_todo.md` §3 (the index the watcher writes) and §4 (opening a doc is not slow). Kept whole for the
+>     measurements, the iteration logs and the reasoning — read it for *why*, read Wordland_todo for *what stands*.
+
+# Docindex_todo.md — the off-tab doc index: a WAFT the watcher writes, not a thing the tab asks for
+
+*(was `Docmag_todo.md` for about an hour on 2026-09-10 — see "IT IS A WAFT, NOT A MAG" below, which is
+ the correction that makes most of the first draft unnecessary rather than wrong.)*
+
+**The owner, 2026-09-10:**
+> *"we should do an off-tab editor junk caching. we NEED to see mtime and so forth quickly, not from
+>  the browser but pushing TO the browser. lets scan|watch those docs into some Mag-style overview
+>   that we can then Repli to the editor? or something like that. Seem can see what changes."*
+> *"we keep building variations of the perfect metaphysical system, try to reuse the parts... C, Seem, etc."*
+
+## 0. What to get on with next
+
+### ✅ 2026-09-17 night — THE OWED RUNG LANDED: a Waft TAKES DISK when it moves under a live tab
+
+The watch desk (below) already told a tab a Waft's file moved; until now the reaction was a note
+ (`good.c.disk_moved`) — the live tree was kept, never refreshed.  Built tonight:
+
+- `Lies_waft_retake(w, good, dige, why)` (Lies.svelte) — marks `good.c.retake`, drops `content` (the
+   documented re-read trigger), drops any stale finished read req at that path, wakes the tick.  The
+    persist loop's Waft-provisioning pass, on seeing `good.c.retake`, swaps the OLD tree for the freshly
+     re-read one **inside one `place()` call** — no roster gap, so Lang's `%Interest`/its armed `%LE`
+      SURVIVE the swap (`w.watch_c(waft, …, waft)` now owner-tags the watcher so `unwatch_owner` can tear
+       down the OLD tree's watcher specifically) — carries `sc.active` across, skips the from-nothing
+        initial save (a vanished file is not ours to re-create), and fires `Lies_waft_mutated` so an armed
+         LE re-pulls origin.
+- `Lies_changed_heard` (LiesLies.svelte) now calls the retake for a Waft, UNLESS a save of ours is
+   pending (`Lies_waft_save_pending`, new — checks the throttle-window flag `Lies_waft_save` now stamps,
+    plus any unfinished `LiesStore_write` at the snap path) — then the live tree is about to win the file
+     anyway, so it's kept and the collision logged — or the file vanished (noted only).
+- `LiesStore_write`'s content-equality gate widened from Doc-only to ANY `%Good` at the path (a Waft's
+   own no-op write is now recognised too — was silently treated as a real write before).
+
+**Gate: `Book:HohoRetake`** (`src/lib/O/test/Machinery.svelte`, `wormhole/Story/HohoRetake/`) — real disk
+ IO, no mocking.  One Prep (Story's Plan/Prep + `run.sc.total` is an INTERACTIVE authoring mechanism —
+  `total` mints at 1 and only a human's Resume-click in the editor extends it, so a multi-Prep multi-step
+   plan authored cold, as I first tried, silently only ever runs Prep 1; collapse a whole scenario into
+    one Prep, one step, same shape as `HohoLocate`'s single-Prep gate) does: open the fixture Waft, arm an
+     LE on it (`Lang_foreground kind:Trail`), then `e_Lies_retake_selftest` — wrapped in `expecting()` (off
+      the Atime mutex, so real `await`s are safe) — writes a REAL clean baseline through the tracked
+       `LiesStore_write` road (so `known` is a deterministic starting point regardless of what a previous
+        run's own foreign write left on disk — re-run safety was the second-hardest part of this gate),
+         then a REAL "foreign" write **raw, outside `req:Store`** (an ad-hoc req with `rw_op:'write'`
+          dispatched directly via `i_elvis_req(w,'Wormhole','rw_op',…)`, bypassing `Lies_waft_save`
+           entirely — the one way to make a real second-writer look real from inside a single tab), then
+            hands `Lies_changed_heard` the exact `{path,dige}` frame the watch desk would have pushed.
+             Swears two Assertions (`a-waft-that-moves`, `a-retake-never-disturbs`), declared, gaps 0.
+- **A real flake found and fixed, not papered over**: the retake's own read sometimes hung
+   INDEFINITELY (measured: instant to ~15s, once >79s with zero other activity logged — not a retry
+    storm, a genuinely dropped reply) because `Lies_waft_retake`'s `i_elvisto(w,'think')` is a WAKE
+     (Coding_guide.md's "wake ≠ hold" — good for one tick, not a keep-alive) and nothing else was left to
+      notice the read's own ttlilt go overdue and re-dispatch.  Fixed IN THE TEST (re-wake every 400ms
+       while polling for the land) — **this is a latent gap in the core retake path itself** worth a
+        proper look (the ttlilt-overdue self-heal inside `LiesStore_read` only runs when something calls
+         it again; nothing does, once the ambient heartbeat is off during an active Story run).
+- **Also found, then properly fixed**: EVERY Hoho Book that opens a real Doc embeds a raw wall-clock
+   `time,compile=…,all=…` line (`LangCompiling.svelte`) and a second one, `Change/compile,secs=…`
+    (Lang.svelte's strip display) — both real durations landing in `.sc`.  First instinct was a global
+     `story_matching` munging rule in code; wrong layer — the SHARED `Trope/Lies/NormalEntropy` profile
+      Waft (`EntropyProfile,Wref:…`, unioned into any Book that references it — Hovercraft.svelte
+       `entropy_rules`) already carries well-tuned `Entcase:Compile_time-compile` (`tol:band,factor:2.53,
+        slack:0.5`) and `Entcase:Change_compile-secs` (`tol:band,factor:0.52,slack:0.2`) for exactly these
+         two lines.  `HohoRetake` just hadn't referenced the profile.  Fix was one line:
+          `EntropyProfile,Wref:Trope/Lies/NormalEntropy` in the toc — green with `caveat:1` (a real
+           `tol:band` forgiveness, not a hidden munge — a genuine regression to multi-second compile
+            times would still redden).  `HohoSurprise` already references it; any new hand-authored
+             Hoho toc should too, from the start.
+
+**Left, small:** the `Coding_guide.md` wake-vs-hold gap above, if the owner wants it chased into
+ `LiesStore_read`/Story's own poll loop rather than papered over per-caller.
+
+### ✅ 2026-09-17 — THE PUSH IS LIVE. The index Waft now announces itself.
+
+`digePlugin` broadcasts a relay control frame `docindex` (the moved Doc rows + `event_at`/`written_at`)
+ to every editor|hacker|player socket the moment it rewrites `wormhole/Docindex/toc.snap`; a code room
+  hears it via `Tribunal.g`'s `on_control_list` and `Lies_docindex_heard` re-issues any OPEN moved doc
+   through `Lies_source_write` (pull silently / surprise popover). Measured on the owner's box: touch →
+    inotify 6ms → index +433ms (400 of it the debounce) → heard +3ms; the owner live: *"responds in slightly
+     less than a second"*. Design + the three latent bugs it flushed (no spine mounted in BigWordland, the
+      hacker Run House reading as editor, the vite restart race that killed both relays) are in memory
+       `docindex-push-and-hacker-room-channel` + `vite-restart-race-closes-new-relay`.
+
+**Left, small:** the EDITOR proper still rides `pinned_stable/` and so does not hear the push until that
+ copy is re-taken from gen/N (the owner's re-pin). The 400ms debounce is the only tunable and is fine.
+  Whether the Docindex deserves a `What` in Waft:Everything, or a better name, is the owner's call.
+
+
+### ✅ BUILT 2026-09-17 — THE WATCH DESK: a tab's fixation on the files it holds, pushed by the process that has inotify
+
+**Why now.** The dev server runs as uid 1000 since 2026-09-17 and its first boot died `ENOSPC` on a Story
+ fixture — inotify watches are budgeted per UID on the host, and `wormhole/` is 5,243 data files vite never
+  imports. So `vite.config.ts` now ignores `**/wormhole/**` for HMR. That was fine for HMR and for the
+   docindex push (it filtered wormhole out anyway) — but it meant NOTHING on the box could tell a tab that
+    a Waft (`wormhole/<Area>/toc.snap`) had moved under it. The owner's shape: *"some client has to keep
+     fixated on Docs and Wafts, so requests watches for a big list of paths, to get them listened to — and
+      they GC gently over time, if all sockets are gone."*
+
+**What is built** (harness: `scripts/relay-test.ts`, the last block — 7 checks; live-checked on a headless
+ BigWordland: `👁 watch reset +1 → 1 path(s) held` / `watch_ok`):
+- `src/lib/server/watch.ts` — `makeWatchDesk(root, push)`. Interest is **per socket, per path**; the kernel
+   watch is **per directory** (one `fs.watch(dir)` serves every file in it, and atomic writes — tmp+rename,
+    which is how both Chrome's FSA and the Node nav land a file — show on the directory, not the inode).
+     A burst settles 120ms, then ONE stat+read+dige and a push to every asker still open. A directory whose
+      last asker left lingers 5 min before GC releases it (a reload does not churn the kernel). Fence: repo-
+       relative, no `..`/absolute/dotfile, roots `Ghost|src|scripts|wormhole`; 4,096 paths per socket,
+        2,048 dirs total.
+- `relay.ts` — `{control:'watch', paths}` → `{control:'watch_ok', ok, refused:[{path,why}]}`;
+   `{control:'unwatch', paths}`; socket close drops its interest. Pushes `{control:'changed', path, dige,
+    mtime, size, event_at}` (or `gone:1`). `dige` is the SAME sha256[:16] the docindex rows carry, so the
+     tab's `known.dige` comparison tells its own write from a foreign one with no new logic.
+- `LiesLies.svelte` — `Lies_watch_sync(w)` rides `Lies_heartbeat`: every `%Good` under `req:Store` of type
+   `text/Doc|text/Waft` is the list; delta only, the whole list again on a new socket. `Lies_changed_heard`:
+    a **Doc** rides the docindex road exactly (`Lies_docindex_heard` with a one-row `moved`) — own write =
+     `ours`, foreign edit → `Lang_disk_moved` (pull disk / surprise_read). A **Waft** is NOTED only (see
+      the owed rung). `req_Store`'s write phase now stamps `/known` on ANY Good at the path (was Doc-only),
+       so a Waft's own save is recognisable.
+
+**Reach.** Only tabs on the LIVE spine hear pushes (gen/N/Tribunal.go carries `on_control_list`): a hacker
+ room and runners. The editor proper rides `pinned_stable/` and SENDS its watch list but cannot hear
+  `changed` until that copy is next refreshed (same caveat as the docindex push). **A customer for that
+   refresh, seen the same afternoon:** `ghost-compile Ghost/Story/SwarmTesting.g` twice returned
+    `generated JS does not parse @ 5004:4` — the line of a version I had ALREADY replaced on disk. The
+     editor's `%Good/known.at` was fresh (my first ticket's read), so writeCarefully's luxury skip trusted
+      the buffer and compiled stale text; a minute later the same ticket compiled clean. With the editor
+       hearing `changed`, `known.at → 0` would have forced the disk read on the second ticket. A Book's own inner Lies
+   world has no transport, so a running Book's Wafts are not watched — by design; the runner's outer world is.
+
+**THE OWED RUNG — what a Waft does when disk moves.** Today: `good.c.disk_moved = {dige, at}` + a console
+ line (`👁 Waft X moved on disk under us … — live tree kept`). The live Waft tree is what Lang `%Interest`,
+  docks and an armed LE point into, so "take disk" means re-placing it — `delete good.c.content`, drop
+   `w/{Waft:path}`, let the persist pass re-read and re-place, then let `Lies_waft_mutated` re-pull origins.
+    Not done blind: it needs a Book (open a Waft on the runner's OUTER Lies world, rewrite the snap on disk,
+     assert the tree took it and the Interest survived). The obvious first customer is the Story view when a
+      RUNNER rewrites a Book's `toc.snap` under the editor.
+
+### ☀ WHERE IT STANDS — 2026-09-10 evening, handover. READ THIS FIRST.
+
+**The road is built and measured end to end.** The tab no longer walks the tree, no longer reads 728
+ files, and no longer rebuilds 43,945 particles a document at a time. It reads one Waft for the roster
+  and decodes one snap for the census.
+
+| | before | now |
+|---|---|---|
+| roster | recursive FSA walk, spread over belief ticks | **0.1–0.3s**, one `read_file` |
+| reads | 728 | **0 paid**, 731 skipped |
+| convergence | 12–21 passes | **1–2 passes** |
+| what dominates | waiting (~60% belief ticks) | working (~90% decode + mint) |
+
+**THE BOMBS — what will mislead you if you do not know it:**
+1. **Do not quote a wall clock from one run.** Same tab, same code: 3.3s and 9.5s; `work_ms` alone
+    varied 2×. The stable result is the PASS COUNT. See `instrument-blindness` in memory — three of my
+     own instruments measured an interval that could not contain the thing under test, and each read as
+      "no improvement", which is indistinguishable from a regression.
+2. **`work_ms` counts IO wait**, because a pass body `await`s Dexie. The first stand after a reload
+    looks ~5× busier purely from a cold IndexedDB. It is not CPU.
+3. **`runner_ask runners` needs 3–5 rounds** before you believe "nothing is live" — the relay spends an
+    addr-less `corr` on the first ack. I blocked on a phantom "no runners" for an hour; round 4 found
+     two. ⚠ **The second half of this bomb is now FIXED (2026-09-10 late)** — it used to say a
+      `role:hacker` tab (BigWordland) stands no relay channel at all. It does now: `Lies_player_seen`
+       admits role:hacker without the socklog arm, so a code room joins the READ-ONLY player door and
+        is addressable with `--player=` (visible, never dispatchable — every dispatch consumer filters
+         `role === 'runner'`). The census labels it `⌨ hacker (a code room)`. It still takes no runner
+          seat, so a Book still needs a separate `?B=` tab.
+4. **The supermap's safety is the dige gate, not the mapper key.** A snapped Doc is adopted only if the
+    index Waft still reports the same dige. Weaken that and a stale Map serves silently — the failure
+     mode where a cache makes things WRONG rather than slow.
+
+**THE NEXT MOVE, if you want one:** the residue is the 5MB decode and 43,945 mints, so the only lever
+ left is *not minting them all at stand* — a Map built lazily for the doc a reader actually asks about.
+  That is a design change, not a knob, and **nothing needs it yet**.
+ ✅ The last thing owed — *is the Stemdex a second corpus scan, and should the two share a producer?* —
+  was **measured and closed 2026-09-10 (late): Atlas 731, Stemdex 12, one tab, one minute. Don't merge.**
+   See the ✅ SETTLED block in §"a second FULL corpus walk" below for the two bombs inside those numbers
+    (12 is a floor, and a plain runner now rosters the whole corpus — the editor tab is no longer
+     required for an Atlas question, but `--fresh` is).
+ **So there is no owed measurement left.** Pick the lazy-Map lever above only if something starts
+  needing it.
+
+### ☀ WHY THIS DOC EXISTS — the second sentence is a correction of the first day's work
+
+2026-09-09/10 the warm Atlas stand went 15.0s → 3.5s in three fixes, and **all three were the same
+ mistake**: a bespoke little transport invented to make ONE fact travel faster.
+
+| what was slow | what I built | what it actually was |
+|---|---|---|
+| 726 FSA reads per warm boot | `/__atlas/dige` | a hand-rolled Mag of doc hashes |
+| 38 `HEAD`s every 2s, every tab | `/__gen/dige` | a hand-rolled Mag of gen hashes |
+| 709 IndexedDB `get`s per stand | `Atlas_cache_prefetch` | a hand-rolled page read |
+
+Each one measured well (4×, 5×, 4.1×) and each one is a **variation of the system rather than the
+ system**: its own JSON shape, its own ETag, its own memo, its own failure mode, none of it a particle,
+  none of it visible in a snap, none of it replicable, none of it observable by Seem. They are the
+   emergency fix and they are not the destination. *The tab should not be asking at all.*
+
+**The bet says the index is the same legible living matter as everything else** — so it is a C tree, it
+ travels by Repli, and Seem sees it change. Nothing new is needed. Every part already exists.
+
+### IT IS A WAFT, NOT A MAG — and this deletes most of the plan
+
+*The owner, 2026-09-10, mid-design: "I'm not sure we learnt anything playing with Mags as a new
+ generation of the Waft type… but it had cursors."*
+
+That is the whole correction, and it is worth more than the section it replaces. The first draft reached
+ for `%Mag`/`%Cloud` **by analogy** — Heard has a shelf of things, we want a shelf of things — which is
+  the "variation of the system" reflex one paragraph after warning about it. The Mag experiment's one
+   durable contribution was **cursors**; the container underneath it was always the older, proven thing.
+
+**And the older thing already IS this.** The Waft vocabulary is literally `Waft > What > Doc > Point`,
+ with `Cursor` already a member (`WAFT_PROTOCOL`, `Text.svelte`). An index of `%Doc:<path>` rows is not
+  *shaped like* a Waft; **it is a Waft.** So:
+
+```
+Waft:<index key>
+  Cursor,…                       resumable position — the one thing the Mag round taught
+  Doc:<path>,dige,mtime,size
+    Map                          ← proven to encode + round-trip (MapEncode.spec.ts, 6/6)
+      def,method,line=…
+      call,method,via,line=…
+```
+
+**What that deletes from this plan:**
+- **no Mag, no `%Cloud` paging** — the Waft is the shelf and `%Cursor` is the resumption
+- **no `Repli`, no new frame kind, no identity road** — `enWaft` → a wormhole file → `deWaft` is a road
+   the machine has driven since the beginning (`LiesStore` saves every Waft this way;
+    `Lies.svelte:807` loads one). The watcher writes `toc.snap`; the tab opens a Waft. That is all.
+- **no `Atlas_cache_put`/`Atlas_cache_adopt`** — Dexie's hand-rolled serialiser was standing in for
+   exactly this file, and its three `.c` fields are the gap noted above.
+- **and it retires the three bespoke transports** (`/__atlas/dige`, `/__gen/dige`,
+   `Atlas_cache_prefetch`) rather than adding a fourth kind of asking.
+
+**The prize is unchanged and now nearer:** the tab does **no walk, no read, no hash, no parse, no
+ Dexie** — it opens a Waft it already knows how to open. One machine pays the 1.5 minutes of CM6 once.
+
+⚠ **The one thing genuinely still owed is the CURSOR**, because that is what the Mag round was for: a
+ 726-doc Waft is not something you want to re-read whole on every change. `%Cursor` in the protocol is a
+  vocabulary entry, not a working incremental read — so *how a reader resumes* is the real design work
+   here, and it is the same question the Seem-merge answers one level up. Do not assume it is solved
+    because the mainkey exists.
+
+### IS THE MAP IN C** FORMATION, AND CAN WE MAKE A SERIALISABLE BUNCH OF IT?
+
+*(the owner's own question, 2026-09-10 — and it is the question the whole plan turns on)*
+
+**Yes to both — and it needed NO unfencing at all.  Measured, not reasoned:
+ `scripts/MapEncode.spec.ts`, 6/6.**
+
+The index is already real C: `%Doc:<path> > %Map > {def|call|elvisto|link|region|anchor|mint|proves}`,
+ every row minted with `i()`. It encodes today, round-trips today, and nobody had ever tried:
+
+```
+Doc:Ghost/X/Sample.g,dige:abc
+  Map,dontSnap	{"dontSnap":1}
+    def,method:Sample_alpha,line=9
+```
+
+⚠ **I got `dontSnap` wrong TWICE writing this section, and the test caught both.**  First I claimed the
+ encoder prunes the Map on `map.sc.dontSnap` — it does not; pruning is driven by a matched RULE's
+  `means.dontSnap`, never by the node's own key. Then I claimed such a rule prunes at encode — it does
+   not either: `Text.svelte` says outright *"The line still encodes here; story_process_node forwards the
+    flag, snap_H folds."*  **`enWaft` marks; the Story snap walk folds.**  So the encoder was always
+     unconditionally willing to emit the whole index, and the flag is advisory metadata for one
+      consumer. Both errors came from inferring behaviour off a comment; both died on first run. *That
+       is the entire argument for characterisation tests over confident ones.*
+
+**So the only real gap is the three fields on `.c`** — `region_path` (an array), `abs_from`, `abs_to` —
+ because `.c` is never encoded. `abs_*` are numbers and move to `sc` trivially. `region_path` must NOT
+  go in `sc` (an object value there is fatal at encode); it is either child particles, or — better —
+   **re-derived at read time from the `%region` rows' own line spans**, which is what a beadchain
+    computes anyway, making it a VIEW rather than stored data.
+  And the tell that this is the right road: `Atlas_cache_put`/`Atlas_cache_adopt` walk the Map copying
+   exactly those three fields out and back for Dexie — **a hand-rolled serialiser sitting beside
+    `enWaft`**, written around a fence that was never there.
+
+**The tell that this is the right road:** `Atlas_cache_put` and `Atlas_cache_adopt` already walk the Map
+ copying those three fields out and back — **a hand-rolled serialiser sitting beside `enWaft`**, written
+  because the real one was fenced off. That is the same mistake as the three transports above, in the one
+   place where fixing it pays the most.
+
+### ⚠ MEASURED 2026-09-10: ATLAS COLD IS 68s, NOT 5 MINUTES — so this plan is aimed at PART of it
+
+Everything below this block was written before the cold case had ever been measured, on the assumption
+ that 726 CM6 parses *were* the owner's 5 minutes. Forced cold on a live runner
+  (`ghost_load --stand=Atlas --fresh --nocache`, a new flag built for exactly this):
+
+| | passes | wall | what it did |
+|---|---|---|---|
+| warm | 16 | **3.5s** | 726 adopts, zero parses |
+| **cold** | **274** | **68.0s** | 728 real parses, zero adopts |
+
+728 docs at ~2.7 per pass with `pass_ms` 70–182ms ⇒ **~36s of parsing and ~30s of waiting for belief
+ ticks.** Two things follow, and the second is the important one:
+
+1. **Even cold, the politeness slicing roughly doubles the wall clock.** Shipping a pre-built index
+    removes BOTH halves — no parse, and no 274-tick convergence — so the prize is bigger than "skip the
+     parse". But `ATLAS_SLICE_MS` still must not be raised (it exists because a 4s mutex hold froze the
+      owner's editor tab); the fix is not to hold longer, it is to have nothing to converge.
+2. **68s ≠ 5 minutes, so Atlas is not the whole complaint.** Something else is running in that tab
+    alongside it. **Prime suspect: the Stemdex** — a SECOND full-corpus scan, over the same ~726 docs,
+     kept fresh by its own polite dige-gated pass (`Lagoon_lies` treats it as a third census). Atlas and
+      the Stemdex have never been measured together, and a plan that removes one of two corpus walks
+       will disappoint anyone who was feeling both.
+ **Do not build further on this doc until the second walk is measured.** The same discipline that caught
+  `dontSnap` twice and the ADOPT-cap inversion applies here: the justification for the whole design is
+   now known to be partial, and finishing the sentence is cheaper than building the wrong half.
+
+#### …and the second walk is real: THREE THINGS INDEPENDENTLY HASH THE SAME CORPUS
+
+Confirmed by reading, not inferred (`LiesFunk.svelte` §Stemdex): the Stemdex is a **full second corpus
+ walk** — its own Dexie table (`stemdex`), its own per-doc dige, its own polite passes with a
+  `READ_BUDGET`, its own convergence, over the same ~726 docs, through the same beliefs mutex. It was
+   invisible in every measurement above for a simple reason: **it had never scanned on the runner**
+    (`lagoon seek` reports *"stemdex standing but UNINDEXED here — nothing has scanned on this tab"*),
+     because nothing on a runner opens a searchbar. The owner's editor tab runs both.
+
+So the tally of things that separately answer *"what is the hash of this doc"*:
+
+| | cache | what it keeps |
+|---|---|---|
+| Atlas | Dexie `atlas` | `dige` + the `%Map` |
+| Stemdex | Dexie `stemdex` | `dige` + defs/props/stems |
+| the served index (2026-09-09) | in-process memo | `dige` + mtime + size |
+
+**Three caches, three diges, one corpus.** The others duplicated a QUESTION; this looked like it
+ duplicated the WALK.
+
+⚠ **CORRECTION, measured 2026-09-10 — "a second FULL corpus walk" was overstated.** A `stemdex` CLI op
+ was built to nudge the pass and watch it converge; on the runner it reached **12 docs and stopped**,
+  and 12 is not a stall, it is the whole roster. The reason is in the code (`LiesFunk.svelte` ~:1558):
+   the Stemdex's roster is **"every Doc in every LOADED WAFT + the whole GhostList"** — it is not an FSA
+    tree walk at all. Atlas walks the filesystem and finds 728; the Stemdex indexes what is *open* plus
+     the ghost pile. So its size is a function of how many Wafts a tab has loaded, and on a runner with
+      almost none it is a dozen docs and converges instantly.
+ **What survives the correction:** two caches, two diges, two vocabularies over an OVERLAPPING corpus,
+  and `Lagoon_seek` already asking both. **What does not:** any claim that the Stemdex is half the
+   owner's 5 minutes. It might be a large roster on a busy editor tab — with `SCAN_BUDGET = 8` fresh
+    scans per pass it would converge slowly — but that is now an open question with a way to answer it
+     (`runner_ask stemdex`, repeatedly, on the tab that actually feels slow), not a finding.
+ *Third time this session that an asserted cost turned out to be a guess. The instrument keeps winning.*
+
+✅ **SETTLED 2026-09-10 (late) — measured with BOTH censuses on ONE tab at ONE moment.** The open
+ question above ("is the Stemdex half the cost, and should the two share a producer?") is closed, and
+  the surprise is that it no longer needs an editor tab to answer:
+
+    see:atlas   docs:731  from_index:731  roster_ms:95   ← the whole corpus, no walk
+    stemdex     indexed:12  warmed:1  scanning:0         ← converged in 2 nudges, ~300ms each
+
+ **Atlas 731, Stemdex 12, same tab, same minute.** They are not two views of one corpus and must not
+  share a producer: merging means either the Stemdex suddenly parses 731 docs (a large new cost nobody
+   asked for) or Atlas shrinks to a session. This confirms by measurement what the subagent concluded
+    by reading — *don't merge; the only true duplication was `defs`.*
+
+ ⚠ **Two bombs in those numbers, both about what the instrument covers.**
+  1. **12 is a FLOOR, not the editor number.** That runner had NO Wafts loaded (`minisnap mundo>A:Lies`
+      → zero `Waft:` rows). The roster is *loaded Wafts + the whole GhostList* (`LiesFunk.svelte`:1576),
+       so a busy editor tab is bigger — bounded by the GhostList (~233) plus open docks. Still nowhere
+        near 731, so the verdict holds, but do not quote 12 as "the Stemdex's size".
+  2. **A plain runner now rosters the FULL corpus** — `from_index:731`, `roster_ms:95`. The old note
+      "the runner roster is only 12 docs, so this needs the editor tab" is STALE: the index Waft
+       removed the FSA dependency, which is exactly what had been blocking this measurement for a day.
+        A runner is now a valid stand for any Atlas question. **Atlas needs `--fresh` to census** —
+         without it `ghost_load --stand=Atlas` stands the ghost and does nothing, `w:Atlas` stays empty,
+          and that reads exactly like a hang. It is not one.
+
+ Incidental confirmation of the dige gate, from the same run: `super_took:702 super_stale:29
+  cache_moved:29 passes:29` on a tree where 22 `.g` + their `.go` had just been edited — 702 adopted
+   from the supermap untouched, 29 re-parsed because they really had moved. That is the gate working.
+
+#### THE MERGE QUESTION, ANSWERED — don't merge the censuses; merge the one thing actually duplicated
+
+An objective read of both indexes (2026-09-10) settled the "big unification" question, and corrected two
+ more things this doc had asserted:
+
+- **The rosters are 728 vs ~233, and the second one is a BROWSING HISTORY.** The GhostList lists
+   `src/lib` and `Ghost` **non-recursively**, plus whatever directories someone has clicked open — so
+    `scripts/`, `Ghost/S`, `Ghost/V`, `src/lib/p2p` are simply absent, and one entry is a `.png`. Atlas
+     indexes a corpus; the Stemdex indexes a session. **They are not two views of one corpus.**
+- **The Stemdex does not hash at all.** It reads the dige off `LiesStore`'s `%Good/known` row, which
+   `LiesStore_land_good` computed for `writeCarefully`'s base-dige gate anyway. So "three things
+    independently hash the corpus" was wrong: the three `dig()` sites are Atlas, LiesStore and the
+     served index, and one of those exists whether or not any index does.
+- **Electrode is not in this category and should never be in a merge conversation about it.** Its
+   universe is the runtime ghost bag, not a corpus; its truth lives in `.c` (`ring`/`tally`/`open`) and
+    its `%Graph` is a *rendering* that `Electrode_reduce` drops and rebuilds. `Lagoon_join` exists
+     precisely because declared and measured are different kinds of fact — two indexes of one corpus
+      could not be joined that way, there would be nothing to compare.
+- **The mainkey law does not argue for merging.** `%Doc` already lives in three shelves with three
+   shapes (`w:Atlas`, `Waft:GhostList`, Waft trees) and the per-shelf rule permits exactly that. What
+    the law *does* settle: if a stem projection ever moves into `w:Atlas`, it must be a CHILD under the
+     existing `%Doc` (`%Stem`/`%Prop` rows), never a second `%Doc`.
+
+**The scale asymmetry is the case against merging, and it is large:** Atlas keeps 43,945 structural rows;
+ the Stemdex over the same corpus would need ~397,000 postings, ~11,500 prop entries and **16.9 MB of
+  clipped source text** — ~9× the rows plus a copy of the repo. Shipping that to every tab as one Waft
+   is shipping the corpus. Their rhythms differ too: Atlas must be COMPLETE (it computes `gone` by
+    comparison) and is FSA-only; the Stemdex is allowed to be partial forever and works without FSA.
+
+**✅ THE ONE REAL DUPLICATION WAS `defs`, AND IT WAS ALSO A LIVE BUG — now fixed.** Measured over the
+ ghost pile: 53 `.g` files, **2,822** real methods, and the Stemdex's def extractor found **714 "defs"
+  of which ZERO were methods** (`Ghost/L/Atlas.g` yielded exactly one: `roots`, a local variable). Its
+   middle regex requires a trailing `{`; a `.g` method line ends in `:`, so the only alternative that
+    ever matched was `const|let X = (` — i.e. locals. `Lagoon_todo §983`'s claim that a missing Atlas
+     *degrades* the answer was therefore false for `.g`: ghost-method search did not degrade, it
+      disappeared, and freetext stems hid it.
+ The instinct was to delete the extractor and let Atlas own defs — but Atlas refuses to stand without a
+  granted FSA handle while this scan rides `LiesStore`, so deleting it removes ghost-method search from
+   exactly the tabs Atlas cannot serve. **Teaching it the dialect instead turns 0 correct into >2,000
+    with under 2% false** (`scripts/StemdexDefs.spec.ts`, 3/3, counted against the corpus rather than a
+     fixture). That is ~90% of the merge's benefit at ~5% of its cost.
+
+**VERDICT: keep two censuses, and NOT one producer.** The evidence ruled out "they are the same index".
+ The number that would decide the producer question was owed since §0 — it has now been taken:
+  **Atlas 731 / Stemdex 12, one tab, one minute (2026-09-10 late; ✅ SETTLED block above).** A shared
+   producer would have to serve both a 731-doc corpus census and a ~12–233-doc session index; that is
+    not one producer with two readers, it is one producer doing the larger job twice as often. **Keep
+     them apart.** The `defs` extractor was the only true duplication and it is already fixed in place.
+
+**Which is the real shape of the plan, and it is better than the one below.** The index Waft should
+ carry the whole reading of a doc — `%Doc` with its `%Map` (Atlas's vocabulary) *and* its stem
+  projection (the Stemdex's) — produced by ONE walk, off-tab, once. Then neither census scans in a tab
+   at all, and `Lagoon_seek`'s "one answer over three censuses" becomes one answer over one arrival.
+ ⚠ Before building that: **measure the Stemdex cold the way Atlas was just measured.** It is the only
+  number still missing, and this document has now twice been aimed by a number rather than a guess.
+
+### THE ORIGINAL (pre-measurement) FRAMING — kept because it is still true of the parse half
+
+The owner, 2026-09-10: *"it just takes 5 minutes of 80% CPU to start up, I think it's a bit heavy."*
+ **Everything measured on 2026-09-09/10 was the WARM case** (`dige_hit:726`, zero parses, 3.5s) — a tab
+  with a full Dexie. The 5 minutes is the COLD build: 726 × `Atlas_map_one`, measured at 50–194ms each
+   (`Wordland_todo §4b`), which is ~1.5 minutes of pure CM6 parsing before the 120ms politeness slicing
+    stretches it across the wall clock. **No amount of memoising the ask touches this**; the parse is the
+     cost, and it is paid on every machine that has never seen the corpus.
+  So the ruling below is not optional — it *is* the plan: **if the watcher ships `%Map` children, no tab
+   ever parses.** One machine pays 1.5 minutes once; every tab receives a census. That is the prize, and
+    a Mag of hashes alone would leave the owner's actual complaint exactly where it is.
+
+### ✅ BUILT 2026-09-10 — the status Waft, and Atlas reading it
+
+**The producer is the vite plugin, and that is not a compromise.** Vite already watches the tree for
+ HMR, so the "inotify daemon" the design wanted is a process you are already running. A separate
+  docker-compose service was considered and refused: a third image sharing `/app/node_modules` is the
+   documented 2026-08-07 outage (Alpine/musl vs Debian/glibc native binaries), so here the cheapest
+    option and the safest option are the same one.
+
+| piece | state | gate |
+|---|---|---|
+| plugin writes `wormhole/Docindex/toc.snap` — 728 docs, `dige+mtime+size`, 71KB, debounced, gitignored | **working** | `StatusWaft.spec.ts` 4/4 |
+| `Atlas_index_read` — roster from the Waft, no walk | **built** | `IndexRoster.spec.ts` 7/7 |
+| `Atlas_refresh` served by the same read | **built** | same, 3 refresh tests |
+| the SuperMap — census as ONE snap in Dexie | **built, measured** | live: `passes 12–21 → 1–2` |
+
+### ✅ THE SUPERMAP — and why it was right to refuse it twice first
+
+Asked for early ("cached chunks of SuperMap… all made on the tab, informed by the daemon about
+ what|when") and **declined twice**, both times correctly:
+- first because the per-adopt round trips were already down to ~4 bulk calls, so chunking would have
+   moved a cost that was no longer there;
+- second because the remaining cost turned out not to be IO at all.
+
+It became right only when the instrument could finally see the reason: with the reads gone
+ (`731 skipped, 0 paid`) and the roster gone (`0.1s`), the tab was **still rebuilding 43,945 `%Map`
+  particles one document at a time, every stand**. No cache *shape* fixes that. What fixes it is that
+   the census is a C tree: `enWaft` encodes it, `decode_wh_lines` reads it back (`MapEncode.spec.ts`),
+    so keep ONE snap and decode it once.
+
+**Measured, live, warm:**
+
+| | passes | roster | total | what dominates |
+|---|---|---|---|---|
+| walk + per-doc adopt | 16 | (walk, unmeasured) | — | reads + walk |
+| index Waft only | 12–21 | 0.1–0.8s | 4.2–17.3s | **waiting** (~60% belief ticks) |
+| **+ supermap** | **1–2** | 0.1–0.3s | **3.3s best** | **working** (~90%: decode + mint) |
+
+`super_took:731`, one decode, 5,124KB snap. The wait is gone; the residue is the decode and the mints.
+
+**Three of my own instruments were wrong on the way here, all the same shape — placed where they could
+ not see the thing they were installed for:** `ms` measured convergence *after* the roster, blind to the
+  walk the index removes; `pass_ms` sampled the last (always empty) pass, so real work read as zero; and
+   `pass_t0` started *after* the decode, which would have hidden the supermap's own cost. Each one
+    would have read as "no improvement" exactly like a real regression. `see:atlas` now carries
+     `roster_ms · ms · total_ms · work_ms · super_took · super_stale` so the next person needs none of
+      this archaeology.
+
+**Two design bugs caught before they shipped:**
+- the save gated on `supermap_dirty`, set only by a REAL parse — so on a warm tab (the whole point)
+   nothing was ever dirty and the supermap could only be written by a tab that did not need it;
+- no floor on census size, so a half-built stand could store a nearly-empty snap that the next stand
+   would adopt as a complete answer. A cache that makes things quietly WRONG is worse than a slow one.
+
+**⚠ Wall clock stays noisy** — 3.3s to 9.5s on identical code, and `work_ms` itself varied 3.0s vs 6.4s
+ for the same operation. Belief-tick latency and IDB warmth both move a lot run to run, so **no single
+  run supports a speedup claim**; the pass count (12–21 → 1–2) is the stable, structural result.
+
+**Next lever, if one is wanted:** not minting all 43,945 particles at stand — a Map built lazily on the
+ doc a reader actually asks about. That is a design change, not a knob, and nothing needs it yet.
+
+**What the gates actually pin**, beyond "it works":
+- the tab's OWN decoder reads what node writes, and **numbers arrive as numbers** — `key:value` is a
+   string and `key=value` is a number, and getting that backwards parses fine while every `mtime`
+    comparison silently never matches again
+- the server-side hash **equals the browser's `dig()`** — the whole road rests on one hash meaning one
+   thing on both sides of it
+- the fake nav records every call, so the assertion is `['read_file wormhole/Docindex/toc.snap']` and
+   nothing else: **a regression that quietly reintroduces the walk fails in CI, not as a slow tab**
+- every failure mode returns 0 and falls back to walking — no index, empty, junk, a nav that throws,
+   no nav at all
+- the refresh contract in full: `refresh_added`, `by` un-stamped on movers *and only movers*, and a
+   `seen` set complete enough for `gone` (get that last one wrong and a refresh silently drops live
+    docs from the census)
+
+**Why the SuperMap is not built.** `Atlas_cache_prefetch` already cut the per-adopt round trips to ~4
+ bulk calls, and the roster walk it shared the 3.5s with is now gone — so whether chunking buys anything
+  is **unmeasured**, and no runner has been up to measure it. It is worth building for the aggregate-
+   cache reason (one shelf holding Maps *and* stems, per the owner's own sketch), not for a speed claim.
+
+⚠ **OWED: the before/after on a live runner.** Everything above is gated headlessly and nothing here
+ claims a speedup. The last measured warm stand was `passes:16, ms:3504` WITH the walk; what it is
+  without the walk is unknown, because no `role:runner` tab has been up since.
+
+**→ `node scripts/atlas_bench.mjs [--nocache]` is that measurement, in one command.** It stands Atlas
+ fresh, polls until the census row carries `ms` (the field `Atlas_report` stamps only once a pass finds
+  nothing left to do), and prints the whole shape of the stand: whether the roster came from the index
+   or WALKED, reads skipped vs paid, the three adopt-refusal reasons apart, passes/capped, and the wall
+    clock with ms-per-pass split into work vs waiting. It refuses when no runner is up rather than
+     inventing a number.
+ It exists because *three separate "obvious" diagnoses were wrong this session the moment an instrument
+  was pointed at them* — the adopt cap that was not the bound, the "5 minutes of parsing" that was 68
+   seconds, the "second full corpus walk" that was a 233-doc browsing history. **The measurement has to
+    be cheaper than the guess, or the guess wins.**
+
+**The numbers to fill in, and what each decides:**
+
+| run | decides |
+|---|---|
+| `atlas_bench` warm, index present | did removing the roster walk help, and by how much (`from_index` should be 728, `passes` should fall) |
+| `atlas_bench --nocache` | the cold path — the one the owner actually feels. Baseline: `passes:274, ms:67997` |
+| `runner_ask stemdex`, repeatedly, on the EDITOR tab | the last open question: whether Atlas and the Stemdex should share a producer |
+
+### THE BREADCRUMB — the doc's slot exists before the doc does
+
+*The owner, 2026-09-10: "we need a breadcrumb I guess, where the current doc we want to see is going to
+ get itself in."*  And, the same minute: *"docks spend an awful long time in the spinner state sometimes."*
+
+**Those are one thing.** A spinner says *something is happening somewhere*; a breadcrumb says *the thing
+ you asked for is going to arrive HERE*. The spinner is what you get when the slot does not exist yet,
+  so the only honest thing the UI can draw is an apology. Give the doc a slot the moment it is asked
+   for, and the wait becomes legible instead of blank — the same move as the Clerkdesk keeping `held` on
+    screen while it re-asks, one level down.
+
+**The shape is already the census's own, and needs nothing new.** Atlas is deliberately two-phase: the
+ roster mints a BARE `%Doc:<path>` row with no `%Map` — cheap, no read, no parse — and the Map lands on
+  a later pass. *That bare row is the breadcrumb.* So:
+
+- asking to see a doc `oai`s its `%Doc` row in the index Waft **immediately**, whether or not anything
+   has mapped it, and lands the `%Cursor` on it — the doc "gets itself in" at the moment of asking
+- the row is visible at once: path, and whatever is known (`dige`/`mtime` from the watcher, nothing at
+   all if it is brand new). `Map` absent is a legible state — *arriving* — not an error and not a spinner
+- the Clerkdesk's errand and this are the same particle seen twice: the Aside records *why* you went,
+   the index row is *where it lands*. Neither needs the other's data.
+
+⚠ **Do not implement this as a new "pending" mainkey or a `loading:1` flag.** The absence of `%Map`
+ already says it, and a flag would be a second way to express one fact — the exact shape of every
+  mistake in this document. If a reader cannot tell "not mapped yet" from "mapped and empty", that is a
+   reason to make the empty case explicit (`Map` with no rows), not to add a marker beside it.
+
+**Owed measurement before any of this is built:** *why* a dock sits spinning. It has never been
+ measured, and this session has twice been wrong about a cost it had only read about. `Lies_ghost_pick`
+  could not be instrumented on a runner (no docks — Clerkdesk_todo leg 1), so this needs the editor tab
+   and the Electrode tap. **A breadcrumb makes a slow thing legible; it does not make it fast, and it
+    must not be allowed to excuse never finding out.**
+
+### THE MAP GENERATOR — one collector, but the DISPATCH has forked (2026-09-10)
+
+*The owner: "what is our Map generator? is it getting fractured? we should have one thing we run changed
+ bits of code against..."*
+
+**The collector is NOT fractured.** There is exactly one pair, both in `src/lib/O/lang/compile.ts`
+ (⚠ that file contains NUL bytes — `grep -a` or you will conclude it is empty):
+ `Lang_collect_markdown_regions(state, job)` and `Lang_compile_collect(state, job, sthoParser)`. Both
+  write into whatever container they are handed (`job.oai({Map:1})`), which is exactly why the same code
+   serves the editor's compile dock and Atlas's census. That part is healthy and should stay.
+
+**The dispatch around it has forked into two, and they already disagree:**
+
+| | `LangCompiling.svelte` (editor) | `Atlas.g` (census) |
+|---|---|---|
+| markdown test | `is_md` computed at :179 | `/\.md$/` on the path, inline |
+| no parser | **throws** | `doc.sc.error = 'no parser'`, returns |
+| result | keeps `lines` to render | discards them |
+
+Two copies of "which collector, and what if there is no parser" is one copy too many, and a daemon-side
+ scanner would make it three. **So: `Lang_map_into(state, job, path)` in `compile.ts`, beside the
+  collectors — the one thing you run changed bits of code against.** Collector choice only, no policy:
+   it returns `{ lines?, no_parser? }` and each caller keeps its own error stance and its own use of
+    `lines`. Then the editor, the census and the watcher are three callers of one generator.
+
+⚠ **And a fourth quasi-producer to retire, not to join:** `Atlas_cache_adopt` rebuilds a `%Map` from
+ Dexie rows without the collector, so the Map's shape is asserted in two places (what the collector
+  emits, and what the adopt reconstructs). With the encode road proven above, that whole path becomes
+   "decode a snap" — one shape, one producer, and `Atlas_cache_put`'s hand-rolled field copying goes
+    with it.
+
+### THE SEEM THAT MERGES — incremental mapping, not rebuilding (the destination)
+
+*The owner: "it should be a Seem that merges the Map around from unchanged bits... and reruns bits of
+ compile thinking depending on what changed, ie all the IOexpr are involved with each other"*
+
+This is the answer to the 5-minute cold start AND to per-keystroke editor cost, and it is a different
+ idea from everything above: the Map stops being REBUILT and starts being MAINTAINED.
+
+- **`%Seem:origin` / `%Seem:working`** is already the machine's name for exactly this pair — a working
+   clone walked beside an origin. It exists today in `LangSion._se_plan`, and it is honestly labelled
+    *"FRONTIER — highly experimental… the %Seem lives in Selection beyond the cordon"*. So the shape is
+     the machine's own, and the implementation is not there yet. **Do not write this up as reuse of a
+      finished part.**
+- **What merging buys:** a doc's `%Map` is mostly stable across an edit. The regions above the change
+   are untouched; the defs below shift by a line delta and nothing else. Re-running the collector over
+    the whole file to learn that is the waste. A Seem that holds origin, takes the CM6 change set, and
+     re-runs only the spans it invalidates turns "parse 726 docs" into "re-parse the paragraph you typed
+      in" — which is the only version of this that is fast on a cold machine as well as a warm one.
+- **"All the IOexpr are involved with each other"** is the hard part and must not be hand-waved. An
+   `IOing` is a multi-leg expression the compiler resolves against other declarations, so a change is
+    not confined to its own line span: editing one leg can invalidate a plan somewhere else.
+     **Therefore the invalidation set is a graph question, not a line-range question** — and the graph
+      is already kept: Atlas holds `call`/`elvisto` edges, Electrode holds measured ones, and
+       `Lagoon_join` already reads declared-vs-measured across both. A merge that re-runs "the changed
+        span plus everything the span's defs are named by" has all its inputs in the censuses already.
+
+**Order, and it is deliberately last:** merging is worth nothing until there is ONE generator to merge
+ against (above) and a serialisable Map to hold as origin (proven). Build those two, ship the watcher,
+  and only then make the watcher incremental — at which point the tab inherits it for free, because the
+   tab is no longer parsing at all.
+
+### THE PARTS, and what each is already for
+
+- **The watcher** — `scripts/daemon/main.ts`. A real long-running node process, disk access, its own
+   identity, and `RELAY=1` already joins the `/relay` websocket. **Not a new container** (that was
+    considered and refused 2026-09-09 — the index is a fact about THIS host's files) and not the vite
+     plugin, which can only answer, never push.
+- **The shelf** — `%Mag`/`%Cloud` paging, `Ghost/M/Heard.g` is the worked example.
+- **The transport** — `Ghost/N/Repli.g`, unchanged: `Repli_offer` / park / pages is paginated streaming
+   C** replication and this is exactly its job. No new frame kind.
+- **The change view** — **Seem**. `Atlas_report` already cites "the Seem/`%News` idiom" for a row that
+   is replaced rather than piled; Seem is how a watcher says *what moved* instead of shipping the world.
+- **The identity/permission road** — the daemon is already a peer with a prepub; a tab already decides
+   who may serve it. Nothing new to authorise.
+
+### → THE NEXT MOVE, in order
+
+1. **Scan into the Mag, in the daemon, with no transport at all.** Build `%Mag:docs` as a real C tree in
+    the daemon's own shelf and expose it on the existing `/c` introspect endpoint. Gate: the Mag's
+     `%Doc` rows agree with `runner_ask lagoon lint`'s doc count and with `/__atlas/dige`'s hashes.
+     *No push yet — prove the shelf before proving the wire.*
+2. **Watch, don't rescan.** `fs.watch`/chokidar on the roots; a change restamps one `%Doc` and bumps the
+    Mag. The daemon already re-stats cheaply (`dige.ts`'s memo is the prior art to fold in, then delete).
+3. **Repli it to a runner.** `Repli_offer` the Mag; the tab lands `%Doc` rows straight into `w:Atlas`.
+    Gate: a Book that stands Atlas with `w.c.roots` empty — nothing to walk — and still gets 726 docs.
+4. **Seem the delta.** The tab shows what changed since it last looked, off the Mag, not off a poll.
+5. **Retire the two endpoints.** `/__atlas/dige` and `/__gen/dige` become the BOOTSTRAP only — a tab
+    with no watcher peer — and are deleted the day a runner can boot from the Mag. Leave the fallback in
+     until then; a tab on a remote node with no daemon must still work.
+
+**DO NOT:** invent a frame kind, a second identity road, or a new shelf mainkey. If a part seems to be
+ missing, it is more likely to be one of `C` / `Seem` / `Mag` / `Repli` / `req` wearing a name this doc
+  has not used yet — that is the whole lesson above, and it cost three bespoke transports to learn.
+
+**Rulings owed:** ~~does the watcher hold `%Map` children~~ — **answered by the 5-minute cold case: it
+ must.** A hash-only Mag leaves the actual complaint untouched. The daemon runs the CM6 collector
+  headless, which `Atlas.g` already states is correct ("a plain headless build is correct with no
+   forcing") and `LocalGen` proves nightly by compiling `.g` through the real translator in node.
+ Still owed: does the Mag live under the daemon's identity or a well-known `pub` the flock shares? · is
+  `region_path` child particles or a re-derived field (it is recomputable from the `%region` rows'
+   line spans, which would make it a VIEW rather than stored data — cheaper and more honest)?
+
+### THE ORDER THIS ACTUALLY WANTS TO BE BUILT IN
+
+Step 1 below is no longer "scan into the Mag". **Make the Map encode first** — it is the smallest change,
+ it is verifiable entirely offline with no daemon and no wire, and every later step is worthless without
+  it. If `enWaft` can emit a `%Doc` with its `%Map` and `Text`'s decoder can read it back into an
+   identical tree, the rest is plumbing that already exists. If it cannot, nothing else is worth starting.
+ Gate: a spec that builds a `%Doc`+`%Map` by hand, encodes, decodes, and asserts the tree round-trips
+  including `region_path`/`abs_*` — the same hand-made-particle discipline as `SectResolve.spec.ts`.
+
+---
+
+## ☀ WHY OPENING ONE DOC IS SLOW — measured 2026-09-11, IN PROGRESS
+
+The thread that started this doc was *"I'm unimpressed with its ability to change Doc quickly"*, and
+ every measurement since went to the CENSUS (Atlas, the Stemdex) rather than to the thing being waited
+  on. These two harnesses measure the doc itself. **Neither existed before; both are green.**
+
+**`scripts/DocLoad.spec.ts` — the compiler is NOT the bottleneck.** Calling it directly, over a 50×
+ size ladder:
+
+    file              KB   parse  compile  total  ms/KB
+    L/Electrode.g     12    106     158     264   22
+    N/Peeroleum.g    113    101     214     315   2.79      ← the owner's example
+    M/Radio.g        273     75     362     437   1.6
+    S/Swarm.g        610     56     842     898   1.47
+
+ Sublinear in size: a ~250ms fixed cost plus a shallow linear term. **Peeroleum compiles in 315ms**,
+  and the largest ghost in the repo is under a second. Whatever the wait is, it is not this.
+
+**`scripts/DocOpen.spec.ts` — drives the REAL `Lies_want` path** (the same elvis a click fires), which
+ the owner named as the suspect: *"there's just a lot of w:Lies elvises to get done to open a doc"*.
+  ⚠ Story_cli's driver pumps `_really_answer_calls()` in a tight loop, **bypassing the drain gate**, so
+   headless gives a true tick COUNT and meaningless seconds. The owner's cost is `ticks × gate`
+    (`ANSWER_CALLS_TICK_MS`=50 busy, `AMBIENT_MAIN_TICK_MS`=200 ambient). Count here, multiply there.
+
+    boot settled after 111 Lies ticks · wafts:13 · docs visible:130
+    turn   0   ticks:3      dock:yes  job:0      ← the dock APPEARS after 3 ticks
+    turn  25   ticks:43     dock:yes  job:0
+    turn  50   ticks:949    dock:yes  job:0
+    turn  75   ticks:2808   dock:yes  job:0
+    turn 100   ticks:4672   dock:yes  job:0
+
+**Two findings, one solid and one to confirm.**
+1. **The open itself is CHEAP — 3 ticks to a standing dock.** So the chain of elvises to *open* is not
+    where the time goes either.
+2. **An open dock leaves `w:Lies` re-thinking continuously** — the rate climbs to ~74 Lies ticks per
+    drain turn and plateaus there, never quiescing. A machine that never goes quiet is the shape of
+     the owner's "5 minutes of 80% CPU", and it would tax everything else on the tab, not just the doc.
+
+⚠ **DO NOT bank finding 2 yet.** `job:0` throughout — the Compile job is never created headless, so the
+ spin may be a req that cannot complete here re-arming `think` every pass, rather than a real defect.
+  **NEXT: dump the req tree after the loop and name which req has `needs_work` forever.** If it is a req
+   that WOULD complete in a live tab, this is a harness artifact; if it re-arms unconditionally, it is
+    the bug. Do not touch `Housing._gallop_gate_ms` to find out ([[drain-gate-resists-instrumentation]]).
+
+### iteration 2 (2026-09-11 ~01:35) — the req tree, and two corrections
+
+**⚠ CORRECTION to iteration 1's numbers above.** Tick counts here are RUN-VOLATILE, exactly like the
+ wall clocks this doc keeps warning about. Three runs of identical code:
+
+    run A   turn 25: 43    turn 50: 949   turn 75: 2808   turn 100: 4672
+    run B   turn 25: 41    turn 50: 72    turn 75: 103    turn 100: 645
+    run C   turn 50: 70    turn 100: 1018
+
+ What DOES reproduce is the **plateau: ~75 Lies ticks per drain turn** in every run once the spin
+  engages. What varies is *when* it engages (turn 25 → turn 100). So quote the plateau, never the
+   series. **`dock appeared after 3 ticks` reproduced in all three runs** and is the solid number.
+
+**⚠ CORRECTION to my own harness — it fabricated a figure.** The first cut printed *"compiled after
+ 2289 ticks"* and derived *"2289 × 50ms = 114.5s busy"* on a run where **the compile never happened**:
+  the loop had hit its deadline and `ticks` was the deadline's count. `compile work (self) —s` was the
+   only honest cell on the page and it was three lines further down. Fixed — completion is now reported
+    as a separate fact and the gate arithmetic is suppressed entirely when nothing compiled. *A
+     fabricated number in a fresh instrument is worse than no instrument.*
+
+**THE REQ DUMP — who never finishes** (`needs_work = !finished && !ok`):
+
+    w:Lies — 5 reqs        done  req:Cortex     ok:1   ·  done  req:Store  ok:1 kids:21
+                           done  req:Langoer    ok:1
+                         ● BUSY  req:git        kids:0
+                         ● BUSY  req:wants      kids:2      ← the want is never consumed
+    w:Lang — 2 reqs      ● BUSY  req:workon     kids:3
+                         ● BUSY  req:waft_roster kids:0
+    dock children:  req:Languish   Text:1
+
+**WHY NOTHING COMPILES HEADLESS — mechanism found.** The compile is driven by text ARRIVING, not by
+ the dock opening. `e_Lang_texting` fires from the UI (80ms throttle) or `machine:1`, and drives
+  `req:text_mutated` under the dock's `req:Languish`. The open path's own delivery is
+   `e:dock_content` — *"the one dock content-writer (Lies/Lies → e:dock_content%Good)"*, `Lang.svelte`
+    :606. So: **dock opens (3 ticks) → Lies must hand Lang a `%Good` → Languish → compile.** The
+     harness stands the dock but never delivers the `%Good`, so `job:0` forever.
+
+**NEXT:** make the harness deliver `e:dock_content` (or get req:Store to fetch the Doc's `%Good`) so
+ the chain completes and the tick count from click→compiled becomes real. Then the four BUSY reqs can
+  be judged: `req:wants` holding 2 children after the want was served looks like the
+   "an owner drops its finished transient reqs" rule (CLAUDE.md) not being applied; `req:git` with no
+    kids on a headless boot is the most likely harness artifact. Judge them only once the chain closes.
+
+### iteration 3 (2026-09-11 ~01:55) — THE CHAIN CLOSES, and it is FAST
+
+`Lies_provide_dock(w, path, { force_compile: true })` was the missing piece. The want stands the dock,
+ but the COMPILE is driven by text arriving; `force_compile` is the seam built for exactly this case —
+  *"a BACKGROUND compile that furnishes the dock and compiles it off disk text WITHOUT taking the
+   active seat or mounting CodeMirror"* (`LiesStore.svelte`:220). It is the same producer the cursor
+    push calls; it only skips the editor seat a headless harness cannot occupy.
+
+    doc                size    ticks   compile work
+    Ghost/N/Peeroleum.g 113KB     3       0.282s
+    Ghost/S/Swarm.g     610KB     2       1.245s
+
+**THE TICK COUNT IS INDEPENDENT OF FILE SIZE — 2–3 ticks, whether the doc is 113KB or 610KB.** The
+ chain from click to compiled is SHORT and FIXED; only the work inside it scales. At a real tab's gate
+  that is 0.1–0.6s of gate plus the work: **under a second for the whole model side, for the biggest
+   ghost in the repo.**
+
+**⇒ SO THE MODEL SIDE IS EXONERATED, AND THE SEARCH NARROWS TO ONE PLACE.** Three suspects have now
+ been measured and cleared in turn: the compiler (315ms), the open chain (3 ticks), and the elvis
+  round-trips (2–3, not dozens). The one thing every one of these measurements deliberately steps
+   around is **the editor seat and the CodeMirror mount** — which is exactly where the owner said the
+    spinner is: *"a few along the compiling chain and one in the middle of the codemirror"*.
+
+**NEXT: measure the CM6 mount.** That cannot be done headless (no layout, no paint), so it needs a
+ live tab and `performance.now()` marks around the seat-taking + `EditorView` construction, reported
+  on the console like the `⏱ Liesui ready` line. Note `Lang_compile_source_state` — the lezer parse —
+   already showed a flat ~60–105ms in DocLoad regardless of size, so the grammar is not it either.
+
+**The four never-finishing reqs are STABLE across every run** (`req:git` kids:0, `req:wants` kids:2,
+ `req:workon` kids:3, `req:waft_roster` kids:0) — the same four with the same shapes on both the
+  Peeroleum and Swarm runs, so they are a feature of the machine, not run noise. They do NOT block the
+   open (which completes in 2–3 ticks), so they are a separate question: a House that never quiesces
+    burns ambient ticks forever. `req:wants` still holding 2 children after its want was served is the
+     one that looks wrong against CLAUDE.md's *"an owner drops its finished transient reqs"*.
+
+### iteration 4 (2026-09-11 ~02:15) — the CM6 mount instrumented; a dead fast path found; my hypothesis WRONG
+
+**Instrument landed:** `build_editor` (`Langui.svelte`:1633) now prints one staged line beside the
+ existing `🏗 EditorView created` —
+
+    ⏱ CM6 mount 1.23s — grammar 71ms · exts 4ms · EditorView 1150ms  [stho, 113KB] Ghost/N/Peeroleum.g
+
+ Three stages because the fixes live in different files: `grammar` is `await lang(name)`, `exts` is our
+  own extension assembly, `EditorView` is CM6 constructing and first-measuring. **Not yet read on a
+   live tab** — a headless BigWordland has no FSA grant, so no Waft loads, no cursor resumes, no dock
+    is opened and `build_editor` never runs. The numbers above are the FORMAT, not a measurement.
+
+**A REAL DEFECT, of the boring kind: a fast path that has never once run.** `stho`'s `resolve()`
+ (`grammars/stho/index.ts`:130) tries a generated parser artifact via
+  `import.meta.glob('./stho.grammar.ts')` before falling back to a live `buildParser()`. **That file
+   does not exist** — not in the repo, not gitignored, and no script anywhere produces it. So the glob
+    is empty, `generated` is always null, and **every editor mount generates the LR parser from
+     grammar source at runtime**. It is also the reason `@lezer/generator` (142KB) is in the page's
+      boot bill at all. `scripts/GrammarBuild.spec.ts` confirms it: `source:live` on every resolve.
+
+**⚠ BUT THE HYPOTHESIS WAS WRONG, and the measurement is what said so.** I expected the rebuild to be
+ the bottleneck. It is not:
+
+    resolve #1 139ms · #2 76ms · #3 37ms · #4 42ms   (all source:live)
+    lang('stho') through the editor's own entry: 24ms
+    ⇒ cold 139ms · warm ~71ms
+
+ **~71ms per mount against a 282ms compile.** Real, worth fixing eventually (generate the artifact, or
+  memoise `lang()` — there is no memo, `resolve()` runs unconditionally per mount), but **not the
+   thing the owner is waiting for.** Do not spend the night on it.
+
+ *Second-order lesson, and the reason this paragraph exists:* the first version of `GrammarBuild.spec.ts`
+  printed **"something is memoising it"** off a first-vs-last ratio — reading a V8 warm-up curve as a
+   cache, in a test written to prove there is no cache. Its own honest data, given the wrong verdict by
+    a lazy heuristic. Fixed to report cold/warm and state the conclusion in full. That is now **four**
+     instruments in three sessions that lied in their summary line while their raw numbers were fine.
+
+**WHERE THAT LEAVES THE HUNT.** Cleared so far, each by measurement: the compiler (315ms), the open
+ chain (3 ticks), the elvis round-trips (2–3), and now the grammar (~71ms). Still unmeasured and now
+  the ONLY candidate left in the open path: **`EditorView` construction itself** — CM6 building its
+   view, decorations and first measurement over a 113KB document. The instrument for it is in place and
+    needs one live tab that actually opens a doc. **NEXT: get that number**, either from the owner's
+     console (the line prints itself on any doc open) or by finding a way to grant FSA headless.
+
+### iteration 5 (2026-09-11 ~02:30) — EVERY STAGE IS NOW MEASURED, AND THEY ARE ALL FAST
+
+`scripts/CM6Mount.spec.ts` — CodeMirror construction, over the same 50× size ladder:
+
+    file              KB   State.create   new View   total   ms/KB
+    L/Electrode.g     12         30          113      142    11.87      ← JIT warm-up, not size
+    N/Peeroleum.g    113         11           42       53     0.47
+    M/Radio.g        273          4           48       53     0.19
+    S/Swarm.g        610         10           43       53     0.09
+
+**Flat at ~53ms from 12KB to 610KB.** CM6 parses lazily by viewport exactly as designed. (⚠ jsdom has
+ no layout, so this is a FLOOR — the live `⏱ CM6 mount` line is still needed to see layout/paint.)
+
+**THE WHOLE OPEN, SUMMED, FOR THE OWNER'S OWN EXAMPLE (Peeroleum.g, 113KB):**
+
+| stage | cost | measured by |
+|---|---|---|
+| belief ticks, click→compiled | 3 ticks = 0.15–0.6s at the gate | `DocOpen.spec.ts` |
+| grammar resolve | ~71ms | `GrammarBuild.spec.ts` |
+| CM6 construct | ~53ms (floor) | `CM6Mount.spec.ts` |
+| compile + %Map | 282ms | `DocLoad.spec.ts` |
+| **total** | **≈0.6–1.0s** | |
+
+**Nothing in the open path accounts for the wait.** Five stages, five measurements, all fast, none
+ scaling badly with size. So the premise has to change, and there are exactly two live possibilities:
+
+**(a) LAYOUT/PAINT** — the one thing jsdom cannot see. Still open; needs the live `⏱ CM6 mount` line,
+ which prints itself on any doc open in a real tab.
+
+**(b) CONTENTION — and this is now the strong one.** *The open is not slow; the machine is busy.* A
+ doc open takes the beliefs mutex like everything else, so if the House never goes quiet the open
+  QUEUES behind whatever is spinning. And we already found the spin, twice, and filed it as a separate
+   question both times:
+   - **four reqs NEVER finish**, stable across every run and both docs: `w:Lies` `req:git` (kids:0) and
+      `req:wants` (kids:2), `w:Lang` `req:workon` (kids:3) and `req:waft_roster` (kids:0)
+   - **~75 Lies ticks per drain turn**, forever, once a dock is open — the one number that reproduced
+      in every run
+
+ **That single cause would explain BOTH of the owner's complaints at once** — *"it takes 5 minutes of
+  80% CPU to start up"* and *"unimpressed with its ability to change Doc quickly"* are the same
+   sentence if the machine never stops thinking. A never-quiescing House burns the ambient tick
+    forever AND makes every interaction wait its turn.
+
+**NEXT: stop treating the spin as a side issue and make it the target.** Find what re-arms `think`
+ unconditionally. `req:wants` still holding 2 children after its want was served is the concrete
+  thread to pull first — CLAUDE.md is explicit that *"an owner drops its finished transient reqs"*, and
+   a `%want` that is never dropped is a req that never stops wanting.
+
+### iteration 6 (2026-09-11 ~02:45) — I WAS WRONG ABOUT THE SPIN. One real fix landed.
+
+**⚠ RETRACTION — "four reqs never finish" was my own instrument mislabelling correct behaviour.**
+ `DocOpen.spec.ts`'s dump printed `● BUSY` for `!finished && !ok`, which is **the normal permanent
+  state of a standing req**. All four are standing by design: `req:waft_roster` is declared
+   `eternal:1`; `req:git`, `req:wants` and `req:workon` are open-ended `doai` reqs (`doai` sets
+    `n.c.do_fn`, a do-function that runs each pass — Lies.svelte:1021 literally comments
+     `/* open-ended */`). And `req:wants` holding children is **also by design** — a `%want` is
+      cursor-intent history, deliberately kept and bounded to 12 (Lies.svelte ~:1066), with the
+       resolver returning early once `newest.sc.resolved`. Nothing there leaks and nothing is stuck.
+ The dump now prints an `eternal` column and labels rows `done` / `standing` / `● STUCK?`.
+
+**⚠ AND THE SPIN ITSELF IS PROBABLY A HARNESS ARTIFACT.** The ~75-ticks-per-drain-turn plateau
+ reproduces — but the crank loop calls `i_elvisto(h,'think')` on every House every turn and then
+  drains to exhaustion, which is a machine with no gate and no idle. **The disproof was already in
+   hand hours earlier and I did not join it up:** on the live runner, `see:lies … ticks:10` sat
+    **frozen across 18 seconds**, and `ticks:8` after a reload. A real tab quiesces. So iteration 5's
+     "the machine is busy" conclusion is NOT supported, and the doc-open hunt has no live suspect
+      left except layout/paint.
+
+*That is the fifth instrument in this hunt to mislead in its summary while its raw rows were fine.
+ The pattern is now unmistakable: I write a verdict line that encodes what I expect, and the verdict
+  outlives the data. Every one was caught by re-reading the raw rows.*
+
+**LANDED — the grammar memo (a real fix, honestly a small one).** `grammars/stho/index.ts` `resolve()`
+ is now memoised **keyed on the grammar hash** — not a session flag, because the live-build path
+  exists precisely so the editor stays honest about the current `.grammar` text, and a flat memo would
+   pin a stale parser the moment someone edits it in-app. Hashing 4.3KB is cheap; generating the
+    parser is not.
+
+    before   resolve #1 139ms · #2 76ms · #3 37ms · #4 42ms   → warm ~71ms, lang() 24ms
+    after    resolve #1 168ms · #2  7ms · #3  1ms · #4  0ms   → warm  ~3ms, lang()  1ms
+
+ **~71ms → ~3ms per editor mount**, and `get_inner_parser()` (tsstho's nested parse, which called
+  `resolve()` a second time) is fixed by the same memo. Gate: **23/23 green.**
+
+**WHERE THE HUNT ACTUALLY STANDS — honestly.** Every stage of a doc open has been measured and every
+ one is fast (≈0.6–1.0s total). Two hypotheses beyond that were mine and both were wrong: the grammar
+  rebuild (real, but 71ms) and the never-quiescing House (an artifact of my own pump). **The single
+   remaining candidate is layout/paint**, which no headless harness can see. The instrument is already
+    in place and prints itself on any doc open in a real tab:
+
+    ⏱ CM6 mount Xs — grammar Nms · exts Nms · EditorView Nms  [stho, NKB] <path>
+
+ **Do not invent a sixth hypothesis. Get that line.**
+
+### iteration 7 (2026-09-11 ~03:00) — the sibling grammars need nothing; the hunt is out of headless road
+
+Checked before touching, having twice "fixed" something unmeasured:
+
+    lang('stho')      first  1ms · again 0ms · again 0ms     ← the memo
+    lang('tsstho')    first 12ms · again 1ms · again 1ms
+    lang('markdown')  first 84ms · again 0ms · again 0ms
+
+`tsstho` rebuilds `configure()` + `parseMixed` + `LRLanguage.define` per call and `markdown` does a
+ dynamic import — both LOOK like the stho problem and neither IS one: the module cache covers the
+  imports and the rebuild is ~1ms. **No memo needed for either.** (Kept in `GrammarBuild.spec.ts` so
+   the next person can see that it was checked rather than assumed.)
+
+**That exhausts the headless road.** Every stage of a doc open is measured and fast; both of my own
+ further hypotheses were wrong; the sibling grammars are fine. The one unmeasured thing left is
+  **layout/paint inside the CM6 mount**, and no jsdom harness can see it.
+
+## ☀ WHAT THE NEXT SESSION SHOULD DO — one line, and do not re-derive the rest
+
+**Get this line off a real tab**, then act on whichever stage is large:
+
+    ⏱ CM6 mount Xs — grammar Nms · exts Nms · EditorView Nms  [stho, NKB] <path>
+
+It is already instrumented (`Langui.svelte` `build_editor`) and prints itself on any doc open in a
+ live browser. Everything else in this hunt is DONE and written up above; re-running any of it is
+  wasted time. If that line comes back small too, then the wait is not in opening a doc at all and the
+   next thing to suspect is the ~4.5s of app boot before Lies first ticks (8.4MB of eagerly-imported
+    modules, `Cytui.svelte` alone 1MB) — which the owner has parked for **Atheory** to regroup.
+
+## ☀ ROOT CAUSE FOUND — 2026-09-11 midday, from the owner's own trace and fix
+
+**The doc is never slow. The ROOM has no heartbeat.**
+
+Every stage of a doc open measures fast (the table above). The 8–33s the owner waits is the
+ `text_load` overlay held over an ALREADY-RENDERED editor by `req_text_loaded`, which clears it only
+  when `dock.c.state` appears — and that req holds on a **ttlilt**, a TIME hold. A ttlilt is advisory
+   data; it schedules nothing. A req holding on one is re-run only when a tick arrives. The ambient
+    heartbeat should bring one every 3.6s. It never came:
+
+    ⏱ set_active_dock @26.64s Ghost/N/Peeroleum.g · bumped:yes · no_ambient:HERE · House:Hackarium
+
+ `Story_subHouse` sets `Run.c.no_ambient = true` (and `no_interval`) on every Run House, every tick,
+  and nothing ever cleared it. That is CORRECT for a test Book — *"story_drive owns the clock."* It is
+   wrong for a Book that stands a ROOM and then finishes: Hackarium runs to completion, the human is
+    then simply in BigWordland, Lies and Lang live on that Run House, and `main()` returns silently
+     (`if (this.c.no_ambient && !ambient_anyway) return`). The only thinks left are the human's clicks.
+
+**The owner had already found the cure before the instrument named the cause:** *"I went over to
+ H:Story and turned on trickle think() and that fixed it… having extra random goes at the %w involved
+  seems to help."* Trickle-think bypasses `no_ambient`. So does a click — which is why Heard.g's
+   overlay cleared 0.45s after the NEXT click, and why `re-arms:3` in 33s.
+
+**The fix (Story.svelte):** the Run owns the clock WHILE IT DRIVES, and hands it back when the run
+ reports complete (`run.sc.paused === 2`, the value both completion branches set). Two halves:
+  the per-tick set in `Story_subHouse` is now gated on the run not being complete (so it stops
+   re-asserting the flag after the end), and `Story_release_clock(Run)` at both completion branches
+    clears `no_ambient`/`no_interval` and arms `reset_interval` so the heartbeat restarts at once.
+     A new run on the same House re-takes the clock the tick it starts. ✅ VERIFIED with trickle OFF (2026-09-11
+      ~14:00): Peeroleum 8.17s → 0.46s, Atlas.g 0.15s, `no_ambient:no`, release line fired. (A first
+       0.42s reading was taken with trickle ON and was retracted — it did not count.) Prints
+      `⏱ Story: run complete on <House> — ambient heartbeat released`.
+
+**Verification state, honestly:** spec gate 22/22 and type-clean. A live SwarmChain went 5/5 on the
+ runner but that tab is on OLD code (no `Liesui ready` in its last 400 lines — it booted before any of
+  this), so that green is a stale-tab green ([[reload-runner-after-recompile]]) and does NOT verify the
+   change. **The real test is the owner's BigWordland:** reload → Hackarium completes → the release
+    line prints → open Heist.g → `text_load spinner` should read well under 2s with `re-arms:≤1`.
+
+**Retired by this finding (all were wrong, all mine, all corrected above):** the 3.0s-ttlilt-timeout
+ theory, the wrong-dock theory, the missing-`bump_version` theory. The instruments that killed each
+  were the right move; the verdicts I hung on them before the data came back were not.
+
+**Two things noted, not started:** Lagoon's scrollspace jumps to the top on click (`arm_scroll_restore`
+ sits beside the switch $effect — suspicious neighbour); and "aiming" should land the target method IN
+  view, not off the bottom — the right seam is CM's `requestMeasure` read/write phase, once, after
+   layout settles, not a layout-change listener.
+
+**Verified trickle-OFF, 2026-09-11 ~14:00.** Peeroleum `text_load` 8.17s → **0.46s**, Atlas.g 0.15s.
+
+**What is left is the heartbeat's own cadence, not a bug.** The owner's trace shows ~1.6–3.1s between
+ `want` (the click) and `set_active_dock` — the `want → provide_dock → Store read → dock_content →
+  text_loaded` chain waiting for the next ambient tick, and 3.1s is one `%mo:main,interval` (3.6s,
+   "may be adjusted"). For a live room that is a slow pulse. A shorter interval for rooms is a
+    one-line dial and the obvious next move; it is a tuning question, a different scale of problem
+     from the one just closed.
+
+### 2026-09-11 afternoon — the chain read hop by hop; the aim is now HELD; two probes wait for a trace
+
+**The `want → set_active_dock` gap, read offline (no trace yet).** Every hop has its own wake, on paper:
+ `e_Lies_want` ends with `i_elvisto(w,'think')`; `Lies_resolve_wants` runs in THAT think and calls
+  `Lies_provide_dock` (COLD → `LiesStore_read` fires the Wormhole `rw_op` elvis at once; settle →
+   `ponder_now`); Phase-2 `LiesStore_drain_good` hands `dock_content` to `Lang/Lang` (an Aw-targeted
+    elvis is ATTENDED — `_Aw_think` runs the target ghost's think with it, so `e_Lang_dock_content`
+     runs on delivery); it ends with `i_elvisto(w,'think')` which drives `req_text_loaded` →
+      `Lang_set_active_dock`. So no hop *should* wait for the 3.6s interval — which means the gap the
+       owner saw is either a lost wake on ONE of these (the five `⏱` stamps name it by subtraction) or
+        the `LiesStore` read itself (disk|FSA time, honest cost). **Don't tune the interval blind:**
+         the trace decides. Ask: open a doc from Lagoon, paste `want / provide_dock / good→Lang /
+          dock_content / set_active_dock` together.
+
+**Aiming — done, not yet seen live.** `Langui.svelte` `fire_seek` now HOLDS the aim: `_aim{pos,
+ scroll(), until: +1.5s, fired}`; the updateListener calls `hold_aim` on `geometryChanged |
+  viewportChanged | docChanged`, which `requestMeasure`s (read: `coordsAtPos` vs `scrollDOM` rect;
+   write: re-dispatch the same scroll a task later, ≤6 times). `wheel|mousedown|touchstart|keydown`
+    drop the hold — the human's hand wins. This IS the "react to every layout change" the owner
+     wondered about, bounded so it cannot loop or fight. (The earlier note above saying "once, after
+      layout settles, not a listener" was the wrong instinct: the folds land a belief tick later,
+       there is no single settle moment to wait for.) Gate 23/23, type-clean on the edited range.
+        Known gap: a scrollbar DRAG lands on scrollDOM not contentDOM, so it doesn't drop the hold —
+         the 1.5s window bounds the worst case.
+
+**Lagoon unscroll — probe in, cause not found by reading.** The list is `.lag-out.tall` (max-height
+ 26rem, its own scroller) keyed per row by `doc+name+line`; `index` is reassigned every 1.2s and on
+  click nothing here touches scroll. Candidates the `📜` probe separates: element REMOUNTED (the
+   BigWordland `{#each houses.filter(active_ip)}` → `house.UIs.ob()` → `keyser(uiC.sc)` chain re-keyed
+    the Lagoon piece), rows dropped to 0 (a transient empty index → scrollTop clamps), or a same-element
+     scrollTop write from elsewhere. A `display:none` flip would ALSO zero scrollTop and fire NO scroll
+      event — if the probe prints nothing while the list visibly jumps, that is the tell, and the
+       place to look is whatever hides the piece during a click.
+
+## ☀ THE CLICK→DOCK GAP, FOUND — 2026-09-16 night. It was the DISK QUEUE, then the DISK.
+
+**One instrument settled it.** `Wormhole_park` now prints one line per op with three spans:
+ `queue→launch` (pump latency) · `launch→settle` (the backend's own time) · `settle→done` (the wake gap).
+  On a runner with a real FSA share, the first pull:
+
+    read  Ghost/N/Tribunal.g               total 5378ms — queue→launch 5272 · launch→settle 62 · settle→done 44
+    write wormhole/Aside/2026-09-16/toc.snap total 5429ms — queue→launch 0    · launch→settle 5420
+    write wormhole/_socklog/…jsonl (524KB)  total 11502ms — launch→settle 10864
+
+ The read is **62ms**. It sat **5.2s** behind the Aside toc write the same click had just caused, because
+  "writes run alone" was queue-WIDE. The wake gap (`settle→done`) is ≤44ms everywhere — the hypothesis
+   in the section above ("a lost wake on one hop") is **dead**; every hop wakes itself. The five `⏱`
+    hop stamps can come out whenever.
+
+**Three fixes in `Housing.svelte.ts Wormhole_park` (all landed, type-clean):**
+1. **Exclusion is per-path** (`key`): a read never waits behind a write of a different file; two ops on
+    one path still serialise.
+2. **Reads first, writes when quiet**: a write launches only when no read is waiting or in flight, for
+    up to `WH_WRITE_YIELD_MS` (4s) — nobody waits on a save, someone waits on every read.
+3. **A local op is never abandoned at 5s** (`WH_OP_WRITE_TIMEOUT_MS` 30s for writes and for LOCAL
+    reads): abandoning a slow FSA read and relaunching it just stacked another FSA op on the running
+     one (`read … total 24830ms · tries 3` beside a 33s write). Only a REMOTE read keeps the 5s window —
+      its reply can genuinely be lost.
+ Plus: `Lies_dump_socklog` / `Lies_dump_supply` write only when the ring MOVED, 30s throttle (was a full
+  524KB rewrite every 10s, moved or not).
+
+**What is left is the disk, and it is not ours.** After the fixes every read shows `queue→launch 0` —
+ and `launch→settle` is 7–13s for a READ, 27–92s for a write, getting worse through the hour. From THIS
+  container a 700-byte write+fsync to /app took **0.35–1.3s**; host loadavg was **10–12**. Chrome's FSA
+   does several fsyncs per write (crswap create, write, close/rename), so ~4× the fsync latency is
+    exactly the 3–5s toc write, and under contention it climbs. The same reads were 62ms when the disk
+     was quiet at 22:35. **Re-measure on a quiet box before tuning anything else**: the number to watch is
+      `launch→settle` on a read with nothing else in flight; if that is <100ms the production line is
+       fixed and the rest is load.
+
+**Ask of the owner:** what has the box at load 10–12 (Atlas? seven Chrome tabs each with an FSA share
+ and socklog armed? the dev container's watcher?) — and turn socklog OFF on the runners now that the
+  become_book hunt is over (`runner_ask socklog off --reload`): armed, each runner rewrites its whole
+   socket ring to disk every 30s.

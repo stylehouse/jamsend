@@ -4,34 +4,34 @@ story:RepliSplit
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.013
-      sample=0.016,at=1785907078
-      sample=0.009,at=1785941562
-      sample=0.007,at=1785966730
-      sample=0.007,at=1785996800
-      sample=0.014,at=1786005380
-      sample=0.01,at=1786005472
+    TimeTotal:beliefs,avg=0.018
       sample=0.011,at=1786069794
       sample=0.024,at=1789115996
       sample=0.02,at=1789118057
       sample=0.015,at=1789118563
-    TimeTotal:step,avg=0.003
-      sample=0.003,at=1785907078
-      sample=0.002,at=1785941562
-      sample=0.001,at=1785966730
-      sample=0.001,at=1785996800
-      sample=0.003,at=1786005380
-      sample=0.002,at=1786005472
+      sample=0.011,at=1792135100
+      sample=0.049,at=1792135854
+      sample=0.011,at=1792136697
+      sample=0.014,at=1792136727
+      sample=0.014,at=1792136939
+      sample=0.01,at=1792136949
+    TimeTotal:step,avg=0.004
       sample=0.002,at=1786069794
       sample=0.005,at=1789115996
       sample=0.004,at=1789118057
       sample=0.003,at=1789118563
+      sample=0.002,at=1792135100
+      sample=0.01,at=1792135854
+      sample=0.002,at=1792136697
+      sample=0.003,at=1792136727
+      sample=0.003,at=1792136939
+      sample=0.002,at=1792136949
   step,dige:60ef9808456910e1
   step=2,dige:5cb54eeceaa8482e
     Assertion:spine-crosses-whole,sentence:the fragment climbed in whole — one mag one cloud one card stand at the mirror
   step=3,dige:d0d727c098e147ae
     Assertion:spine-locates-itself,sentence:the second pass located the standing mag and cloud spine — and only the new card was minted into it
-  step=4,dige:938c59d7843e6270
-    Assertion:many-to-one-stays-many,sentence:two spins of different tracks stayed two — while the re-spun track updated its own row in place
-  step=5,dige:3f4fdd0e0edcbbad
+  step=4,dige:cce102662f63a697
+    Assertion:many-to-one-stays-many,sentence:two recos by different people stayed two — while the re-said reco updated its own row in place
+  step=5,dige:e3716e546a13ed72
     Assertion:undeclared-splits-visibly,sentence:an undeclared mainkey fell back to all keys and split into a visible twin — churn you can see and never a silent merge

@@ -4,9 +4,7 @@ story:MusuPier
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.059
-      sample=0.094,at=1782801266
-      sample=0.054,at=1785905050
+    TimeTotal:beliefs,avg=0.052
       sample=0.083,at=1785905707
       sample=0.045,at=1785905714
       sample=0.033,at=1785905735
@@ -15,9 +13,9 @@ story:MusuPier
       sample=0.035,at=1785996307
       sample=0.102,at=1789113194
       sample=0.061,at=1789117980
-    TimeTotal:step,avg=0.01
-      sample=0.016,at=1782801266
-      sample=0.009,at=1785905050
+      sample=0.047,at=1792134922
+      sample=0.032,at=1792134958
+    TimeTotal:step,avg=0.009
       sample=0.014,at=1785905707
       sample=0.008,at=1785905714
       sample=0.005,at=1785905735
@@ -26,6 +24,8 @@ story:MusuPier
       sample=0.006,at=1785996307
       sample=0.017,at=1789113194
       sample=0.01,at=1789117980
+      sample=0.008,at=1792134922
+      sample=0.005,at=1792134958
   step,dige:3f89b5f9dd5239d0
   step=2,dige:87d495623c631437
   step=3,dige:7dd4fb5f51ab7873

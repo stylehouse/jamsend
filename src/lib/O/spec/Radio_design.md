@@ -152,9 +152,9 @@ And a fourth, **planned** layer: an opportunistic WebRTC **multicast swarm** for
 
 ### The programme director (forward design)
 
-- **The Booth taste organ** `[BOOK/OWED]` — `Ghost/M/Booth.g` frames taste as *standing facts*
-   (the calls the doors consult, fed by evidence that never gates). **No live caller.**
-- **The magazine / stimuli machine** `[OWED]` — `Radio_todo.md` §11 (Booth) and §12 (`%Musica`,
+- ~~**The Booth taste organ**~~ — deleted 2026-10-16. It was never wired, and it became Yay/Nay on the Heard Mag
+   (`Radio_todo.md` §0.d; the design is in `history/Radio_todo_2026-08.md`).
+- **The magazine / stimuli machine** `[OWED]` — `Radio_todo.md` §12 (`%Musica`,
    the collection sublimed into media; beliefs served by stance; the jobs ladder) are largely
     forward design, not built.
 

@@ -103,7 +103,7 @@ export function everything_map() {
     ]])
 
     W.push(['Ghost/Music/Ality', 'the music pipeline — rastock racast raterm — stock a track then cast it then play it at the terminal — the radio dials and the pool keeps what played',
-     ['MusuStaple','MusuStream','MusuStock','MusuLive','MusuWear','MusuSkip','MusuCrowd','MusuSignal','MusuGlide','MusuTune','MusuRadio','MusuMix','MusuMesh','MusuCue','MusuEdge','MusuPier','MusuConceal','MusuBounce','MusuReplica','MusuReco','MusuRaStream','MusuRaChase','MusuRaStock','MusuRaTerm','MusuOgg','MusuLossy','MusuPress','MusuQuarter','MusuNeGrind','MusuPoolFill','MusuPoolRadio','MusuPoolRandom','MusuPoolBytes','MusuPoolPolicy','MusuGenerateTestsMusic'], [
+     ['MusuTune','MusuRadio','MusuPier','MusuBounce','MusuReplica','MusuReco','MusuRaStream','MusuRaChase','MusuRaStock','MusuRaTerm','MusuOgg','MusuLossy','MusuPress','MusuQuarter','MusuNeGrind','MusuPoolFill','MusuPoolRadio','MusuPoolRandom','MusuPoolBytes','MusuPoolPolicy','MusuGenerateTestsMusic'], [
      ['What:the stock pass', 'Ra — needles LUFS then a baked gain then Opus segments cut into chunk particles — the preview is the tail of the song and the head run is separate',
       'Doc:Ghost/M/Ra.g', P('Ra_gain_for', 'loudness → gain'), P('Ra_bake', 'apply the gain to pcm'), P('Ra_encode_feed', 'pcm into the opus encoder'), P('Ra_chunk_cut', 'segments into chunk particles'), P('Ra_chunk_mint', 'one chunk particle — seq bytes cid'), P('Ra_preview_offset', 'where the preview cuts — 30 to 70 percent in'), P('Ra_head_whole', 'is the head run complete'), P('Ra_record_from', 'a Record from a file'),
       'Doc:Ghost/M/Orig.g', P('Orig_ogg_mux', 'chunks back into an ogg file'), P('Orig_ogg_parse', 'an ogg file into packets')],
@@ -120,22 +120,16 @@ export function everything_map() {
      ['What:the stoker and the riffle', 'what warms the next play — churn preheat cull — a card dealt from a shelf',
       'Doc:Ghost/M/Radio.g', P('Stoker_ensure', 'the stoker particle'), P('Stoker_churn', 'the beat'), P('Stoker_preheat', 'warm the next'), P('Stoker_cull', 'drop the cold'), P('Stoker_mag_draw', 'draw from a Mag'), P('Riffle_ensure', 'the riffle'), P('Riffle_deal_shelf', 'deal a card off a shelf'), P('Riffle_deal_deep', 'deal from deep'),
       'Doc:src/lib/O/ui/StokerFace.svelte', 'Doc:src/lib/O/ui/RiffleFace.svelte'],
-     ['What:the machine', 'Radiola — the cursor models the streaming spine was first proven on — streamability keep-ahead wear and the live edge',
-      'Doc:Ghost/M/Radiola.g', P('req_streamability', 'enough ahead to play'), P('Radiola_keep_ahead', 'how far ahead to stock'), P('req_restock', 'make more'), P('req_reap', 'wear out the old'), P('Glide_decide', 'live-edge rate slew'), P('LiveEdge_decide', 'the safe margin off the frontier')],
-     ['What:the audio engine', 'Sound — synth silence measure and the starving live-stream pump — real muted Web Audio',
+     ['What:the audio engine', 'Sound — synth silence measure and the real audio device — real muted Web Audio',
       'Doc:Ghost/M/Sound.g', P('Sound_synth', 'synth pcm'), P('Sound_measure', 'measure entropy of pcm'), P('Sound_radiostock', 'the stock pump'), P('Sound_stock_chunk', 'one chunk to the graph'), P('Sound_panic', 'stop everything'), 'Doc:src/lib/O/Funk/Sound.svelte'],
      ['What:the crate', 'digging a music collection — meta from a name or a path — the transcode and the radiostock override',
       'Doc:Ghost/M/Crate.g', P('Crate_nav', 'the nav over the collection'), P('Crate_radiostock', 'stock from the crate'), P('Crate_meta_from_path', 'artist title from a path'), P('Crate_transcode_release', 'let a transcode go'), P('Crate_pile_draw', 'draw from the pile'), 'Doc:src/lib/O/ui/CrateFace.svelte'],
-     ['What:the mixer and the mesh', 'beat detection beatmatch crossfade and the DJ cue — the sync that sees itself',
-      'Doc:Ghost/M/Mixer.g', P('Mix_tempo', 'beats per minute'), P('Mix_beatmatch', 'align two decks'), P('Mix_crossfade', 'fade between'), P('Mix_align', 'phase align'),
-      'Doc:Ghost/M/Mesh.g', P('Mesh_route', 'cheapest route'), P('Mesh_broadcast_stretch', 'multicast stretch'),
-      'Doc:Ghost/M/Booth.g', P('Tune_of', 'a tune key'), P('Booth_bans', 'what the booth bans')],
      ['What:the tests', 'Doc:Ghost/Story/MusuTesting.g', 'Doc:Ghost/Story/RaTesting.g'],
      ['What:the spec', 'Doc:src/lib/O/spec/Radio_todo.md', 'Doc:src/lib/O/spec/Radio_circuit_todo.md', 'Doc:src/lib/O/spec/SoundPooling_todo.md', 'Doc:src/lib/O/spec/Radio_spec.md', 'Doc:src/lib/O/spec/Radio_design.md', 'Doc:src/lib/O/spec/Radio_lowlevel.md', 'Doc:src/lib/O/spec/Radio_multicast_todo.md', 'Doc:src/lib/O/spec/Backpressure_todo.md'],
     ]])
 
     W.push(['Ghost/Music/Cave', 'the collection — heist original bytes into the Cave — the keep chooses — the Heard Mag is the ledger of love — a phone hands its loves to the laptop',
-     ['MusuHeist','MusuHeard','MusuHandoff','MusuBerth','MusuVend','MusuDoor','MusuCursor','MusuHeal','MusuResume','MusuRename','MusuRecast','MusuStanding','MusuFreeze','MusuReap','MusuBreach','MusuMag','MusuBuddy','MusuSteward','MusuSmuggle','Heistation','Siphonation'], [
+     ['MusuHeist','MusuHeard','MusuHandoff','MusuBerth','MusuVend','MusuDoor','MusuCursor','MusuHeal','MusuResume','MusuRename','MusuRecast','MusuStanding','MusuFreeze','MusuReap','MusuBreach','MusuMag','MusuBuddy','MusuSteward','MusuSmuggle','Heistation'], [
      ['What:the heist', 'Heist — ORIGINAL file bytes move straight into the collection — a job a filing a body',
       'Doc:Ghost/M/Heist.g', P('Heist_job', 'one heist — what to pull and where'), P('Heist_body_new', 'a body to receive bytes'), P('Heist_has_body', 'is the whole body here'), P('Heist_filing_for', 'where a track files'), P('Heist_manifest', 'what a heist will take'), P('Heist_release_rec', 'let a record go'), P('Heist_xfer_breach', 'bytes that do not hash — refused'),
       'Doc:src/lib/O/ui/HeistFace.svelte', 'Doc:src/lib/O/ui/HeistBarFace.svelte', 'Doc:src/lib/O/Funk/HeistSetup.svelte'],
@@ -150,10 +144,8 @@ export function everything_map() {
       'Doc:Ghost/M/Heard.g', P('Heard_mag', 'the Mag per pub'), P('Heard_card', 'the Card per track'), P('Heard_take', 'a reaction — yay — re-affirms on a later press never unloves'), P('Heard_nay', 'a reaction — not in my pool never drawn again'), P('Heard_meh', 'a reaction — an early skip radio-written'), P('Heard_taken', 'is it loved'), P('Heard_verdict', 'what happened to the take'), P('Heard_seen', 'mark a card seen'), P('Heard_unseen', 'how many unseen'), P('Heard_gc', 'the clock that forgets'), P('Heard_clone_beat', 'copy verdicts across')],
      ['What:the roads', 'a card names the road that fetched it — the pool road is a child of the card a human made — the old hand road is retired — the heart-settings switch the roads',
       'Doc:Ghost/M/Heard.g', P('Heard_road', 'which road bears this card'), P('Heard_road_mint', 'a pool press under a human card grows a Road child'), P('Heard_road_promote', 'a human touch promotes a machine-first card'), P('Heard_hand_on', 'is the share-my-hearts road on'), P('Heard_hand_set', 'switch it'), P('Heard_tip', 'the one-time heart-settings tip')],
-     ['What:the siphon', 'tags and playlists over the collection',
-      'Doc:Ghost/M/Siphon.g', P('Siphon_tags', 'the tag set'), P('Siphon_tag_apply', 'tag a track'), P('Siphon_playlist', 'a playlist from tags'), P('Siphon_home', 'where siphons live')],
-     ['What:the tests', 'Doc:Ghost/Story/HeistTesting.g', 'Doc:Ghost/Story/BerthTesting.g', 'Doc:Ghost/Story/SiphonTesting.g'],
-     ['What:the spec', 'Doc:src/lib/O/spec/Heist_todo.md', 'Doc:src/lib/O/spec/Heist_design.md', 'Doc:src/lib/O/spec/Mag_todo.md', 'Doc:src/lib/O/spec/Mag_design.md', 'Doc:src/lib/O/spec/Siphon_todo.md', 'Doc:src/lib/O/spec/Fallen_out_of_mind_todo.md', 'Doc:src/lib/O/spec/Radio_circuit_todo.md'],
+     ['What:the tests', 'Doc:Ghost/Story/HeistTesting.g', 'Doc:Ghost/Story/BerthTesting.g'],
+     ['What:the spec', 'Doc:src/lib/O/spec/Heist_todo.md', 'Doc:src/lib/O/spec/Heist_design.md', 'Doc:src/lib/O/spec/Mag_todo.md', 'Doc:src/lib/O/spec/Fallen_out_of_mind_todo.md', 'Doc:src/lib/O/spec/Radio_circuit_todo.md'],
     ]])
 
     W.push(['Ghost/Vis/Visua', 'the visual — the crush that gangs leaves — the glass that cuts cells from the model — what a Book looks like while it runs',
@@ -174,7 +166,7 @@ export function everything_map() {
       'Doc:src/lib/O/Vytui.svelte', 'Doc:src/lib/O/Cyto.svelte', P('cyto_scan', 'walk the particles into nodes'), P('cytyle_classify', 'skip invisible compound'), P('cyto_update_wave', 'the animation wave'),
       'Doc:src/lib/O/Cytui.svelte', 'Doc:src/lib/O/Matstyle.svelte', P('matstyle_for', 'a swatch for a mainkey'), P('matstyle_apply', 'apply'), 'Doc:src/lib/O/glass_faces.ts', 'Doc:src/lib/O/glass_kinds.ts', 'Doc:src/lib/V/BigShapeland.svelte', 'Doc:scripts/runner_shot.mjs', 'Doc:scripts/runner_eye.mjs'],
      ['What:the tests', 'Doc:Ghost/Story/VoroTesting.g', P('VoroMitosis_seed', 'a flora that divides'), P('VoroScape_library', 'a library scape'), 'Doc:Ghost/V/VytoTesting.g', P('VytoStaple_seed', 'the glass beside a run'), P('VytoCell_seed', 'dosed cogs into cells'), P('VytoMitosis_found', 'grow and go extinct'), P('VytoTandem_found', 'two watchers one gear'), P('VytoFreeze_stand', 'freeze on a failed run'), P('VytoSeek_stand', 'seek a step pip')],
-     ['What:the spec', 'Doc:src/lib/O/spec/Glassbeast_todo.md', 'Doc:src/lib/O/spec/Vyto_spec.md', 'Doc:src/lib/O/spec/Vyto_sizing_todo.md', 'Doc:src/lib/O/spec/Cellsizing_todo.md', 'Doc:src/lib/O/spec/Voro_todo.md', 'Doc:src/lib/O/spec/Voro_vtuffing.md', 'Doc:src/lib/O/spec/Voro_svg_stuffing.md', 'Doc:src/lib/O/spec/Lens_posable_TODO.md', 'Doc:src/lib/O/spec/Waft_styling_todo.md'],
+     ['What:the spec', 'Doc:src/lib/O/spec/Glassbeast_todo.md', 'Doc:src/lib/O/spec/Vyto_spec.md', 'Doc:src/lib/O/spec/Vyto_sizing_todo.md', 'Doc:src/lib/O/spec/Cellsizing_todo.md', 'Doc:src/lib/O/spec/Voromay_todo.md', 'Doc:src/lib/O/spec/Lens_posable_TODO.md', 'Doc:src/lib/O/spec/Waft_styling_todo.md'],
     ]])
 
     W.push(['Ghost/Land/Wordland', 'the land — the bet turned on the code itself — what the code says what it does and who asks',
@@ -199,7 +191,7 @@ export function everything_map() {
      ['What:the rooms', 'BigWordland is the room — the Hackarium the Clerkdesk the Educarium',
       'Doc:src/lib/L/BigWordland.svelte', 'Doc:src/lib/L/Hackarium.svelte', 'Doc:src/lib/L/Clerkdesk.svelte', 'Doc:src/lib/L/Educarium.svelte', 'Doc:src/lib/L/Lagui.svelte', 'Doc:src/lib/L/testing.ts'],
      ['What:the tests', 'Doc:Ghost/L/AtlasTesting.g', 'Doc:Ghost/L/ElectrodeTesting.g', 'Doc:Ghost/L/LagoonTesting.g'],
-     ['What:the spec', 'Doc:src/lib/O/spec/Wordland_todo.md', 'Doc:src/lib/O/spec/Lagoon_todo.md', 'Doc:src/lib/O/spec/Electrode_todo.md', 'Doc:src/lib/O/spec/Stemdex_todo.md', 'Doc:src/lib/O/spec/Stemdex_spec.md', 'Doc:src/lib/O/spec/Clerkdesk_todo.md', 'Doc:src/lib/O/spec/Docindex_todo.md', 'Doc:src/lib/O/spec/Meaningfold_todo.md', 'Doc:src/lib/O/spec/Verbs_todo.md', 'Doc:src/lib/O/spec/Emotion_todo.md'],
+     ['What:the spec', 'Doc:src/lib/O/spec/Wordland_todo.md', 'Doc:src/lib/O/spec/Lagoon_todo.md', 'Doc:src/lib/O/spec/Electrode_todo.md', 'Doc:src/lib/O/spec/Stemdex_todo.md', 'Doc:src/lib/O/spec/Stemdex_spec.md', 'Doc:src/lib/O/spec/Clerkdesk_todo.md', 'Doc:src/lib/O/spec/Meaningfold_todo.md', 'Doc:src/lib/O/spec/Verbs_todo.md', 'Doc:src/lib/O/spec/Emotion_todo.md'],
     ]])
 
     W.push(['Ghost/Hoho/Easy', 'the foundation — particles in a House — the req machine — the Story that proves — the Lies pipeline that compiles and runs — the language of Wafts',
@@ -242,9 +234,9 @@ export function everything_map() {
       'Doc:Ghost/N/Peeroleum.g', 'Doc:src/lib/server/relay.ts', 'Doc:src/lib/O/spec/Peeroleum_spec.md'],
      ['What:the swarm', 'Ghost/Swarm/Easy — soul crew invite door reach ferry bodies gossip stash theft', 'FromWhat:Waft:Ghost/Swarm/Easy',
       'Doc:Ghost/S/Swarm.g', 'Doc:src/lib/O/spec/Swarm_spec.md', 'Doc:src/lib/O/spec/Crew_todo.md'],
-     ['What:the music', 'Ghost/Music/Ality — Ra Radio Radiola Sound Crate Orig Mixer Mesh — stock cast term — the pool', 'FromWhat:Waft:Ghost/Music/Ality',
+     ['What:the music', 'Ghost/Music/Ality — Ra Radio Pool Sound Crate Orig — stock cast term — the pool', 'FromWhat:Waft:Ghost/Music/Ality',
       'Doc:Ghost/M/Ra.g', 'Doc:Ghost/M/Radio.g', 'Doc:src/lib/O/spec/Radio_todo.md'],
-     ['What:the cave', 'Ghost/Music/Cave — Heist Heard Siphon — the keep the Mag the hand road', 'FromWhat:Waft:Ghost/Music/Cave',
+     ['What:the cave', 'Ghost/Music/Cave — Heist Heard — the keep the Mag the hand road', 'FromWhat:Waft:Ghost/Music/Cave',
       'Doc:Ghost/M/Heist.g', 'Doc:Ghost/M/Heard.g', 'Doc:src/lib/O/spec/Heist_todo.md'],
      ['What:the visual', 'Ghost/Vis/Visua — Voro Vyto Vytui Cyto Matstyle — crush glass solve attention', 'FromWhat:Waft:Ghost/Vis/Visua',
       'Doc:Ghost/V/Vyto.g', 'Doc:src/lib/O/Vytui.svelte', 'Doc:src/lib/O/spec/Glassbeast_todo.md'],

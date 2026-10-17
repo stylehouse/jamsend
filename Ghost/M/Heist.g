@@ -3607,28 +3607,6 @@ async Heist_defaults_rehydrate(nav, ident):
     for (const k of Object.keys(entry.sc)) if (k !== 'Defaults') patch[k] = entry.sc[k]
     if (Object.keys(patch).length) { if (!st.Heist_defaults) st.Heist_defaults = {}; Object.assign(st.Heist_defaults, patch) }
 
-// Heist_known_categories — "discover what we already have" (the human 2026-07-30): every DISTINCT `- <name>`
-//  (or nested `- a/- b`) leading path prefix already standing in this collection, with how many tracks sit
-//   under each — so the category widget can suggest MERGING into an existing folder instead of typing a
-//    near-duplicate.  Reads straight off %Record.sc.path (now stamped on every record, not just heisted
-//     ones — Ra_record_from). Cheap: one pass over an already-in-memory magazine, no disk touch.
-Heist_known_categories(own_lib):
-    let counts = {}
-    for (const rec of this.Ra_recs(own_lib)) {
-        let path = String(rec.sc.path || '')
-        if (!path.match(/^(-|0) /)) continue
-        let parts = path.split('/')
-        let prefix = []
-        for (const p of parts) {
-            if (!p.match(/^(-|0) /)) break
-            prefix.push(p)
-        }
-        if (!prefix.length) continue
-        let key = prefix.join('/')
-        counts[key] = (counts[key] || 0) + 1
-    }
-    return Object.keys(counts).sort().map((k) => ({ path: k, tracks: counts[k] }))
-
 // Heist_known_dirs — the same discovery for the OTHER hierarchy: does this collection already hold a
 //  directory prefix matching (or close to) the source's own artist/album chain?  Scans for any standing
 //   path sharing `artist` as its FIRST segment (case-insensitive — a friend's folder casing rarely matches

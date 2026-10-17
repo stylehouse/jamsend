@@ -171,7 +171,9 @@ A **snap** is the text serialisation of the C tree which Story makes between ste
 **The land (Ghost/L, src/lib/L)**: the bet turned on the code itself. `Atlas.g` keeps
  what the code SAYS (the compiler's `%Map` for every doc, headless, kept — `w:Atlas/Doc/Map`),
   `Electrode.g` keeps what it DOES (both ends of every ghost call, reduced on demand to
-   `w:Electrode/Graph/Method/Flow`), `L/BigWordland.svelte` is the room. L ghosts are NOT in the
+   `w:Electrode/Graph/Method/Flow`), `L/BigWordland.svelte` is the room — **Wordland, the modern search-first editor
+    being built (`role:hacker`, read-only), distinct from Editron, the current `role:editor` webapp whose organs it
+     repurposes**. L ghosts are NOT in the
     spine manifest: a runner gets them via `runner_ask ghost_load Ghost/L/X.g --stand=X`, and a
      tab reload drops them (and makes their Books run hollow until re-loaded). Read
       `spec/Wordland_todo.md` first; `Stemdex_todo.md §0` has Atlas's history.
@@ -206,7 +208,7 @@ Show the arc, not just the diff.
 
 ## Docs: specs, todos, and the history/ shelf
 
-`src/lib/O/spec/` holds the design docs; **`spec/DocIndex.md` is their front door** (the ~20 topics, one doc to open for each). Two naming stances and one shelf:
+`src/lib/O/spec/` holds the design docs; **`spec/DocIndex.md` is their front door** (four sections — metaphysics and the code itself, the app foundation, Jamsend, the visual end — and one doc to open per topic). Two naming stances and one shelf:
 
 - **`*_todo.md` is the default working doc.** A topic gets **one** todo (e.g. `Radio_todo.md`), not a
    litter of handovers. Every `*_todo.md` opens with a **`## 0.`** section a fresh session reads to learn

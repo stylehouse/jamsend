@@ -178,7 +178,7 @@ All five are `[OWED]`. Everything green above is either a Book or two tabs on on
 
 - `history/Onboard_todo.md` — the first-run funnel + the display handoff to Vyto. **Deferred**; ~80% of
    the components exist, the orchestration is unbuilt. Stays a working todo.
-- `Follow_todo.md` — the DJ-monitor `%Follow` follower mode ("enslave a client to my stream").
+- ~~`Follow_todo.md`~~ (deleted 2026-10-16; one line in `Radio_future.md` §13) — the DJ-monitor `%Follow` follower mode ("enslave a client to my stream").
    **Not built at all**, deliberately deferred to post-production. Stays a working todo.
 
 **⚠ Flagged — a parallel trust architecture, NOT the shipping spine:**

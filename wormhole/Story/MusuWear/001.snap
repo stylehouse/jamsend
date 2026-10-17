@@ -1,7 +1,0 @@
-Snap:H
-  H:MusuWear,Run
-    A:MusuWear
-      self,round=7	{"mung":["age"]}
-      w:MusuWear
-        self,round=7	{"mung":["age"]}
-        req:wrangle,eternal,ok

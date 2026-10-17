@@ -1,0 +1,11 @@
+story:Radiation
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.001
+      sample=0.001,at=1792135399
+    TimeTotal:step,avg=0.001
+      sample=0.001,at=1792135399
+  step,dige:4522d3486cb014f9

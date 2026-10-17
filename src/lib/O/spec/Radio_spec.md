@@ -517,6 +517,12 @@ Legend: **[built]** real data/logic flows through it; **[done]** a specific refi
 
 ### 5B — The audio ladder (the nine stages)
 
+> **2026-10-16:** the Book-only models under most of this ladder were deleted along with their Books:
+> `Radiola.g` (stages 1–4, the cursor spool, Glide and LiveEdge), the Signal, Glide, Edge and Conceal real-audio Books,
+> `Mixer.g` (stages 6–7, MusuMix and MusuCue) and `Mesh.g` (stages 8–9, MusuMesh). A **[BOOK]** tag on those stages is
+> now historical: the proof ran, and the code is gone. Stage 5 (MusuPier) still stands. `Radio_todo.md` §0.d says what
+> each one was, in one sentence.
+
 *(Relabelled 2026-10-15, applying `Radio_design.md`'s own ruling: every stage below is Book-green
  over the loopback wire (`Lake_link`), not live cross-machine — read **[BOOK]** where this table
   used to say `[built]`. None of these nine stages has a live caller outside its own Book.)*
@@ -619,6 +625,8 @@ A relay-only peer sends once; a webrtc-peered client forwards locally so the upl
 ---
 
 ## 6. The test family (where each stage is proven)
+
+> **2026-10-16:** the Mixer, DJ-cue and Mesh/Stretch rows below, and the cursor-model rows, are Books that were deleted (see §5B).
 
 All under `Ghost/Story/MusuTesting.g`, dispatched per-beat off `step_n`, witnessed by idempotent
  `%witnessed:*` latches; the snap-fixture diff is the gate. Verify on the live runner

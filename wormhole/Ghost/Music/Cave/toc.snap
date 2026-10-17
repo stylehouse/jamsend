@@ -20,7 +20,6 @@ Waft:Ghost/Music/Cave,desc:the collection — heist original bytes into the Cave
     Funkcion:Storying,of_Book:MusuSteward
     Funkcion:Storying,of_Book:MusuSmuggle
     Funkcion:Storying,of_Book:Heistation
-    Funkcion:Storying,of_Book:Siphonation
   What:the heist,desc:Heist — ORIGINAL file bytes move straight into the collection — a job a filing a body
     Doc:Ghost/M/Heist.g
     Point,method:Heist_job,desc:one heist — what to pull and where
@@ -83,21 +82,12 @@ Waft:Ghost/Music/Cave,desc:the collection — heist original bytes into the Cave
     Point,method:Heard_hand_on,desc:is the share-my-hearts road on
     Point,method:Heard_hand_set,desc:switch it
     Point,method:Heard_tip,desc:the one-time heart-settings tip
-  What:the siphon,desc:tags and playlists over the collection
-    Doc:Ghost/M/Siphon.g
-    Point,method:Siphon_tags,desc:the tag set
-    Point,method:Siphon_tag_apply,desc:tag a track
-    Point,method:Siphon_playlist,desc:a playlist from tags
-    Point,method:Siphon_home,desc:where siphons live
   What:the tests
     Doc:Ghost/Story/HeistTesting.g
     Doc:Ghost/Story/BerthTesting.g
-    Doc:Ghost/Story/SiphonTesting.g
   What:the spec
     Doc:src/lib/O/spec/Heist_todo.md
     Doc:src/lib/O/spec/Heist_design.md
     Doc:src/lib/O/spec/Mag_todo.md
-    Doc:src/lib/O/spec/Mag_design.md
-    Doc:src/lib/O/spec/Siphon_todo.md
     Doc:src/lib/O/spec/Fallen_out_of_mind_todo.md
     Doc:src/lib/O/spec/Radio_circuit_todo.md

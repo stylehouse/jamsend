@@ -1,8 +1,0 @@
-Snap:H
-  H:MusuSignal,Run
-    A:MusuSignal
-      self,round=2	{"mung":["age"]}
-      w:MusuSignal
-        self,round=2	{"mung":["age"]}
-        req:wrangle,eternal,ok
-        signal,kind:healthy,bits=7.41,gaps=0,rms=0.1643,played=24,of=24,underran=0

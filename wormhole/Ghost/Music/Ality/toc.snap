@@ -1,22 +1,8 @@
 Waft:Ghost/Music/Ality,desc:the music pipeline — rastock racast raterm — stock a track then cast it then play it at the terminal — the radio dials and the pool keeps what played
   Funkcion:CreduFunk
-    Funkcion:Storying,of_Book:MusuStaple
-    Funkcion:Storying,of_Book:MusuStream
-    Funkcion:Storying,of_Book:MusuStock
-    Funkcion:Storying,of_Book:MusuLive
-    Funkcion:Storying,of_Book:MusuWear
-    Funkcion:Storying,of_Book:MusuSkip
-    Funkcion:Storying,of_Book:MusuCrowd
-    Funkcion:Storying,of_Book:MusuSignal
-    Funkcion:Storying,of_Book:MusuGlide
     Funkcion:Storying,of_Book:MusuTune
     Funkcion:Storying,of_Book:MusuRadio
-    Funkcion:Storying,of_Book:MusuMix
-    Funkcion:Storying,of_Book:MusuMesh
-    Funkcion:Storying,of_Book:MusuCue
-    Funkcion:Storying,of_Book:MusuEdge
     Funkcion:Storying,of_Book:MusuPier
-    Funkcion:Storying,of_Book:MusuConceal
     Funkcion:Storying,of_Book:MusuBounce
     Funkcion:Storying,of_Book:MusuReplica
     Funkcion:Storying,of_Book:MusuReco
@@ -111,15 +97,7 @@ Waft:Ghost/Music/Ality,desc:the music pipeline — rastock racast raterm — sto
     Point,method:Riffle_deal_deep,desc:deal from deep
     Doc:src/lib/O/ui/StokerFace.svelte
     Doc:src/lib/O/ui/RiffleFace.svelte
-  What:the machine,desc:Radiola — the cursor models the streaming spine was first proven on — streamability keep-ahead wear and the live edge
-    Doc:Ghost/M/Radiola.g
-    Point,method:req_streamability,desc:enough ahead to play
-    Point,method:Radiola_keep_ahead,desc:how far ahead to stock
-    Point,method:req_restock,desc:make more
-    Point,method:req_reap,desc:wear out the old
-    Point,method:Glide_decide,desc:live-edge rate slew
-    Point,method:LiveEdge_decide,desc:the safe margin off the frontier
-  What:the audio engine,desc:Sound — synth silence measure and the starving live-stream pump — real muted Web Audio
+  What:the audio engine,desc:Sound — synth silence measure and the real audio device — real muted Web Audio
     Doc:Ghost/M/Sound.g
     Point,method:Sound_synth,desc:synth pcm
     Point,method:Sound_measure,desc:measure entropy of pcm
@@ -135,18 +113,6 @@ Waft:Ghost/Music/Ality,desc:the music pipeline — rastock racast raterm — sto
     Point,method:Crate_transcode_release,desc:let a transcode go
     Point,method:Crate_pile_draw,desc:draw from the pile
     Doc:src/lib/O/ui/CrateFace.svelte
-  What:the mixer and the mesh,desc:beat detection beatmatch crossfade and the DJ cue — the sync that sees itself
-    Doc:Ghost/M/Mixer.g
-    Point,method:Mix_tempo,desc:beats per minute
-    Point,method:Mix_beatmatch,desc:align two decks
-    Point,method:Mix_crossfade,desc:fade between
-    Point,method:Mix_align,desc:phase align
-    Doc:Ghost/M/Mesh.g
-    Point,method:Mesh_route,desc:cheapest route
-    Point,method:Mesh_broadcast_stretch,desc:multicast stretch
-    Doc:Ghost/M/Booth.g
-    Point,method:Tune_of,desc:a tune key
-    Point,method:Booth_bans,desc:what the booth bans
   What:the tests
     Doc:Ghost/Story/MusuTesting.g
     Doc:Ghost/Story/RaTesting.g

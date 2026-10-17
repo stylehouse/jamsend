@@ -11,7 +11,7 @@ import { Idento } from "$lib/Common"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '2e5dd1a4c3269c2b~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '5af726b46413e259~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -804,12 +804,6 @@ Ra_home_bay(w, me, them) {
 //        it homes under MY home (§2.1 satisfied — nothing per-Pier floats on w).  Returns the shelf child.
 Ra_home_radiostocking(w, pub) {
     return this.Ra_home_shelf(w, w.oai({ Mine: 1, pub: pub }), pub, 'radiostocking')
-},
-// Ra_home_the — the durable-keeper shelf.  Its FIRST resident arrives with the written-zine rung (rung 2's
-//  `What/` prose promoting a draw into a keeper — Radio_spec §2.3); no hand-authored keeper mag exists yet, so
-//   nothing mints here today — the door stands ready for that rung, never fabricating a resident.
-Ra_home_the(w, pub) {
-    return this.Ra_home_shelf(w, w.oai({ Mine: 1, pub: pub }), pub, 'the')
 },
 // Ra_home_shelf — the shared tail: home under w, a NAMED shelf (`stock`|`shop`) under the home, pub stamped
 //  on both (the home wears it as its identity; the shelf carries it so a Record's rec.c.up resolves pub).
@@ -2385,37 +2379,6 @@ async Ra_stock(w, lib, nav, src_base, take, from) {
     return { built: built, stood: stood, skipped: skipped, of: paths.length }
 
 },
-// Ra_proof — the audio proof read: chunk 0 BACK off the disk → the raw-packet decoder (the same one
-//  the terminal trusts) → measure its LUFS with the SAME meter that set the gain.  {lufs, seconds} —
-//   or {fail} carrying WHY (a silent null here cost a whole diagnosis round; the Book stamps the
-//    reason into the snap where it can be read).  Every stage rides a 25s race — a true HANG names
-//     its stage instead of bleeding the ttlilt budget (25s not 8: a background-throttled tab
-//      legitimately stretches a stage to ~30s of timer-clamped wall clock).
-async Ra_proof(nav, pub, id, s) {
-    let race = (p, tag) => Promise.race([p, new Promise((res) => setTimeout(() => res({ hung: tag }), 25000))])
-    let t0 = Date.now()
-    let hit = await race(this.Ra_stock_find(nav, pub, id), 'find')
-    if (hit && hit.hung) return { fail: 'hang find' }
-    if (!hit) return { fail: 'no stock file for ' + pub + ' ' + id }
-    let raw = await race(nav.bin_read(this.Ra_stock_dir(), hit.name), 'bin_read')
-    let t1 = Date.now()
-    if (raw && raw.hung) return { fail: 'hang bin_read r' + (t1 - t0) }
-    if (!raw || !raw.byteLength) return { fail: 'no bytes ' + this.Ra_stock_dir() + '/' + hit.name }
-    let un = this.Ra_unpack(raw)
-    if (!un || !un.bufs[s]) return { fail: 'no chunk ' + s }
-    let packets = this.Ra_chunk_packets(un.bufs[s])
-    // chunk 0 opens the encode — drop its preskip; a later chunk decodes convergence-dirty for ~one
-    //  packet, which the proof accepts (it measures loudness, not the first 20ms).
-    let skip = (s === 0) ? +(un.info.preskip || 312) : 0
-    let got = await race(this.Ra_decode_packets(packets, +(un.info.nch || 1), skip), 'decode')
-    let t2 = Date.now()
-    if (got && got.hung) return { fail: 'hang decode r' + (t1 - t0) + ' d' + (t2 - t1) }
-    if (!got) return { fail: 'decode chunk ' + s + ' d' + (t2 - t1) }
-    let lufs = await race(this.Ra_lufs(got.channels, 48000), 'lufs')
-    let t3 = Date.now()
-    if (lufs && lufs.hung) return { fail: 'hang lufs r' + (t1 - t0) + ' d' + (t2 - t1) + ' l' + (t3 - t2) }
-    return { lufs: lufs, seconds: +(got.n / 48000).toFixed(3), nch: got.channels.length, ms: 'r' + (t1 - t0) + ' d' + (t2 - t1) + ' l' + (t3 - t2) }
-},
 //#endregion
 
 //#region transcode — the STREAM side: the continuation encode, DEMAND-DRIVEN off parked wants
@@ -2989,18 +2952,8 @@ Ra_chunk_mint(rec, seq, buf, preskip) {
 //   preview's.  The seam into the offer is convergence-dirty for about a packet, which is what the
 //    preview→continuation seam already is and is documented as honest there.
 
-// Ra_head_map / Ra_head_have — the head run's chunks, byte-materialising and presence-only, the same
-//  split (and the same reason) as Ra_chunk_map / Ra_chunk_have: the "have I got it yet" callers must
-//   not memcpy the run to answer a question about presence.
-Ra_head_map(rec) {
-    let map = []
-    for (const ch of rec.o({ hseq: 1 })) {
-        let b = this.Repli_chunk_bytes(ch)
-        if (b != null) map[+ch.sc.hseq] = (b instanceof Uint8Array) ? b : new Uint8Array(b)
-    }
-    return map
-
-},
+// Ra_head_have — the head run's chunks, presence-only (as Ra_chunk_have): the "have I got it yet" callers
+//  must not memcpy the run to answer a question about presence.
 Ra_head_have(rec) {
     let map = []
     for (const ch of rec.o({ hseq: 1 })) map[+ch.sc.hseq] = 1

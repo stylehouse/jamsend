@@ -2,6 +2,24 @@
 
 ## 0. WHAT TO GET ON WITH NEXT (rewritten 2026-09-11 night; the older §0s are §0.6–§0.8 below, intact)
 
+### 0.0 2026-10-17 — THE POCKET: where the pool IS the music (owner, refines the 10-04 ruling below)
+
+*"I want to use this as a music player. SoundPooling should be the go if the relay is not reachable"* + *"it should switch to
+ soundpool if no FSA"*.  The 10-04 "unless we run out of Radio" clause, made concrete. Landed, live-only (`Story_replaying` gates
+  it out of every Book):
+- **`Radio_pocket_why`** (Radio.g): `norelay` when the station socket (`Socket_real` port, new `down_since`/`is_open`) has been
+   down past 5s; `nofolder` when `top.c.listen_only` (no FSA, or thin by choice — a phone, an installed PWA). No PWA param is
+    needed: a phone has no `showDirectoryPicker`, so Housing already lands it `listen_only`.
+- **The dial's last rung** dials the pool (`Radio_pocket_dial`: dial; else resurrect from `pool/` + heal, dial again; else
+   replay) before the empty own shelf. `norelay` also skips the five-second friend hope. It stamps `solo` (`norelay`, or the
+    friend reason), so `Radio_crossover` still cuts to a friend the moment one is playable.
+- **The encode rung is back, in the pocket only** (`Ra_pool_previews_heal`): after an offline reload nothing can be carried, so
+   the pocket encodes a card's own preview from its file (base `pool`, which the Stoker resurrect skips since 10-04).
+- **The shell boots offline** (`src/service-worker.js`): network-first, cache-on-failure, for the genuine player only (no `?B=`;
+   the page posts `music_page`); `/relay`, `/peerjs`, `/__*` never pass through. BigSoundland also asks `storage.persist()`.
+- **Owed: the field trip** — install from djamsend on the phone, play a few friends' tracks so the pool fills, airplane mode,
+   reopen. Unverified on a device.
+
 ### 0.0 2026-10-04 — RULED: the pool is not a radio source (owner)
 
 *"SoundPooling ISN'T available as Radio for now … unless we run out of Radio … we want to hear from the Piers directly, to

@@ -99,8 +99,8 @@ async function main() {
 	check('runner received the routed runner_ask frame', runner.got.some((m) => m.header?.type === 'runner_ask' && m.corr === 'corr-ping'))
 
 	// (d) run op carries the Book through and comes back accepted.
-	c.ask('corr-run', 'run', { book: 'MusuLive' })
-	const ran = await until(() => c.replies.some((m) => m.control === 'runner_ack' && m.corr === 'corr-run' && m.result?.book === 'MusuLive' && m.result?.accepted))
+	c.ask('corr-run', 'run', { book: 'MusuRadio' })
+	const ran = await until(() => c.replies.some((m) => m.control === 'runner_ack' && m.corr === 'corr-run' && m.result?.book === 'MusuRadio' && m.result?.accepted))
 	check('runner_ask run <Book> → ack {accepted, book}', ran)
 
 	// (e) state op returns the verdict/phase shape the CLI prints back.

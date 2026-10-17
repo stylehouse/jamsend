@@ -24,12 +24,12 @@ Two irritations, probably one rebuild:
      forget to be on is a silent absence).  Atheory would make loading DECLARED — the base
       Housing (`A**`) knowing what belongs on it, legibly, the way everything else in the world
        is legible matter.
-2. **The toplevel has built-up crap.**  The boot walks worlds it then destroys (the
-    world-1→world-2 remount at storyFinished; BigSoundland's un-buffered `cyto` derive + keyser
-     remount is furniture balanced on that churn).  A stranger's cold boot runs a 1-step toc and
-      leaves `step_n` stranded at 1 forever — the whole cold-boot disease (Solo_todo bombs) is
-       toplevel sediment.  A simpler toplevel would make those seams walkable ("easier to
-        moonwalk through these such transpirings").
+2. **The toplevel has built-up crap.**  The app's boot IS a Story Book (`Sounditron`, run in check mode on
+    every music page), so app behaviour that lives in "beat N" exists only if the run reaches N.  The
+     cold-boot disease (Solo_todo bombs) was that, and its patches are sediment.  A simpler toplevel would
+      make those seams walkable ("easier to moonwalk through these such transpirings").  *Corrected
+       2026-10-18 — the old wording here (a world-1→world-2 remount at storyFinished; an un-buffered `cyto`
+        derive balanced on it) does not hold today; see "Progressive startup" below.*
 
 ## The load-list inventory — DONE 2026-09-05 (the "when it starts" step below, paid)
 
@@ -540,10 +540,59 @@ Before anything new rides it, the organ must reproduce a merge we already trust,
    runner (`LiesStore_good → land_good`), and Atheory's case-study irritation 3 is that delivery being polled.  With Merge,
    code changes would be fractures like any other, pushed to the bodies that hold that ghost.
 
+## Progressive startup — what we know (2026-10-18)
+
+The owner: Book:Sounditron is *"for watching the machine progress through important steps of its boot towards
+ playing music"*, and *"there could actually be layered and differently scoped Story going on at the same time…
+  one watching basic startup that is blind to the more specific core of activity… multiple Story Book-expectors
+   and their wills to control the one Runtime could cooperate"* — **separate booting from testing, with the same
+    Story2 tech.**
+
+**What's settled:**
+- **The 1-step cold toc is fixed.**  `AppTreeNav` (`MountNav.svelte.ts:225`): a music folder with no `wormhole/`
+   reads its app tree from `.jamsend/wormhole/` (their disk, the upper layer) over GitHub (the lower layer, and
+    reads that miss upper WAIT for it), so a stranger gets the full 8-step Book rather than recording a fresh one.
+     `.jamsend/` is the app's own namespace at the root of the Wormhole share (`account/`, `wormhole/`).
+- **storyFinished remounts nothing.**  Live on eed8 (`?I=eed831f1977c4e81`, booted 09:56:45): from `📚 storyFinished`
+   on, the console shows no destroy, no `life mount`, no Cello re-intent — only the Cred spool, then music.
+    `Auto.svelte`'s handler just spools and reports.  The BigSoundland `cyto` derive has been held by `glass_hold`
+     (6s) since 2026-08-31, and an end-user page draws Cello, not that glass.  The Cyto integration is going anyway
+      (owner): *anything* should be able to hook a Story's progress to animate off the underlying structure.
+- **The live check run is a clock, not a test.**  All 8 steps `mismatch accepted (lenient)` on a live tab.  It
+   only counts beats.  `story_save` still runs on a humdinger (`toc unchanged, not rewritten`; harmless here, but
+    `Story_future_directions §5.3` is unbuilt).
+
+**The beats, sorted.**  Sounditron is mostly an expector already: most beats `expecting()` a machine fact.  The few
+ that DO things are the ones the cold-boot patches had to pull out.
+
+| n | desc | does (machine) | waits for (expector) | eed8, 2026-10-18 |
+|---|---|---|---|---|
+| 1 | — | `Sounditron_glass` (organs + Vyto commission) | — | 0.6s |
+| 2 | the machine stands | supervise, glass again | `stoker_wait` 15s: the shelf stocked | 0.3s |
+| 3 | the relay answers | — | `relay_wait` 10s: the channel live | 0.4s |
+| 4 | who could we reach | `Sounditron_muse` | `muse_wait` 4s; tallies Possibilities | 0.4s |
+| 5 | reach for a peer | **`Swarm_hi_all`** | `peer_wait` 20s with a music friend, else 2s | **20.2s**: 20 piers, `who_ok 0/6 online` |
+| 6 | does sound run here | `Sounditron_listen` | `sound_wait` 6s: the probe | 3.1s |
+| 7 | the music runs | — | `music_wait` 20s | **20.4s**: timed out |
+| 8 | sum and report | — | — (tallies Session) | 0.5s |
+
+Music started 09:57:49, 7s after storyFinished (`dial` → `Fourier Four — Query E ← @Grav+eed8 [pool]`).  Whether a
+ gesture or `Radio_autopress` pressed it isn't in the log; the AudioContext started in the same ms.  Of 56s of Book,
+  40s was two waits timing out on a peer nobody could reach.  Before the Book, `Liesui ready in 15.3s` (11.4s of it
+   app→Lies).
+
+**The shape this points at:** the machine-doing cells (glass, supervise, `hi_all`, muse, listen) stand on the page's
+ own heartbeat, declared by the A** manifest.  Every beat becomes an expectation, and several Books can watch one
+  runtime at different scopes: a startup Book blind to the core, a Radio Book that sees only the core.  Each expector
+   that wants to *drive* (a Book's hand-crank) has to ask, which is a will over the runtime and the same question as
+    the focus authority below.  The tell to enforce: an `if (n === k)` doing app work.  Only expectors read `step_n`.
+     The cost is re-recording Sounditron and the Musu/Vyto fixtures that ride it, once, deliberately (today the humdinger
+      gate keeps them byte-identical).
+
 ## Not yet
 
-The toplevel inventory (what happens between page-load and commission) is still owed, and §0's second
- irritation — the built-up toplevel crap, the world-1→world-2 remount — has no design.  The A** shape
+The toplevel inventory (what happens between page-load and commission) is half-owed: the post-Lies half is the
+ table above, the 15s before it isn't measured.  §0's second irritation has a direction (above), not a design.  The A** shape
   above addresses the LOADING half's dispatch and identity; it does not on its own make the toplevel
    walkable.
 

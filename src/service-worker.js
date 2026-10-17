@@ -1,13 +1,54 @@
 /// <reference lib="webworker" />
 
-// Minimal service worker — its ONLY job is to make jamsend installable as a PWA.
-//  Installability wants a manifest + a registered service worker; SvelteKit auto-
-//  registers this file (src/service-worker.js) by convention.  jamsend is an always-
-//  online app (WebRTC streaming, a live /relay websocket, peerjs signalling), so this
-//  deliberately caches NOTHING and passes every request straight through: caching the
-//  shell would only serve stale gen after an edit, and the live channels must never be
-//  intercepted.  If it ever needs to go offline-capable, add a versioned cache HERE and
-//  keep /relay + peerjs-server on the network path.
+// The service worker — it makes jamsend installable as a PWA, and lets the MUSIC PAGE boot with the box unreachable.
+//  SvelteKit auto-registers this file (src/service-worker.js) by convention, for EVERY tab on the origin — runners, the
+//   editor, the hacker room — so it is opt-in by page:
+//
+//  • the genuine player (BigSoundland with no ?B=) is the only thing cached.  A navigation to `/` or `/BigSoundland`
+//     without ?B=/?E= marks its resulting client as a music page, and the page posts {jamsend:'music_page'} on boot to
+//      re-mark itself after the worker was stopped.  Every other tab's fetches are never touched (no respondWith), so a
+//       dispatch tab can never be handed stale gen.
+//  • NETWORK FIRST, the cache only when the network FAILS (a reject, not a 500) — online, the player gets exactly what it
+//     would without a worker, and each good response refreshes the copy.  Offline (the box down, the relay unreachable),
+//      the last copy boots the shell and the radio falls to the SoundPool (Radio_pocket_why, Ghost/M/Radio.g).
+//  • NEVER the live channels: /relay (the websocket), /peerjs (signalling), /__* (dev-server endpoints).  Music bytes
+//     travel over the wire and the pool lives in OPFS, so neither passes through here.
+//
+// To retire the cache, bump CACHE: activate deletes every other jamsend-shell-* cache.
+
+const CACHE = 'jamsend-shell-v1'
+const music = new Set()   // clientIds of music pages — lost when the worker stops; the page's boot message re-adds it
+
+const is_music_url = (url) => {
+    const p = url.pathname
+    if (p !== '/' && p !== '/BigSoundland' && p !== '/BigSoundland/') return false
+    return !url.searchParams.has('B') && !url.searchParams.has('E')
+}
+const never = (url) => url.pathname.startsWith('/relay') || url.pathname.startsWith('/peerjs') || url.pathname.startsWith('/__')
+
+// the cache key: one shell per path for a navigation (the ?I= identity is read client-side), and a module without
+//  Vite's HMR `t=` stamp so a hot-updated file overwrites its own entry instead of piling up beside it.
+const key_of = (url, navigate) => {
+    if (navigate) return url.origin + url.pathname
+    const k = new URL(url.href)
+    k.searchParams.delete('t')
+    return k.href
+}
+
+async function network_first(request, key) {
+    try {
+        const res = await fetch(request)
+        if (res.ok && res.type === 'basic') {
+            const copy = res.clone()
+            caches.open(CACHE).then((c) => c.put(key, copy)).catch(() => {})
+        }
+        return res
+    } catch (er) {
+        const hit = await caches.match(key)
+        if (hit) return hit
+        throw er
+    }
+}
 
 self.addEventListener('install', () => {
     // take over immediately so the first install doesn't wait for every tab to close.
@@ -15,14 +56,29 @@ self.addEventListener('install', () => {
 })
 
 self.addEventListener('activate', (event) => {
-    event.waitUntil(self.clients.claim())
+    event.waitUntil((async () => {
+        for (const k of await caches.keys()) {
+            if (k.startsWith('jamsend-shell-') && k !== CACHE) await caches.delete(k)
+        }
+        await self.clients.claim()
+    })())
+})
+
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.jamsend === 'music_page' && event.source && event.source.id) music.add(event.source.id)
 })
 
 self.addEventListener('fetch', (event) => {
-    // The mere presence of a fetch handler is what older engines count toward
-    //  installability.  We handle nothing ourselves — no respondWith — so the browser
-    //  fetches exactly as it would without a service worker.  In particular the /relay
-    //  websocket upgrade and the peerjs-server signalling never pass through here, and
-    //  nothing (app shell, music bytes, gen) is cached.
-    void event
+    const req = event.request
+    if (req.method !== 'GET' || req.headers.has('range')) return
+    const url = new URL(req.url)
+    if (url.origin !== self.location.origin || never(url)) return
+    const navigate = req.mode === 'navigate'
+    if (navigate) {
+        if (!is_music_url(url)) return
+        if (event.resultingClientId) music.add(event.resultingClientId)
+    } else if (!music.has(event.clientId)) {
+        return
+    }
+    event.respondWith(network_first(req, key_of(url, navigate)))
 })

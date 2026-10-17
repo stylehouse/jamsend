@@ -211,6 +211,7 @@
     const soloWhy = (f: { solo: string, soloBy: string }) =>
         f.solo === 'gathering' ? `waiting on ${f.soloBy || 'a friend'}’s music` :
         f.solo === 'offline'   ? 'your friends are offline' :
+        f.solo === 'norelay'   ? 'cannot reach the relay — your pocket' :
                                  'nobody online yet'
     // the progress RING (the bitsy player, 2026-08-09): arc length for a fraction of the
     //  r=26 circle.  The ring replaces the bar — a round cell wants round furniture.

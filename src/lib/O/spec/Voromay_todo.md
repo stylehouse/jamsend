@@ -75,7 +75,7 @@ Every flow is an append-only ledger event carrying an `of:<id>` (many-events-per
 | heist picks | `%Pick,ref:<id>` under `%Heist` | `Ghost/M/Heist.g:3555` | the tracks inside a heist |
 | **friend's crate** (their shelf, live-mirrored over Repli) | `%Theirs,pub:<friend>` | `Ghost/M/Ra.g:686` (usage `:2304`) | a per-friend mirror container — the node-adjacent "what they have" |
 | **live transfer HUD** (bytes moving now) | `%Transfer` (`dontSnap:1`) | `Ghost/M/Heist.g:2202` | reads `Repli_xfer` live (`held/total`, goodput) — the pulsing-edge data, deliberately NOT snapped |
-| single-track siphon (SoundPool phone-pull) | `%Siphon,of:<id>,phase` | `Ghost/M/Siphon.g:109` | `asked→pulling→landed` — the LOFI hand-to-hand pull |
+| single-track siphon (SoundPool phone-pull) | `%Siphon,of:<id>,phase` | ~~`Ghost/M/Siphon.g`~~ (deleted 2026-10-16) | `asked→pulling→landed` — the LOFI hand-to-hand pull |
 | pool press/evict pressure | `%Want,of:<id>,do:press\|pull\|evict` | `Ghost/M/Ra.g:1076` | the SoundPool economy proposals |
 | smuggle / backup queue | `%Upgrade,of:<origId>` | `Ghost/M/Ra.g:1145` | lofi-copy-held-but-Original-not-yet — the Cave-backup flow |
 | stream chunks (the actual bytes) | `%Stream` / `%Preview` (seq-keyed) | `Ghost/M/Ra.g:2799` / `1745` | the wire segments; too fine to draw as edges — summarise via `%Transfer` |

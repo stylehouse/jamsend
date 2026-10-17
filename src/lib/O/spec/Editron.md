@@ -1,5 +1,13 @@
 # Editron — the editor↔runner architecture (Lies side)
 
+> **Editron is the CURRENT editor** — the `role:editor` webapp (`?B=Editron`), the one tab allowed to write, compile and
+>  hold the Keep.  It is having its organs repurposed: Lies, Lang, the Waft tree, the Stemdex and the Keep are reassembling
+>   around search in **Wordland** (`/BigWordland`, `role:hacker`), the modern editor being built — see `Wordland_todo.md`
+>    for the side-by-side and what moves where.  This doc stays the front door for what Editron still uniquely is: the
+>     editor↔runner machine, the compile/ship/verdict loop, and Credence.  **§8 is the account of every power "the
+>      editor" holds, and the design that splits it: a write seat wrested by the active tab, and a compile authority that
+>       never compiles what it runs (Editron keeps it; Wordland never compiles itself).**
+
 The coherent overview of the editor|runner machine: who the two roles are, how code crosses
  between them, how a run is driven and its verdict returned, and how the Credence board reads
   those verdicts back. The transport *spine* lives in `Peeroleum_spec.md` (heading 10); this is
@@ -273,6 +281,70 @@ Per-Book is `cred.runs` **partitioned by `book` at spool time**, not a directory
        Cross-ref [[creduler-runner-architecture]], [[story-books-catalog]].
 
 ---
+
+## 8. The editor's powers, the seat, and who compiles — Editron and Wordland (2026-10-16)
+
+*The owner, 2026-10-16: "it'll need to mutex with other role:editor and that whole singularity of power needs wresting on
+ whoever is active… there's a bunch of Lies protocols for compiling the current version of a .g to get owned by some editor
+  instance but we want to not rely on the Wordland for compiling the Wordland… expand|fuse Wordland with Atheory, but leave
+   Editron stable."*  Design, unbuilt.  Read with `Wordland_todo.md` (the new editor) and `Focus_todo.md` (who is active).
+
+### 8.1 What "the editor" holds today — each power, and what makes it singular
+
+| power | where it's gated | what keeps it to one holder |
+|---|---|---|
+| **Waft saves** (every open Waft's `toc.snap`) | `Lies_waft_save` path, `=== 'editor'` | nothing — two editors are two writers, last write wins |
+| **the Keep** (per-Waft cursor, focus, accessed_at) | Lies.svelte Keep writes, `=== 'editor'` | nothing — "single-writer like the editor" by assumption |
+| **Waft:Cluster** (the `%HostedIdentity` registry) | `Lies_aim_setup` — only an editor opens it | one writer *by construction* (the 2026-08-08 last-write-wins fix); the claimer prunes every other `role:editor` row (`Lies_cluster_claim_self`) — **a row prune, not a lock** |
+| **compile with `dock_source`** (the raw `.g` the runner re-lands) | LangCompiling / LiesCortex, `Lies_is_editor` | nothing |
+| **`ghost_compile` tickets** (the CLI's "compile this `.g`") | CLI signs `to:'editor'`; `Lies_ghost_compile_recv` verifies against the trusted flock, takes it as a BACKGROUND `force_compile`, acks `started/done/error` by corr | **nothing — the relay fans a role bucket out to every socket that declared it** (`deliverLocal`), so two editors both compile the same ticket |
+| **gen_write** (the `.go` onto disk via the relay) | `relay.ts handleGenWrite`: path fenced to `gen/**.go`; signed by a key in `CLUSTER_TRUSTED_PUBS` when configured | the trust flock is {this editor's key, claude} — a KEY, not a tab: any tab holding that identity can push |
+| **the Rungo** (the authority to run) | editor → runner, `header.seq`, higher seq supersedes | per editor — two editors issue two seq streams |
+| **the Pantheate split** | `req_Codebit` mounts the compiled module only when `!Lies_is_editor` | the editor compiles and never runs what it compiles |
+| **the transport freeze** | `Lies_transport_up` editor-only; the editor rides `pinned_stable/*.go` | the compiler never rides the spine it compiles |
+| the relay bridge role | `setRole` — set-once per relay | the first `become editor|runner` wins the server; later conflicting becomes throw |
+
+So "there is one editor" is true only of the Cluster file.  Everything else is singular because, in practice, the owner
+ opens one Editron.  `role:hacker` (Wordland) opts out of ALL of it for free, because every gate is an equality with
+  `'editor'` — which is why it can stand beside Editron today, and why it cannot write.
+
+### 8.2 The design — split the singularity into TWO powers
+
+"The editor" bundles two things that want different holders:
+
+**A. THE WRITE SEAT — a lease, wrested by whoever is active.**  Waft saves, the Keep, Cluster, `:make`, verbs that write.
+- **One seat per box, held at the relay**, because the relay is the one place every tab on the box meets (the Cluster file
+   is per-box for the same reason).  The relay already arbitrates seats for identities — hello's `seats` set and
+    `heldByAnother` — so this is the same arbiter over one more name (`seat:editor`), not a new mechanism.
+- **Wresting:** a tab asks `{control:'seat', want:'editor', why}`; the relay grants it and sends the old holder
+   `{control:'seat_lost', to:<new>}` (the GrantBorrow `seat_lost` precedent).  **Who may wrest is "whoever is active"** —
+    the tab the human's hands are in.  That is `Focus_todo`'s attention authority, one level up: a deliberate act in a
+     tab (typing into a doc, pressing ✍ save, Enter on a writing verb) asks for the seat; merely being open never does.
+- **Losing is graceful:** the loser flushes what is in flight first (`Lies_waft_save_pending` is the existing probe) and
+   then reads as a reader, without a reload.  The gates change from `role === 'editor'` to **`Lies_holds_seat(w)`** —
+    the role says what a tab CAN be; the seat says what it IS right now.
+- **The two-of-you hazard is the same problem** (`Reach_todo` "run into yourself", memory `doorkeeper-and-two-of-you`):
+   a seat needs a liveness ping so a crashed holder's seat frees and a live one is never doubled.  Build them as one.
+
+**B. THE COMPILE AUTHORITY — never a tab that runs what it compiles.**  `ghost_compile` tickets, `dock_source`, gen_write,
+ the Rungo.
+- **The rule, generalised from the transport freeze:** *a compiler never compiles code it is running.*  Editron obeys it
+   for the spine (`pinned_stable/`).  Wordland cannot: it rides the LIVE spine and stands `Ghost/L/*`, Lies, Lang and Vyto
+    live — a broken compile of its own organs takes down the tab that would fix it.  **So Wordland never compiles Wordland.**
+- **Holder: Editron, unchanged.**  It stays the stable compiler, frozen on `pinned_stable/`, reached by the same signed
+   `ghost_compile` ticket the CLI already sends.  Wordland holding the write seat SAVES a `.g`; the compile is asked of
+    Editron, and the verdict comes back by corr.
+- **And only ONE compiler takes a ticket:** address the ticket to the compile holder (a `seat:compiler` on the same
+   arbiter), not the `editor` role bucket — that closes the double-compile in 8.1.
+- **Later — Atheory's:** a headless compiler (LocalGen already runs the real translator in node every night) could hold
+   the compile authority with no browser tab at all.  Then Editron is a fallback, not a dependency.
+
+### 8.3 What changes in Editron — as little as possible
+
+Editron stays stable: it is the reference compiler and the fallback editor.  The only change it needs is to **honour the
+ write seat** (read `Lies_holds_seat` where it reads `=== 'editor'` today, and yield on `seat_lost`), so that it and
+  Wordland never both write.  Until that lands, the rule is manual: **Wordland takes the write seat only when no Editron
+   is live on the box.**  Everything new — the seat UI, wresting by attention, the fusion with Atheory — is Wordland's.
 
 ## FUTURE
 

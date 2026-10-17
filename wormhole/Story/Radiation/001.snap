@@ -1,0 +1,6 @@
+Snap:H
+  H:Radiation,Run
+    A:Radiation
+      self,round	{"mung":["age"]}
+      w:Radiation
+        self,round	{"mung":["age"]}

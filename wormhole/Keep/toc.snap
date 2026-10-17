@@ -10,7 +10,6 @@ Waft:Keep,equip:Keep,lte_expanded,isx_show_cold
   WaftTimes,of_Waft:Keep,minimised
   WaftTimes,of_Waft:GhostList,discovered_at=1782807094692,accessed_at=1789548498006,minimised
   DocScroll,of_Doc:Ghost/N/Peeroleum.g
-  DocScroll,of_Doc:Ghost/M/Radiola.g,scroll_line=16
   DocScroll,of_Doc:Ghost/Story/Musuation.g,scroll_line=2608
   DocScroll,of_Doc:Ghost/Story/Peregrination.g,scroll_line=43
   DocScroll,of_Doc:src/lib/ghost/Radios.svelte,scroll_line=761
@@ -64,7 +63,6 @@ Waft:Keep,equip:Keep,lte_expanded,isx_show_cold
   DocScroll,of_Doc:src/lib/O/Funk/Shelver.svelte,scroll_line=75
   DocScroll,of_Doc:src/lib/p2p/ftp/Sharing.svelte.ts,scroll_line=296
   DocScroll,of_Doc:src/lib/O/Census.svelte,scroll_line=264
-  DocScroll,of_Doc:Ghost/M/Booth.g,scroll_line=12
   WaftTimes,of_Waft:Aside/2026-09-12,discovered_at=1789172018848,accessed_at=1789548498198
     Cursor,what:What:4,at=1789172042602
   DocScroll,of_Doc:src/lib/mostly/Selection.svelte.ts,scroll_line=374

@@ -210,6 +210,10 @@ Socket_real(w):
     }
     let port = {
         type: 'websocket', real: 1, ws: null,
+        // down_since — when the relay was last NOT reachable (ms), 0 while OPEN.  Born down: a socket that
+        //  never opened is the "relay not reachable" a pocket-player falls to its SoundPool on (Radio_relay_down).
+        down_since: Date.now(),
+        is_open() { return !!ws && ws.readyState === WebSocket.OPEN },
         send(frame) {
             let h = frame && frame.header
             if (!ws || ws.readyState !== WebSocket.OPEN) {
@@ -391,12 +395,14 @@ Socket_real(w):
             //      still clears the counter a beat later.  onclose cancels the timer so it can't fire post-drop.
             clearTimeout(stable_timer)
             stable_timer = setTimeout(() => { tries = 0 }, STABLE_MS)
+            port.down_since = 0
             note(`🛰 ws OPEN ${url} — flushing ${pending.length} buffered`)
             let q = pending.splice(0); for (const f of q) wire(f)
             for (const cb of open_hooks) { try { cb() } catch (e) {} }   // re-run consumer open work (relay `become`) on every (re)connect
         }
         ws.onclose = (ev) => {
             clearTimeout(stable_timer)   // a pending "proved stable" reset must not fire after a drop
+            if (!port.down_since) port.down_since = Date.now()
             note(`🛰 ws CLOSE code=${ev.code} clean=${ev.wasClean}${intentional ? ' (intentional)' : ''}`)
             // the bulk lane is pure repli_page — ephemeral, worthless once stale, self-heals via the
             //  sink's own re-ask — so it drops on close exactly like the noisy/run_phase frames above,

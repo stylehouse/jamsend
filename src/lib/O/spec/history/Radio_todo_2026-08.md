@@ -1,0 +1,2178 @@
+# Radio_todo — the 2026-08 log and the Booth (§0.1 and §11.0–11.6), retired
+
+> **HISTORY (retired 2026-10-16).** These are two sections cut out of `spec/Radio_todo.md`, kept whole for the arc.
+> **§0.1** was the evening-by-evening log of the Radio build (2026-08). **§11.0–11.6** was the Booth, the
+> "taste as standing facts" organ (`Ghost/M/Booth.g`), which was vetoed, never wired, and deleted 2026-10-16:
+> what it reached for became **Yay** (`Radio_like` → `Heard_take`, the ♥) and **Nay** (`Radio_nay` → `Heard_nay`,
+> the thumbs-down), on the Heard Mag. The living Radio doc is `spec/Radio_todo.md` §0; §11.7 (the Berth) stayed there.
+
+## 0.1 log (2026-08, kept for the arc)
+
+Fold into the sections below as it's absorbed — this is the arc's own record, kept for continuity;
+ it is not a current statement of the field (see §0 above for that).
+
+### 2026-08-24 — THE LOOP THAT NEVER GIVES UP, AND THE FILENAME THAT CAN NEVER SERVE
+
+The owner, log in hand: `⇊☠ heist NO PROGRESS 93905s — 10/13 landed after 22322 asks`, the daemon
+ cycling `parked want ABANDONED → transcode STALLED` on one id forever, and its own heartbeat naming
+  the cause: `↳ no native path for /0 themes/…/06 - Manny Oque…`.  One root, two missing give-ups:
+
+- **ROOT — the U+FFFD round trip** (`scripts/NodeWormholeNav.ts`): `readdirSync` decodes latin-1
+   filename bytes to U+FFFD, and that string can never round-trip to disk — `existsSync` misses,
+    `native_path` nulls, the transcode never starts, and NEITHER side ever gives up.  Fixed at the
+     nav: `trueBytes()` re-walks a missing U+FFFD path in buffer mode matching each mangled segment
+      by its own lossy decode; readers (`read_file`/`bin_read`/`read_range`) take the byte path
+       directly, `native_path` hands ffmpeg a clean-named symlink under `overlay/.mangled/`.
+        Proven with a real 0xF3/0xE9 filename (scratchpad nav_rescue_test).  **DAEMON NEEDS RESTART.**
+- **SINK GIVE-UP** (`Heist.g` → `gen/M/Heist.go @ 362643c`): `Heist_pull_giveup` — the pull-side twin
+   of the land-throw quarantine.  Two gates: ≥90 unanswered materialise-asks (~6min of the 4s ladder),
+    or 5 bench strikes (`pick.c.bench_n`, deliberately surviving the clear-all-benches pass).  The pick
+     wears snapped `sc.failed` (a reload must not resurrect the loop; un/re-tick = retry), a `%pullfail`
+      row lands on the Jam job beside the landfail rows, and the heist finishes AROUND it.  Humdinger-
+       gated: Books keep never-give-up.
+- **`!tape` SUBDUED at the expected end** (`Radio.g` → `gen/M/Radio.go @ 237237c`): the starve-start
+   face flip to 'starved' is now skipped when `tape_out` (the KNOWN end shape) — only a real HOLE
+    confesses; a late tail chunk re-arms the flip next pass.  `starve` trace now carries `tape:0|1`.
+     Books unaffected (tape_out is 0 without humdinger).
+- **BOOK GATE — ✓ GREEN** (2026-08-24, on the Otro runner): MusuHeist ran first (the `--watch`
+   chain exits 1 on red and it proceeded), then MusuBerth 7/7, ok_pct 1.  The give-up / `!tape` /
+    transcode-dead changes are all humdinger-gated and the recorded fixtures held.  Runner released.
+- **SOURCE-SIDE, done in part** (`Ra.g` → `gen/M/Ra.go @ 242757c`): the L3 STALLED bark now
+   ESCALATES to `◈☠ transcode DEAD — <reason>` when the rec's producer has failed ≥8 times running
+    (minutes of sustained failure — past the transient-nav window the retry ladder is kept for at
+     Ra_source_pcm:2064), naming `pcm_dead|pcm_why` instead of the generic "frontier never reached
+      it".  PURE DIAGNOSTICS — the 60s retry ladder stands (Ra_native_continuation:2812 blesses "one
+       ffmpeg a minute" for a dead source; a re-stock revives it).  Humdinger-gated.
+- ✅ **DONE 2026-09-10 — the distinguished disclaim landed.** `Repli_tell_miss(w, pier, h, dead)` carries
+   `dead:1`; the STREAM serve path disclaims instead of parking when `rec.c.pcm_dead` is set (Ra's own
+    verdict — `'card'` no stock card · `'nav'` the U+FFFD path that can never round-trip to disk ·
+     `'headless'` no decoder); `Repli_recv_missed` stamps `w.c.ra_dead` beside `ra_missed`; and Heist's
+      pull beat skips the re-census for a dead id, saying so once.
+  **The fact was already there and unread** — Ra had been stamping `pcm_dead` and nothing on the wire
+   lane ever looked at it, so a want for such a record parked (a park PROMISES bytes are coming), the
+    leash abandoned it ~90s later, the sink re-asked, and the pair cycled forever. That is this section's
+     own opening loop, and the cure was reading a mark rather than adding one.
+  The four negatives now read as one scale: **parked** (found it, bytes coming) · **missed** (cannot
+   resolve — re-census me) · **missed+dead** (resolved, unmakeable — a census cannot help) ·
+    **no_idspace** (never mine — stop forever). Carried as a FLAG on the existing frame, not a fourth
+     type, so an older sink ignores it and keeps today's retriable ladder.
+  **Gate:** MusuHeist 22/22 · MusuReplica 14/14 · MusuPoolBytes 5/5 · MusuPoolFill 6/6 · MusuPoolRandom
+   5/5 · MusuPoolRadio 6/6 · MusuBerth 7/7 — all caveat 0, identical to baseline, and the three new log
+    sentences appear in ZERO Books (a Book has no transcode, so the branch is unreachable there).
+- ~~**STILL NOT DONE — the real NACK needs a frame-semantics bit.**~~ (superseded above; kept for the reasoning) A plain `repli_missed` means
+   "re-census me" to a Heist sink (Heist.g:2699), which is FUTILE for a resolvable-id / unreadable-
+    FILE (the id resolves; the bytes can't be made) and would only add ~6min of census churn until
+     `Heist_pull_giveup` fires.  The honest fix is a distinguished disclaim — `repli_missed` carrying
+      a `dead:1` (or a new `repli_dead` frame) that means "give up on this id, do NOT re-census" —
+       so `Repli_recv_missed` can stamp a give-up flag the pull beat reads directly instead of the
+        re-census flag.  Touches both directions + Book fixtures, so it is its own pass.  Until then
+         the sink converges on its own ladder (the 90-ask / 5-bench give-up) and the source's parked
+          want ABANDON-culls once the sink stops asking (Ra.g leash, 90s) — correct, just not instant.
+  - NOTE the loop the owner pasted TERMINATES END-TO-END the moment eed refreshes onto the new
+     `Heist.go`: sink gives up → stops asking → source want goes unasked → ABANDONED cull → STALLED
+      barks stop.  The frame-semantics pass only makes it FASTER + quieter, not more correct.
+
+### 2026-08-22 — THE SEAM: tape-out endgame + `%Mag:'Streams'` (the whole-Record order) — ✓ LIVE-CONFIRMED
+
+The owner's asks, one sitting: *"at the very end of each track we say 'ran out of tape'… this
+ message should just be '!tape', and in this case which we know is coming, get the next track really
+  ready"* · *"next-track-after-finished should be from the start — ordinary sequential listening;
+   only surfing jumps into the middle"* · *"we could order the whole-Record on a special streams
+    Mag? keep elegant, within the design."*  All landed in `Ghost/M/Radio.g`, compiled to
+     `gen/M/Radio.go @ 90f5a012` (via **LocalGen** — see the compile-rail bomb below), Books green
+      (MusuBerth 7/7, MusuHeist 22/22, ok_pct 1 both), and **confirmed on the owner's live eed tab**:
+
+    📻⟫ starve {seq:44} → tape-out {seq:44,left:1} → dial → primed-fin-use {hbase:162}
+      → open {hbase:162,went:finish,wire:1} → primed-open   — all four seam marks in ~1ms:
+    a FRIEND's track opened at 0:00 from pre-decoded head PCM at a natural finish, over the wire.
+
+**Open threads, in the order they bite ("there's more I want" — the owner, handing over):**
+1. **Wire-side tail-ahead want driver** — the ordered whole-Record for FRIEND records:
+    `Radio_stream_ahead` fulfils local orders (head encode + transcode steps) but a wire record's
+     tail still rides the playhead's own want window, so the tape-out still fires on wire finishes
+      (the confirmed trace above IS one: left=1).  The Streams %Card already names the record and
+       `repli_want {id, stream, from_idx}` already exists — the driver is "want the ordered
+        record's un-held tail, gently, while comfortable".  See the priced §"%Stream ORDER"
+         negative result — the owner's Streams-Mag direction re-opens exactly its wire half.
+2. **Tape-out fired at 5.3s, not its 1.5s grace, on the congested tab** — the pump's 400ms cadence
+    stretches under a held beliefs mutex (same hour eed refused every runner_ask).  Bounded and
+     fine, but if the seam still feels slow, the mutex hold is the suspect, not the grace.
+3. **runner_ask's player rail refused everything that hour** — every `--player=` op acked
+    `ok:false` with an EMPTY error (CLI shows "refused (busy)"), runner went silent on `world`;
+     concurrent census_codec/Auto edits were in flight.  The console seam-echo (below) was the
+      workaround; the rail wants its own diagnosis.
+4. **The compile-rail bomb: editor ghost_compile acks `done` while its .go write silently fails.**
+    `Lang_drain_compile_settles` (LangCompiling.svelte:313) sends the done-ack without checking
+     `ev.sc.error`.  Working path: `GFILES="Ghost/M/Radio.g" vitest run -c
+      scripts/Story_cli.vitest.config.mjs scripts/LocalGen.spec.ts` — then VERIFY the .go's
+       Ghostmeta flipped (= sha256(.g)[:16]); the ack alone proves nothing.
+5. Runner housekeeping: a `fsa_blocked` Peeroleum.g rungo sits wedged; the runner tab holds no
+    local FSA share so MusuBerth/MusuHeist-class Books refuse there until one is granted.
+
+What the .g now says (grep the marks):
+- **`tape-out`** (pump, starve branch): when the missing run at `seq` reaches the END of the track
+   (no later chunk stands), the 6s grace is spent on bytes that are not coming — a 1.5s grace, then
+    `seq = total` and the same look drains + advances.  Humdinger-gated; a Book keeps the splice
+     cadence to the byte.  Mid-track holes keep the full 6s (one late chunk landing restores it).
+- **`%Mag:'Streams'`** — the standing ORDER, the owner's shape: `Radio_peek_next` now falls through
+   the lineup (measured `lu=1 cards=0` live, so peek was a dead letter and prime NEVER primed on a
+    live tab — the scar in `Radio_head_ahead` said so all along) to the dial's own pool, draws ONCE
+     (`Radio_dial_pool(w, radio, all, peek)` — peek skips the aim lock), and mints
+      `%Card,id` (+`sc.by`, `sc.own` 1-or-absent) via `Radio_stream_order`.  `Radio_dial` consumes
+       the order as its first fallback rung (below the joining hold, above the lineup walk), aiming
+        at consume time.  `Radio_stream_ahead` fulfils it behind the same >4s comfort gate as prime:
+         local → `Ra_head_ensure` + one `Ra_transcode_ensure|advance` step per pass (the
+          `Radio_supply_go` producers, aimed one track early); wire → head rides the restock beat's
+           `opus_head` ask, **tail-ahead-of-play want driver still does not exist** — that is the
+            priced piece in the "§%Stream ORDER" negative result below, now re-opened by the owner's
+             direction for the wire side.  Books never grow the Mag (peek is prime-gated).
+- **`primed-fin` / `primed-fin-use`** — the two-shape prime: the skip bet stands (2026-08-12
+   doctrine intact), and within ~12s of the frontier prime ALSO decodes the finish shape (head
+    chunk 0, `hbase = Ra_head_whole ? pv_off : 0`) onto `radio.c.ready_fin`.  `Radio_open` spends
+     whichever shape matches policy; `prime-drop` now means BOTH missed (ring carries `had`/`had_fin`).
+     This is what makes finish→from-the-start actually gapless: the old path prime-dropped on every
+      finish and paid a cold decode exactly when the tape-out grind had already eaten the slack.
+- `Radio_source_toggle` clears the Streams Mag + both primes with the lineup (stale-side pick).
+
+Also landed, live already (plain HMR, not .g): RadioFace's starve note is now literally `!tape`;
+ Vytui measures faces at +0/+100ms off the `react_soon` latch (content-only changes — a next-track
+  title swap — never bumped `paint_tick`, so the Radio face sat tiny until a hover moved geometry;
+   the measure now rides the same out-of-reactive-context timer as adopt, dead-band damped).
+
+**The seam now SPEAKS on the console** (2026-08-22 follow-up): `Radio_trace` echoes the seam-mark
+ set (`dial open primed primed-open primed-fin primed-fin-use prime-drop starve unstarve tape-out`)
+  as `📻⟫ <ev> {...}` on humdinger pages only — added because the runner_ask rail was refusing all
+   player-addressed ops that hour (every `--player=` op acked `ok:false` with an EMPTY error and the
+    runner went silent on `world`; worth its own look — the census/Auto edits were in flight then).
+     A Book's console stays byte-identical.
+
+Verify (after the compile lands): watch the ring for `tape-out` (left=N), `primed`, `primed-fin`,
+ `primed-fin-use` at a finish, `open … hbase>0 went=finish` on the track after a full play-through;
+  the seam should carry no starve.  Then `runner_ask run` the Musu* Books several times each
+   (re-run rule) — every new mechanism is humdinger-gated or Mag-absent in Books, so any red is a
+    translator/typo, not a policy leak.
+
+The owner's "chop encoded data in half and only decode|Preview the first half" is in (`Ra_source_pcm`'s
+ `need_secs` → byte-clipped `read_range` → `pcm_partial` mark; heads pass `(off*SEGS)+10`; a
+  continuation never encodes from a partial). Two guard rails learned live the same hour:
+- **A short partial must escalate, not retry.** The first cut re-clipped identically forever
+   (4 decode laps on one record before it was caught). `partial-short` now brands
+    `rec.c.pcm_clip_bust` and a busted record always decodes full. One wasted ~50ms lap max.
+- **Daylight refinement: the clip is computed from `rec.sc.bytes`/`card.bytes`, and for many records
+   that number describes a DIFFERENT rendition than the file at `path`** (the two-path-shapes
+    radiostock issue) — clips came out 25–70× short (5s decoded of a 273s track), so those records
+     always bust and the optimisation is a no-op for them. The honest size is the actual file's: ask
+      the nav (stat, or read_range's own knowledge) instead of the card. Until then the bust brand
+       keeps it correct, merely unoptimised.
+Sibling dawn work in Ra.g, same session: decode concurrency `maxfly=2` with a reserve slot for a
+ starving continuation (`cont_starving_ts`), starving-first want order in the pump, and a sink-side
+  `HEAD_ASK_CAP=4` on fresh remote-head asks — the boot-storm "off the tape" chain.
+
+### 2026-08-12 — THE HEAD IS EARNED BY FINISHING, NOT BY HAVING TUNED IN
+
+The owner, watching it run: *"seems like all the Records are starting from the start now?"* — then the
+ rule they actually wanted: *"start from the middle when next-track is clicked, but go end-to-start
+  when they play all the way through"*.
+
+`Radio_hbase`'s first reading was `!radio.c.tuned` — "every open after the first is a continuation".
+ That is one case too generous: it swept SKIPS in with finishes, and once every record held a whole
+  head (measured 16/16) it meant every track opened at 0:00. The radio feel was gone. Now it keys on
+   `radio.c.went` — `'finish'` stamped by the advance branch, `'skip'` by `Radio_skip`, consumed by
+    `Radio_open` so an unattributed open falls back to mid-song.
+
+**The bomb this defuses, because the old comment said it could not be done.** `Radio_prime` runs while
+ the PREVIOUS track still plays, so it cannot know which transition is coming, and the two now want
+  different first bytes (head chunk 0 vs offer chunk 0). The old note concluded "make the rule
+   finish-only and the two disagree on every skip — the one path prime exists for". The way through is
+    that **the finish path has ~2s of slack and the skip path has none**: the advance branch turns the
+     dial 2s before the audio frontier on purpose, so a cold decode there is inaudible, while a skip is
+      a keypress with the voice already cut. So prime always bets on the skip shape, and `Radio_open`
+       re-decides from policy and DROPS a prime whose `hbase` disagrees. Watch `prime-drop` in the ring
+        if a finish ever feels laggy.
+
+**Two different zeros, and the trap is that they look identical.** `Radio_start_seq`'s 0 is the first
+ chunk of the OFFER, which is already 30–70% into the song — landing there IS the mid-song feel.
+  Opening at the song's real beginning is the head run concatenated in front. Do not merge them.
+
+### 2026-08-12 (later) — THE HEAD LANDED AND IT WORKS, AND IT IS A HACK. THE v2 SHAPE IS NAMED.
+
+**It works.** The owner, on the live tab: *"oh yeah it is working now!"* A track that plays out is
+ followed by one that opens at 0:00 — over the wire, from a friend's shelf. What that took, in the
+  order it has to happen: a producer (`Ra_head_ensure`), a playback concatenation (`Radio_map` +
+   `Radio_hbase`), a wire kind (`opus_head` / `Repli_serve_head`), and a duration fix
+    (`radio.sc.of` / `sc.skip` branching on `hbase`) — that last one is what the owner saw as *"it
+     stalls out at the end of the track"*: the bar was measured against the OFFER while the head made
+      us play the whole track, so it pegged at 100% with `pv_off × 2s` still to run.
+
+**And it is a hack. Naming it, because it will not name itself later.** The tells, in the order they
+ will bite:
+- **`hseq` exists only to dodge a collision.** Its entire reason for being is that the chunk walks
+   below are mainkey-BLIND (`rec.o({ seq: 1 })`), so a head keyed `seq` would silently overwrite
+    preview chunks `0…pv_off-1` with different audio. A key named after another key is not a name.
+- **One shape under three mainkeys.** `%Preview`, `%Stream`, `%Prehead` all carry exactly
+   `buf`/`cid`/`head`/`preskip` and differ only in which source segments they cover. CLAUDE.md's rule
+    catches the inverse ("two DIFFERENT shapes under one mainkey"); this is its mirror image and it is
+     just as much a modelling failure.
+- **`hbase` is a rebase applied at PLAY time, and it propagates.** `Radio_map` needed it, then
+   `Radio_open`, then `Radio_prime`'s `ready`, then `sc.of` and `sc.skip`. Four sites in two days.
+    A hack is a thing you keep having to remember; this one has asked four times.
+- **`opus_head` needed its own no-park rule** (`Repli_serve_head` deliberately does not park), because
+   `Repli_serve_parked`'s retry gate is written against the OFFER's seq space and unparks instantly on
+    an index that is always ready. A special case inside a special case.
+- **NOT my invention, and this is the honest part:** `pv_off` rebasing the record so `seq 0` ≢ the
+   start of the track is pre-existing, it is the real debt, and `%Prehead` is a faithful patch on top
+    of it rather than a fresh kludge. See the 2026-08-12 entry below for how that came to be.
+
+#### NEGATIVE RESULT — the "%Stream ORDER" is NOT needed. Do not build it.
+
+Planned, then measured, then dropped. Worth the space because it looked obviously right: the prototype
+ ordered its stream explicitly (`w.c.ostream` → `%streamable,re,enid`), delivery here is a passive
+  restock fan-out, and the owner named the gap — *"before the end of the first track we need to order
+   the %Stream, right?"* So the plan was an explicit order at `Radio_open` of the CURRENT track, a
+    full track of lead time. **The live tab says the passive path already wins.**
+
+Measured on player `96d0cf88` (`socklog on` → `dump` → `wormhole/_trace/`, plus the resident snap):
+- **Every record is head-whole. 16 of 16, exact.** Per-record `pv_off` against `%Prehead` count:
+   `16/16, 14/14, 12/12, 10/10, 14/14, 16/16, 12/12, 14/14, 14/14, 12/12, 14/14, 14/14, 16/16,
+    16/16, 10/10, 12/12` — and it spans BOTH shelves, 8 `Mine` + 8 `Theirs`. The fan-out
+     converges completely, not partially.
+- **Production is ~1–3s, not minutes.** The trace's own sequence per record is
+   `head-wait-pcm pending=0` (kicks the PCM load) → `pending=1` → `head-made chunks=N`. Four heads
+    made in the seven seconds `1786496702→708`. `head-wait-pcm` is the dominant mark (20) and it is
+     NOT a fault — it is that handshake, one line per poll while the source PCM loads.
+- **So the ask-to-head latency is ~4–6s** (`head-serve-wait miss=2` → the sink's 4s ladder re-asks →
+   served), against a ~40s track. Any ask placed anywhere in the previous track lands in time. An
+    order buys nothing an already-converged catalog needs.
+
+**What the `hbase=0` opens actually were: the BOOT WINDOW, and nothing else.** A tab that has just
+ come up has not fan-outed yet, so its first continuation or two open at the cut. That is a
+  transient, it self-heals within a track or two, and `Radio_hbase`'s all-or-nothing rule already
+   makes the fallback honest (open at the cut rather than starve three chunks into the first verse).
+ **If it is ever worth improving, the cheap lever is ordering, not architecture:** walk the AIMED
+  friend's records first in `Ra_restock_beat`'s rotation, since the dial's pool is aim-narrowed. Tuning,
+   not a mechanism. Measure the boot window before spending anything on it.
+ The pool is also small — this tab: 1 `%Theirs` home, `records=8`. A rotation covers 8 records fast.
+  Re-measure before assuming this holds for a 500-record crate; that is the one thing that would
+   revive the order.
+
+#### v2 — MULTIPLE SEQ SPACES IN ONE `%Record`, DIFFERENTIATED BY MAINKEY
+
+The owner's shape, verbatim: *"we need multiple seq in the same C/\*, differentiating \* by mainkey
+ into streams of Preview|Stream|Headstream."* That is the elegant version and it supersedes the
+  "re-base everything to SOURCE coordinates" answer written in the entry below — which is a bigger,
+   more protocol-visible change for the same benefit.
+
+```
+%Record,id                     sc: id path seconds seg_secs nch br pv_off total …
+  %Preview,seq:0…P-1           the mid-song teaser — its OWN space
+  %Stream,seq:0…              the continuation past the teaser — its OWN space
+  %Headstream,seq:0…pv_off-1   the song's opening — its OWN space
+```
+
+Three runs, three independent `seq` spaces, one record. A run's mainkey says WHICH stream and `seq`
+ says where in it — so nothing is ever named after what it is trying not to collide with, and adding a
+  fourth kind of run later costs a mainkey and nothing else.
+
+**What that actually changes — the whole inventory, so the next fork does not have to re-derive it.**
+1. **The mainkey-blind walks become mainkey-AWARE.** Every one of these takes a run kind:
+    `Ra_chunk_map` (Ra.g:2625), `Ra_chunk_have` (Ra.g:2642), `Ra_chunk_heads` (Ra.g:2706),
+     `Radio_map` (Radio.g:3190), `Repli_chunk_at` (Repli.g:198), plus the incidental counters
+      `Radio.g:1391`, `Swarm.g:2549`, `HeistTesting.g`, and (replacing `Jam.g:93`'s `Jam_grab`
+       chunk-copy loop, gone with `Jam.g` 2026-09-04) `Ra_rec_copy`'s chunk-copy loop
+        (`Ghost/M/Ra.g:912`) — see `Radio_circuit_todo.md`.
+2. **A `run` argument replaces `hbase` arithmetic.** `Radio_map` stops concatenating with an offset
+    and instead returns an ORDERED CONCATENATION OF RUNS — `[Headstream, Preview, Stream]` for a
+     continuation, `[Preview, Stream]` for a tune-in. The playback timeline is then a property of the
+      run list, not a magic number threaded through five call sites.
+3. **`sc.of` / `sc.skip` fall out for free** — they become "sum the run lengths we are actually
+    playing", with no branch. The bug the owner felt cannot recur in that shape.
+4. **The wire kind collapses.** `repli_want` already carries `{id, stream, from_idx}`; `stream`
+    becomes the RUN MAINKEY instead of the ad-hoc `'opus'` / `'opus_head'` pair, and
+     `Repli_serve_head` merges back into `Repli_serve_chunks`. The parking gate is then written
+      against the run being served, which is what removes the no-park special case.
+5. **`%Stream` re-numbers.** Today `%Stream,seq` continues the preview's space (`seq P…total-1`); in
+    v2 it starts at its own 0. This is the only on-disk change and it is a one-time re-index of every
+     mirror. **Price it before doing it:** Book scores lean on standing radiostock
+      ([[books-lean-on-standing-radiostock]]) — wiping it drops them ~5×, so re-baseline after.
+6. **Migration is readable, not clever:** the `hseq` key is `%Prehead`'s only distinguishing mark, so
+    `%Prehead,hseq:N` → `%Headstream,seq:N` is a rename, and `%Stream,seq:N` → `seq:N-P` is a
+     subtraction. Both are one pass over a shelf. Do them in ONE diff so a red Book has one suspect
+      ([[controlled-revert-to-attribute-a-red-book]]).
+
+**Do this as its own diff, after the current one is committed.** It touches nine walk sites and every
+ mirror; landing it on top of an uncommitted feature makes any red un-attributable.
+
+### 2026-08-12 — THE HEAD OF A TRACK DOES NOT EXIST, SO "FROM THE START" CANNOT BE ASKED FOR
+
+*The owner, after checking the live tab: "the next track still plays from the middle somewhere the
+ %Preview as usual. it's supposed to request a Stream that goes from the start. can it do that or is
+  there a bunch missing?"* **There is a bunch missing, and it is not a request flag — it is a missing
+   producer plus a coordinate system that cannot name the thing.**
+
+**Two different mid-track offsets were being confused, and only the small one got fixed.**
+- `Radio_start_seq` — a RANDOM extra offset inside the chunks we already hold. That is the one the
+   `c.tuned` entry below removed. Real, but it was only ever the garnish.
+- **`pv_off` — the preview cut, 30–70% into the track** (`Ra_preview_offset`, Ra.g:87/1535). This is
+   the offset the owner is hearing, it is on EVERY offered record, and it survives `seq = 0` because
+    **seq 0 *is* the cut**: `Ra_stock_render` mints `total = segs - OFF, pv_off: OFF` (Ra.g:1599), so
+     the record's whole chunk universe starts at the cut. `Radio_open` already stamps this honestly as
+      `radio.sc.skip` (:727) — `skip=24` and `skip=20` were sitting in the live snap the whole time.
+
+**The bytes are not merely unrequested — nobody has ever made them.** `Orig.g:296-299` states it
+ outright: *"only the preview window plus whatever was streamed exists at all — the head segments
+  `[0, pv_off)` are never encoded by anyone."* And the continuation confirms it from the other side:
+   `Ra_stream` seeks to `from = (pv_off + P) * SEG` (Ra.g:2217) — it extends the preview FORWARD and
+    has no backfill mode. So a want for the head has no producer on any shelf, including your own.
+
+**What "request a Stream from the start" actually costs — three pieces, only the first is small.**
+1. **A head encode at the owner.** `Ra_stream` is already an ffmpeg seek-and-encode; the head is the
+    same call with `from = 0` and a length of `pv_off` segments. Genuinely small.
+2. **A chunk coordinate system that can name the head — the big one, and it is protocol-visible.**
+    Today `seq` is preview-relative (`seq 0` ≡ source segment `pv_off`), so there is no index for a
+     head chunk to be wanted, served, stocked or acked under. The clean answer is to re-base records
+      to SOURCE coordinates (`seq 0` ≡ sample 0, `total = segs`, the preview occupying
+       `[pv_off, pv_off+P)` and the head an ordinary HOLE the pump already knows how to splice). That
+        touches want/serve, `Radio_map`, `at0`, `sc.of`/`sc.skip`, Swarm's want-ahead aiming, and
+         every recorded fixture. Do NOT bolt on negative indices — a second coordinate system for one
+          case is the shape this codebase keeps ruling against.
+3. **Lead time.** Unlike the preview, head bytes are NOT pre-cached — they must be encoded on demand
+    and cross the wire. The hook exists: `Radio_peek_next`/`Radio_prime` already know the next record
+     roughly a track early. Needs an explicit policy for the seam: if the head has not landed in time,
+      does the track wait, or open at the cut and say so? (The honest default is open at the cut —
+       silence is worse — but that must be a decision, not an accident.)
+
+**Do not "fix" this by shrinking or zeroing `Ra_preview_offset`.** The mid-track cut is load-bearing
+ elsewhere: it is why a shuffle does not open every track at 0:00, and `Ra_stock_render` caches
+  exactly one window per track. Zeroing it makes every record start at the start by deleting the
+   feature rather than building the head — and re-cuts every card on every shelf once (Ra.g:1474-1481).
+
+> ⚠ **This section is 1,565 lines of diary and nobody can read it as an ask.** For *what is
+>  actually open, what is cut, and what needs the owner's word*, read **`V1_cut_todo.md`** first —
+>   five questions and a ship-blocker list, built from this section on 2026-08-11. What follows
+>    stays authoritative for HOW each thing landed. It is also due the human's own 2026-07-12
+>     ruling — *§0 stays a brief, not a log* — with the diary moving to
+>      `spec/history/Radio_buildlog.md`, which already exists for exactly this.
+
+### 2026-08-11 — TUNING IN IS ONCE A SITTING (a real fix — but NOT the ask, see the entry below it)
+
+⚠ **This entry does not deliver "the next track starts from the start".** It removes a SECOND,
+ smaller offset that sat on top of the real one. The owner checked the live tab and said so: *"I don't
+  believe your fix worked, the next track still plays from the middle somewhere the %Preview as
+   usual."* Right — read `THE HEAD OF A TRACK DOES NOT EXIST` below before touching this again.
+
+*The owner: "how about finishing one track causes the next to start from the start?"* Applied in
+ `Radio.g` — `Radio_start_seq` returns 0 once `radio.c.tuned` is set, and `Radio_open` sets it the
+  moment a needle lands.
+
+**Why the latch is per-SITTING and not per-FINISH, which is a wider rule than the ask.** The
+ 2026-08-07 mid-track entry is justified by one sentence — *"a radio you switch on is already
+  mid-song"* — and that is an argument about SWITCHING ON. It says nothing about the track after,
+   and a listener who sat through a whole track only to be dropped into the middle of the next reads
+    it as a fault. So the mid-track start is now the tune-in and nothing else: finish, skip and
+     riffle-audition all open at 0.
+ The technical half, and it is what decides it: **`Radio_prime` fixes the start seq while the
+  PREVIOUS track is still playing** (:608, "prime and open cannot disagree about where the needle
+   lands") — before anyone can know whether the next transition will be a finish or a skip. Under
+    "finish-only" those two answers differ, so every skip would have to throw its prime away — and
+     the skip is the exact path prime was built for ("the lag between click and sound"). One rule for
+      both transitions keeps the prime spendable. If the owner wants the scanning feel back on skip,
+       that is the cost to pay, knowingly.
+ `.c`, so a reload re-arms the tune-in — an ARRIVAL, not a policy, the same shape as `c.crossed`. A
+  pause|resume is not a re-tune-in (`Radio_pause` rewinds `c.seq`, it never drops `c.rec`).
+ Still humdinger-gated, so **no fixture moves**; a Book keeps the 0 it recorded.
+
+**Seen live, and the RED half is owed.** Four consecutive opens on player `96d0cf88` (`poke
+ Radio_skip`, `world` after each) all landed `at=0`, on records of `total=24` and `total=20` chunks —
+  where the old ladder would have drawn `Ra_rand(12)` / `Ra_rand(10)`, so four zeros in a row is
+   ~1e-4 if the tab held those chunks contiguously (unverified: `have` was not read per record, and
+    a shallow hold makes `room < 1` and returns 0 by the old path too — that is the loophole in this
+     evidence). **The decisive test is the other half** ([[mutation-test-every-claim]]): the FIRST
+      open of a fresh sitting must still land mid-track. It needs a tab reload, which costs the human
+       the 60s come-back above, so it was not taken — take it the next time a player is reloaded
+        anyway, and read `at` on the very first `Radio:playing`.
+
+**…AND IT %STREAMS IT ALL (2026-08-11, later — the owner: "it's got to %Stream it all", measured on
+ the come-back-fix reload).** Four consecutive wire tracks on the freshly-booted `96d0cf88`, every
+  open `primed start=0`, and each played its FULL length — inter-mark deltas sum to 48.2s / 36.3s /
+   41.9s against `total=24/18/21` chunks × 2s, with ZERO `starve` marks. The past-preview leg is
+    visible working on the same ring: `serve-park off=16 waiting=2` → `pcm-decode-done secs=64` →
+     `stream-first-chunk seq=16` — the serving side decodes the source and mints %Stream chunks on
+      demand, and the puller's head+16 keeps them landing ahead of the needle. `Radio_supply_go`'s
+       never-cap-a-wire-record rule is what makes 0:00 starts safe at all; nothing needed changing.
+  **The RED half is STILL owed**: this boot's first open drew a 1-chunk record (`total=1`), which
+   can never tune in mid-track by construction — the loophole stands, take it on a boot whose first
+    record is deep.
+
+### 2026-08-11 (night) — GRANT ACTIVATION: `repli_ready`, THE CONSENT-SHAPED COME-BACK FIX
+
+The owner's reframe, verbatim: *"sounds like Lefto needs to get consent to send repli_lines,
+ everything needs to hang off the Grant being established and perhaps activated... this is time to
+  mature things."* That supersedes every frame-reliability patch tried below — and they are all
+   REVERTED now: the Peeroleum `repli_lines` exemption (measured no-op, was spamming the console),
+    `Swarm_offer_lost`/`Swarm_offer_reset`, and the unwired recap pair. The negative result stays
+     recorded in a comment above `Swarm_share_up` and at Peeroleum.g's startup-hold.
+
+**What landed instead — `repli_ready`, the activation half of a grant lifecycle.** A grant on file
+ says a peer MAY receive our catalog (established); it says nothing about whether their rx is armed
+  THIS boot (active). So the newly-armed side now announces: at the bottom of `Swarm_share_up`
+   (rx armed as of that line), it sends `repli_ready` to every sealed pier — live station only, so
+    no fixture sees it. The frame lands in a MATURE tab by construction (the peer that wants to
+     offer has been up all along), so it has no startup window of its own — the flaw every
+      back-signal variant died of. The receiving handler (`Swarm_repli_ready`, voucher-gated via
+       the swarm envelope) stamps `route.c.rx_ready` and un-spends `offered_mark`/`offered_at`;
+        the ordinary beat re-offers through every gate it always used.
+ **Today an ACCELERATOR, not yet a gate**: routes never stamped keep the 60s-floor behaviour, so an
+  old peer loses nothing. The maturation — offers HELD until the grant is ACTIVE, `rx_ready` as a
+   real consent state on the grant, possibly its own particle — is the next step and should be
+    taken deliberately, with the owner.
+
+**Verification CLOSED 2026-08-11 (later): the come-back is ~13.6s, twice measured — B's own boot
+ plus ~1s.** The mark-reset alone was NOT enough (suspect 2 was right in spirit): two earlier
+  trials still landed at ~65–74s because an un-spent mark only accelerates whenever A's offer
+   loop next actually RUNS, and the beat's phases are minute-scale under a slow tour/cull. The
+    ask now gets an ANSWER instead of a note-to-self: `Swarm_repli_ready` fires
+     `Swarm_offer_now` right in the handler — the same gates and mark discipline as the beat's
+      offer loop (pier_live Music, register caster, stamp `offered_mark` BEFORE the send), so the
+       beat sees a spent mark and cannot double-offer. The reset stays as the backstop: if the
+        immediate offer throws, the mark is null and the beat + floor behave exactly as before.
+  **And the reply race is closed at B**: the immediate offer comes back within one round trip,
+   but B's per-route `repli_rx` used to be registered by B's own FIRST share beat — so the reply
+    would have died in the same dead window. `Swarm_share_up` now registers the rx on every
+     sealed route BEFORE sending `repli_ready` (arm the door, then knock).
+  Measured (scratchpad `whenland3.mjs`, per-route grep — suspect 1 honoured): reload B beside a
+   serving A → B `share-up` ~+12s, A's ring `repli-ready` + `offer-now`, `offered 1–2s ago` on
+    B's OWN route block, B `crates: 1 %Theirs` at **13.6s / 13.7s**; then `crossover
+     playable=3 of=Righto` and ~211 KB/s flowing. Books: SwarmInvite 5/5 green, SwarmShare
+      exactly its 8-caveat baseline. The residual come-back IS B's standup — any further shaving
+       is work on B's boot, as the entry below already concluded.
+
+**And shaved (2026-08-11, later still — the owner's "kinda jammed" reload): the come-back is now
+ ~3.5–5s, and the ~30s jam shape is structurally gone.** The 13.6s above was mostly the SHARE-ARM
+  queueing behind the arrival Book, and on a bad boot it stacked to ~33s. Ring-instrumented
+   diagnosis (marks `glass-ensure`/`radio-w-stood`/`share-armed-by`/`share-ask` are still in, and
+    cheap enough to keep):
+  - `radio_w` stands at the glass's beat 1 (~3s) — but `Swarm_share_up` was only being asked by
+    `SwarmStandup.svelte`'s `$effect`, which rides Mundo `version` bumps, **and Mundo holds still
+     for ~10s stretches while the arrival Book steps in its own House** (measured: asks n=1..16 in
+      the first 1.6s, then silence until the Book's completion bumped Mundo at step 9). So the
+       share armed at Book-end: ~13s on a good boot, ~33s when `music_wait` burned its 20s first —
+        which it did precisely BECAUSE the share hadn't armed (no friend crate at beat 6, so the
+         auto-start had nothing; the two delays compounded, that was the jam).
+  - `Stoker_ensure`'s arm-at-the-seam path (the 2026-08-06 cure, entry below) was DEAD on
+    humdingers: its `!w.sc.w` prod gate reads the end-user room's radio world (the arrival Book's
+     `w:Sounditron`) as a driven Book. Fixed: the gate is now `!w.sc.w || top.c.humdinger` — a
+      humdinger IS prod; driven Books on machine tabs stay gated exactly as before.
+  - `SwarmStandup` grew a 750ms wall-clock tick that all its effects ride alongside `version` —
+    a standup must not trust the world it is standing up to keep waking it. (Its old comment
+     claimed the belief loop's idle cadence would; measured false during a Book run.)
+  Verified both directions: reload → `radio-w-stood` → `share-up` + `share-armed-by w=Sounditron`
+   **+0ms** → `crate-born` + `mirror-merge recs=8` within ~70ms, all before the arrival Book's
+    step 2; music running by step 7 with `ms=0`. Canaries after: SwarmShare 9/9 at its 8-caveat
+     baseline, SwarmInvite settled green. Residual mystery, harmless now: one observed boot had
+      multi-second gaps mid-ring (9.9s, 5.1s) — background-tab timer throttling is the suspect;
+       under the seam arm a late glass just arms late-with-the-glass instead of at Book-end.
+
+**Also landed, same night (the Invite flow):**
+- `Swarm_expect_joining` — the INVITEE's half of "an invite means come here": armed at
+  `Swarm_redeem` (the hello is on the wire), `because='joining'`, 15s (join carries 8s+8s waits).
+- `Radio_dial` holds EVERY rung while `because='joining'` hopes — a tab that scanned a QR is here
+  to hear THAT friend, not whoever else is live. The inviter's `'invite'` keeps the bottom-rung
+  hold only (minting a QR mid-session must never stop playing music).
+- The favour: `Swarm_accept` (always the redeemer/deliberate-join side) stashes
+  `top.c.aim_wish = inviter`; `Radio_dial` consumes it into `radio.sc.aim`, so the aimed pool
+  prefers the inviter as soon as their records land. First-shot, not a lock — an empty crate
+  falls through, per the existing "falling back is never a downgrade" rule.
+
+### 2026-08-11 — COMING BACK ALWAYS COSTS ONE RE-OFFER FLOOR: THE FIRST OFFER IS THROWN AWAY
+
+**⚠ This entry replaces an earlier one that blamed the boast.** That read was wrong and the wrong fix
+ was nearly built — see *"what the boast has to do with it"* at the bottom. The boast is innocent.
+
+**Measured directly, not off the ring** (the supply ring rolls at ~120 marks, so ring-relative
+ arithmetic across a boot silently lies — poll `crates:` and A's `offered Ns ago` instead;
+  `scratchpad/whenland.mjs`). B reloaded beside a serving A:
+
+```
++5.8s   A OFFER #1   (change-triggered: B's era flipped, mark changed)   B.crates=0
+        … 57 seconds, B.crates=0 at every 2.5s sample …
++62.9s  A.offered resets — THE 60s RE-OFFER FLOOR                        B.crates=1  ← landed
+```
+
+Then everything downstream is instant: `mirror-merge` +1ms, all 8 `want-first`/`page-first` pairs
+ inside ~2s, music shortly after. **The come-back is one floor interval and nothing else.**
+
+**Why the first offer is structurally guaranteed to be wasted.** A's offer loop (Swarm.g:2428-2470)
+ fires the moment `route.c.peer_era` flips — i.e. the instant B's hi crosses. Timed on three trials,
+  that is **+6.1s**, and B does not answer a ping until **+7.0s**. A offers ~1s BEFORE B's page is
+   even up, long before B has registered its `repli_lines` handler (`Repli_register_rx`, Repli.g:1283).
+    The frame lands on nothing. A then stamps `route.c.offered_mark` and `route.c.offered_at`
+     **optimistically** — it believes it delivered — so the change-trigger is spent, and the only
+      remaining path is the 60s floor. Every time. Deterministically.
+
+The offer loop's own comment already names this class of bug — *"a mark that is wrong-but-stable …
+ is a silent permanent hole with no self-heal at all. A floor turns any such hole into a delay of at
+  most one interval"* — it just never suspected the mark could be spent on a dropped frame.
+
+**WHY the frame dies, exactly — and it is a seam between two locally-correct policies.**
+ Peeroleum.g:996 holds an unregistered type during the peer's startup window: *"HOLD it: not-ok → no
+  ack, so the sender's ack-gated retry re-delivers once our consumer attaches its handler."* That is
+   sound only while such a retry exists. It stopped existing for `repli_lines` on 2026-07-29, when the
+    reliability policy (Peeroleum.g:426) made it **ephemeral** — correctly, for the PULL RESPONSE it
+     usually is (the sink re-asks every un-merged offset every 4s). But the same frame type also
+      carries the **pushed catalog offer**, which has no re-ask behind it: *you cannot re-ask for a
+       catalog you do not know exists*. So the come-back offer is held for a retry that was deleted,
+        and lost in silence. **One frame type carrying two reliability classes is the root defect.**
+         Neither comment is wrong; neither file can see the other. (`[[nobody-owns-the-seam]]`.)
+
+**THE DOMINANT TERM IS THE RECEIVER'S OWN STANDUP, and it is not the wire.** `Swarm_share_up` — which
+ calls `Repli_arm` and is therefore the instant B can receive a catalog at all — runs at **+16.4s**,
+  measured to a tenth over three consecutive reloads (16.6 / 16.4 / 16.4). No sender-side cleverness
+   can beat that number. **Anything that shaves the come-back below ~17s is work on B's boot, not on
+    the offer.**
+
+**A NEGATIVE RESULT, recorded so nobody rebuilds it.** Two changes were made and measured and they do
+ **not** fix the come-back — both are still in the tree as instrumentation, and both can be reverted:
+  - `Peeroleum.g` — exempt `repli_lines` from the startup-hold so the peer COMPLAINS (`no_protocol`)
+     instead of silently swallowing it.
+  - `Swarm.g` — `Swarm_offer_lost`, the first-ever listener for `w.c.on.no_protocol`: on a complaint
+     about `repli_lines`, un-spend `offered_mark` so the ordinary 600ms beat re-offers.
+
+ The complaint **does** cross and is now visible (`offer-lost of=96d0cf88 re_seq=379` on the sender's
+  ring — the diagnosis is confirmed end to end). But the come-back stayed at **65.2s / 65.3s**, still
+   the 60s floor, because the mechanism is **structurally one step behind readiness**: B complains
+    only while it CANNOT receive, and stops complaining at the exact moment it can. Every
+     complaint-driven re-offer therefore lands in the dead window too, and the last one is spent just
+      before B arms. A back-signal that ceases on success can never carry the success.
+
+**THE FIX THIS LEAVES, and it is the ask — hung on the right trigger.** B knows, at `Swarm_share_up`
+ and nowhere else, both halves at once: *I can now receive* and *I hold no `%Theirs` crate for this
+  mutually-sealed friend*. That one instant is the whole answer. Ask there: once per boot, per
+   crateless sealed friend, receiver-initiated. It collapses the 48.8s tail to ~0.2s and leaves the
+    come-back equal to B's standup plus ~2s. Needs one small new frame type (a re-offer request) —
+     `repli_want` is per-record-page and cannot express it.
+  This is the edge the earlier entry wanted. **The instinct was right and the trigger was wrong:**
+   off the boast it makes gossip actionable, lets a peer set our outbound schedule, and fires when we
+    still cannot receive; off our own `share-up` it is a statement about our own readiness, bounded by
+     "I have no crate", and unable to storm. Not applied — a new frame type is the owner's call.
+
+Blunt non-fixes to resist: shortening the floor (pays wire forever for a once-per-boot problem) and
+ delaying A's era-change offer by a magic number (guesses at B's readiness from the wrong side).
+ Also resist "make the offer reliable": there is no live retx sweep (`Peeroleum_arm_whittle` is
+  Book-only), so a reliable emit would be retransmitted by nothing and would only pile the `%outbox`.
+
+**Instruments** (scratchpad, worth rebuilding if lost): `whenland.mjs` polls the receiver's `crates:`
+ against the sender's `offered Ns ago` — the only honest way to date a delivery; `whenready.mjs`
+  times `share-up` against the crate. **Never date a boot from the supply ring** — it rolls at ~120
+   marks, so ring-relative arithmetic across a come-back silently lies, which is how the first
+    version of this entry got written.
+
+**What the boast has to do with it: nothing.** The earlier entry timed `boast-heard → crate-born` at
+ 42s and concluded the boast handler should ask for lines. `Swarm_boast_recv` really does write two
+  `%IveGot` facts and return, and Swarm.g:1859 really does say *"boast is advisory — nothing grants
+   off it"* — but the 42s was the floor, and the boasts were bystanders that happened to be in frame.
+    Hanging the ask on the boast would have made gossip actionable (breaking *"gossip never opens a
+     door"*, :1931), let a peer set our outbound schedule, and permanently masked the dropped offer.
+      **A backstop built over a broken primary makes the primary untestable** — and the primary here
+       is not merely broken, it is broken on every single reconnect.
+
+**And `sound.shelf` is green through all of it.** *"a friend has told you what they have · Lefto · 8
+ records"* is satisfied by `w.o({Friend:1})` with `records > 0` (`Sounditron_probe_shelf`:2021) — the
+  ADVERTISEMENT, never the goods. Two probes read two different things and only one of them is what a
+   listener means. Same shape as `arrive.playing` below.
+
+**`arrive.playing` over-claims by ~54s.** Measured twice on both tabs: `arrived` declared at 10.7s
+ while `radio.solo` read ◐ *"your own music while we gather"* until ~69s. Arrival is met by ANY music,
+  including the solo fallback — so the milestone that lifts the Butler and declares the app ready fires
+   while you are still alone. **"Arrived" and "fully functioning" are two claims and only one is
+    declared.** The rows that knew — `radio.solo` ◐ and `sound.pulled` ○ — were saying so the whole time.
+
+**What was ruled out, by measurement not argument:** slow wire (8 records go playable in 9s once
+ started) · the 600ms share beat (`Ra_mag_warm` is ungated and runs throughout) · `radio_w` stamped
+  late (Radio.g:1753 stamps it at radio setup and arms the share inline) · the disk cache (cached
+   records open `wire=0`; radiostock is consulted and works).
+⚠ **A correction worth keeping:** an earlier pass here claimed the come-back *re-downloads bytes
+ already on disk*. It does not — that read a wire cost into a mirror-structure measurement. What IS
+  true is that the in-memory mirror is wiped by a reload (128 previews → 0) and nothing is persisted
+   while it rebuilds, so the cost recurs on every reload.
+
+### 2026-08-11 — THE RADIO STOPS BEFORE IT STARTS, AND A SKIP ALWAYS FIXES IT
+
+**The night's actual headline, seen three times on live tabs and still not explained.** A booted
+ Sounditron sits with a full friend pool standing — `radio.remote ✓ 8 playable of 8 from Lefto`,
+  `radio.fresh ✓ 8 fresh of 8` — and **nothing plays**. One press of next-track starts it instantly,
+   every time. The owner, the second time: *"all I had to do in there was hit next-track to get it to
+    play, of course… so, watch out for that opportunity, and take it."*
+
+**What is NOT the cause** (each read, not guessed):
+- *A dead pump.* `Radio_pump_soon` reschedules 800ms on a null dial, and `Radio_pump` reschedules **on
+   throw** as well (:375-380, written for exactly this fear). A chain that died would have to die in a
+    way both of those miss.
+- *An empty pool.* The census said 8 playable at the moment of the stall.
+- *Exhaustion.* The `all` replay rung (:944) sits above the local rung; all-heard replays.
+- *A false `'playing'` state.* Real, fixed today (below) — but this recurred AFTER that fix, with the
+   AudioContext already running. So it is a second, separate stall.
+
+**The live suspect, UNPROVEN: background-tab timer throttling.** `Radio_pump_soon` is a bare
+ `setTimeout` (:367-368) and there is **no `visibilitychange` or `document.hidden` handling anywhere in
+  Radio.g or Sound.g**. Chrome throttles background-tab timers hard, which would produce precisely this
+   — a tab that boots unfocused never gets its next look, and ANY interaction revives it. It also fits
+    "a skip always works", since a skip re-enters the pump synchronously off a real gesture. Related:
+     [[jsdom-says-someone-is-looking]] (headless `document.hidden` is false, so Books can never catch
+      this). **Next move: stamp the pump's wake times and compare a focused boot with a backgrounded
+       one.** One measurement decides it.
+
+**Meanwhile the recovery is taken, not suggested** (`Sounditron.g`, the `arrive.playing` patience
+ block). At the give-up seam, if no record is open and the census says something is playable, the
+  registrar calls `Radio_skip` itself, once, and says *"nothing had started — nudged the dial for
+   you"*. Guards: once per episode (`c.skipped`), only with `!rad.c.rec` so it can never cut audible
+    music, only with a genuinely playable pool, and only at a moment already conceded. **It is a
+     RECOVERY, not a fix — when the cause is found it should be deleted, not extended.**
+
+⚠ **Instrument trap paid for while writing it:** the guard was nearly `!probe.rms`, which would have
+ been **dead forever**. `Lies_audio_probe` builds its own `osc → analyser → gain(0) → destination`, so
+  `rms` says whether the AudioContext can process audio — ~0.705 on every healthy tab, playing or not.
+   `radio.c.rec` is the real "is music coming out". [[audio-probe-rms-is-its-own-tone]]
+
+### 2026-08-11 — A STATE WORD SET BEFORE IT WAS EARNED (fixed, and proven booting through `digging`)
+
+`Radio_go` wrote `Radio_state(radio,'playing')` **above** `await Sound_gat()`, whose AC resume needs a
+ user gesture — so a gestureless tab sat in `'playing'` with no device, no record and a suspended
+  context. Measured: `probe {"state":"suspended","rms":0}` under `poke Radio_skip →
+   {"was":"playing","now":"playing","title":null}`. Three readers trusted the word:
+    `Radio_toggle` (:116) called `Radio_pause` — **the play button paused**; `Radio_nudge`'s pump gate
+     refused to restart; and `Sounditron_music_why`'s gesture branch was gated on `off|paused`, making
+      the one correct diagnosis unreachable in the state it describes. Every instrument read calm
+       (`loud:0 amiss:0`) over a dead page. Four fixes: park in `'digging'` until the device is real;
+        `Radio_toggle` presses play when there is no `c.gat` (and that press IS the gesture the resume
+         waits on, so the button that looked broken is the one that cures it); `music_why` tests the AC
+          before the state word; and the give-up advice goes live + carries a `remedy` word.
+ **Proven live**: `Radio:digging,face:Radio` (bare) → `Radio:playing,title:High A,by_name:Lefto`.
+  [[a-state-word-set-before-it-is-earned]]
+
+**Still owed here:** the `Radio_toggle` guard and the widened `music_why` gate can only fire in the
+ deadlock the first fix now prevents — so exercising them means reproducing it deliberately. A fix
+  nobody has seen work gates nothing ([[mutation-test-every-claim]]).
+
+
+A rolling brief: the newest work sits here first, then gets baked into its home section
+ (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
+Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
+
+### 2026-08-09 — "IT WON'T STREAM FROM LEFTO" IS EXHAUSTION, NOT ABSENCE (diagnosed on the live pair)
+
+The owner, on the tab at `?I=f5da6599b8505881`: *"observe why it won't stream from Lefto, Lefto can
+ stream from Righto."* **The wire is fine.** The pier is MUTUAL and sealed both ways, the mirror is
+  fully previewed, and the tab was serving Lefto at `xfer 0↓ / 11↑ KB/s` the whole time it "couldn't
+   stream". Nothing is broken between the tabs. The friend POOL is empty, and the reason is an
+    id-collision the heard-set cannot see.
+
+**The chain, each link checked against the live snap or the source:**
+1. The tab has already diagnosed itself — the snap carries `error,of:96d0cf8852651a73,say:no music
+    coming across from Lefto`, minted by `Radio_lineup_errors` (Radio.g:1212) when a live granted
+     pier contributes NO pool.
+2. `Radio_lineup_fill` (1110) builds those pools, filtering friend records by
+    `radio.c.heard[rec.sc.id]` (1163).
+3. **`radio.c.heard` is keyed by the BARE record id, with no owner** (`Radio_heard_add`, 723).
+4. Both tabs are on the same box reading the same files, so their ids are the same ids. Measured
+    from the live snap: **16 of 16** of this tab's own record ids also appear in its 24-record mirror
+     of Lefto — a total overlap, not a partial one.
+5. So **playing your own copy of a track marks the friend's copy heard.** Your own listening drains
+    the friend pool.
+6. The eviction that would re-admit them is `Radio_heard_cap()` = 100 (718) — but the entire
+    universe here is 24 distinct ids, so the roll-over **can never fire**. The pool stays empty for
+     the life of the tab.
+7. Corroboration in the same snap: `Mag:Lineup,up_next:9` against `AHEAD = 20` — the fill cannot
+    reach its target. The queue is draining and cannot refill.
+8. `radio.sc.own` is absent, so the lineup is in SOURCE-EXCLUSIVE friends mode (the 2026-07-28
+    ruling, 1145). There is no fallback to your own shelf: pool-empty is silence, not a switch.
+
+(`radio.c.heard`, `Radio_heard_add`, and `Radio_heard_cap` named in this chain were deleted
+ 2026-09-04 with the rest of the old Jam machinery; the dedup set is now `Radio_heard(radio)`
+  reading `Heard_set` off the durable `Mag:heard,pub:<me>`, bounded by `heard_ttl` rather than a
+   100-cap — see `Radio_circuit_todo.md`. The diagnosis above is historical and stands as read.)
+
+**THE ASYMMETRY IS NOT REAL — BOTH TABS HAVE IT, and Lefto is the WORSE one.** Checked Lefto's own
+ world in the same session, and it carries the mirror-image row: `error,of:f5da6599b8505881,say:no
+  music coming across from Righto`. The numbers:
+
+| | Righto `f5da6599` | Lefto `96d0cf88` |
+|---|---|---|
+| lineup `up_next` | 9 | **0** |
+| Stoker `fresh` / `stock` | 9 / 16 | **0** / 16 |
+| xfer | 0↓ / 11↑ | 19↓ / 0↑ |
+| mirror of the friend | 24 recs, `flat=8` | 16 recs, `flat=0` |
+
+Lefto has heard **everything it owns** (`fresh=0`) and has **nothing queued** (`up_next=0`). It looks
+ healthy only because it happens to be mid-track on a Righto record it is still pulling (hence 19↓);
+  when that track ends there is no next card. Righto looks broken only because its current track is
+   one it already holds in full, so nothing needs to arrive (hence 0↓). **The download difference is
+    a per-track accident, not a capability difference.** The owner's read — "Lefto can stream from
+     Righto" — is what a working radio and an empty queue look like from outside.
+
+The whole universe is **16 tracks that BOTH tabs already own** (16/16 id overlap), so "the friend's
+ collection" is identical to your own. Hearing your 16 heards theirs. There is no round two.
+
+**The message is a misattribution, and the fix for that already exists elsewhere in this file.**
+ `Radio_dial_pool` (1284) carries an `all` flag for exactly this distinction, and its comment says
+  why: *"the caller cannot tell 'no friend music has landed' from 'I have played all of it', and
+   those want opposite answers (an honest note vs. a replay)."* `Radio_lineup_errors` never got that
+    fix, so it blames the friend for a shelf the listener finished.
+
+**Not the cause, but seen while looking:** the mirror holds 24 Lefto records while Lefto boasts 16
+ (`boast-heard of=96d0cf88 records=16`) — 8 rows in the mirror that Lefto no longer offers. Related
+  to [[one-sided-reload-breaks-serving]]; harmless here, worth its own look.
+
+**The candidate fixes — owner's call, NOT applied** (and Radio.g had a concurrent editor at the time,
+ mtime moving mid-session, so nothing was touched):
+- **(a) Exhaustion → replay**, matching the `Radio_dial_pool(all)` idiom the codebase already chose:
+   when a friend's heard-filtered pool is empty but their unfiltered pool is not, clear those ids
+    from `heard` and say "round two" rather than minting an error. Fixes the message and the silence
+     in one move.
+- **(b) Own the heard key** (`hp + ':' + id`) — cheap, but it means hearing the same track twice,
+   once as yours and once as theirs, which may be worse than the disease.
+- **(c) Scale the cap to the collection** rather than a flat 100 — the flat number is only ever
+   correct for a library much larger than the room.
+(a) is the recommendation: it is the distinction the code already knows it needs.
+
+### 2026-08-10 — `Radio_crossover` — THE FIRST FRIEND TRACK NOW CUTS IN (the 08-09 ask, landed in part)
+
+*The owner, restating it a third time: "it should switch to playing from the peer's stream when their
+ first track becomes ready."* The two entries below recorded this as design-only. The **first track**
+  half is now implemented in `Radio_nudge`'s playing branch (`Radio_crossover`, Radio.g).
+
+**Why it needed writing at all, given "a playing radio is not deaf" (2026-08-08) already landed.** That
+ fix restaled the LINEUP — and a lineup entry is the NEXT track. So the friend's music was correctly
+  queued and the listener still sat through the rest of a stopgap first. Waiting is right for every
+   later track and wrong for the first, because the first friend track is the moment the app becomes
+    what it is for.
+
+**Four gates, each load-bearing** (the failure mode being avoided is "cuts a track at random"):
+ once a sitting (`radio.c.crossed`, runtime-only so a reload re-arms — this is an ARRIVAL, not a
+  policy) · only out of solo (`sc.solo` set ⇒ we are on our own shelf; cutting a friend's track to
+   start another friend's is just random skipping) · only when `Radio_pool_census().playable` is
+    non-zero (`Radio_playable`'s real test — chunk 0 warm plus the first seconds — not "a card
+     exists"; a cut to a husk is silence) · **throttled 1.5s, and this one is not politeness**:
+      `Radio_nudge` runs PER LANDED CHUNK and its own comment insists on O(1), while
+       `Radio_pool_census` walks every crate and record — this is the exact shape of the 2026-08-06
+        per-chunk burn. After the crossover the latch makes it free forever.
+
+It calls `Radio_skip` (which blends rather than cuts, 2026-08-07) and lets the dial's existing friend
+ preference choose, rather than growing a second opinion about what to play.
+
+**⚠ THE BOMB — RE-AIMED 2026-08-10 (late). The conclusion was right and the fuse was wrong; the
+ paragraph that stood here would have sent you to the wrong function.** What it said: the crossover
+  gates on `playable` (heard-blind) but fires a `Radio_skip` that lands in
+   `Ra_dial_next(… skip_ids: radio.c.heard)`, so an all-heard friend crate burns the latch back onto
+    your own music. **That mechanism cannot fire**, for two independent reasons, both already in the
+     file it accused:
+- `Radio_dial` reaches `Ra_dial_next` ONLY inside the `radio.sc.own` branch (:917) and the last "mine"
+   rung (:982). The friend path goes lineup → `Radio_dial_pool` (fresh, :928) → **the exhaustion rung
+    `Radio_dial_pool(w, radio, 1)` (:944)**, which drops the heard gate (:1524) and REPLAYS. That rung
+     is the 2026-08-06 "exhaustion is not starvation" fix, and it sits *above* the local rung on
+      purpose. All-heard costs one honest replay (counted in `sc.replays`), never own music.
+- `Radio_pool_census` (:1577) and `Radio_dial_pool` (:1526) apply the SAME `Radio_playable` over the
+   same `Theirs` crates, so a census that said `playable > 0` cannot be followed by an empty
+    exhaustion pool. And `Radio_lineup_fill` is source-exclusive (:1367/:1375), so the lineup cannot
+     hand back own music either.
+
+**THE REAL FUSE: `Radio_source_toggle` never clears `sc.solo`.** `sc.solo` means one precise thing
+ everywhere it is read — *on my own shelf INVOLUNTARILY* — minted only on the mine rung (:996, which
+  `own` makes unreachable) and retired only in `Radio_open` when a friend's track opens (:695). The
+   source switch (:1293–1308) deletes `sc.note` and **not** `sc.solo`. So boot alone → solo set → flip
+    to "my records" → `own=1 && solo` stands for the rest of the sitting. A friend's first chunk then
+     lands, the crossover's three gates all pass, `crossed` burns, `Radio_skip` fires, and the dial
+      takes the `own` branch at :917 — **your own record, latch spent, and the listener's explicit
+       source choice overridden for nothing.** Second harm, same cause: `Radio_dial_solo` (:1141) reads
+        that stale flag, so the roster says *"listening alone"* over a deliberate own-mode.
+
+**The fix is one line in the toggle, and deliberately NOT in the crossover.** Clear `sc.solo`/`solo_by`
+ where the meaning changes, restoring the invariant at its only breach point; then `own=1 ⇒ solo
+  absent` holds structurally and every consumer is right for free. Rejected: an `sc.own` gate inside
+   `Radio_crossover` (a second copy of one fact, free to drift, and it leaves the roster still lying);
+    a refundable latch (to refund, the crossover must observe what the dial chose — exactly the second
+     opinion about what to play that :1634 exists to refuse). Open, and the owner's call, not a bug:
+      whether `c.crossed` should permit a RE-arrival hours later when a friend leaves and returns.
+
+**SEEN FIRE — TWICE, 2026-08-10 late, on Righto beside Lefto.** Two independent boots, same arc, from
+ `runner_ask world --player=<pub>`:
+
+```
+radio.solo ◐  "listening alone — your own music while we gather"
+   +1382ms / +284ms   crossover   playable=2 of=Lefto
+radio.solo ·  "with a friend"
+```
+
+The solo mark, the cut-in, and solo clearing because `Radio_open` opened a friend's track — the whole
+ designed causality, reproduced. So this is **proven, not written** ([[mutation-test-every-claim]]:
+  still owed its RED half — flip to own, bring friend music in, confirm it does *not* fire and
+   `crossed` is not burned. That negative test is the one that gates the fix above).
+⚠ **Instrument note, paid for once:** `trace` is REFUSED on a `--player` (allowed: ping probe world
+ supervisor state rungos runners socklog dump poke reload snap steps assertions). A `trace … | grep
+  crossover` greps an error message and returns silence that reads exactly like "never fired". Use
+   `world`. [[the-instrument-was-blind-to-the-molds]]
+
+### 2026-08-09 — "jump to the friend's stream when it comes available" (owner, same session)
+
+Restated tighter than the boot-policy ruling below and worth keeping in its own words: *"we need to
+ jump to the Friend's stream when it comes available."* This is ruling 1 below with the emphasis
+  moved from BOOT to ANY MOMENT — a friend coming online mid-session should pull the radio over, not
+   only decide what a fresh tab opens on. Note it interacts with the exhaustion bug above: today a
+    friend "becoming available" contributes nothing if their records are already in `heard`.
+
+### 2026-08-09 — THE BOOT POLICY, in the owner's words (design only — nothing implemented)
+
+Dropped mid-session while working the Vyto glass; recorded here because it is RADIO policy, not
+ glass policy. Three connected rulings about what a fresh tab should PLAY:
+
+1. **"we should switch to a friends stream when they come online, perhaps even play nothing until
+    it's determined no peer is online, so we can start playing new music."** — presence-first: the
+     friend's stream outranks local shuffle, and the boot may hold silence briefly rather than
+      commit to old music it will immediately abandon.
+2. **"it should start with %oldMusic and %newMusic,pending and you can throw attention light into
+    either direction... but %oldMusic is what's already here so it could actually be faster... to
+     jump into without networking."** — the boot choice as TWO CELLS in the glass, decided by the
+      attention currency (heat), not by a setting: %oldMusic (local radiostock — playable with zero
+       networking, so it can be INSTANT) vs %newMusic,pending (waits on peers/share arming ~30s).
+        The user throws light at the one they want; absent a throw, presence decides (ruling 1).
+3. **"perhaps it starts before there's a %Radio"** — the glass can commission before the Radio organ
+    exists. That race is now at least SAID (Vyto_normal's presence check, Supervisor_todo §9) but
+     the honest fix is boot-order: the two boot cells above could BE the pre-%Radio state — the
+      glass is never organ-less, it opens on the choice itself.
+
+Next move when this is picked up: mint %oldMusic/%newMusic as real particles the Sounditron
+ commissions at boot, wire heat-throw to the dial, and let ruling 1 auto-resolve the pending cell.
+
+### 2026-08-07 — ONE OF ANYTHING, ON THE WIRE TOO (the 61/638 report)
+
+**The destination this serves:** the numbers a listener reads off the glass have to be the truth. The
+ owner, on a long-open player tab: *"it's in 'all heard' and has been for ages, and the set of them …
+  is at 61/638, dunno why it keeps accumulating on its own"* — against a **62-track** crate.
+
+**The bomb: `Repli_merge` enforced one-of-anything only within the ARRIVING PARENT.** It located a
+ `%Record` under the `%Cloud` the frame happened to name, so it answered *"is this record on this
+  page?"* when the ruling it exists to enforce is *"there is only one of anything on this SHELF"*
+   (`Ra_rec_home`, the landing-Mag ruling). The sender's own shelf **churns** — the tour drops and
+    re-stocks tracks, and `Ra_mag_page` always lands a re-stocked one on the LAST page — so a track
+     that crossed on page 1 crosses again later on page 8, misses the page-local census, and mints a
+      **twin**. Measured live on Righto: **65 records over 53 distinct ids across 11 pages**, `a14602e5`
+       on pages 1 AND 8, `dc8eac48` on 1 AND 9.
+
+**The two symptoms were one bug.** The same trace showed `serve-miss … no record for id — materialise
+ gone` repeating forever for two ids, and **`ba8bb2c3` was one of the duplicated ones**: the sink was
+  re-asking a stale twin of a holding the source had long since re-paged, and the source could only
+   keep saying no. A phantom record is not cosmetic — it inflates every census the listener reads AND
+    it is what the dial then picks.
+
+Fixed at both ends. `Repli_merge` escalates the `%Record` census from the arriving parent to
+ **`mirrorTop`** — the crate root — so the wire asks the same shelf-wide question `Ra_rec_home` asks
+  locally: one door, one answer, both sides. The found record **stays where it sits** rather than
+   moving to the named page; paging is a listening ramp, not identity (`Ra_recs` walks `Mag**`
+    regardless), and tearing a head out from under its landed chunks to satisfy a page number would
+     cost real bytes. `Ra_crate_dedupe` then clears the twins a long-open tab is *already* holding,
+      keeper = the copy holding the most chunk bytes, and the record the radio is **playing** is
+       protected outright. It uses `drop(n)` not `rm(pattern)`: `rm` locates by query and with twins
+        standing under one parent the query cannot say which — it could take the keeper.
+
+Verified live on Righto, no reload: `recs=68 distinct=55` → **`recs=56 distinct=56`**, nothing lost.
+ `RepliUpsert` (7/7), `RepliSplit` (5/5) and `RepliShadow` (5/5) all green — and their own assertions
+  are the property that was strengthened (*"an identical resend located itself and changed nothing — no
+   twin was minted"*, *"the second pass located the standing mag and cloud spine"*).
+
+**Tooling that found it, and keeps it findable:** `runner_ask world` grew a **`crate_census`** —
+ `%Theirs` homes, per-shelf `recs` vs `distinct_ids`, mags, clouds. It states the two leaks
+  *separately*: `homes > pubs` means one crate counted many times by any reader that loops homes;
+   `recs > distinct_ids` means the same track standing twice in the tree. They are different bugs and
+    look identical in a total. The same op's `world_snap` was ALSO a lie worth knowing about — its
+     comment claimed it encoded "the resident world so Radio/Musu/Theirs show", but it encoded
+      `Lies_runner_story_w()`, the **Story** world; on a tab that has run a Book you got its recorded
+       step snaps and not one live particle. The two coincide only on a virgin player tab, which is why
+        it read as working for so long. `resident_snap` is now its own key.
+
+### 2026-08-07 — THE SHUFFLE POOL WAS NEVER THE CRATE (the "same 10 tracks" report)
+
+**The destination this serves:** hitting skip repeatedly should walk the whole collection, and the
+ tracks should blend. The owner: *"it keeps playing the same 10 tracks"* — with 62 tracks in reach.
+
+**The bomb, for whoever reads this next: `Radio_dial_pool` admits a record only once chunk 0 is
+ PRESENT.** A husk plays silence, so presence IS playability — which means *the warm window is the
+  dial's entire domain*. Anything the restock beat declines to warm is not slow to start, it is
+   INVISIBLE to the shuffle. Two defects compounded on that fact, both in `Ra_restock_beat`:
+
+1. **Wants were fired once, ever** — latched on the bare `ra_wanted` boolean, no retry timer. That is
+    the exact shape `Ra_pull_beat`'s own header names as the bug it fixed ("a want lost to a
+     dropped|parked serve was NEVER re-asked... the record wedged forever") — and this beat is cited
+      *there* as the proven sibling for the BUDGET half, while never receiving the RE-ASK half. One
+       dropped want-reply froze a record as a husk for the session, permanently outside the dial.
+2. **A contiguous window against a uniform dial** — candidates were the K catalog-successors of the
+    playing record, but the dial picks uniformly at random. So the warm set grew only by successors of
+     records already played (a slowly-spreading clump) while `heard` retired its members until the pool
+      emptied and the caller fell through to the `all` replay. No amount of skipping escapes it: a skip
+       advances the frontier by at most K.
+
+Fixed together — either alone still leaves the pool small. Half the window now steps a **golden-ratio
+ cursor across the whole catalog** (the crate wander's trick); scattering is right rather than wasteful
+  *because* the gate is chunk 0 alone — one landed page makes a record dial-able and the live pull
+   deepens whatever gets picked. Both halves gated on `humdinger`. The re-ask is gated **not merely to
+    spare fixtures**: it is wall-clock driven, so inside a Book whether it fires would depend on machine
+     speed — a want sequence that flaps with load is worse than one that never re-asks.
+
+**%PREVIEW-MIDDLE LANDED** (was parked in `Sounditron_todo.md` "not built blind — needs the human's
+ ear"; the owner asked for it directly). `Ra_preview_offset` cuts the offer 30–70% in, deterministic
+  off the **enid** — which is the content hash, so every Pier and every reboot agree; a random roll
+   could not be re-derived when a card resurrects, and two peers disagreeing would hand one id two
+    different timelines. `seq` stays 0-based (offer seq *i* = source segment `off+i`), so the page grid,
+     want stride and %Stream seam are untouched; the offer's chunk count is `total-off` and the
+      continuation opens at `off+P`. Three other sites follow it: `Ra_record_from` (stamps `pv_off`,
+       **absent when 0** so nothing snaps differently), `Ra_transcode_ensure`, `Ra_term_decode_pulled`'s
+        last-chunk remainder, and `Radio_open`'s `sc.of`. The resurrect gate now also requires the card's
+         cut point to match, so pre-existing stock rebuilds itself once.
+ **The seam is fine by construction** — it is an encode boundary, marked `head`, and both the Book
+  decoder and the live player reset the decoder there and drop that encode's preskip; both halves carry
+   the same baked gain. **What is UNVERIFIED is the track START**: the first preview chunk now opens
+    mid-waveform, so the encoder begins from silence at a non-zero sample. Needs an ear, not a Book.
+
+**Heist UI: `music/Unfiled/` was not only a lie, it was CREATING the folder.** `HeistSetup.commit()`
+ *and* `Heist_keep_commit` both defaulted the genre to the literal string `'Unfiled'`, which
+  `Heist_filing_for` then returned as a real category — landing a folder the 2026-07-29 ruling
+   explicitly forbids ("I don't want anything prepended"). Both now leave it absent. The `music/` prefix
+    was invented display (there is no such root), and the row showed only the basename, claiming the
+     album folders get flattened — they don't (`Heist_cp_path` preserves the source path). Also:
+      `Repli_serve_chunks` writes `x.serves[id]` on every advance and **never removes it**, so a finished
+       upload kept its ⇈ row at 100% forever *and*, being among the four most recent, crowded out rows
+        that were genuinely moving. Rows now carry `done`, sort behind live ones, and age out.
+
+**NEW CELL — `%Shuffle` / `ShuffleFace`** (the owner: *"perhaps we can get a visual on that. should be
+ on the page, in Vyto!"*). One pip per record in reach, lit only when the dial could pick it, filled by
+  preview-held fraction, dimmed once heard. The wall of hollow pips beside a small lit cluster IS the
+   report — seen instead of inferred. Rides with the deck (yields to an open heist).
+
+**BOOK STATE, attributed properly (the controlled revert, twice).** MusuStock 1.0, MusuRaTerm 1.0,
+ MusuHeist 1.0 (the ungated re-ask had cost it 0.95 — gating restored it). **MusuMag and MusuRaStream are
+  PRE-EXISTING RED, not this work**: with `Ra.g` reverted to HEAD they measure *identically* (MusuMag 0.1
+   vs 0.1, ×3 and ×2 runs; MusuRaStream never settles on either build). Both remain to be diagnosed.
+ **Trap worth keeping:** MusuMag read 0.7 before the radiostock wipe and 0.1 after, on BOTH builds — the
+  Books lean on standing stock, so a cache deletion mid-session will look exactly like a regression.
+   Always re-baseline after touching `.jamsend/radiostock/`.
+
+**radiostock had no disk-side GC.** 237 files / 116MB for 62 distinct tracks: the filename carries the
+ writing peer's pub, so every fresh browser identity re-wrote the whole crate (15 generations).
+  `RADIOSTOCK_CACHE_LIMIT` whittles only the in-memory record set — nothing ever culls the files except
+   the source-gone drop. Wiped at the owner's request (also required by the preview re-cut). **A real
+    disk-side cap is still owed.**
+
+**NEXT:** the owner's ear on (a) the mid-track track-START, (b) the blend; their eye on ShuffleFace;
+ then diagnose MusuMag/MusuRaStream, and cap radiostock on disk.
+
+**2026-08-07 — THE SMALL POOL THAT WOULDN'T ROLL OVER. THE ANSWER WAS THE WHITTLE, NOT THE MEANDER.**
+
+The owner: *"it should be easy to find every album in a 5 album collection like this but somehow two of
+ them only have one track each"*, then *"still stuck in a small pool of radiostock that wont roll over"*.
+Simulated the algorithm rather than guessing at it (scratchpad `meander_sim.mjs` / `window_sim.mjs`), and
+ the simulation **refuted the standing hypothesis** — the draw weighting was never the cause.
+
+- **The shelf is a moving window, so its composition is an EQUILIBRIUM, not an accumulation.** Album *i*
+   gains at its draw probability p_i and loses at held_i/W, because the whittle drops the globally oldest
+    record and knows nothing about albums. That settles at **held_i = W·p_i**. For [40,20,12,4,2] at W=24
+     the algebra predicts [12.3, 6.2, 3.7, **1.2**, **0.6**]; simulation measured [12.5, 6.2, 3.7, **1.05**,
+      **0.48**] — the owner's report to the decimal. With an unbounded shelf every scheme collects every
+       album, so the meander was never the illness.
+- **This kills the obvious fix.** Weighting the draw by each album's REMAINING tracks changes nothing: at
+   equilibrium remaining is itself proportional to total, so it reduces to the same proportional rule. No
+    draw weighting can fix an album-blind whittle — but a fair whittle fixes it under EVERY weighting, and
+     costs the big album nothing (shelf → [6,6,6,3,2], P(album ≤ 1 track) 52%/75% → 0%/0%).
+- **Landed: `Stoker_tour` retires the oldest record of whichever album is currently fattest** (`sc.album`,
+   or the path's dirname when untagged). Max-min allocation done the cheap way.
+- **THE CRATE IS BIG AND DEEP** — but see the ground-truth count later in this entry, which splits this
+   claim in two: the TREE is big and deep (528 directories, five levels, 82% of it `wormhole/`) while the
+    MUSIC really is small (62 files in 7 directories). So "the small collection read was wrong" is only
+     half right, and the half that matters for the wander is the tree. **The tour mark now carries**
+   `dirs`/`known`/`open`/`top` off the meander's own learn map, and `top` named the tree:
+    `0 spawn/- folks/- west/Calexico and Iron & Wine In the Reins:13`. Five levels down. A 12-hop budget
+     that RESET TO THE ROOT on every dead end could barely reach an album at all. Now 24 hops, and a dead
+      end steps UP one level instead of unwinding — both behind the `learn` (humdinger) predicate, since
+       they change the draw sequence and a driven world must keep walking byte-identically.
+- **Three defects found by simulation, not by reading**, all pulling the wander into empty structure:
+   the learn map keyed one directory two ways depending on base (so a third of digs saw an explored tree
+    as unvisited); `est` floored at 1 PER DIRECTORY, so barren structure out-weighed real music; and past
+     depth 6 it returned the unvisited prior instead of what it had learned.
+- **THE INSTRUMENT-WAS-THE-BUG CLASS CLAIMED TWO MORE.** (a) `learn[here] = {...}` sat BELOW the
+   `if (!branches)` guard, so a spent leaf album and a genuinely empty directory — the two cases the map
+    exists to record — were the two it never wrote. `open` could never reach 0; empty folders kept the
+     prior of 8 for ever. Moving the write above the guard: picks=0 26% → 10%, throughput +22%.
+      (b) The first roll fired on `dug > 0`, and live it read `dug=1 dropped=1` on every tour with stock
+       pinned at 20 against a window of 40 — the conveyor had become a CAP. The roll must stay strictly
+        slower than the dig (`dug > 1`) or it cancels it. **That is five for five this week: every one
+         of these looked like normal operation from the outside.**
+- **A spent branch returns in proportion to what it holds**: floor `ceil(sqrt(true tracks))`, not 1, so a
+   momentarily-shelved 200-track album isn't priced like an empty folder. Best measured revisit latency of
+    four floors tried (20.5 → 9.7 tours). Integer by construction — `prandle` is `floor(random*n)`, so a
+     fractional weight would collapse its remainder into the last bucket and bias the final branch.
+- **Thread (b) — "163 directories for 48 tracks" — RESOLVED, and it was the biggest thing here.**
+   The dead-end **step-up** added the same day (climb one level instead of resetting to the root) fixed
+    the four-wasted-descents problem and bought a far worse one: stepping up out of a barren leaf lands
+     on a parent whose ONLY branch is the leaf just abandoned, so the very next draw descends straight
+      back into it. Traced hop by hop in simulation — `misc9/a/x DEAD -> up -> misc9/a/x DEAD -> up`
+       eleven times, **22 of 24 hops oscillating between two directories, on 91% of digs**. That is what
+        `picks=0 got=0` always was: not a wander that failed to find music, a wander that never got to
+         look. Sixth instrument-was-the-bug of the week, and the only one that was a *dead loop*.
+   **Fix: deadness PROPAGATES.** A directory is dead when it is learned, holds no audio of its own, and
+    every sub is dead; dead branches are pruned from the draw, so a node whose branches are all dead
+     becomes dead itself and its parent prunes it — the corridor unwinds instead of trapping the walk.
+      Two deliberate non-properties: unknown space is never dead (no learn entry ⇒ false, so there is
+       always a way into what has not been seen), and a SPENT album is never dead (it reads `audio`, the
+        true count, never `open`), so whittling always brings it back and no track is written off.
+   Simulated on the owner's shape (201 dirs / 995 tracks / 130 albums, 400 digs × 40 seeds):
+    albums reached **26 → 122** of 130, tracks **70 → 487** of 995, empty digs **364 → 152** of 400,
+     dirs walked **83 → 193** of 201 — and hops **DOWN** 8926 → 6266, so it is cheaper as well.
+- **CORRECTION, FOUND IN A COLD RE-READ OF MY OWN DIFF: THE PRUNE WAS INERT ALL NIGHT.**
+   `live = dirs.filter(d => !dead(here + '/' + d, dm))` — but a `dirs` element is a directory HANDLE, and
+    every other line in the function spells `String(d.name)`. Interpolating the handle built the key
+     `<here>/[object Object]`, which is in no learn map ever, so `dead()` took its `if (!e) return false`
+      exit on every call and **nothing was pruned from the moment it landed**. It fails in the SAFE
+       direction — nothing wrongly written off — which is exactly why nothing threw and the numbers still
+        went up. Ninth of the week, and the first where the silent mechanism was my own new code.
+   **What this changes about the attribution, which matters more than the fix:**
+   · The SIMULATION was testing the intended algorithm correctly (its `dirs` are `Object.keys(...)`,
+      i.e. strings), so albums 20.5 → 110.4 on the repo shape stands — **as a prediction, still untested
+       live.**
+   · The LIVE results — 49 → 62 discovery, the 38–40 limit cycle, the shelf composition — are real but
+      were produced by the **φ slot cursor, the dry-tour roll, and the cold learn map after the reload**.
+       Not by deadness. Every sentence in this entry crediting the prune for a live number is wrong.
+   · The ping-pong trap traced in simulation is REAL and was **never actually fixed live**. Discovery
+      still reached 62/62 despite it, so on this tree it costs hops rather than coverage.
+   · Therefore expect a further improvement once the fixed build runs — but a MODEST one, see below.
+- **AND THE SIMULATION'S SHAPE WAS WRONG, WHICH INFLATED EVERY HEADLINE IN THIS ENTRY.** The synthetic
+   crate was built before the share had been counted: 995 tracks in 130 albums, against a reality of
+    **62 tracks in 7 directories**. Finding 130 needles is a different problem from finding 7, so the
+     "albums 20.5 → 110.4" and "26 → 122" figures **do not transfer to this owner's share**. Rebuilt the
+      harness to the counted shape (520 dirs, 62 tracks, albums 18/13/11/8/8/3/1, 408 dirs of
+       `wormhole/Ting/<date>/<time>`, `scratchpad/real2.mjs`) and re-measured what actually ships:
+   | metric | was-live (cursor only) | shipped (+prune+confirm) |
+   | music dirs reached | 7/7 | 7/7 |
+   | tracks found | 62/62 | 62/62 |
+   | **digs to complete discovery** | 120.7 | **110.1** (−9%) |
+   | **hops to complete discovery** | 2262 | **2010** (−11%) |
+   So on THIS share the prune is a ~10% speedup, not a transformation, and final coverage is unchanged —
+    which is precisely why the cursor-only build reached 62/62 live without it. The big numbers were real
+     for the shape they were measured on and that shape is not the owner's. **Count the crate BEFORE
+      choosing the harness shape; a simulation calibrated to an imagined input measures an imagined
+       system.** Second time in one sitting that the sim's shape, not its logic, was the thing that lied.
+- **Thread (a) — MEASURED, and the partial-listing hypothesis is REFUTED.** `flap` counts revisits where
+   a directory's audio count disagrees with the last visit, `flapd` the same for its subdir count (the
+    more dangerous half — a short directory listing omits a music-bearing child from `subs`, and deadness
+     only checks the subs it was told about, so a parent whose real children were never seen could be
+      pruned and take a branch out of reach). Both sat at **0** across many tours on both players.
+       So `known=49` is honest and the share really does hold ~49 tracks in 184 directories — low music
+        density, but the truth of it. The original one-off tick-down (50→49) stays UNEXPLAINED; it simply
+         does not recur under measurement, which is worth knowing but is not the same as solved.
+- **`picks=0 got=0` ON EVERY TOUR MARK WAS AN ARTEFACT, NOT A FINDING.** `st.c.dig_*` are per-CALL and
+   the round loop breaks on the first dry round — so the round the trace read was, by construction,
+    always the one that found nothing. Marks were printing `dug=1 ... picks=0 got=0`: an instrument
+     contradicting itself within a single line, for as long as the mark has existed. It cost this session
+      a wrong "the wander cannot reach the free tracks" theory, chased almost to a speculative fix, before
+       the contradiction was noticed. Now summed across rounds. **Seventh of the week, same shape** — and
+        the first one that was actively *arguing the opposite of the truth* rather than staying silent.
+   **Still not the whole truth, and worth knowing before trusting these fields.** `Stoker_dig` loops over
+    three bases (`['music', '', 'testsounds']`) and RE-ASSIGNS `dig_picks/got/hit/dup/bad` inside that
+     loop, so one call's counters describe only the LAST BASE it tried. Summing across rounds therefore
+      gives the last-base value of each round, not the true total — an undercount, in the same direction
+       as the bug it replaced. Left alone deliberately: making it exact means changing per-base semantics
+        that a nearby comment says are load-bearing ("the shelf count ACROSS THIS ONE CALL is the exact
+         test"), and that is not a change to make while the live pair is unreachable. **Read `dug` as the
+          authority for what a tour actually landed; treat `picks/got` as a lower bound.**
+- **Thread (a)'s insurance, kept anyway** — deadness still requires a second opinion.
+   Pruning is permanent, so a single short `expand()` on a real album would write it off for the life of
+    the page. Deadness therefore needs a second opinion: `z` counts consecutive audio-free visits and a
+     directory must look empty TWICE. Costs warm-up speed only (tracks by dig 50: 58 → 38) and converges
+      to the same ceiling (121 vs 122 albums). Still worth confirming (a) directly — log `audio_all.length`
+       for one known-size album across repeat visits — because if listings really are partial, `known`
+        and every weight derived from it are under-counting everywhere, not just here.
+- **EVERY DIRECTORY CARRIES ITS OWN SLOT CURSOR** (the owner: *"some kind of balanced tree that grows to
+   find every directory evenly, by magic... a Dip assigned tree of directories"*, *"walk evenly into the
+    unknown space"*, *"roughness"*). An iid draw is a coupon collector — seeing all K branches of a node
+     takes ~K·lnK visits with a heavy tail, so the wander kept re-treading the branch it had just come
+      back up from. The node now steps its OWN cursor by φ across the weighted CDF, the same shape as
+       `Dip_assign` claiming `parent.sc.i++` (Hovercraft.svelte) but proportional instead of round-robin:
+        successive visits land ~0.618 apart, so K roughly equal branches are covered in K visits with no
+         repeat and no gap, and a branch worth 3× another still gets 3× the slots. Discrepancy
+          O(log n / n) against iid's O(√n). φ specifically because its continued fraction is all 1s, so
+           the sweep can never fall into lockstep with a branch count. The cursor is born at a random
+            offset — the **roughness** — so no two nodes are in phase. Worth **+16 albums and +17 dirs**
+             on top of pruning. It is not one of the old wearing-out cursors and cannot become one: it
+              indexes BRANCHES at one directory, never tracks, the track pick stays a fresh draw, and it
+               lives on the `.c`-only learn map so it never encodes and dies with the page.
+   Sharp edge, found before it shipped: that map SURVIVES HMR, so a live page carries hundreds of entries
+    minted by the previous build with no cursor. `undefined + 1` is NaN, `NaN >= w` is false, and the CDF
+     walk then stops at k=0 — every one of those nodes would have picked its first branch for ever, on
+      the live pages only, with nothing thrown to say so. Hence `if (node.n == null)`, not `if (!node)`.
+- **THE DRY TOUR IS THE ONE THAT MOST NEEDS THE ROLL** — the deadlock behind the owner's actual sentence.
+   Yesterday's `dug > 1` guard reads a dry wander as "there is nothing out there". Usually it means the
+    opposite: the wander came up dry BECAUSE the shelf holds everything within reach, and the skip set
+     built from that shelf is what emptied the pool. Supply is not absent, it is *held*. Both players sat
+      in exactly this: `dug=0 dropped=0 stock=34` tour after tour against a window of 40 — never full so
+       no over-the-window whittle, never digging so no roll. Dropping un-barrens the path, so at
+        saturation the whittle is the ONLY source of supply. Now `dug < 1` rolls one as well, and it is
+         self-limiting without a rate of its own: drop one on a dry tour, the next tour finds exactly
+          that one, `dug === 1` blocks the roll — the shelf sits at its ceiling and rotates a record
+           every couple of tours instead of freezing. The measured case the `dug > 1` guard exists for
+            (`dug=1 dropped=1` pinning a growing shelf) still takes neither branch.
+   Live on both players within minutes: `dug=0 dropped=1 stock=33` → `dug=1 dropped=0 stock=34`, over and
+    over, with `barren` falling 8 → 1 as the drops un-barren paths and the re-digs then succeed.
+   **Settled into a stable limit cycle, the same one on both players independently:**
+    `40 → 39 → 38 → 39 → 40 → 39 → 38 → 39 → 40` — up to the window, down two on the whittle + dry roll,
+     straight back on the dig. It does NOT drift toward the floor, which was the one failure mode this
+      change could have had; and the shelf now reaches a FULL window of 40, against 23–34 before. Two
+       independent players converging on the identical cycle is the tell that it is a property of the
+        mechanism rather than a lucky sitting.
+- **THE DIAL BLENDS RATHER THAN CUTS** (the owner: *"it should be very effective at rapidly skipping
+   tracks. getting them to blend together a little even"*). `Radio_skip` used to `close()` the voice on
+    the spot, severing a graph mid-sample — a click, and a burst of them on a fast run of skips. The
+     outgoing voice already has audio scheduled AHEAD of the playhead, so ramping its gain down while the
+      incoming voice ramps up gives a real overlap: skip a primed track and the two genuinely cross.
+       Un-primed, the same ramp degrades to a clean fade instead of a click — the safe direction to fail.
+   `Audiolet.fade_in(secs)` is the new half; `fade(1, secs)` could NOT do it, because it anchors on the
+    CURRENT value and a fresh voice sits at gain 1 — the incoming track would land at full volume.
+   The outgoing voice is closed on a timer, and any voice still fading when another skip lands is closed
+    AT ONCE — the stack is bounded at one however fast the dial is turned, which is what keeps rapid
+     skipping cheap rather than an accumulation of dead graphs. Live pages only: a timer and a gain ramp
+      are wall-clock, and a driven world must tear its voice down synchronously or every Book that skips
+       would be racing a `setTimeout`. **Unverified from here** — a blend is pixels-and-ears, and neither
+        round-trips a fixture; `runner_shot` cannot hear. Wants the owner's ear on a fast run of skips.
+- **GROUND TRUTH OF THE SHARE, finally measured — the share is /app ITSELF.** The `died=` electrode (a
+   `.c` string naming where a give-up walk ended) came back `died=src/routes h24`,
+    `died=Ghost/test/Story/Hoho h24`, `died=wormhole/Ting/2026-07-02/160434 h24` — the wander was
+     spending its whole 24-hop budget inside the source tree. So the crate is the repo working tree,
+      with the owner's music in `0 spawn/` inside it. Counted from the container:
+   | directories | 528 (435 of them under `wormhole/`) |
+   | directories holding audio | **7** |
+   | audio files | **62** |
+   Album sizes 18, 13, 11, 8, 8, **3**, **1**. **Part of the founding complaint was ground truth, not a
+    defect**: *"somehow two of them only have one track each"* — the last two directories are
+     `Charif Megarbane - Tayyara Warak (2022) [FLAC]` appearing TWICE, once with 3 tracks and once
+      holding a single file. That copy really does hold one track. Before theorising about a crate,
+       count it; the container can see this share even though it cannot see an FSA-picked one.
+   This also sizes the remaining work honestly: the wander must find 7 music directories among 528, and
+    `wormhole/` alone is 82% of the tree. Deadness collapses it bottom-up, but every barren leaf needs
+     two visits (the `z` confirmation), so convergence is on the order of ~1000 directory visits.
+- **A THEORY KILLED BY SIMULATION BEFORE IT WAS EVER TYPED INTO THE GHOST.** `est` prices an unvisited
+   directory at 8 and sums over subs, so a directory with 20 unexplored subdirs estimates 160 tracks and
+    out-weighs any real album ~12:1 — and source trees are the branchiest thing there is. That reads like
+     an obvious bomb. It is not: an EXPLORE arm (unvisited prior 0 plus a flat per-branch curiosity
+      bonus) measured WORSE on a repo-shaped share — 98.8 albums against 110.4. The per-descendant prior
+       is not a bug, it IS the exploration drive, and flattening it costs discovery. **Simulate first;
+        this is the second standing hypothesis this week that the data refused.**
+   The same run is the evidence for what DID land, on the shape that actually matters — a repo-shaped
+    share of 904 dirs with music buried beside a big source tree: albums reached **20.5 → 110.4** of 130,
+     tracks **54 → 358**, empty digs **372 → 217**, at lower hop cost.
+- **THE COVERAGE CLAIM IS NOW LIVE EVIDENCE, NOT SIMULATION.** Counted off Lefto's real shelf of Righto's
+   shared stock (33 records), against the disk truth above:
+   | testsounds 8/8 · Deadfly 8 of 11 · Calexico 7 of 13 · Resonating 5 of 8 · Marzipan 4 of 18 ·
+    Tayyara(arabia) 1 of 3 · Tayyara(dup) 0 of 1 |
+   **Every album is represented except the one-track duplicate**, and the distribution is the OPPOSITE of
+    proportional-to-size — the biggest album on disk (Marzipan, 18) holds the fewest (4) while the 8-track
+     testsounds holds all 8. That is the album-fair whittle doing precisely its job: it drops from the
+      currently-fattest album, so a big album cannot crowd out a small one. Nothing is stranded at one
+       track any more except the folder that genuinely contains one file.
+   Method note worth keeping: the world snap embeds records in TWO forms — plain snap text and, when a
+    title or directory holds a comma, escaped JSON. A `grep -oE 'path:[^,]*'` silently drops both classes
+     (truncates at the comma, misses the backslash-escaped ones) and undercounted by a third here, hiding
+      a whole album. `tr -d '\\'` first, then match to `,sr=`.
+- **COMPLETE DISCOVERY, MEASURED AGAINST DISK TRUTH.** Righto reached `known=62` — every audio file in
+   the share — from a COLD learn map in ~13 minutes: 27 → 40 → 43 → 44 → **62**. The old code plateaued
+    at 48–49 after hours and stopped there. That number is not a proxy or a ratio: the crate holds
+     exactly 62 files (counted above), so `known == 62` IS total coverage. This is the gate the whole
+      §0 entry was reaching for, and it is now a measurement rather than a simulation.
+   Lefto sat at 49 through the same window, and 62 − 49 = 13 = exactly the Calexico album — i.e. one
+    music directory its own wander had not yet entered (its SHELF holds 7 Calexico tracks, but those
+     arrived over the wire from Righto, not from its own walk). A testable prediction, not a worry:
+      `known` should step to 62 when it lands there, and its `dirs` was still climbing (111 → 131).
+   **Confirmed at 02:46** — Lefto went 49 → **62** in a single step, i.e. +13 exactly, the Calexico album,
+    the moment its wander entered that folder. So BOTH players reached complete discovery of the share
+     from cold maps, and the one player that lagged did so for the predicted reason rather than a second
+      cause. Stock settled at 39 against a window of 40 on both. Note Righto found all 62 having learned
+       FEWER directories than Lefto (119 vs 139): the win is not "walk more", it is "stop re-walking the
+        barren", which is exactly what deadness + the slot cursor were for.
+- **Still open — REVISED at the end of the sitting, because most of this bullet was overtaken.**
+   `open` fixing wasted hops but not coverage still holds, and the fair whittle is still the only thing
+    that moves shelf composition. But "the coverage claim wants more live turns than it has had" is no
+     longer true: both players reached 62/62 against counted disk truth, and the shelf distribution was
+      read off the live snap (biggest album fewest records). **Coverage is settled; do not re-litigate it.**
+   What is genuinely still open:
+   · **The visualise-the-scrolling-Mag idea** — untouched, and the owner said only *"perhaps"*. Face work,
+      unprovable from the container (pixels or it didn't land), so it wants a steer before it is started.
+   · **The blend wants an ear.** Proven ACTIVE rather than inert — it rides the same `humdinger` gate as
+      the learn map, which is demonstrably populated — and proven leak-free by construction, but whether
+       it SOUNDS like a blend is not a question this container can answer.
+   · **Sounditron 0.29 → 0.14 red**, caused by these changes and expected (it is resident on the live
+      tabs where the new meander runs); its re-record is still blocked on stock nondeterminism.
+   · **§0 is ~950 lines across five dated entries** and wants folding into §3.x/§9 — the doc's own rule,
+      and an editorial call for the owner rather than something to do unilaterally.
+   · **THE WARM WINDOW AND THE DIAL DISAGREE ABOUT WHAT MATTERS — an efficiency question, NOT a bug.**
+      `Ra_restock_beat` warms the next `Ra_keep_ahead` (4) records **in catalog order**, rotated to start
+       after the playing one; its comment assumes sequential play ("so the NEXT track starts instantly").
+        `Ra_dial_next` picks **uniformly at random** across the whole catalog. With ~33 records that is a
+         ~12% chance a dial turn lands on something already warm — so ~7 turns in 8 pull cold, and a
+          SKIP is a dial turn, which bears directly on the owner's "very effective at rapidly skipping".
+      **Measured before believing it, and it is not currently biting**: zero `starve`/`unstarve` marks on
+       either player's ring across a session with 140–194 skips, and `primed [id]` → `primed-open [id]`
+        shows the prime being spent on the fast path. A loopback pair pulls fast enough to hide it. On a
+         real wire it would not hide. Options if it ever surfaces: have the dial PREFER records whose
+          preview is whole (uses what was already paid for, but narrows variety toward the window), warm
+           a random sample instead of a sequential run (matches the dial's distribution, same hit rate),
+            or simply raise `keep_ahead`. **A design call for the owner — do not just change it.**
+      Read both functions before touching either; this subsystem punished three plausible readings in one
+       sitting (page clumping "breaks the shuffle" — the dial is random; "only 5 dial candidates" —
+        `preview` is PROMISED not landed, so husks are candidates; and the branchiness bomb).
+
+**2026-08-07 — "ONLY 3 TRACKS COME OVER". TWO BUGS, BOTH MEASURED, BOTH FIXED, BOTH LIVE-PROVEN.**
+ The owner's report was exact and the two causes are independent — one at each end of the wire. Between
+  them a listener heard the first three tracks of a friend's crate and then nothing new, forever, while
+   every instrument said the share was healthy. **This is the shape to remember: the CATALOG crossed in
+    full and the dial looked fine; only the BYTES were pinned.** A census of what arrived would have
+     shown 15 records and declared victory.
+ · **(1) THE KEEP_AHEAD WINDOW NEVER ROTATED — a two-world read.** `Ra_restock_beat` anchors its
+    rotation on `w.c.play`, which is the PACED LISTEN's playhead (`Ra_term_stream_open`) — the Books'
+     cursor. Live there is no paced listen: the real playhead is `radio.c.rec`, and **the radio lives in
+      the RADIO world while the share beat calls the restock with the STATION world.** Two different
+       particles, so `w.c.play` was permanently undefined, `at` stuck at 0, and the window sat pinned to
+        the first four records of the catalog for the whole session.
+    MEASURED: Righto mirrored 15 of Lefto's records and fired exactly **four `want-first` marks** — all
+     within four seconds of boot — then never wanted another. Three of the four ever played.
+    FIXED: `Ra_playing_id(w)` — paced-listen cursor first (so every Book keeps its pinned cursor and no
+     fixture moves), the live radio second, null if neither stands. One line at the call site.
+    PROVEN: four NEW `want-first` marks in the first three minutes after the fix.
+ · **(2) BOTH STOKERS HAD GONE PERMANENTLY TO SLEEP — the wrong organ was asked about sharing.**
+    `Stoker_look` digs only while `fresh < 8`, where `fresh` counts records MY radio has not heard this
+     sitting. But the default radio is SOURCE-EXCLUSIVE (friends' collections, not my own), so my own
+      records are never heard, `fresh` never falls, and **the dig gate never opens again**. The gate is
+       right for what it guards — my own listening never running dry — it is simply the wrong question
+        to ask about what I SERVE.
+    MEASURED: `advertise records=21` on Righto and `records=15` on Lefto, dead flat for entire sessions,
+     with the collection barely sampled.
+    FIXED: **`Stoker_tour` — the conveyor.** The owner's ruling: *"Mag:shuffle seems to have an end, but
+     it can spawn more at the end constantly, and whittle off the top."* One ordinary dig, then whittle
+      the oldest back to a window of 24 (`w.c.tour_window`), every 90s (`w.c.tour_floor_ms`). The Mag
+       stops being a list that fills once and freezes and becomes a MOVING WINDOW over the collection.
+    PROVEN: stock 21 → 23 → 24 within three minutes, `advertise records=` moving for the first time.
+ · **NO CURSORS, and none were needed** (the owner: *"the old cursors were terrible, careful with that.
+    wearing out tracks, etc."*). The old `Radios.svelte` machine kept a per-client cursor on the
+     broadcaster, `KEEP_AHEAD=5` against `co_cursor_N_least_left`, `orecord` remote-cursor reports every
+      other seq, and a wear-out ledger. **The conveyor needs none of it**: the supplier rotates its own
+       window on a plain clock and the ordinary catalog diff tells every friend what came and went — no
+        per-listener state, nothing to get out of step, nothing to resume. A listener who misses a track
+         meets it again on a later turn of the wheel. Keep it this way.
+ · **Live-only by construction, deliberately with ONE gate.** `Stoker_tour`'s only caller is the share
+    beat, which cannot run in a Book (`Swarm_share_up` is reached only behind `!w.sc.w` and from
+     InvitePanel's `$effect`, which no Book mounts) — the same argument `Ra_shuffle_cull` already rests
+      on. A humdinger check was written and then REMOVED: humdinger is the end-user-PAGE stamp, so a tab
+       booted `?B=` — which the owner's own pair answers to — would silently never tour, and that failure
+        looks exactly like the bug being fixed. One gate, in one place, checkable.
+ · The offer `mark` gained the tour count: add-one-drop-one leaves the record count identical, so a
+    pure-count mark would call a completely different catalog "unchanged" and sit on it until the 60s
+     floor tripped.
+ · **THE WHITTLE HOLD — "no Pier can be cursoring that Record before we can whittle it" (the owner,
+    same sitting). And it needed NO cursor.** The fact was already ours, locally: `rec.c.want_ts` is
+     stamped by `Repli_serve_want` every time any Pier asks for a page of that record (it exists for
+      the release-after-serve sweep, which holds a rec's bytes while a sink is still asking). So the
+       whittle skips any record wanted within `w.c.tour_hold_ms` (default 10 min — a listener pulls a
+        whole preview then plays it for minutes without asking again, so a tight hold would whittle
+         the very track they are mid-way through).
+    **THIS IS THE WHOLE DIFFERENCE FROM THE OLD MACHINE.** `Radios.svelte` kept a per-client cursor ON
+     THE BROADCASTER, advanced by `orecord` reports over the wire, and got out of step exactly as often
+      as the wire did. Here nothing crosses, nothing is remembered per listener, and nothing can
+       disagree — we observe our OWN serving and draw the obvious conclusion. A quiet Pier simply stops
+        holding records. If every record is held the wheel does not turn that time and the Mag grows a
+         little; that is the safe direction to fail in. `held=N` rides the tour mark.
+ · **THE CONVEYOR THEN STALLED — and the electrodes named it in two reads, which is the point of them.**
+    First read: `picks=2 got=2 dug=0` — the wander returns tracks, they stock fine, the shelf does not
+     grow. Two causes fit that equally and want opposite fixes, so the second electrode was ONE number
+      (`hit` — picks that were in the skip set) to separate them. Read: **`hit=0`** — the path filter
+       was working perfectly; the picks were genuinely not already-shelved paths.
+    THE CAUSE, from `p0`: the wander at **base `''`** returns `testsounds/The Sines - Deep A.wav`, while
+     those same records were shelved under base `testsounds` with `sc.path` = the BARE filename. Same
+      file, two path spellings, so no path-keyed skip can ever match — and the identity is a sha256 of
+       the BYTES, so the duplicate is unknowable until the whole file has been read. The tour re-read
+        the same audio every 90s to land nothing.
+    FIXED with the only thing that can work here: **learn the barren path**. When a pick stocks and its
+     id was already held, remember that path (fully qualified, on the House, bounded 4096) and the
+      wander looks past it forever after. Self-correcting, needs no new sc key, and covers every path
+       spelling by construction rather than by enumerating them. `dup=N` rides the tour mark.
+    (The meander also now tests BOTH a bare and a fully-qualified key, which catches the easy half
+     directly. Records carry no base, so that alone could never have been sufficient.)
+    **AND THE LADDER STOPPED ONE RUNG EARLY — the actual reason it stayed stuck.** `Stoker_dig` walks
+     three bases (`music`, ``, `testsounds`) and used to `break` on the first that returned ANY picks,
+      regardless of whether they landed. So once the wander settled into a crate already held in full,
+       every turn ended there and the other bases were never reached. Measured on Lefto: four turns of
+        `base=testsounds picks=2 got=2 dug=0` against a testsounds of EIGHT files, all shelved — then
+         the one turn that happened to start at base `''` dug 2 immediately (17→19). **The wander was
+          never the problem.** Now it breaks only on a base that actually added something.
+    The barren test also changed to the honest one: the shelf count ACROSS A SINGLE `Ra_stock_one`
+     call, rather than comparing the returned id against a pre-built map. That map read `dup=0` while
+      the shelf visibly refused to grow — a measurement disagreeing with the thing it measured, which
+       is never worth keeping. [[comments-assert-unmeasured-properties]]
+ · **A DRY TOUR USED TO BE SILENT — fixed within the hour, and it is the same bug as everything above.**
+    The first cut marked only `dug > 0 || dropped > 0`, so a tour whose wander found nothing left no
+     trace, and a conveyor that had quietly stopped looked identical to one running fine. Caught by
+      reading the live ring: `advertise` still beating (so the share beat, and therefore the tour, was
+       certainly running) with not one `tour` mark behind it. Now every turn marks, `dug=0` included —
+        that is the honest signal that the tour has run out of collection to tour. ~40 marks an hour
+         against a 1200 ring; the silence was never worth the room it saved.
+ · **LANDED, same sitting — `mirror-merge` now counts BIRTHS, not touches.** It counted every Record a
+    frame touched, and a CHUNK frame touches its record too, so it fired ~1/sec for the life of a tab
+     and said `recs=1` every time. The ring caps at 1200 marks, so ~20 minutes of ordinary transfer
+      traffic evicted every advertise/tour/want-first/page-first behind it — the marks that carry the
+       story (read live: **37 `mirror-merge` against 4 `want-first` in one dump**). It also made the
+        mark's own comment false: "records actually landing" describes a BIRTH, and a re-touch is not
+         one. One `.c` latch. The chunk path keeps its own once-each marks (`page-first`,
+          `stream-first-chunk`). [[comments-assert-unmeasured-properties]]
+
+**2026-08-07, same sitting — THE PLAYER'S FEEL: four owner rulings, landed.** ("the players" is now the
+ owner's word for the Sounditron tabs.)
+ · **⎵ skips, ⏎ heists** — page-level in BigSoundland, because on a radio your hands are not on a
+    widget and hunting for the ⏭ button is the thing the keys exist to remove. Guarded against
+     stealing a typed key: any editable target (input/textarea/select/contenteditable) or a modified
+      press passes straight through, else ⎵ would skip a track per word while renaming a friend.
+ · **⏎ takes the ALBUM, and that is the settled model, not a shortcut.** `Heist_keep_pick_all/_none/
+    _seed` were REMOVED 2026-07-30 ("let's not support single tracks... we are doing that already") —
+     a %Heist seeds on ONE record id and `Heist_keep_default_pick` keeps the whole folder it describes.
+      `Radio_heist_now` mints the keep **primed, not pulling**: the beat rummages and default-picks,
+       the human still presses ▶. A key you can hit by accident must not start writing files into a
+        collection. Idempotent per record — the seed IS the identity.
+ · **Tracks tune in part-way through** (`Radio_start_seq`) — a radio you switch on is already mid-song;
+    every track opening at 0:00 is the tell of a playlist. ONLY inside chunks already held, never past
+     the first half of them, always leaving runway: a start that had to fetch its own first chunk would
+      trade the feel for a stall. The pump already supported a non-zero entry (the mid-encode resume
+       path). **The non-obvious half:** `radio.sc.at` is not cosmetic — `Swarm_share_beat` derives its
+        want-ahead window from it (`head = at / seg_s`), so tuning in late had to carry a `c.at0`
+         offset or every full-length pull would have aimed at the wrong part of the song.
+ · **The next track is decoded before you ask for it** (`Radio_prime` / `Radio_peek_next`) — the owner:
+    "try to always have one very ready to go, there's a lag between click and sound". The lag is
+     DECODE, all of it after the keypress. So while the current track has >4s decoded ahead, the next
+      one's opening chunks are decoded into plain planar Float32 and held. **RAW PCM, NOT SCHEDULED
+       AUDIO, is the whole trick**: a skip replaces `radio.c.aud` with a fresh audiolet, so anything
+        already scheduled would die with it — Float32 belongs to nobody and lands on the new audiolet
+         the instant it exists. Priming also FIXES the random start seq, so prime and open cannot
+          disagree about where the needle lands. `Radio_peek_next` walks the lineup READ-ONLY (the dial
+           consumes its head, so priming must never call it). Marks: `primed`, `primed-open`.
+
+**PROVEN LIVE ON BOTH PLAYERS at the end of the 2026-08-07 sitting** — the marks to look for, and what
+ a healthy pair reads like:
+ · `tour dug=N dropped=N held=N stock=24 skip=32 dup=2 barren=9` — the conveyor turning, the whittle
+    HOLDING records a Pier is pulling, and the barren set genuinely learning (skip = records + barren).
+ · `primed [id] start=1 chunks=3` then `primed-open [id] seq=4` — the next track decoded before it was
+    asked for, and then SPENT at open. Both marks on both players is the lag actually being gone.
+ · Lefto grew 17 → 24 and stopped at the window; Righto sits at 23–24 whittling. Flat `records=N` in
+    `advertise` for minutes on end is the tell that the stoker has gone back to sleep.
+ **Books at close:** HohoTiles 9/9, MusuRadio 9/9 c0, MusuStock 5/5, SwarmShare 9/9, RepliUpsert 7/7 —
+  all `ok_pct=1`. MusuHeist reads `ok_pct=0.95` while every one of its 22 steps reports `ok=1` and **not
+   one of its 001–022 fixtures moved** — an aggregate disagreeing with its own per-step reading, worth
+    chasing someday as a REPORTING bug, not a regression. Attribute by fixtures, never by ok_pct alone.
+
+**THE SERVE SIDE RETRIES A HOPELESS DECODE FOREVER — found live 2026-08-06 by the new lane, minutes
+ after arming it. THIS IS THE NEXT REAL FIX.**
+ Measured on Righto (read-only): **1087 `pcm-decode-start` marks against 2 `pcm-decode-done`**, while
+  two of the asker's wants sat `park-stall off=16 secs=480` — eight minutes. Both dead records now say
+   why in one word: **`pcm-nosource why="no card"`**.
+ THE CHAIN: `Ra_source_pcm`'s first gate is `Ra_card(w, rec)`, which is `Ra_stock_find(nav, pub, id)` —
+  no radiostock file ⇒ null. It returned null **with no mark, no latch and no memory**, and
+   `Ra_transcode_ensure`'s `.then()` clears `pcm_pending` UNCONDITIONALLY, so the next pump beat re-kicks
+    the same doomed decode ~600ms later, forever. The want stays parked; the ASKER sees only a want that
+     never lands. A serve that can NEVER succeed is indistinguishable from a slow one — the §0 silent-fact
+      shape exactly, and a fourth sibling of the decoder corpse.
+ **THE DEEPER ONE, and it indicts a documented safety property.** `Ra_stock_gc` caps radiostock at 256
+  files per pub and wears the oldest off; the ruling that made that safe (§0, 2026-07-26) is *"a dropped
+   file is one re-dig from source — `Ra_stock_one` is idempotent"*. **Nothing on this path re-digs.**
+    `Ra_source_pcm` just fails at the gate. So the GC's stated regenerate-on-demand property is asserted
+     in a comment and not implemented here — [[comments-assert-unmeasured-properties]] again. (PROVEN: the
+      stock file is absent and the retry is unbounded. NOT proven: *why* it is absent — GC eviction vs the
+       dead-source `Ra_stock_drop` in this same function vs never minted. Electrode that, don't guess.)
+ **LANDED:** `pcm-nosource` — the fact made visible, once per record per reason, the latch read by the
+  next line so it cannot rot into a write-only one. **NOT landed, deliberately — the design call is the
+   human's:** (a) the retry policy (a hard latch would make a genuinely transient missing-nav permanent —
+    wants backoff, not a stop), (b) **re-dig instead of fail**, which is what the GC ruling already
+     promises, and (c) TELL THE ASKER — `repli_missed` (landed 2026-08-06) is the ready-made lane and this
+      is precisely its meaning.
+
+**LATE 2026-08-06 (a second thread, "Puck") — the two-tab-loop build. ALL COMPILED (LocalGen) and
+ live-proven on the pair; nothing committed.** The plan (approved): iterate the live pair with minimal
+  human gestures — HMR ghost-compile needs NO tab reload, so the tap tax only falls on reloads.
+ **PROVEN THIS SESSION: a `.g` edit reaches the human's MANUAL tabs with no reload and no gesture** —
+  the new marks appeared in Righto's live ring minutes after LocalGen wrote the gen. That is the whole
+   iteration loop, and it costs the human nothing.
+ · **Both §0 items below are now CODE, awaiting compile+live proof:** (a)'s trace gap got the
+    **crate-birth lane** — `boast-heard` (Swarm_ive_got) → `crate-born` (Repli_mirror_lib) →
+     `mirror-merge recs=N` (Repli_recv_lines) → `want-first` (Repli_want_next, the one funnel) →
+      `page-first` (Repli_attach_page, latches `rec.c.first_page_t`) — one unbroken ring story from
+       advertise to dial; (b)'s meander now draws **weighted by lazily-learned subtree counts**
+        (`M.c.meander_learn`, zero extra IO, unvisited→prior 8) — GATED to `humdinger` pages so every
+         Book's prandle sequence is byte-identical, **no re-record needed** (dodges the fixture CARE).
+ · **The live wander was never random — the owner's hunch was exact.** `Radio_prod_seed`'s gate
+    `if (w.sc.w) return` short-circuits on /BigSoundland because the resident world IS `w:Sounditron`
+     (BigQualand stamps the default), so every real boot walked the fixed `[1,2,3,4]` wander. Fixed:
+      the predicate is now the PAGE not the world — `top_House().c.humdinger` (boot_qualand's
+       end-user stamp) seeds crypto entropy; machine tabs (editor, ?B=, grid) keep the pin.
+ · **Instruments hardened:** `tracelog.mjs` now REFUSES unknown args (the evening-costing mtime
+    footgun), takes `--runner=<pub-prefix>` + both `--file` forms — verified against the live dumps.
+     `runner_ask` grew CLI plumbing for three new ops — `socklog [on|off] [--reload]`, `dump` (skip
+      the ~5s throttle), `poke <allowlisted verb>` — the runner-side `Lies_runner_ask_recv` branches
+       are WRITTEN INTO THE PLAN but not yet landed (LiesFunk HMRs into live tabs; held with compiles).
+ · **Rig facts worth keeping:** an end-user page = `humdinger` is the durable prod-vs-driven
+    predicate; `pw_drive.mjs --cdp` + the flock droids (`--autoplay-policy=no-user-gesture-required`,
+     remoteWormhole grant is one-time+infinite) are the path to a ZERO-gesture pair when the manual
+      loop gets annoying. Commit points: (1) tracelog+runner_ask CLI, (2) the .g trio once compiled
+       and live-proven.
+
+**NEXT SESSION STARTS HERE (2026-08-06, end of day).** Two items, in this order.
+
+**(a) GET REAL RADIO TRACES — the owner's ask, and the tooling now mostly supports it.**
+ Two instrument bugs were found and fixed at close of play 2026-08-06; read both before trusting a
+  trace, because each produced a confident wrong diagnosis first.
+ · **`tracelog.mjs` has no `--runner` flag** and silently ignores unknown args, defaulting to the
+    newest dump BY MTIME. `tracelog.mjs --runner=f5da6599b8505881` therefore pulled nothing and
+     printed **58517's** ring (an idle grid runner, no piers) whose honest `starved why=nobody
+      homes=0 recs=0` I spent an evening attributing to Righto. Righto's own dump said
+       `18 why:"gathering"` throughout. The tool does not pull at all: the TAB dumps
+        `wormhole/_trace/<role>-<pub>-<boot>.jsonl` every ~5s through its own FSA share, and ONLY
+         once 🪪 Id hatch → **socklog** is armed on it. `--file` takes a SPACE, not `=`. Check the
+          filename in the header line against the runner you meant; `--list` names them. Over the
+           relay, `runner_ask world` is the op that reaches a live tab's ring.
+ · **Console `+Δms` was ring-relative and therefore lied under `grep`** (dropped lines silently widen
+    every gap — this is what produced a bogus "advertise fires every 601ms"). FIXED: `fmt()` now
+     prefixes an absolute `@Nms` anchored to the first shown mark, so a filtered line still says when
+      it happened. Deltas are computed after `keep`, so tracelog's OWN `--heist`/`--life` filters were
+       always honest; only downstream `grep` broke them.
+ With that, the first real measurement lands: Righto's dial→starve loop runs at a **flat 800ms**
+  cadence. What we still cannot see is the interesting part — WHY a radio with a live sealed pier
+   reads `gathering` (live peer, every record a husk). That is the trace to build next: the owner
+    wants "really good traces of the radio behaviour", and the honest gap is between `advertise
+     homes=1 stocks=1` (the census's view of MY OWN home) and `starved homes=0 recs=0` (the dial's
+      view of `w.o({Theirs:1})`, the FRIENDS' shelves). **Those two `homes` count opposite sides
+       and must never be read as contradicting each other** — that near-miss cost an hour tonight.
+
+**(b) Then §3.x #33 — the collection wander samples branches, not tracks.** `Crate_nav_meander`
+ (`Crate.g:212`) does `prandle(dirs.length + (audio.length ? 1 : 0))`, i.e. a uniform pick over
+  CHILD DIRECTORIES with all of a directory's audio collapsed into ONE outcome. So a deep sparse
+   branch and a 200-track album are equally likely, and the owner's report stands: whole albums that
+    are ⅔ of the collection are never reached by pressing next. Weight the pick by subtree track
+     count. **CARE: `prandle` is the Book determinism source — changing the draw order moves every
+      fixture that wanders.** Re-record in the same commit or the Books go dark (that is exactly how
+       MusuRaChase/MusuRaStream went red for a month).
+
+**STATE OF THE TREE at handover.** ~224 uncommitted insertions across five ghosts (Swarm, Radio,
+ Repli, Peeroleum, Heist), all compiled, and now **live-verified read-only on Righto**: `1 pier,
+  1 mutually sealed` (half-seal healer holds), `advertise records=20→21→22 artists=14 cw=1 selfs=1
+   homes=1 stocks=1 told=1` (the boast re-fires on census change and the peer is told; `cw=1`
+    retires the "census_w is never set" misread, which was boot ordering), no `share-no` trace (the
+     share arms from `Stoker_ensure`, not the UI `$effect`). NOT verified: the 30s floor's
+      SUPPRESSION timing — needs the unfiltered measurement in (a). **This is a commit point.**
+ `MusuRaStream` fixtures are back at HEAD (owner ran the restore 21:33); `MusuRaChase`'s three
+  `toc.snap`s carry only `TimeSpool` samples, which any run leaves. **Re-record RaChase/RaStream
+   INSIDE the commit that carries the ghost changes** — fixture follows the code decision. The
+    completion-gated runner script is `scratchpad/book.sh` (polls `phase` to `done|failed|
+     ledger_timeout` AND gates on `run.book`, because `run --watch` returning is not completion and
+      a concurrent agent can own the runner).
+ Per the reviewing agent: the discovery findings + the design-questions checklist below belong in
+  **`Composition_todo.md`** (its scope note claims the not-the-transfer-loop failures); leave this
+   day's arc and the mechanism-local fixes (CPU, decoder corpse) here with a pointer. Not yet moved.
+
+**WHERE WE ARE, 2026-08-06 (written for a reviewing agent — read this first).**
+ The day started on CPU burn and ended on discovery. The arc, so the diff makes sense:
+ · **Morning — the downloader burned CPU and transfers crawled.** Named by a devtools profile, not by
+    guessing: `array_prototype2.includes` 83% total, `get_proxied_value` 80%. `.svelte.ts` compiles
+     through Svelte, which rewrites `.includes()`/`.indexOf()` into proxy-aware helpers that dispatch
+      per element — so a linear scan in `Stuff.svelte.ts` is linear × proxy dispatch. Fixed with a
+       `Set` in `o_query`, a `vmaps` Map index behind `TheX.v_index`, and three
+        materialise-for-a-presence-test bugs (`Ra_chunk_map` → `Repli_chunk_at`/`Ra_chunk_have`).
+         Step times fell ~7.7s → 2.5–4.5s and the human confirmed heisting felt fine.
+ · **Afternoon — with the bytes moving, the DISCOVERY layer turned out to be the real illness.** That
+    is the three-bug section below, and it is the load-bearing part of this entry.
+ · **Live rig**: Righto `f5da6599b8505881` + Lefto `96d0cf8852651a73`, `BigSoundland?I=<id>`, Invited to
+    each other. Read-only probes only (`runner_ask world`, `tracelog.mjs`) — never run a Book on them.
+     Everything below was found on that pair; no Book reproduces any of it, which is the point of §4.
+
+**THE BOOK GATE IS PARTLY BLIND — know this before trusting a green (2026-08-06).**
+ · **Green and trustworthy** on runner `58517b484a8e896d`: MusuHeist 22/22, RepliUpsert, RepliSplit,
+    RepliShadow, MusuStream, MusuResume, MusuRadio, SwarmShare, MusuStock, HohoTiles.
+ · **A runner can lie.** `a67a5d04a04fd334` settled EVERY Book all-red including `HohoTiles`, which
+    touches nothing under test, while `58517b` gave the same Book green in the same minute. Both answer
+     `ping` identically. **Run one control Book your change cannot affect before believing a red sweep.**
+ · **A Book with no recorded fixture mints one on the spot and reports green.** `Radiation` and a
+    mistyped `MusuRepli` both did — a vacuous 1/1. A `done:1 total:1` result gates nothing; check
+     `wormhole/Story/<Book>/` exists before counting it as evidence.
+ · **MusuRaStream / MusuRaChase were red for a month and nobody noticed.** Not a code fault: their
+    fixtures were last recorded 2026-07-08 and had missed three later, intended changes — the swarm
+     clock pin (`w.sc.now`, RaTesting.g, commit 7935704a), seq becoming a STRING everywhere (so a
+      literal query never trips the `{k:1}` presence wildcard), and `repli_want` no longer booking an
+       inbox unemit (the documented want-bypass). Every one of those is already green in MusuBuddy,
+        MusuMag, MusuHeist and MusuBay — `grep -ho "unemit[=:]" wormhole/Story/<B>/0*.snap` dates any
+         fixture in one line. Re-recorded 2026-08-06.
+ · **Still unexplained: MusuMag sits at 0.7** (7/10) with an up-to-date fixture, so it is a real
+    failure and the one honest unknown in the set.
+ · **Attribute before you blame yourself.** A controlled revert of all five ghosts to HEAD reproduced
+    MusuRaStream's step-1 dige `9304f7107d9abdfb` byte-for-byte — proof the day's work was invisible to
+     it. Books are deterministic; this costs ten minutes and settles authorship absolutely.
+
+**THREE SILENT-FACT BUGS IN ONE AFTERNOON (2026-08-06) — and they are the same bug.**
+ All three were found on the live Righto|Lefto pair, all three are compiled, **none is yet verified
+  live** (the tabs were mid-reload; the Book sweep on `a67a` is the regression gate, not the proof).
+ 1. **The music boast had exactly ONE trigger.** `Swarm_gossip_music` was called only from
+     `Swarm_hear_hi`, on a non-reply `hi` — i.e. at standup, which is the one moment the census is
+      *guaranteed* wrong, because both things it counts stand LATER than the handshake (`radio_w` when
+       the dial first runs `Stoker_ensure`; `census_w` when `Swarm_share_up` arms). So a tab boasted
+        `records:0` and nothing ever recomputed it. **The tell was not the zero — it was that a tab up
+         for eight minutes held three `advertise` marks, all inside its first 40s.** Cure:
+          `Swarm_boast_floor`, the twin of the re-offer floor already sitting in `Swarm_share_beat`.
+ 2. **The live share armed from a UI `$effect`.** `Swarm_share_up`'s only caller was
+     `InvitePanel.svelte`'s effect, which polls on `H.version` and had to *happen* to run after
+      `Stoker_ensure` stamped `radio_w`. Lose that race and the tab arms no share loop — so it never
+       offers its stock AND never registers an rx for the friend's cast. It can neither send music nor
+        receive it while looking perfectly healthy: sealed, Music-granted, happily playing its own
+         local shelf. Cure: arm it in `Stoker_ensure`, at the instant the precondition becomes true,
+          Book-gated on `w.sc.w` (the share starts a wall-clock pump; `SwarmTesting.g` forbids that
+           in a Book). Plus `Swarm_share_no` — the refusing verb now names which guard failed.
+ 3. **The serve MISS never travelled.** `Repli_serve_miss` logged on the SOURCE; its own comment
+     conceded it — *"if a sink stalls, look at the friend's console for this"*. The sink was told
+      nothing, so an unservable want looked exactly like a slow one, and the repair was Heist's blind
+       ladder: 3 unanswered asks at 4s behind a 20s throttle. Measured: `heist-noprogress asked:12
+        landed:1 of:8 secs:46`, then full-speed serving the moment the re-census landed. Cure:
+         `repli_missed`, the exact twin of `repli_parked` — same lane, same shape, opposite meaning.
+
+ **THE SHAPE, and the brief for any mega-do-up of this spine.** In every one of the three, *one side
+  already knew the fact* and there was no path for it to reach the side that needed it; the missing
+   path was then papered over by a repair that **inferred** the fact from timeouts. Note that the
+    half-seal entry below is a fourth instance of the same family — a repair keyed to the wrong
+     predicate — and the CLI's `world` could see in one line what the healer could not.
+ So the design questions worth a session, in order of how much they'd buy:
+  - **Which facts does one peer know that the other cannot?** Enumerate them. Every one is a candidate
+     silent-death bug. `parked` and `missed` are now both told; what else — revoked grant, swept lib,
+      full disk, a want past the frontier that will NEVER be reached?
+  - **Which repairs infer a fact instead of asking for it?** Each is a latency floor at best and a
+     permanent hole at worst. Grep for the shape: an `asks_out >= N` or a `Date.now() - ts > MS` gate
+      guarding a repair.
+  - **Which capabilities arm from a component rather than from the belief loop?** #2 was one; the
+     `$effect` latch trio in `InvitePanel.svelte` (`self`/`stood`/`shared`) is load-bearing p2p state
+      living in a UI panel. A req carries its own liveness and shows up in the snap — a `$state`
+       boolean in a component does neither.
+  - **Which change-triggered marks have no floor under them?** `offered_mark` has one and says why;
+     the boast had none. A mark that is wrong-but-stable is a silent permanent hole.
+
+**THE SEAL SELF-HEAL CANNOT SEE THE HALF-SEAL IT IS STANDING IN (2026-08-06) — live blocker.**
+ A heist sat at *0 of 3 landed after 100 asks, 425s*, while Repli reported a cheerful 50KB/s both ways.
+  `runner_ask world` named it in one line: `1 pier, 0 mutually sealed` →
+   `→ one-way (half-seal) Lefto 96d0cf88 grants:[96d0cf885265→Music]`. **Our %Pier holds only THEIR
+    grant.** So asks leave (outbound needs nothing), the source answers, and the answers die on our
+     doorstep — `🛰☠ deliver: no Pier` — which is why both ends read as merely SLOW rather than broken.
+ **Why it never heals.** `Swarm_reaccept_incomplete` (`Swarm.g:707`) is exactly the cure for a half-seal,
+  but its first test is `if (pier.o({Grant:1, by: theirPub})[0]) continue  // already complete`. Ours HAS
+   their grant, so it is judged complete and skipped — it never reaches the `mineC` probe. The function's
+    own comment states the assumption it rests on: *"Cannot false-positive: a redeemer's %Pier is born
+     with BOTH grants (Swarm_accept), so only an issuer half-seal ever matches."* That invariant is
+      violated here. This is the MIRROR of the bug the healer was written for, and the healer is blind to
+       it by construction.
+ **The lesson worth more than the patch:** the healer tests for *the half it expected to be missing*, not
+  for *completeness*. A repair keyed to one direction of an asymmetry will sail past the other direction
+   forever. The predicate should be "do I hold BOTH grants?" — the same question `world` already asks to
+    print `mutually sealed`, which is why the CLI could see in one line what the healer could not.
+ **FIXED (2026-08-06) — this entry is kept for the lesson, not the bug.** `Swarm_reaccept_incomplete`
+  now tests WHOLENESS (`mineC && theirsC` ⇒ skip) and heals both directions: a missing grant of MY OWN
+   is re-minted **locally** (my signature, no wire, no security surface — the same mint `Swarm_accept`
+    does at seal), and a missing grant of THEIRS re-sends `pier_accept` reusing my already-signed atom
+     rather than re-minting one. Verify with `runner_ask world --runner=<id>`; the tell was
+      `0 mutually sealed` against a non-zero pier count.
+
+**THE PUMP WAS UNKILLABLE; THE DECODER WAS NOT (2026-08-06).**
+ `📻⚠ Radio_pump threw … Cannot call 'decode' on a closed codec` every 400ms forever, radio stuck
+  `starved`, real dead air. Not a wire fault: **WebCodecs closes an `AudioDecoder` ITSELF when a decode
+   errors**, delivering the error to the callback — `Radio_dec_open` latched it (`st.bad = e`) and
+    *nothing in the file ever read it*. So `radio.c.dec` kept pointing at a corpse, and since every
+     re-open branch is guarded `if (!radio.c.dec)`, a dead decoder is strictly WORSE than no decoder —
+      it is the one state that can never heal. `Radio_pump`'s own comment had already reasoned about
+       "a malformed packet reaching `Radio_dec_feed`'s AudioDecoder" and made the **loop** survive it;
+        the missing half was making the **decoder** survive it. The loop's survival is what hid it:
+         a healthy-looking retry cadence with zero progress behind it.
+ Cure (landed): `Radio_dec_dead(st)` — `st.bad` OR `st.dec.state === 'closed'` — checked at the top of
+  the feed loop; drop the corpse, count a drop, let the existing branches re-open dirty. Plus a
+   **poison guard**: if the same `seq` kills a SECOND fresh decoder the packet is bad, not the codec,
+    so splice past it (`dec_bad_at`), because re-opening forever on a bad chunk is the very
+     never-progresses shape, only churning objects.
+ **The bomb for the next person:** a `.c` latch that nobody reads is not diagnostics, it is a silent
+  failure mode with a comment on it. Grep for the other write-only latches before trusting one.
+**MusuRaChase/MusuRaStream ARE RED FOR A DULLER REASON — STALE FIXTURES, NOT A REGRESSION (2026-08-06).**
+ Chased as a §5.x backpressure regression, then as a knock-on of the decoder corpse above. It is
+  neither. `MusuRaChase_drive` (`RaTesting.g`) pins the swarm clock — `w.sc.now = 1751990000 + 10*n`,
+   the same determinism cure MusuBuddy got — and that pin landed **2026-08-05 in `7935704a`
+    "reductionistic Repli?"** *without a re-record*. **No MusuRaChase fixture carries `now=` at all**
+     (`grep -l 'w:MusuRaChase,now=' … | wc -l` → 0). The world-root line is in EVERY snap, so every one
+      of the 56 steps mismatches on that single key: step 1's whole diff is
+       `w:MusuRaChase` vs `w:MusuRaChase,now=1751990010`, `error:null` throughout.
+ **The trap this sets:** 0% with no errors reads like catastrophe and invites a hunt for a deep
+  regression — but "red from step 1, identical one-key diff, no errors" is the signature of a fixture
+   that predates a deliberate source change. **Diff step 1 FIRST**; it costs one call and would have
+    saved two sessions of suspicion. Corollary: a determinism pin is a fixture-invalidating edit —
+     re-record in the same commit or the Book is dark until someone does.
+ **THE CLAIM IS FINE — that scare is dead.** `%see:'the playhead crossed the first boundary…'`
+  (`RaTesting.g`) is PRESENT in the live snaps at 14, 30 and 56, exactly as in the fixtures. The
+   earlier "a claim went missing" reading came from a comparison already invalid at step 1; it was
+    wrong, and nothing is lost. Two consecutive runs also produced identical diges (`edd9f464`,
+     `37e6902f`, …), so the pin achieved what it was for: the Book is deterministic again.
+ **The residue decomposes into FOUR committed changes, none of them from the backpressure work** —
+  swept over all 56 steps, then categorised by mainkey (`unemit` 255, `emit` 90, `Stream` 29 at the
+   step-56 plateau):
+   1. the clock pin above — `now=`, `Pier,since:`, `Grant,time:` **and its ed25519 `sign:` recomputed
+       over that time**, `Edge,at:`, `self,round=`;
+   2. `path:` now stamped on EVERY `%Record`, not just heisted ones (`Heist.g:2120`);
+   3. `Peeroleum.g:761` `String(u.sc.seq)` — rows encode `unemit:2` (string) where fixtures hold
+       `unemit=2` (number). One committed edit, 255 diff lines;
+   4. `repli_page`/`repli_lines` reclassified EPHEMERAL (`c72d9613`, 2026-07-29) — **`emit` rows
+       80 → 10**, i.e. the stranded reliable-emit backlog the policy was written to kill.
+  And a behavioural delta on top: **`Stream` chunks landed by step 56 went 16 → 45.**
+ **Why these are still NOT accepted, despite the claim being safe.** A re-record now would bake that
+  16→45 / 80→10 improvement into the fixtures while the tree still holds UNCOMMITTED backpressure
+   work — so the snaps would encode a mix of four committed changes and four uncommitted ones, and
+    no later reader could tell which caused what. **Fixtures follow the code decision; they do not
+     precede it.** Re-record after the working tree is committed, in the same commit, and the
+      accept becomes honest.
+
+**THE GLASS STOPPED TEARING ITSELF DOWN (2026-08-05) — and §13 is new.**
+ The bug that made the Keep/directories editor "snap shut" mid-typing was never a Heist bug: `replace()`
+  PUBLISHES the empty half of its transaction, `agency_officing` (`Hovercraft.svelte:133`) replaces every
+   actor's `w:` children every tick, and Vytui's `{#each vyto_worlds() as w (w)}` therefore got a 0-length
+    list once per tick — destroying stage + faces + every face in the family's glass, once per tick, all
+     along. Fixed at the reader (`ui/micro/hold.ts`, both Vytui structural gates); `replace()` untouched
+      by ruling. Chain + the three cures + the light-cone note: `reactivity_docs.md` § "The transacting-empty
+       render". **Live proof owed** (type in a fresh keep's directories editor across several trickles).
+        Worth knowing for every face this family draws — any UI that walks `A`/`w` during render has been
+         eating this. NEW: **§13** is the toplevel/BigSoundland assembly zone (the ActionButtons ask lives
+          there, filed behind settling the dev-vs-end-user views).
+
+**THE WIRE-CROSSING RUNG SCOPED (2026-07-26) — music over the REAL relay is a PORT, not a build.**
+ A three-agent investigation nailed the carrier layer. The swappable-carrier seam ALREADY EXISTS:
+  `%Peering.active_transport.c.connection` (interface = `send(frame)` + inbound→`Peeroleum_deliver`,
+   optional `reliable`/`claim`/`subscribe`), and `Tribunal_activate_websocket` already does the one-line
+    swap `at.c.connection = ws.c.port`. `Socket_real` (`Tribunal.g:57`) is the REAL relay carrier —
+     binary-framed (`[header JSON]\n[raw buffer]`), auto-reconnect, carrying editor↔runner DAILY; friends
+      already seal live tab-to-tab over it (2026-07-07, SwarmDoor manual). The gap is narrow: **the
+       music-repli flow has only EVER run over `Lake_link`**, an in-process by-reference loopback that is a
+        Story-test mock (`PeerTesting.g` — its "Lake" name a Peregrination theme, UNRELATED to the
+         HohoTiles Lies/Lang family; genuinely rename-worthy). No Book installs `Socket_real`; Sounditron
+          alone touches the real relay and only proves channel *capability* ("frames CAN cross"), not a
+           round-trip. **THE NON-OBVIOUS RISK:** every music Book settles frames "over post_do between beats"
+            (the reliable mock) — the repli/want machinery has NEVER faced a mid-beat round-trip, while the
+             real relay is async, ~400–900ms RTT, reconnect-mid-stream. THAT is the load-bearing gate, not a
+              formality.
+ THE RUNG (one coupled move): stand the MusuVend-style husk→preview→stream flow over `Socket_real` between
+  two real tabs; the instant frames cross the untrusted relay, land `header.sign` on emit + real
+   `verify_trust` on the handshake (the `Peerily.svelte.ts` 672/1011 port, reusing the Idento key that
+    already signs grants). Signing a loopback is theater; over the relay it is the point — the crypto is
+     UNBLOCKED the moment any flow runs over the relay. Prove MANUALLY with fingers first (does it survive
+      RTT + reconnect?), THEN a distributed two-runner Book (Cluster_spec §5) as the durable gate — don't
+       block the first "real" on building distributed-Story. BONUS: a working `verify_trust` on the
+        handshake IS Peeroleum §5's Tyrant seam → filling it makes the mock Tyrant doubly obsolete; this
+         goes AHEAD of the Tyrant cleanup. COORDINATION: the carrier swap is plain wire-side (mine to
+          drive); the sign/verify half touches the trust layer → coordinate with the security thread first.
+ THE CONCRETE LADDER — "two BigSoundland tabs each running Book:Sounditron, talking" (mapped 2026-07-26):
+  The gap made precise: **Sounditron never sends-and-asserts-arrival.** Its beats are liveness+census only —
+   beat 3 `Sounditron_channel_live` (`Sounditron.g:70`) returns a boolean "socket up"; beat 4 counts
+    addressable `%Possibility` rows ("the choose-which-peer layer that does not exist yet"); beat 5
+     `Sounditron_peer_live` (`:296`) = "someone holds an engagement lease OR a warm Runner row exists". Its
+      sworn sentences say frames **"can cross"** (`:473`), never *did*. The ONLY real tab↔tab traffic in the
+       whole file is the detached, **fire-and-forget presence pulse** in `Sounditron_trickle_look` (`:230`,
+        `Swarm_pulse_all` — which by contract runs "never in a Book"), whose sole "proof" is the far side's
+         hear-funnel stamping `heard_at` (`Swarm.g:380`) which `Sounditron_friends` (`:365`) reads into a
+          `here` UI dot. THAT un-asserted pulse is the rung to make real. Anchors: real carrier `Socket_real`
+           (`Tribunal.g:57`, send `:112`/recv `:146`→`Peeroleum_deliver`); `Peeroleum_deliver` DROPS a
+            `to:<prepub>` frame unless a `%Pier` exists — first contact only via `pier_hello` (`Peeroleum.g:441`);
+             the ONLY real seal path is the manual **InvitePanel join** (`InvitePanel.svelte:204` →
+              `Swarm_station_up`→`Swarm_redeem`→`pier_hello`→`Swarm_hello` mutual `%Pier`+cross-signed grants).
+   The three rungs, in order:
+   - **(R1) MANUAL FINGERS PROOF (needs the human — I can't open/seal tabs).** Open two `/BigSoundland` tabs
+      (page is `src/lib/V/BigSoundland.svelte` — NOTE moved from `L/`; `?B=Sounditron` default, `role:'sound'`
+       runner), InvitePanel-join them (the live seal), watch each light the OTHER's `here` dot. This proves the
+        real relay carries tab↔tab bidirectionally TODAY — it just isn't asserted. Cheapest first real.
+   - **(R2) THE ASSERTED ECHO ROUND-TRIP (the actual new rung).** There is NO delivery-assert primitive today
+      and NO scriptable seal/echo — `runner_ask` ops are read/run/state/declare/…, none pulse or seal. So R2
+       needs: a tiny echo frame type (A→B `echo?`, B→A `echo!`) over the sealed Pier (model it on the
+        corr-routed `runner_ack` reply, `LiesFunk.svelte:2494` — the one genuine real-wire request/reply that
+         already works, but CLI↔runner not tab↔tab), + a Sounditron beat that sends it and SWEARS receipt
+          (`got_echo_from:<prepub>`), superseding the "can cross" sentence with "did cross". This is new wire
+           surface on the trust boundary → build WITH the security thread (it wants `header.sign`+`verify_trust`
+            landing here anyway — R2 and the crypto are the same touch).
+   - **(R3) DISTRIBUTED TWO-RUNNER BOOK (durable gate, deferred).** Cluster_spec §5. Drive two sealed tabs as
+      two `runner_ask --runner=<A>`/`--runner=<B>` calls (no built-in cross-runner choreography — the harness
+       gives independent addressing, `ping.self`=prepub, not a duet). Don't block the first real on building
+        distributed-Story. A scriptable `redeem` op would also unblock automated R1/R2 but is itself a
+         security-coordinated build (it scripts the seal).
+   SPLIT: carrier/observe + the echo beat = mine to draft; the seal-scripting + sign/verify = security-thread;
+    two LIVE sealed tabs for R1 = the human. NEXT PHYSICAL MOVE = ask the human to do R1 (two tabs + join +
+     watch the dots), which both proves the wire tab↔tab and de-risks R2's frame shape before any code lands.
+ SIDE-LANDINGS this session (the "state of Radio" review): (a) every wire-relevant Book now carries a terse
+  `wire:` clause in `wormhole/Credence/toc.snap` (least-churn home vs a per-Book `Waft:Cluster` which is
+   max-churn) — the census made the sim/real line legible: loopback/mock everywhere, Sounditron the lone
+    real-channel Book. (b) The Sounditron "disk accumulates" nondeterminism got a real primitive, not a
+     bless: `spec/Story_hygiene_todo.md` — a pre-Story `The/Hygiene/%Reset` sweep (an Assertion's inverse),
+      landed opt-in in `Story.svelte`, PROVEN live (MusuLossy green ×3 + a planted decoy deleted at step-1
+       start); Sounditron is the WRONG first customer (pin the probe, don't wipe the user's cache) — the
+        heist/Musu family is.
+
+**RADIOSTOCK ZOMBIE-PROOFED (2026-07-26) — a plain per-pub disk cap, no reference-tracing.**
+ The on-disk `radiostock/` was the one monotonic leak: `Stoker_cull` bounds the in-memory SHELF (44 live)
+  and `Ra_stock_find` culls same-enid TWINS, but nothing bounded the DIR — one file per distinct track ever
+   dug, forever. Now `Ra_stock_gc(nav,pub)` (`Ra.g`, called once per landed churn in `Radio.g` beside
+    `Stoker_mag_draw`) keeps only this pub's newest `Ra_stock_cap()`=**256** files and wears the oldest off
+     (`Ra_stock_ls` is newest-first → `slice(cap)` is the oldest tail). The human's ruling made it SIMPLE:
+      **no Mag-reference-tracing** — a `%Card` refers by id and the byte-cache regenerates (a dropped file is
+       one re-dig from source; `Ra_stock_one` is idempotent, Radio.g:832), so keep-what's-referenced would be
+        needless bookkeeping. Per-pub (a shared `.jamsend` never lets one identity evict another's shelf);
+         best-effort (no-ops on a read-only proxy via `Ra_stock_drop`); NO sc telemetry (a gone-count is
+          disk-history-dependent = fixture noise). Proven: MusuStock green ×2, MusuWear + MusuStanding green —
+           the cap is a **no-op below 256** so no test that digs <256 tracks is perturbed. NOTE this bounds
+            PRODUCTION disk; it does NOT make TESTS deterministic (they never reach 256) — test determinism is
+             the hygiene hook's job. `radiostock` remains the ONLY timestamped disk filename in the whole
+              codebase (verified) — every other disk write is deterministic-named + overwrite-idempotent, so
+               once radiostock is handled, disk determinism has no other timestamp source.
+ **HOW MANY BOOKS SHOULD USE THE HYGIENE HOOK (the survey):** a HANDFUL, not the suite. The natural customer
+  set is the ~8 heist/marauding Books that ALREADY hand-code a `Heist_sweep(test-marrauding-of-<X>)` at
+   start+end — **MusuHeist, MusuBreach, MusuBreach_wire, MusuOgg, MusuReap, MusuSoft, MusuBay, MusuLossy**
+    (+ the Berthation Books) — for them the hook is a DECLARATIVE cleanup of a sweep they already run (moves
+     it from imperative-in-step-1 to a toc-resident `%Reset`, an Assertion's inverse), plus uniform
+      abortive-safety; it is NOT a bug-fix (they're already deterministic via the hand-coded start-sweep).
+       Everything else needs NOTHING: most Books write deterministic-named idempotent-overwrite files (e.g.
+        MusuLossy's wav/opus/mp3), and radiostock (the only timestamped path) the human has ruled we TOLERATE
+         in tests (differently-named, non-colliding, already absorbed by the EntropyArrest Entcases). So:
+          convert ONE heist Book first to prove the pattern end-to-end, then roll the ~8; do NOT touch
+           Sounditron (real user cache) or the broad suite.
+
+**THE INVITE TRILOGY LANDED (2026-07-22) — chain, blotter, back-signal, all green ×2, uncommitted.**
+ The three invite kinds now part cleanly and each is Book-proven on the live runner:
+ - **(1) Re-assignable ReInvite chain** — the SHARE-QR invite that threads A—B—C—D, the TIP (not the
+    issuer) grants each newcomer, `%ChainRoot` is the light lineage ref, `reinvite_ok` is tip-signed.
+     `Ghost/S/Swarm.g #region ReInvite`, Book **SwarmChain** (Swarm_spec §6.3a).
+ - **(2) One-time serial SHEET (blotter)** — `Swarm_mint_blotter` → N plain single-use serials under a
+    `%Blotter`; claimed count DERIVED from members' spend flags (never a snapped counter); legacy `######`
+     door-parse pinned. `Ghost/S/Swarm.g #region blotter`, Book **SwarmBlotter** (Swarm_spec §6.2).
+ - **(3) Protocol back-signal (Peeroleum Robustness Organ 2)** — an unenabled frame type draws a
+    `no_protocol` complaint when the peer is READY (acked so the retry stands down — no wedge), but is
+     HELD (`%faulty` `startup-hold`, no ack) DURING the handshake window so the retx re-delivers once a
+      handler attaches. `Ghost/N/Peeroleum.g` (`Peeroleum_deliver` + `req_unemit`), Book **PereComplain**
+       (reconciled in `Cluster_spec.md §1`). Display side (share icon, blotter A4 QR sheet) is Vyto's.
+
+**FOLLOWER PLAYER commissioned (2026-07-22) — a new sub-build, its own doc `Follow_todo.md`.**
+ A client takes a QR and enters FOLLOW mode: a dumb player mirroring a leader-DJ's playhead (and, later,
+  the DJ's private monitor channel while they play a different main stream). It's a new invite flavor (a
+   `%Follow` Feature grant) riding the `@channel` fan-out + `Peeroleum_offer_stream` handover that already
+    exist. GATED behind the 2026-07-22 invite-crypto QA (harden the mint/grant foundation first). The
+     first-run onboarding UX the human also raised (username + open-share + the BigSoundland speech-bubble
+      reframing the FSA "FaceSucker") is MOSTLY-BUILT Svelte already (`InvitePanel`/`BootGate`/`Shares`) →
+       a UI-orchestration job in Vyto's zone; the wire side is a thin first-run-state contract only.
+
+**INVITE-CRYPTO HARDENED (2026-07-22) — one real HIGH hole found + fixed + proven, uncommitted.**
+ Two Sonnet audits of `Ghost/S/Swarm.g`/`Peeroleum.g`. The load-bearing finding: `Swarm_seal` bound the
+  verified key (`page.pub`) but NEVER the routing address (`page.prepub`), so a `pier_hello` could forge a
+   victim's prepub while holding its own key and HIJACK/overwrite an identity slot (the voucher gate that
+    should stop this exempts pre-seal `pier_hello`). FIX: a `Swarm_page_bound(page)` guard
+     (`prepubOf(page.pub)===page.prepub`) at all 5 seal entries + a `Swarm_seal` backstop, proven RED→GREEN
+      by the adversarial Book **SwarmSpoof** (green×2; the forged `%Pier` seen in bytes then gone) with
+       SwarmChain/Staple/Blotter non-regressed. Also downgrades the audit's F1 (reinvite_honour grant oracle).
+        Then a follow-on sweep (human: "check everywhere") + the runners' recovery landed THREE more, all
+         proven/handled: **verify-first** — refuse forged/not_ours/spoofed hellos LOCALLY before minting a
+          transport route (closes F3's forged-hello bloat + stops a spoof spamming the forged victim; SwarmSpoof
+           beat-4b, green×2, whole family non-regressed); **G1** — `Swarm_heard_hi` dropped a forgeable
+            `header.from` fallback that let a page-less hi bypass the voucher gate and poke a real friend's route
+             (fixed + non-regressing; adversarial station-Book proof optional/owed); **R1** — `Repli_attach_page`
+              gained the rung-0 `sha256(bytes)===cid` gate on chunk arrival, mirroring Heist's landing check so a
+               chunk streamed for live playback can't decode tampered bytes silently (Book **RaBreach**, green×2).
+                NOT touched: F5 voucher-era freshness — the [[Trust_todo]]-retracted wrong-layer item.
+                 Full record: memory `swarm-seal-prepub-binding-hole`.
+
+**STORY GATES YOUR ORGANS NOW (2026-07-19) — a cross-thread brief from the Story side.**
+ Sounditron (the /BigSoundland resident diagnostic: machine → relay → possibilities → peer →
+  sound → report, the user a reporting test-probe) hosts the whole Radio family in its run
+   world — and its `Opt/wild` record-not-check regime is DEAD (the human: "I wanted both").
+    It now records AND fixture-checks like every Book, so **%Radio/%Stoker/%Tuner/%Door and
+     the stock shelf are load-bearing fixture bytes**.  What this thread must know:
+
+ - **Two live couplings into your code.**  (1) Sounditron's beat 2 holds its snap until
+    `Sounditron_stock_settled(w)`: `%Stoker` state ∈ `idle|spent` AND `sc.stock != null`.
+     Rename a Stoker state or the census counters and the hold breaks → racing frames → red
+      churn.  (2) The meander's finds mint SORTED (bound 12) so snap order is stable.  Touch
+       either seam → recompile, re-run Sounditron, expect an Accept.
+ - **The noise law**: EntropyArrest forgives wobbling VALUES on a stable line (an `Entcase`
+    in the toc, e.g. `re:Session.alive={INT},tol:any` — the standing caveat:1).  It can NEVER
+     forgive appearing/vanishing ROWS — structural drift needs a deterministic seam (a
+      settle-hold, a sorted mint) or a re-record.  A new sc key you stamp on any family
+       particle churns every fixture that world touches — budget the Accept.
+ - **The assertion toolkit is yours too** (any Musu*/Radio Book): a witness swears
+    `this.story_swear(w, 'sentence — em-dashes never commas', subjectC?)` — idempotent per
+     run, no oa guards; the subject microsnaps what the claim points at (NEVER a %Grant or
+      sealed key material).  Evidence rides the off-snap `ave/%Assertioning` shelf — zero
+       fixture bytes, forever.  DECLARED contract = toc `step=N/%Assertion:slug,sentence:…`
+        (the hosting step is the by-when); a missing declared proof REDS the run even at
+         100% steps, un-maskable by entropy.  UNDECLARED sworn show amber ◇ "wants declaring"
+          — the human promotes via the explorer's `declare ↑` (or
+           `runner_ask declare '<sentence>'`); code never self-promotes.  `%see`/`%seen` are
+            EXTINCT; the word is sworn/contract/evidence, never "roster".  `i %desc:'a few
+             words'` per beat labels the pip.
+ - **Verify rails**: `runner_ask assertions` prints ✓/✗ contract + ◇ undeclared + ⌖
+    microsnaps, exit 1 on gaps.  **ALWAYS `--runner=<full-prepub>`**: fixtures pin ONE
+     runner's environment — an auto-courted foreign tab reds everything honestly (live
+      incident 2026-07-19; nothing was Accepted over it, keep it that way).
+ - **What the human sees** (Storui): assertion DIAMONDS beside the pips
+    (pending→latched→overdue amber→red pulse at run end), the `sworn N/M ◇K` button on the
+     run bar, `[s]` swaps the whole panel to sworn mode (total mutex with the diff), and a
+      missing assertion stands as a red GHOST LINE in the diff where its sworn would be.
+
+**THE STATE (2026-07-19, uncommitted — the robusticise marathon).**  The v1.0 seam is wired:
+ music flows friend-to-friend live, reconnect heals itself from either side on both channels,
+  and the glass is being remade to show MUSIC first.  One line per organ — the code is the detail:
+
+ - **Live share**: `Swarm_share_up/_beat/_loop` (Swarm.g) — stock husk-casts to granted friends,
+    per-friend `%Theirs` crates mint in the RADIO world, the dial plays the pool, and the
+     keep-ahead leg wants full-length pages off the REAL playhead.
+ - **Reconnect**: `Swarm_station_routes` + the `swarm_hi` era-reset greeting (swarm channel);
+    ping-borne boot epoch + spine re-ack + `pinned_stable` promotion (Lies channel).
+ - **Voucher**: per-era identity-signed `{prepub,pub,era}` on swarm frames, verified against the
+    SEALED pier before `heard_at` — the relay stays untrusted (the human's ruling).
+ - **%Suggest** store-and-forward (offline-safe, both piers, stash lane); **Faves** zine
+    (`Musica_pop`/`%Zine` cell); **riffle** = open/flip/close dealing the DEEP subtree;
+     naming at the door (`thang_put` upsert) + the ?Iz→?I swap at redeem.
+ - **THE LINEUP**: `%Mag:'Lineup'` — up to 20 tracks past the listened-to cursor, every crate
+    contributing round-robin, the dial consumes the head, STARVE = a real `%error` row per
+     granted friend giving nothing playable (Radio.g lineup region; LineupFace).
+ - **THE GLASS ALLOWLIST** (the "remake the model" cut): a `use_faces` world tucks every
+    UNDRESSED cell-holder under 'system' (`cyto_crew`, Cyto.svelte) — the model VoroCyto gets
+     is the user's, not the machinery's.  CrateFace spreads `%Mine|%Theirs` records as
+      little cards (▶ auditions); gang mirrors label by member mainkey, never 'gang_of'; the
+       Sounditron probe %Caper wears `crew:system`.
+ - **Draw-Mags**: `Stoker_mag_draw` — every landing churn mints a `%Cloud` of `%Card`s on the
+    `radiostocking/%Mag` (spec §2.3 — the culture trace; stock stays FLAT by the §2.4 ruling,
+     Mags REFER).  Stoker floors raised for the 20-ahead: resurrect 24 · dig floor 8 · churn
+      goal 20 · cull 44.
+ - **Meander starvation killed + probe-proven** (branch-weighted `Crate_nav_meander`): 200
+    walks → 58 distinct tracks, 50 deep — every album the human listed surfaces.
+ - **Books PereReborn + SwarmShare — SWORN, gaps 0, green ×2** (delegated agent, 2026-07-19):
+    declared contracts at their beats (PereReborn 3 — the collision claim re-gated n>=5 after
+     the agent caught it latching toothlessly on the PREP acks; SwarmShare 4).  The spine's
+      collision re-ack + epoch reset; per-friend mirror keying, %Suggest store-and-forward,
+       the hi rebirth reset.  Core regression green (SwarmStaple · PereStaple · MusuRaStream).
+ - **Health-sweep reds to eyeball (the human's re-record call):** VoroScape 0.17 + PereProof
+    0.09, both pure dige-drift, error:null throughout.  PereProof likely the DELIBERATE spine
+     re-ack (a collision now emits an extra ack frame the old fixtures lack); VoroScape's
+      fixtures were already cleared-for-re-record at the Voro rename.  Diff-eyeball, then
+       accept if the drift is the expected shape.
+
+**Live gates owed:** the two-tab fingers-proof (seal → husks in the friend crate → preview →
+ pool dials it → full track → suggest-while-offline round trip → refresh either tab, dots
+  re-green ≤15s, crates refill); an eyeball of CrateFace + the Lineup on /BigSoundland.
+**Sounditron re-record BLOCKED on stock non-determinism** (the agent tried accept→rerun —
+ every step's dige differs per run; the futile fixtures were reverted).  Three sources, in
+  weight order: (1) DISK ACCUMULATION — each run's digs grow the on-disk radiostock the next
+   run RESURRECTS, so run N+1's settled stock includes run N's finds (no seed fixes this);
+    (2) the beat-2 settle-hold (Sounditron.g:106, 10s budget) now TIMES OUT mid-churn under
+     the raised floors and pins a racing frame — lengthen it if determinism is chased;
+      (3) the dial randoms — now CURED:
+     every Math.random in Radio.g rides `Ra_rand(w,n)` (per-world, crypto-live, `Ra_seed`
+      pins it for a Book, `Ra_entropy` stirs it live).  The human's call: bless red-on-dige
+       as the big-share environment tell (the assertion contract stays the portable verdict —
+        the §1 Sounditron_todo stance) OR summarize/exclude the stocked-record set from
+         Sounditron's snap.
+
+**THE MAG PIVOT IN FLIGHT (2026-07-19, human-steered agent thread — unpreened):**
+ `spec/Mag_todo.md` proposes `%Mag**/%Record` — Records living UNDER Mags, EXPLICITLY
+  superseding `Radio_spec §2.4`'s flat-stock ruling — plus Mags-over-Repli, shuffle
+   warm-start pages, and the show|hide → crawlable topic-limb graph (retiring the flat
+    %Tuner mute).  Until the human preens it, §2.4 stands and Mag_todo is the challenger;
+     a reader of either doc should know the other exists.
+
+**Owed ledger (landed rungs' remainders — full detail in `history/Radio_buildlog.md`):**
+ - D1a crypto door: swap MusuDoor's grant toggle for live `Swarm_pier_live` (attended —
+    entropy profile + warm re-accept).
+ - M4 remainder: the WIRE goner via the Berth forget path; rename-as-standing-Upkeep;
+    roster fan-out over N followers.
+ - `%Original` master + `%Blob` re-home into the shop; the prod signer + `hid` derivation
+    (rung 7's app path — today only Books set a signer).
+ - Berth: the `%Rack` + load-on-init; the MusuBerth live-gate.  Heistlet `cursor · backoff`
+    legs + a true two-runner return trip.
+ - ✓ **DONE** — music-metadata swap inside `Crate_meta_from_tags` (`parseBuffer` from music-metadata@11,
+    imported Crate.g:14, drives the field-by-field fallback at Crate.g:383; `Crate_wav_with_tags` writer
+     kept hand-rolled — the lib is read-only).
+ - Cloud-model redirect (the human, 2026-07-13): `randomic` → `shuffle|ctime|mtime` partitions
+    of ~20 at the real rastock→magazine seam.
+ - Captured idea: the invite as the DJ's CUE — an Idzeug redeemed at the deck headphone-monitors
+    the next track (design seam for deck-UI × invite).
+
+**Posited unknowns (the final figure-out):**
+ - **The wire crypto audit → `Trust_todo.md` (rewritten 2026-07-26).**  The `.g` comms suite
+    (`Swarm.g`/`Peeroleum.g`/`Tribunal.g`) IS the production wire (not a sim — an earlier note here mislabelled
+     it; corrected).  Its crypto is **split-personality**: the **society** layer (`Swarm.g` invites/grants/
+      reinvites/vouchers) is **real ed25519** and Book-green (single-use spend + blotter + chain all built); the
+       **transport** layer (`Peeroleum.g` per-frame + hello/trust handshake) is **deliberate mock v1** — no
+        per-frame signature (`header.sign` is a landed-later seam), hello-verify is `startsWith`, trust-verify is
+         a no-op.  `src/lib/p2p/Peerily.svelte.ts` (the previous-gen prototype) is the REFERENCE for the owed
+          port: land per-frame `emit`-signing + a real `verify_trust` onto the Peeroleum handshake (its
+           per-connect rebuild scaffolding — `reset_handshake` keeps `%Ud` — is already correct).  The detached
+            per-era voucher is per-era link-auth by design, not a forgery bug.  (Heist-landing `id`-homing is a
+             fine hardening IF records auto-merge — but "eyeball incoming music" is the intended model anyway.)
+   > **⚠ UPDATED 2026-10-15** (`Trust_todo.md` §1, re-read 2026-10-13). `Tyrant.g` — the
+   >  mock-era ghost this split-personality read predates — was deleted 2026-09-16. Since then: sender
+   >   proof on every Swarm frame is REAL, per era (the station voucher, `Swarm_voucher_ok`); the
+   >    relay's `fromGate` (landed 2026-10-13) closes `header.from` spoofing on the music plane's
+   >     `repli_*` frames too. Per-frame signing/AEAD (WT1/WT2) is still owed — see that doc's §0.3.
+ - BootGate on a device whose AudioContext never inits: the gate stands forever; fingers-check.
+ - watch_c migration for face reactivity (today faces poll H.version + a 1s tick).
+ - Scale seams: FSA names-only expand (3000-file dirs); whole-stock husk re-offers want the
+    neu/goner Selection once stocks grow; live-channel unemit rows never cull (the hi-reset
+     bounds it; a standing sweep is owed).
+
+**Bombs (durable homes: §2 wiring bombs · §1.5 Book discipline · CLAUDE.md · memories):**
+ LocalGen for spine .g; seed the toc THEN reload the runner; always `--runner=`; pre-pin the
+  assertion set before an accept; sealed real-audio Books keep benign ≈; the host commits
+   mid-session — re-check the tree after HEAD moves.
+
+---
+
+## 11. The Booth — taste as standing facts (the programme director organ)
+
+Born from the %Tombstone post-mortem (built unexplained, named in graveyard-speak, thought
+ heist-locally). The fix is a FAMILY designed together, so every fact answers — where it is
+  defined — the four questions the tombstone never did: **what is it, how long does it live,
+   who consults it, how is it lifted.** Adversarially vetted (record: §11.6).
+
+**STATUS (2026-07-13, the human's rulings — read BEFORE building anything in this section):**
+ - **%Tombstone STAYS in the engine.** The Ban rename was built then REVERTED by the host
+    ("you're just changing the name") — Heist.g/HeistTesting.g/LiesLies are back on the tombstone
+     baseline. `Ghost/M/Booth.g` exists, compiles, and is deliberately UNWIRED + UNENROLLED — the
+      human vetoed it then softened ("maybe I was too harsh"): the likely revival is Booth's door
+       probe over §11.7's Waft:Taste (the document as the store), NOT the line-ledger. Still: no
+        wiring without a fresh ruling.
+ - **The taste data model is unsettled, and klepto-mode is what warps it** ("why would I ban a
+    track I started heisting?"): in a want-driven heist — genre starting points + the source
+     Pier's advice (§11.7 Waft:Map) — most refusal-memory dissolves. Build toward want-driven;
+      revisit refusal-memory only after that exists.
+ - **Persistence is RULED: §11.7 (the Berth).** The Waft is the project-standard mutable robust
+    document; the Booth's raw-line `.jamsend/booth` ledger is superseded — do not extend it.
+ The family vocabulary below (the tune handle, the door table, rest/wanted shapes) survives as
+  design material; the ORGAN packaging (Booth/Ban verbs, the ledger) is the vetoed part.
+
+**The model in three sentences.** Every opinion the listener forms lives as a fact on the
+ collection, pointing at music through one handle (`tune:`/`artist:` — §11.1). The **calls**
+  (§11.2: Ban, Rest, Wanted, rotation, Setlist) are consulted by the machine's doors — acquiring
+   (heist), programming (racast), playing (raterm), being-browsed — each at its own gate. The
+    **evidence** (§11.3: spins, the airplay log, and their readers charts + Hunch) feeds the calls
+     but never gates anything itself.
+
+### 11.0 One track's life through the family
+
+A husk is offered on a heist; the door checks the collection — already held? banned? — and only
+ the new and un-refused pull. The track lands on probation (`newlyadded`); the listener loves it
+  (graduates, arrives hot in rotation) or drops it (file deleted, card retired, a **Ban** minted so
+   the next heist's door refuses that identity). As it plays, **spins** and **skips** tally and the
+    **airplay log** keeps the recent tape; the **charts** read the tallies. Too many skips and the
+     Booth gets a **Hunch**: rest it — a **Rest** sits the track out for a while and expires on its
+      own; a Ban stands until the listener lifts it. What a browsing peer eventually sees is your
+       programming — charts, setlists, rotation — never your file paths.
+
+### 11.1 The tune — one way to point at music
+
+Every opinion-fact points at music the SAME way: a **`tune:`** scalar holding the canonical
+ **`Artist — Title`** string (single spaced em-dash — the same no-commas convention as %see
+  sentences; commas would fight the peel parser).
+
+    Ban,tune:Fourier Four — Query E
+    Ban,artist:DJ Oscillo
+
+**Grain is visible by which key rides the line**: `tune:` = one track, `artist:` = the whole
+ artist — never a `kind:` enum. Three invariants, each load-bearing:
+ - **The split**: `Tune_split` takes the FIRST ` — ` as the boundary, so titles may contain
+    em-dashes and artists may not (accepted rarity, stated here so nobody reverse-engineers it
+     from a snap).
+ - **One normalization site**: `Tune_key(artist, title)` (trim + collapse whitespace; "feat."
+    stripping and case-folding are `<` later gears that will land THERE and nowhere else).
+ - **Derive, don't assert**: `Tune_of(rec)` derives the handle from a %Record's tags — the record
+    keeps `artist:/title:/album:` (facts of the file) and never stores its own `tune:`.
+ Accepted cost: "every ban by artist X" is a scan-and-split over `o({Ban:1})`, since `o()` matches
+  literally (no prefix match); opinion-facts are few, the scan is fine. Verified encode-safe: an
+   em-dash is not in `encode_stringies`' unsafe set, and ` — ` already round-trips live in %see
+    sentences. Namesake to hold: lowercase `tune` is a live MAINKEY in MusuTesting.g test-result
+     particles (`{tune:1, kind:'result'}`, :1253) — different world, no query overlap with the
+      Booth facts, but grep before assuming `tune:` is fresh anywhere.
+
+### 11.2 The calls — facts the doors consult
+
+| fact      | heist door (acquire)   | racast door (program)  | raterm door (play)       | built    |
+|-----------|------------------------|------------------------|--------------------------|----------|
+| Ban       | refuse (`job.sc.banned`)| never cast `<`        | never queue `<`          | tier 1   |
+| Rest      | · (not its layer)      | skip while resting `<` | auto-skip, manual-ok `<` | `<` t2   |
+| Wanted    | pull first / only `<`  | ·                      | ·                        | `<` t2   |
+| rotation  | ·                      | weight `<`             | weight auto-play `<`     | `<` t4   |
+| Setlist   | ·                      | cast as program `<`    | play locally `<`         | `<` t4   |
+
+(`·` = does not consult, by design. "Already held" needs no fact: a %Record existing IS the fact,
+ probed by `Heist_held`. "Loved" needs no fact either: love is a probation VERDICT whose durable
+  trace is `rotation:heavy` — the family is not punishment-only, the positive half just lives in
+   rotation.)
+
+**Ban — the do-not-play list — TIER 1 (the %Tombstone reborn).** The listener's standing refusal
+ of a track or an artist — "is it like a hated tracks?" — exactly that, the real broadcast
+  do-not-play ledger (the BBC banned records; so do we). Minted when the listener DROPS a
+   probation track (`Heist_feel` calls `Booth_ban`), or by hand at either grain. Lives on the
+    collection — an opinion belongs to the collection, not to any job, so it survives every %Caper
+     flatten. **A ban stands until you lift it by hand (`Booth_lift`); nothing sweeps it** — not a
+      flatten, not any cleanup — because a ban that silently vanished would re-download the very
+       track it refused (the machine-side rule is the %UnGrant one: never GC a negative fact —
+        the family's only other negative fact, a waved-off Hunch, obeys the same rule). No
+         `at:` birthday — history lives in the airplay log, and a timestamp would churn fixtures.
+          Probe `Booth_bans(lib, artist, title)` — spelled as the QUESTION it is, unmistakable
+           from the act at any call site — checks tune-grain then artist-grain; the
+          artist-grain ban is first-class from day one: the door refuses EVERY track by that
+           artist, racast/raterm will never surface them, and the census still builds their cards
+            (a ban is about what enters/plays here, not about un-knowing what a peer holds).
+             Door tallies stay apart — `skipped` (already held) vs `banned` (refused) — so a snap
+              reads WHY each husk stopped.
+ **Why ban what you chose to heist? (the human's unease, 2026-07-12 — a standing stance, not
+  settled).** Klepto v1 pulls EVERYTHING; probation is the selection step, so the Ban is
+   bulk-mode's memory of a drop — you never chose the track, the heist did. In a want-driven heist
+    (Wanted raids t2 + the single-track session §10.2 #4) the Ban nearly dissolves: you simply
+     never re-want it. Direction: build toward want-driven heisting and keep the Ban as bulk-mode's
+      small memory. Alternatives weighed and parked: the verdict LEDGER as the sole store (the
+       door reads last-verdict-per-tune off `.jamsend`); one mutable `%Stance,tune` card per known
+        tune (merges ban/rest/love — C/C/C is cheap so a structured stance home is affordable —
+         but a deletable stance loses the never-GC negative-fact clarity).
+ **Persistence — where opinion lives when the tab dies.** A collection's CATALOG is derived (the
+  census re-walks the disk every boot — nothing to persist); opinion is NOT derivable, so the
+   Booth persists in the collection's own meta home: **`.jamsend/booth`** ledger lines
+    (`seq ban|lift grain key`, the proven newlyadded mechanics), net state rehydrated onto the lib
+     at census, write-through on every ban/lift. The opinion TRAVELS WITH the music — copy the
+      folder, keep your bans. A `Waft:Booth` VIEW (the hand-editable board, Credence-style — the
+       human's instinct) is the right SURFACE for it later; the Waft displays and edits the same
+        ledger rather than being a second home.
+
+**Rest — the temporal sit-out — `<` t2.** "Not now; back in a while" — radio-real: resting an
+ overplayed record. A Rest is NOT a weak Ban: you rest a track you LOVE (fatigue management), you
+  ban one you refuse (a verdict). `Rest,tune:…,back:2026-07-19` — "rest it, back the 19th": a
+   human-readable date, never an epoch (the snap must read as a sentence). Doors READ an expired
+    Rest as absent (a pure read, no mutation inside a probe); the particle is actually removed at
+     the next Booth WRITE on that collection (any ban/rest/lift sweeps expired Rests in passing —
+      a tracked write moment), so expired Rests lie around harmlessly at worst — a fixture may
+       carry a benign stale Rest, like the sealing-Books' benign ≈. The heist door does NOT
+        consult Rest: acquisition is not playing, and refusing bytes over a mood is the wrong
+         layer.
+
+**Wanted — the want list — `<` t2.** Tunes you don't hold and are hunting — the collector's want
+ list styled as the heist-land wanted poster: `Wanted,tune:…` (artist-grain allowed). Minted by
+  hand (later: from a friend's chart). The heist door pulls Wanted husks FIRST, and a
+   `raid:1` job pulls nothing else — klepto narrowed to a raid, named as one. Retired automatically at
+    landing — honestly: that retirement is an edit in `Heist_land` (where landing actually
+     happens), the same class of door-wiring as the Ban check, not a free lifecycle.
+
+**rotation — programming weight — `<` t4.** `rotation:heavy|light` on the %Record; ABSENT =
+ normal (the boolean rule generalized: the default is no key). Love on probation → heavy. Cleared
+  by deleting the key (via a tracked replace). The racast picker weights heavy up, light down,
+   resting to zero. Only matters once racast is a real programmer.
+
+**Setlist — a programmed set — `<` t4.** A NAMED, ORDERED set of tunes — the radio show. filing
+ gives a track one genre home; setlists are many-to-many. (%Crate was the natural name and is
+  TAKEN — an opened collection dir; `Show` shadows %showing. Entries are **`Cut,seq:N,tune:…`** —
+   a deep cut; DECIDED, owning that `Cut` sits one letter from the live %Cue deck particle — the
+    read-aloud quality beat the grep risk.) A Setlist whose tune goes
+    banned keeps the entry — the setlist is a document, the Ban is policy, policy wins at play
+     time. Removal of a set or an entry = a tracked replace. racast casting a setlist as a program
+      is where casting stops being shuffle and becomes radio.
+
+### 11.3 The evidence — feeds the calls, never gates
+
+**spins + skips — `<` t3.** Monotone lifetime tallies on the %Record (`spins:`/`skips:`), never
+ reset, dying with their record. raterm bumps `spins` when a play crosses half the track (a guess
+  — radio counts at air, streaming at 30s; tune at build), `skips` when the listener bails before
+   that. Precedent: MusuTesting.g already tallies `sc.spins` on a radio particle. Legitimate stored
+    state (a tally is not derivable from anywhere once the moment passes) — but it must stay
+     independent truth, never a cache of the airplay log, or the two drift.
+
+**airplay log — `<` t3.** The bounded recent tape — `seq spin|skip tune` lines in
+ `.jamsend/airplay.log` (no timestamp column: `seq` alone carries the order the Hunch needs, and
+  every column then reads aloud), capped ~500, reusing the proven `newlyadded` log mechanics. Real
+   stations keep exactly this. The Hunch reads it (burnout needs ORDER, not totals);
+    charts-this-week derives from it.
+
+**charts — a function, not an organ.** `Chart_top(lib, n)` derives the countdown from spins at
+ read time; storing a chart would be the assert-vs-derive disease. A %Chart particle may exist
+  only as a %testing/view artifact.
+
+**Hunch — the producer's suggestion — `<` LAST, and honestly a MECHANISM.** The machine notices
+ and proposes; only the human decides. Two hunches at birth: burnout (a tune skipped 3 of its last
+  5 plays → suggest a Rest) and three-bans (three banned tunes by one artist → suggest the
+   artist-grain Ban). **The suggested act rides as the KEY** — `Hunch,rest:The Sines — Warm Static`
+    / `Hunch,ban:DJ Oscillo` — the same trick as `tune:`/`artist:` grain; no `kind:` enum (the
+     shape §11.1 bans). Taken → becomes the real fact, hunch retired; waved off → stays with
+      `waved_off:1`, lives on the collection, and is itself never-GC (a waved-off hunch that
+       vanished would re-nag — the family's second negative fact, same rule as the Ban). This
+        organ quietly needs a rule-sweep loop over the airplay log + that per-subject memory —
+         real machinery, which is WHY it is last: build it only after spins + the log are live and
+          proven.
+
+### 11.4 Parked surfaces (deferred until there is a surface)
+
+**Liner** (`%Liner,note:…` child of a %Record — liner notes, the human's voice in the interior)
+ and **Marquee** (the station's browse-face: what a peer sees is your charts/setlists/rotation,
+  never file paths; NOT named "Ident" — Idento is the ed25519 pair, and a radio ident is the audio
+   sting). Both are display-only leaves with no door; they return when raterm/browse UI exists.
+
+### 11.5 Tier plan + the %Tombstone→%Ban migration
+
+**Tier 1 is MOOT (2026-07-13): the tombstone is CONDEMNED (§10.2), not migrating.** The %Ban rename
+ was host-vetoed already; now the underlying gear goes too — a heist keeps only the held-skip,
+  poke-outs are manifest gestures, and IF a taste surface ever wants standing refusals they start
+   fresh from Booth vocabulary with a REAL populator (the deny ceremony never was one). The Tier 1
+    checklist below is KEPT because it maps every tombstone touch-point exactly — it is the RIP
+     checklist now: DELETE at each site instead of renaming, drop the retomb scene instead of
+      rewording it, and the two pinned see sentences die with it (the deny-drop sentence and its
+       honest-log gate survive — deleting + logging needs no ledger).
+
+**Tier 1 (now, one live-gate)** — one new ghost, `Ghost/M/Booth.g` (no Tune.g litter — six verbs,
+ one enrollment): `Tune_key`/`Tune_split`/`Tune_of` + `Booth_ban`/`Booth_bans`/`Booth_lift`
+  (both grains from day one; `Booth_bans` is the probe, spelled as a question). Then the migration:
+ - `Ghost/M/Heist.g`: `Heist_feel`'s inline mint → `Booth_ban`; `Heist_beat`'s door →
+    `Booth_bans`; `job.sc.tombstoned` → `job.sc.banned`; DELETE `Heist_tombstoned`; comment
+     sweep (:95-101, :150-157, :254, :270-278).
+ - `Ghost/Story/HeistTesting.g`: `retomb` → `encore` (phase flow comment :96, :110, :118-119;
+    bundle :223-229; flow :270, :275, :301, :316; witness :486, :493) + `Tombstone:1` query →
+     `Ban:1` (:494) + `ht.sc.tombstoned` → `banned` + BOTH see sentences reworded to (pinned here
+      as the quality bar — no commas, radio-land):
+      deny (:485): `the listener dropped the track and the Booth banned it — the file gone from
+       the disk and the do-not-play card standing on the collection`
+      encore (:496): `the same shelf came round again and the banned track stayed refused — the
+       collection remembered the ban and pulled nothing`
+ - Enrollment order (the bomb): LocalGen BOTH gen `.go` files FIRST, then add Booth.g to
+    CREDULER_GHOSTS (LiesLies.svelte :55).
+ - Fixtures: exactly 26 snaps (017-042) carry Tombstone/tombstoned/retomb — ONE live re-record
+    run + accept refreshes them; pre-pin the %see set (11 sentences, two reworded).
+ - Sabotage-proof: `Booth_bans` → `false`, LocalGen → the denied track re-heists
+    (`landed=1, banned=0`) → the encore see DROPS → red; restore, recompile, green.
+ - Unrelated namesakes stay: `%UnGrant` (crypto ledger), the `%wore_out` record-wear GC
+    (Radiola.g:227 prose calls it a tombstone), and Musuation's `{tune:1}` test-result mainkey
+     (§11.1) are NOT this and keep their names.
+
+**Tier 2**: Rest + Wanted (the other two door-facts; heist door learns priority/want_only).
+**Tier 3**: spins/skips → airplay log → charts (the evidence spine — each lands with a consumer).
+**Tier 4**: rotation + Setlist (racast becomes radio) → Marquee/Liner when there's a surface.
+
+### 11.6 Vetting record
+
+Two adversarial rounds (2026-07-12, eight Opus critics total — human-voice, music-land naming,
+ particle discipline, YAGNI, coherence, then fresh-eyes re-review). The blow-by-blow of what each
+  round changed lives in `history/Radio_buildlog.md`; what belongs HERE is what stops a re-churn:
+
+ **Dissents (kept against a critic, deliberately):** `Rest` keeps its name (critic wanted
+  Benched/Cooldown — sports/gamer-speak; "resting a record" is the radio term, and the
+   music-notation rest — a written silence — HARMONIZES); `encore` keeps its name (one critic read
+    encore as demand-not-refusal; the naming critic called it the best rename in the doc — the
+     shelf IS offered again); `Cut` for setlist entries over `Track` (12 live collisions) and
+      `Slot` (scheduling-grid speak) — the %Cue one-letter risk is owned.
+ **Settled — do not churn:** the `tune:`/`artist:` handle + grain-by-key; the calls/evidence
+  two-layer model with the story-first §11.0; the four-question frame per fact; Ban
+   stands-till-lifted + never-GC; the Rest≠weak-Ban distinction; the §11.5 checklist.
+ **Round 2 verdict: SHIP-WITH-FIXES — all applied**: `Booth_banned`→`Booth_bans` (probe as
+  question), Hunch enum killed (act-as-key + `waved_off:`), `until:`→`back:`, `want_only:`→`raid:`,
+   airplay `ts` dropped, `Cut` decided, the Musuation `tune` namesake noted, both see sentences
+    pinned (§11.5). Migration checklist independently verified against live code: zero line drift,
+     26 fixture files exact, em-dash encode-safety proven in 198 recorded snaps.
+

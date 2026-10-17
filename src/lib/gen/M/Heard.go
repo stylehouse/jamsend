@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heard(): string { return '458b1dd80137271d~g1' },
+    Ghostmeta_Ghost_M_Heard(): string { return 'aef7406c8d1a9ac3~g1' },
 
 // Heard.g — THE HEARD MAG: what I heard, of whom, and what I took (Radio_circuit_todo.md).
 //  One Mag under my own identity — `%Mag:heard,pub:<me>` — holding one `%Card,id,pub` per track the
@@ -639,10 +639,6 @@ Heard_verdict_field(key) {
     if (key === 'unvouched') { return 'offer_unsigned_at' }
     if (key === 'landfail') { return 'landing_failed_at' }
     return ''
-},
-// Heard_verdict_keys — the wire vocabulary (unchanged) plus `why`, still what Heard_untake forgets.
-Heard_verdict_keys() {
-    return ['held', 'unvouched', 'landfail', 'why']
 },
 // Heard_listing_keys — what a taken Card clones off the friend's answer (§1, stage 2).
 Heard_listing_keys() {
