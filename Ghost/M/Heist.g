@@ -24,6 +24,7 @@
 //    hash the instant the last byte writes — an early breach tripwire ahead of the read-back gate.
 IMPORT()
     import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/Common"
+    import { APP_DATA_DIR } from "$lib/app_data_dir"
 
 //#region knobs
 // Heist_chunk_bytes — the %Body transport slice.  Big enough that an 8-minute WAV stays ~30 particles
@@ -56,7 +57,7 @@ Heist_has_body(n):
 // Heist_meta_dir — the app's private corner inside the share (the radiostock convention): ALL meta,
 //  never media bytes at its top level.
 Heist_meta_dir():
-    return '.jamsend'
+    return APP_DATA_DIR
 
 // Heist_marrauding — the per-Pier per-run namespace a heist LANDS UNDER: meta + newlyadded + landing
 //  categories all live below it, so a run's work deletes cleanly (one sweep of test-marrauding-of-<runid>
@@ -4824,7 +4825,7 @@ async Heist_sweep(nav, path):
 Berth_dir(root, prepub, name):
     // prepub is OPTIONAL — an identity-less Waft (Heist_newlyadded_waft's collection-scoped Newlyadded,
     //  never split by who gave what) homes one level shallower: <root>/.jamsend/berth/<name>.
-    return root + '/.jamsend/berth/' + (prepub ? prepub + '/' : '') + name
+    return root + '/' + APP_DATA_DIR + '/berth/' + (prepub ? prepub + '/' : '') + name
 
 // ── THE APPEND DOOR (2026-08-08) ────────────────────────────────────────────────────────────────
 // A Berth Waft is `toc.snap` PLUS numbered part files — `001.snap`, `002.snap`, … — exactly the shape
@@ -4999,7 +5000,7 @@ async Berth_reset(nav, root, prepub, name):
         try { await this.Heist_unlink(nav, dir, 'toc.snap.crswap') } catch (er) {}
         return
     }
-    await this.Heist_sweep(nav, root + '/.jamsend/berth/' + prepub)
+    await this.Heist_sweep(nav, root + '/' + APP_DATA_DIR + '/berth/' + prepub)
 
 // Musica_publish — the first magazine rung (§12.2, M1): sublime a collection into media homed in a Berth
 //  Waft.  The magazine is the catalog SUBLIMED, not the payload: it carries %Card LISTINGS (id/artist/title/

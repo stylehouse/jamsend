@@ -50,6 +50,7 @@
 //     its keys — so the vouch repeats run to run, a pinnable fixture.
 IMPORT()
     import { Idento } from "$lib/Common"
+    import { APP_DATA_DIR } from "$lib/app_data_dir"
     import { mint_grant } from "$lib/O/Funk/Grant.ts"
 
 MusuHeist(A,w):
@@ -3091,7 +3092,7 @@ async MusuOgg_stock(w, nav):
 // MusuOgg_dir — where the export lands: the app's private '.jamsend/' corner (never media bytes at a
 //  share top level), a per-Book run namespace so a re-run is deterministic and the sweep is clean.
 MusuOgg_dir():
-    return '.jamsend/ogg-export/musuogg'
+    return APP_DATA_DIR + '/ogg-export/musuogg'
 
 // MusuOgg_name — the export file name, keyed by the record id so the %Blob path is stable across a re-run.
 MusuOgg_name(id):

@@ -4,13 +4,14 @@
     import { onMount } from "svelte"
 
 import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/Common"
+import { APP_DATA_DIR } from "$lib/app_data_dir"
 
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '1301569d0f48c2c2~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '50ff3d064cfe48ea~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -71,7 +72,7 @@ Heist_has_body(n) {
 // Heist_meta_dir — the app's private corner inside the share (the radiostock convention): ALL meta,
 //  never media bytes at its top level.
 Heist_meta_dir() {
-    return '.jamsend'
+    return APP_DATA_DIR
 
 },
 // Heist_marrauding — the per-Pier per-run namespace a heist LANDS UNDER: meta + newlyadded + landing
@@ -4961,7 +4962,7 @@ async Heist_sweep(nav, path) {
 Berth_dir(root, prepub, name) {
     // prepub is OPTIONAL — an identity-less Waft (Heist_newlyadded_waft's collection-scoped Newlyadded,
     //  never split by who gave what) homes one level shallower: <root>/.jamsend/berth/<name>.
-    return root + '/.jamsend/berth/' + (prepub ? prepub + '/' : '') + name
+    return root + '/' + APP_DATA_DIR + '/berth/' + (prepub ? prepub + '/' : '') + name
 
 },
 // ── THE APPEND DOOR (2026-08-08) ────────────────────────────────────────────────────────────────
@@ -5143,7 +5144,7 @@ async Berth_reset(nav, root, prepub, name) {
         try { await this.Heist_unlink(nav, dir, 'toc.snap.crswap') } catch (er) {}
         return
     }
-    await this.Heist_sweep(nav, root + '/.jamsend/berth/' + prepub)
+    await this.Heist_sweep(nav, root + '/' + APP_DATA_DIR + '/berth/' + prepub)
 
 },
 // Musica_publish — the first magazine rung (§12.2, M1): sublime a collection into media homed in a Berth

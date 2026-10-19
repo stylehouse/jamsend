@@ -384,6 +384,7 @@ else console.log = (...args: any[]) => { if (v_pass(String(args[0] ?? ''))) app_
 
 const { mount, flushSync } = await import('svelte')
 const { NodeWormholeNav }  = await import('../NodeWormholeNav')
+const { APP_DATA_DIR }     = await import('../../src/lib/app_data_dir')
 const Daemonic             = (await import('./Daemonic.svelte')).default
 
 // Reads fall through overlay → repo; writes land in the overlay.  Deliberately the TEST nav: a
@@ -414,9 +415,9 @@ if (LIBRARY) {
     if (!existsSync(LIBRARY)) say(`⚠ LIBRARY=${LIBRARY} does not exist — no collection and no account`)
     else {
         mounts.music = LIBRARY
-        mounts['.jamsend'] = { path: `${LIBRARY}/.jamsend`, rw: true }
-        if (!existsSync(`${LIBRARY}/.jamsend`)) {
-            say(`⚠ ${LIBRARY}/.jamsend is absent — provision this identity from a BROWSER first (§4.1: the daemon never provisions)`)
+        mounts[APP_DATA_DIR] = { path: `${LIBRARY}/${APP_DATA_DIR}`, rw: true }
+        if (!existsSync(`${LIBRARY}/${APP_DATA_DIR}`)) {
+            say(`⚠ ${LIBRARY}/${APP_DATA_DIR} is absent — provision this identity from a BROWSER first (§4.1: the daemon never provisions)`)
         }
     }
 } else if (MUSIC) {
@@ -617,9 +618,9 @@ const nag_identity = (): string => {
     if (!nagged && (stood || process.uptime() > 90)) {
         nagged = true
         say(one)
-        if (id.active) say(`   It PERSISTS: mirrored to <music>/.jamsend/account/${id.active}…/ and resumed from there, so it is the same peer each boot — and that is an unencrypted private key in your music folder you did not ask for. Delete that directory to be rid of it.`)
+        if (id.active) say(`   It PERSISTS: mirrored to <music>/${APP_DATA_DIR}/account/${id.active}…/ and resumed from there, so it is the same peer each boot — and that is an unencrypted private key in your music folder you did not ask for. Delete that directory to be rid of it.`)
         say(`   To be a real peer: grant your music folder in a BROWSER, let it write the account, then`)
-        say(`   ls <music>/.jamsend/account/   — the directory names ARE the prepubs — and set`)
+        say(`   ls <music>/${APP_DATA_DIR}/account/   — the directory names ARE the prepubs — and set`)
         say(`   JAMSERVE_ID=<prepub> (which becomes I=). The daemon never provisions (§4.1).`)
     }
     return id.active ? ` ⚠throwaway` : ` ⚠no-identity`
@@ -1232,7 +1233,7 @@ const persist_account = async (): Promise<void> => {
         // the ack edge, same as the browser mirror's: /status's persist card reads this stamp.
         try { (((H as any).top_House?.() ?? H) as any).c.account_mirror_at = Date.now() } catch {}
         if (again && V.account) say(`🪪 account re-mirrored — the friend list on disk changed${owed_why ? ` (settled: ${owed_why})` : ''}`)
-        else say(`🪪 account mirrored → .jamsend/account/${ident.sc.prepub}/toc.snap (resume with I=${ident.sc.prepub})`)
+        else say(`🪪 account mirrored → ${APP_DATA_DIR}/account/${ident.sc.prepub}/toc.snap (resume with I=${ident.sc.prepub})`)
     } catch (e: any) {
         mirrored_snap = ''
         say(`⚠ account mirror failed: ${e?.message}`)
@@ -1609,7 +1610,7 @@ const arrest_watch = async () => {
     if (!top?.c?.identity_pending) { arrested_at = 0; return }
     if (!arrested_at) { arrested_at = Date.now(); return }
     if (Date.now() - arrested_at < ARREST_GRACE_MS) return
-    const acct = `.jamsend/account/${process.env.I}/toc.snap`
+    const acct = `${APP_DATA_DIR}/account/${process.env.I}/toc.snap`
     const why  = top.c.identity_pending_why ? ` (${top.c.identity_pending_why})` : ''
     if (existsSync(path.join(OVERLAY, acct)) || existsSync(path.join(ROOT, acct))) {
         say(`☠ identity ARRESTED with the account ON DISK (${acct})${why}`)

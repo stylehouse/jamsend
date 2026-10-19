@@ -53,6 +53,7 @@
     import { onMount }      from "svelte"
     import LibraryRun       from "$lib/O/ui/LibraryRun.svelte"
     import { now_in_seconds, now_in_seconds_with_ms } from "$lib/Common";
+    import { APP_DATA_DIR } from "$lib/app_data_dir"
     import { boot_param }   from "$lib/boot"
     import { Idento }       from "$lib/Common"
     import { prepubOf }     from "$lib/cluster_trust"
@@ -242,7 +243,7 @@
                 if (Date.now() - t0 < SEED_WAIT_MS) return false
             } else if ((nav as any).atime_async) {
                 ;(topH.c as any).identity_seed_tried = 1
-                console.warn(`🪪 identity disk-seed skipped — nav is REMOTE; .jamsend never crosses the wire.`)
+                console.warn(`🪪 identity disk-seed skipped — nav is REMOTE; ${APP_DATA_DIR} never crosses the wire.`)
             } else {
                 ;(topH.c as any).identity_seed_tried = 1
                 try {
@@ -255,7 +256,7 @@
                         await (H as any).thang_add(wT, stored.prepub, stored)   // so the NEXT boot is a Dexie hit
                         const live = (H as any).Clustation_concrete(A, param, stored)
                         delete (topH.c as any).identity_seed_since
-                        console.log(`🪪 Identity RESTORED from disk ${cluster_name(stored.prepub)} (${stored.prepub}) — .jamsend/account`)
+                        console.log(`🪪 Identity RESTORED from disk ${cluster_name(stored.prepub)} (${stored.prepub}) — ${APP_DATA_DIR}/account`)
                         // THE SECOND-RELOAD TRAP (2026-08-08, Identity_persist_todo §5 audit item 3,
                         //  §6.6). The line above restores the KEY and nothing else. The vault we just
                         //   seeded also holds the whole ledger this account owns — its %Piers (friends),
@@ -514,7 +515,7 @@
         if ((top.c as any).account_mirror_stale) {
             if (!(top.c as any).account_mirror_stale_said) {
                 ;(top.c as any).account_mirror_stale_said = 1
-                console.warn(`🪪 account mirror held — reinstated at the bare name but the live tree predates the borrow; re-read .jamsend/account/${ident.sc.prepub}/ (disk wins, §7.4f) then clear account_mirror_stale.`)
+                console.warn(`🪪 account mirror held — reinstated at the bare name but the live tree predates the borrow; re-read ${APP_DATA_DIR}/account/${ident.sc.prepub}/ (disk wins, §7.4f) then clear account_mirror_stale.`)
             }
             return false
         }
@@ -606,7 +607,7 @@
             //   consuming it.  DoorFace derives "settling… / settled ✓" from exactly these.
             ;(top.c as any).account_mirror_at = Date.now()
             delete (top.c as any).account_settle_owed
-            console.log(`🪪 account mirrored → .jamsend/account/${ident.sc.prepub}/toc.snap`)
+            console.log(`🪪 account mirrored → ${APP_DATA_DIR}/account/${ident.sc.prepub}/toc.snap`)
             return true
         } catch (er) {
             // Clear the mark so a transient failure (a gesture-less FSA handle, a full disk) retries

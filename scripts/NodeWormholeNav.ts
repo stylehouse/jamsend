@@ -18,6 +18,7 @@
 import { readFileSync, writeFileSync, appendFileSync, mkdirSync, readdirSync, existsSync, statSync, openSync, readSync, writeSync, closeSync, chmodSync, unlinkSync, symlinkSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import path from 'node:path'
+import { APP_DATA_DIR } from '../src/lib/app_data_dir'
 
 const isDirAt = (p: string | Buffer) => existsSync(p) && statSync(p).isDirectory()
 
@@ -243,7 +244,7 @@ export class NodeWormholeNav {
     //  plaintext private key, Swarm_snap_keyed).  Checked on the resolved abs (not the raw rel) so a rel
     //   that merely MENTIONS `.jamsend` before a `..` cancels it back out isn't mistaken for the real thing.
     private sensitive(abs: string): boolean {
-        return abs.split(path.sep).includes('.jamsend')
+        return abs.split(path.sep).includes(APP_DATA_DIR)
     }
 
     // secureJamsendDir — walked AFTER a plain (mode-less) recursive mkdirSync, never passed as that
@@ -255,7 +256,7 @@ export class NodeWormholeNav {
     //       mode only from `.jamsend` down — never above it, whether the dir is fresh or predates this fix.
     private secureJamsendDir(dirAbs: string) {
         const parts = dirAbs.split(path.sep)
-        const idx = parts.lastIndexOf('.jamsend')
+        const idx = parts.lastIndexOf(APP_DATA_DIR)
         if (idx === -1) return
         for (let i = idx; i < parts.length; i++) {
             const p = parts.slice(0, i + 1).join(path.sep) || path.sep

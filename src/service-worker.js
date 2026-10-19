@@ -16,7 +16,7 @@
 //
 // To retire the cache, bump CACHE: activate deletes every other jamsend-shell-* cache.
 
-const CACHE = 'jamsend-shell-v1'
+const CACHE = 'jamsend-shell-v2'   // v1 cached raw .go sources (the empty-destination bug below)
 const music = new Set()   // clientIds of music pages — lost when the worker stops; the page's boot message re-adds it
 
 const is_music_url = (url) => {
@@ -35,9 +35,22 @@ const key_of = (url, navigate) => {
     return k.href
 }
 
+// A ghost (`gen/**.go`) is a Svelte file under a foreign extension, so Vite transforms it only when it can tell the
+//  request is for a script — by `Sec-Fetch-Dest: script`.  A fetch re-issued from this worker arrives as `empty`, Vite
+//   serves the raw `<script lang="ts">…` source with no content-type, and the browser sniffs it as HTML: every Creduler
+//    ghost then fails "Expected a JavaScript-or-Wasm module script… text/html" (found 2026-10-19 on the music page).
+//     `?import` is Vite's own spelling of "this is an import", so ask with it; the response still answers the original
+//      URL, and the cache key stays the original.
+const network_request = (request, url) => {
+    if (request.destination !== 'script' || !url.pathname.endsWith('.go') || url.searchParams.has('import')) return request
+    const u = new URL(url.href)
+    u.searchParams.set('import', '')
+    return new Request(u.href, { credentials: request.credentials, cache: request.cache })
+}
+
 async function network_first(request, key) {
     try {
-        const res = await fetch(request)
+        const res = await fetch(network_request(request, new URL(request.url)))
         if (res.ok && res.type === 'basic') {
             const copy = res.clone()
             caches.open(CACHE).then((c) => c.put(key, copy)).catch(() => {})

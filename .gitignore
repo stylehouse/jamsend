@@ -31,6 +31,7 @@ logs
 
 # Claude Code personal overrides
 .claude/settings.local.json
+.claude/worktrees/
 
 # investigation scaffold (relay-socket dumps) — TEMP
 wormhole/_socklog/

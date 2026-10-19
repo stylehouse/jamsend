@@ -47,6 +47,7 @@
 IMPORT()
     import { sha256_hex } from "$lib/Common"
     import { Idento } from "$lib/Common"
+    import { APP_DATA_DIR } from "$lib/app_data_dir"
 
 //#region knobs
 // Ra_target_lufs — the ONE loudness constant (Radio_todo §3.2, decided 2026-07-07): -14 LUFS, the
@@ -499,7 +500,7 @@ async Ra_decode_packets(packets, nch, skip):
 //  same home the old Records.svelte used — $share/.jamsend/radiostock — and the one Agency/Structure
 //   already step around), so our stock never litters the granted collection's top level.
 Ra_stock_dir():
-    return '.jamsend/radiostock'
+    return APP_DATA_DIR + '/radiostock'
 
 // Ra_stock_cap — how many files THIS Peering keeps on disk before the oldest wear off (Ra_stock_gc_cap).
 //  radiostock is a WORKING cache for the speedy run-around, not the archive — so it is bounded, like

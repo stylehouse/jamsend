@@ -5,13 +5,14 @@
 
 import { sha256_hex } from "$lib/Common"
 import { Idento } from "$lib/Common"
+import { APP_DATA_DIR } from "$lib/app_data_dir"
 
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '5af726b46413e259~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return 'aef53c7f755ca31b~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -535,7 +536,7 @@ async Ra_decode_packets(packets, nch, skip) {
 //  same home the old Records.svelte used — $share/.jamsend/radiostock — and the one Agency/Structure
 //   already step around), so our stock never litters the granted collection's top level.
 Ra_stock_dir() {
-    return '.jamsend/radiostock'
+    return APP_DATA_DIR + '/radiostock'
 
 },
 // Ra_stock_cap — how many files THIS Peering keeps on disk before the oldest wear off (Ra_stock_gc_cap).

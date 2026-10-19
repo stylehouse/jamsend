@@ -589,6 +589,45 @@ Music started 09:57:49, 7s after storyFinished (`dial` → `Fourier Four — Que
      The cost is re-recording Sounditron and the Musu/Vyto fixtures that ride it, once, deliberately (today the humdinger
       gate keeps them byte-identical).
 
+## The app's own storage — `.jamsend/`, surveyed (2026-10-18)
+
+The owner: Berth *"needs moved into the foundation of the app… where-ever we hard-code .jamsend should probably be
+ DOTAPPNAMESTORAGEDIR or something?  part of Jamsend is the app-supporting foundation."*
+
+**One door already.**  Every user reaches disk through `A:Wormhole.c.nav`, a MountNav (`Crate_nav`, `Crate.g:131`).
+ Aiming is by longest-prefix mounts keyed on the literal path strings, so callers spell `.jamsend/…` and the foundation
+  re-aims some prefixes:
+
+| prefix | where it really lands | set up by |
+|---|---|---|
+| `wormhole` (music folder, no `wormhole/`) | `.jamsend/wormhole/` on their disk, over GitHub | `AppTreeNav`, `Housing.svelte.ts:2625` |
+| `.jamsend/account`, `.jamsend/identities` | a separate credentials folder, when one is granted | `Wormhole_mount_creds`, `:2641` |
+| `pool/` | OPFS | `Wormhole_mount_pool` |
+| `.jamsend/berth`, `.jamsend/radiostock` | the share, beside the music (deliberately unmounted) | — |
+
+**The hard-coded spellings:**
+- **Ghosts:** `Heist_meta_dir()` returns `'.jamsend'`, a helper nobody else uses.  The rest spell it out:
+   `Berth_dir` and its sweep (Heist.g), `Ra_stock_dir` (Ra.g; its file extension `.jamsend_radiostock` too),
+    `Swarm_account_dir` / `Swarm_roster_dir` (Swarm.g), and HeistTesting's `ogg-export` and `lossy-proof`.
+- **Foundation:** Housing's AppTreeNav root and creds mounts, and **the serve wall**: the relay refuses any path with
+   a `.jamsend` segment (`Housing.svelte.ts:2792`, "owner-local — never served over the wire").  On the node side,
+    `NodeWormholeNav` keys its 0600 file mode on the same segment, and `scripts/daemon/main.ts` mounts it.
+- **Tests and logs:** `MountNav.spec.ts` (18), Auto's log lines.
+
+**The move:**
+1. **One constant — DONE 2026-10-18: `APP_DATA_DIR` (`src/lib/app_data_dir.ts`, dependency-free).**  Every code spelling
+    reads it: Housing (app tree root, creds mounts, the serve wall), NodeWormholeNav (0600/0700), the daemon, and the ghosts
+     via `IMPORT()` (Heist, Ra, Swarm, HeistTesting).  It is one spelling, not a rename: the value stays `.jamsend`, or every
+      existing disk is orphaned.  Left literal on purpose: `MountNav.spec.ts` (it pins the on-disk value), comments, a snapped
+       `%see` sentence, and Ra's `.jamsend_radiostock` file extension (a file-format name, not the dir).
+2. **Berth into the foundation.**  `Berth_dir/open/save/append/fold/reset` live in Heist.g (`//#region berth`), but they
+    are encoders-only and zero-Lies, and Heist is their only caller (KeepMemo, Heists, HeistDefaults, Newlyadded, Musica,
+     Faves/Zines).  Anything else wanting a per-identity Waft must have Heist loaded, which is the load-list disease again.
+      They belong beside the Wormhole verbs, so Swarm, Radio and Story can use them directly.
+3. **A humdinger's run records go to a berth.**  `Story_future_directions §5.3` wants a music page never to write
+    fixtures into the app tree, or only to "a scratch path never read back".  Today it saves through `wormhole/`, i.e.
+     `.jamsend/wormhole/`, where a short copy could shadow GitHub again.  A per-identity berth is that scratch path.
+
 ## Not yet
 
 The toplevel inventory (what happens between page-load and commission) is half-owed: the post-Lies half is the

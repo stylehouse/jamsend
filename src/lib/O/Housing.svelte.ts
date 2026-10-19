@@ -6,6 +6,7 @@ import { now_in_seconds_with_ms } from "$lib/Common";
 import { grap, grep, tex, throttle } from "$lib/Common"
 import { mount_opfs_github_nav, mount_lazy_github_nav, mount_opfs_pool_nav, JAMSEND_SOURCE } from "./WormholeOpfs.svelte.ts";
 import { MountNav, AppTreeNav, app_tree_decision } from "./MountNav.svelte.ts";
+import { APP_DATA_DIR } from "$lib/app_data_dir";
 import { Dexie, liveQuery, type EntityTable } from 'dexie';
 
 // concat_chunks — join a file's reader chunks into ONE ArrayBuffer in a single linear pass.
@@ -2622,7 +2623,7 @@ export class House extends StorableHousing {
                 A.c.app_tree = 'failed'; A.c.app_tree_error = String(err); H.main(true)
                 return null
             })
-        mn.mount('wormhole', new AppTreeNav(mn.base, '.jamsend/wormhole', cloud, 'wormhole'), { label: 'app tree (.jamsend/wormhole + cloud)' })
+        mn.mount('wormhole', new AppTreeNav(mn.base, `${APP_DATA_DIR}/wormhole`, cloud, 'wormhole'), { label: `app tree (${APP_DATA_DIR}/wormhole + cloud)` })
     }
 
     // Wormhole_mount_creds — point the two keyed paths at the credentials folder, if one was granted.
@@ -2638,8 +2639,8 @@ export class House extends StorableHousing {
         const list = A.c.fsh_creds?.list
         if (!mn?.is_mounted || !list) return
         const creds = new WormholeNav(list)
-        mn.mount('.jamsend/account', creds, { inner: 'account', label: 'credentials folder' })
-        mn.mount('.jamsend/identities', creds, { inner: 'identities', label: 'credentials folder' })
+        mn.mount(`${APP_DATA_DIR}/account`, creds, { inner: 'account', label: 'credentials folder' })
+        mn.mount(`${APP_DATA_DIR}/identities`, creds, { inner: 'identities', label: 'credentials folder' })
         A.c.creds_mounted = list.name || 1
         this.diag(`Wormhole credentials mounted at "${list.name}" — account + identities leave the share`)
     }
@@ -2789,8 +2790,8 @@ export class House extends StorableHousing {
                 //     our own runner) must never read, list, or overwrite an owner's key over the relay.
                 //      Defence in depth beside Crate_nav_paths' dot-dir skip (invariant 2).
                 for (const p of [req.sc.rw_dir, req.sc.rw_name]) {
-                    if (p && String(p).split('/').some((seg: string) => seg === '.jamsend')) {
-                        return { error: '🔒 .jamsend is owner-local — never served over the wire', fatal: 1 }   // a refusal, never retried
+                    if (p && String(p).split('/').some((seg: string) => seg === APP_DATA_DIR)) {
+                        return { error: `🔒 ${APP_DATA_DIR} is owner-local — never served over the wire`, fatal: 1 }   // a refusal, never retried
                     }
                 }
                 try {

@@ -4,6 +4,7 @@
     import { onMount } from "svelte"
 
 import { Idento, peel } from "$lib/Common"
+import { APP_DATA_DIR } from "$lib/app_data_dir"
 import { mint_grant, verify_grant, grant_to_C, grant_of_C, mint_revoke, verify_revoke } from "$lib/O/Funk/Grant.ts"
 import { signHeader, verifyHeader, prepubOf } from "$lib/cluster_trust"
 import { vessel_register, vessel_subnet, vessel_drop, vessel_sweep } from "$lib/O/vessel_store"
@@ -16,7 +17,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'ef52ffd9c4b256ab~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'a0b1321415a2c4d7~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -6685,10 +6686,10 @@ Swarm_graft(parent, node) {
 //    no per-device root.  `root` is the durable collection ('' = the share root); a Book passes its
 //     marrauding root so its writes sweep with the run.
 Swarm_account_dir(root, prepub) {
-    return (root || '') + '/.jamsend/account/' + prepub
+    return (root || '') + '/' + APP_DATA_DIR + '/account/' + prepub
 },
 Swarm_roster_dir(root) {
-    return (root || '') + '/.jamsend/identities'
+    return (root || '') + '/' + APP_DATA_DIR + '/identities'
 
 },
 // Swarm_account_save — persist the account as its export snap (keypair embedded) at
@@ -6733,7 +6734,7 @@ async Swarm_account_load(nav, root, prepub, container) {
 async Swarm_account_list(nav, root) {
     if (!nav?.dir_at) return []
     let dl = null
-    try { dl = await nav.dir_at((root || '') + '/.jamsend/account') } catch (er) { dl = null }
+    try { dl = await nav.dir_at((root || '') + '/' + APP_DATA_DIR + '/account') } catch (er) { dl = null }
     if (!dl) return []
     await dl.expand()
     return dl.directories.map(d => d.name)

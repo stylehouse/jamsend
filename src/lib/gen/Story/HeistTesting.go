@@ -4,6 +4,7 @@
     import { onMount } from "svelte"
 
 import { Idento } from "$lib/Common"
+import { APP_DATA_DIR } from "$lib/app_data_dir"
 import { mint_grant } from "$lib/O/Funk/Grant.ts"
 
     let { H } = $props()
@@ -11,7 +12,7 @@ import { mint_grant } from "$lib/O/Funk/Grant.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_HeistTesting(): string { return '69fdd337484f7bac~g1' },
+    Ghostmeta_Ghost_Story_HeistTesting(): string { return '50e90f841d1cfe64~g1' },
 
 // HeistTesting.g — né Heistation.g (the `<Name>Testing.g` convention, owner ruling 2026-09-09;
 //  src/lib/L/testing.ts is the one predicate).  Book NAMES did not move with the file — `MusuHeist`,
@@ -3265,7 +3266,7 @@ async MusuOgg_stock(w, nav) {
 // MusuOgg_dir — where the export lands: the app's private '.jamsend/' corner (never media bytes at a
 //  share top level), a per-Book run namespace so a re-run is deterministic and the sweep is clean.
 MusuOgg_dir() {
-    return '.jamsend/ogg-export/musuogg'
+    return APP_DATA_DIR + '/ogg-export/musuogg'
 
 },
 // MusuOgg_name — the export file name, keyed by the record id so the %Blob path is stable across a re-run.
