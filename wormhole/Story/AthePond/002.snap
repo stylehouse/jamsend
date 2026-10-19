@@ -1,0 +1,10 @@
+Snap:H
+  H:AthePond,Run
+    A:AthePond
+      w:AthePond
+        req:wrangle,eternal,ok
+        req:stand_wait,finished
+    A:AtheTank
+      w:AtheTank
+        Fish:minnow 1
+        Fish:perch 2

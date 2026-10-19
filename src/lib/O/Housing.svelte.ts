@@ -558,6 +558,14 @@ export class House extends StorableHousing {
 
     // null until Ghost.svelte shim calls eatfunc — gates _really_answer_calls
     ghosts: Record<string, Function> | null = $state(null)
+    // which file each eaten method came from: method name → that file's Ghostmeta_* name.  Every eatfunc hash
+    //  is one compiled .g and carries exactly one Ghostmeta_*, so ghostsHaunt can say where each method came
+    //   from; H.ghosts alone is flat and can't.  Atheory reads it to stand an A's code as layers
+    //    (Ghost/A/Theory.g, spec/Atheory_todo.md §0.2).  Kept on the top House only; plain, not $state.
+    ghost_origin: Record<string, string> = {}
+    // a method name eaten from a SECOND file overwrites the first (H.ghosts is flat), so note it here
+    //  rather than lose it: { method, was, now }, both Ghostmeta_* names.  Read by Theory.g as %TheAClobber.
+    ghost_clobbers: { method: string, was: string, now: string }[] = []
 
     // ghosts must have arrived before we are truly started
     override start_checks(): (boolean | null)[] {
@@ -656,6 +664,17 @@ export class House extends StorableHousing {
     ghostsHaunt(hash: Record<string, Function>) {
         // merge into H.ghosts
         this.ghosts = { ...(this.ghosts ?? {}), ...hash }
+        // note which file these came from (a hash without a Ghostmeta_* is a hand-written ghost: no origin)
+        const meta = Object.keys(hash).find(k => k.startsWith('Ghostmeta_'))
+        if (meta) {
+            let top: House = this as House
+            while (top.up) top = top.up as House
+            for (const k of Object.keys(hash)) {
+                const was = top.ghost_origin[k]
+                if (was && was !== meta) top.ghost_clobbers.push({ method: k, was, now: meta })
+                top.ghost_origin[k] = meta
+            }
+        }
         // merge that into everything
         for (const h of this.all_House) {
             Object.assign(h, this.ghosts)

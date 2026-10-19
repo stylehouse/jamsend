@@ -12,6 +12,9 @@ A capture doc, not yet a plan — the owner has reached for this three times in 
 
 ## 0. What this is about
 
+*2026-10-20 — §0.1 below is the current sketch and the owner's rulings; read it first.  What follows here is the
+ original framing.*
+
 *2026-09-08 — read `Wordland_todo.md` first: it is where this doc's A\*\* shape, Atlas (what the code says)
  and Electrode (what it does — built that night) are read together.  Electrode's `join` gives the
   static border measurement below its MEASURED twin (one Book run: 379 declared call pairs, 202 ran), and
@@ -30,6 +33,333 @@ Two irritations, probably one rebuild:
       make those seams walkable ("easier to moonwalk through these such transpirings").  *Corrected
        2026-10-18 — the old wording here (a world-1→world-2 remount at storyFinished; an un-buffered `cyto`
         derive balanced on it) does not hold today; see "Progressive startup" below.*
+
+## 0.1 The sketch (2026-10-20) — read this before the case studies
+
+*The owner and a session worked through a 100-sentence gist and two rounds of rulings.  This is what survived:
+ settled where it says settled, candidate where it says candidate.  The sections further down are the evidence
+  it rests on; where they disagree with this, this wins.*
+
+**Scope first.**  The music app rests for a while.  The next non-architectural work is **tests for the Atheory rebuild
+ itself**; rebuilding parts of the music app on it comes later, as rebuild terrain.  Slotting a new layer in must keep
+  every existing Book working.
+
+### What it is, in one breath
+
+The next Housing.  Code and time become matter like everything else: which code runs where is a particle on the A
+ that holds it, and every change is a recorded event that advances a version.  It spreads space out and loads code
+  more efficiently first; harmonising all IO with it (IOexpr, streams) is the next wave, and it looms.
+
+### Dispatch is the centre, not the prototype
+
+The A\*\* shape below (`TheA_<Name>_<Variant>_<dige>` prototypes) makes `A.*` callable, but that's the surface.
+ The organ underneath is **`do_fn_for`: given a node, find the code that handles it.**  Today it resolves by naming
+  tricks: `e_<elvis>`, the world's own method, `req_<kind>`, and, the precedent that matters, a typed serial req
+   dispatching **by its mainkey** (`%Pier,req:N` → `req_Pier`, `Housing.svelte.ts:1498`).
+- **Candidate: the handler table as data.**  Methods named `Class_Aspect_Verb` (`Record_play_start`) compile into rows:
+   mainkey `Record`, aspect `play`, this method.  Any machinery holding a `%Record` (Story, Vyto, a Sunpit) asks its A's
+    table for the code, the way a `%req` already carries its `do_fn`.  The naming convention IS the table; method
+     resolution by prototype chain becomes one way the table answers, not the model.
+- **Clobbers are events.**  Two layers defining one name is noted and accepted in a graph of all the code coming
+   together: a space mirroring `Ghost/*/*` that talks about it, where versions written out form trees and branches,
+    like git.  Never a silent own-property mask.
+
+### Spheres — what hangs off a particle
+
+Seem holds them (not yet renamed Merge).  **Candidate names: Said / Held / Was / Regard** (owner: yes, as working names).
+
+| | is | written by | tense | lives |
+|---|---|---|---|---|
+| **n**, Said | the particle's `sc`, what it says | its owner | present | as matter |
+| **D**, Held | the resolved alignment: what the machine believes n's shape is (`resolve()`) | the Se | present | per walk; the seam everything else attaches to |
+| **K**, Was | this point's past, as its own keeper remembers it: last pass, last send, last accept | n's owner | past | chosen: Repli's last-sent must survive reload |
+| **O**, Regard | this point's present, as **another** organ sees it: Vyto's placement, a want's parked-ness | another organ | present | that organ's life |
+
+The test for any `.c` entry is two questions: *whose is it, and which tense?*  Neither K nor O → a finger (an edge), flesh
+ (an organ's handle) or a run's scratch.
+- **n and D are under the hood** and carry the basis key all through.  **K and O live in `%OtherSphere:'<label>'/*`**,
+   which IOexpr makes programmatically, one per organ (`OtherSphere:'Vyto'`); they don't need the basis key at every node.
+- **Holsters.**  A C that keeps its contents out of the enclosing machinery's meaning: `Room/Box/Cat`, so the Cat isn't
+   read as a `Room/Cat` beside the others.  Name each one for its use, not one generic word.  The designed Sunpit
+    (`w.c.sunpit`, off the H\*\* walk) is one, **designed, not built** (`Vyto_sunpit` returns `null`).
+- **Open: snap filtering needs its own look.**  A snap is "everything reachable from H\*\*".  Spheres want hiding by
+   default even when D sits on n, so they need a place the walker skips: tucked behind n, or an OtherSphere with a no-snap
+    mark the encoder honours.
+
+### Versions
+
+- **Code: an A's version is a digest over the digests of every `.go` on its chain.**  One name for the whole, and you can
+   still see which file moved.  (This replaces the per-ghost vs per-closure question in "Open decisions" below.)  The
+    Variant slot keeps an instrumented build beside the clean one.
+- **Data: per compartment.**  An A or w advances a version when, and only when, something beneath it changed, and the
+   version names its event: which pulses, under which code digest, by whom.  A buffer changing is a version too.
+- **Time is versions.**  Wall-clock milliseconds are recorded but hidden (on `.c`), and Story imposes a grid that folds
+   "when" into steps for snaps.  Not yet coherent; expected to settle when we get to it.
+- **Schema changes ride the code wave.**  A code version carries its migrations as data ("this digest renames key a→b
+   on mainkey X"), and code gossip delivers both.  A fracture names the digest it was written under, so a receiver can
+    migrate it.  Extra credit: migrations reach disk lazily (applied on read, written back on the next save).
+- **The compile authority never runs the code it compiles.**  It blesses a version as real and pushes it with its
+   migrations.  Editron holds it now; a headless compiler later (`Editron.md` §8.2 B).
+
+### The scheduler — elvises in space and time (candidate; the sketch to grow)
+
+- **A pulse is addressed to a compartment** (an A or w), never to "the House", and in time by the versions it needs, not
+   a moment.  A pulse whose causes are present is ready.
+- **Summed per compartment.**  Ready pulses of one kind to one receptor merge into one wake.  Precedents, both working:
+   the wants accumulator (`Lies.svelte:75`, `w/{req:'wants'}` piling up cursor intents for one desire) and Vyto's
+    plain-form drive (watch each source, coalesce the trailing edge, one scan per burst, never inside a beat).
+- **One batch, one pass, one version.**  Compartments that share no wires can run in any order; those joined by a wire
+   run one after another along it.  The wire-tree (`Wire_spec.md`) is the space-flow map, and responding to a change is
+    a lookup in it, not a broadcast `think`.
+- **Sunpits iterate.**  An IOexpr row compiles the way `oai … + block` compiles to `doai`: the compiler emits a cursor
+   (`.more()`, `LangSolver_report`'s `_io_cursor`) plus what it can see statically (which sources it reads → its watch
+    list).  At runtime the Sunpit pulls rows and lands each by find-or-create, bumping only on real change.  Its version
+     is how far it has read plus how many real changes it landed.  Sion's flock planner (plan many IOings together,
+      knowing the entanglements) may be the same organ as the scheduler, at compile time.
+- **Priority** comes from the will (`Emotion_todo.md`): nearest a strong, unsure will first.  **Backpressure** is a slow
+   compartment holding its batch open.  A ttlilt may grow an alarm.
+- **Isolation:** one heap is fine for now.  Two code versions in one tab are two prototypes over one House; real
+   isolation (a Worker, an iframe, ShadowRealm) is possibly improvable later and is not this rebuild's job.
+
+### Scopes, effects and the live|replay wall
+
+- **Find services in the nearest enclosing scope.**  The MusuRadioAim leak was a lookup going to `top_House()` for "the
+   Supervisor" and finding the runner's own.  With lexical lookup, a Book's Run world sees its own Supervisor, and the wall
+    is the world boundary.  Supervisor and Story stack: both are expectors over a runtime; the Supervisor only watches,
+     a Book may also drive.
+- **The two hand-placed gates this replaces.**  `top.c.humdinger` (`BigQualand.svelte.ts:121`, 2026-07-12) marks a
+   Big\*land room as an end-user page, never a dispatch target, so it isn't enrolled as a runner; it predates the richer
+    roles and is a candidate to fold into role.  `Story_replaying()` (`Story.svelte:2170`) is true while any Book in the
+     tab is stepping, and live readers go inert on it; it is tab-wide, so it silences live code the Book never touches.
+- **Effects are addressable.**  Audio, WebRTC, disk and the relay are organs.  Show what breaks when we time-travel, and
+   let a replay say which organs to mock, as a property of the system rather than a gate per reader.
+
+### Authority and turfs
+
+- **Turfs** (a wormhole path, a compartment) are mutexed by a lease held at the relay, generalising the editor's write
+   seat (`Editron.md` §8).  Ask the relay for your other selves once, when acquiring; renew by heartbeat; write locally
+    while the lease holds.  Only acquiring waits on becoming the single writer, which FSA writes need anyway.
+- **Rules are particles**, in the shape Portability 2E found: the mainkey is the discipline, the value the role
+   (`%SingleWriter:Captain`).  Rule engines decide which legs of an A may do what, and a person can read the rule graph
+    instead of a stack trace.
+- **Signatures are a scope above Seem.**  Crypto among Piers is the ultimate authority system and belongs to the wire
+   and the crew.  `by|rule|hid|pass` is a different thing, where a quality came from, and its home is the Voro processor
+    built as an organisation of Seems (Cstructures §3 is vague inspiration, not law for all of Seem).
+
+### Rollback — to study
+
+`replace()` isn't really reversible.  The likely shape: **an A knows how much C\*\* and process it must re-synthesize from
+ a resumable point**, instead of transacting everything.  Restart bigger chunks of the program.  Study before choosing.
+
+### Knowing the manifest is true
+
+Atlas knows what the code says it calls; Electrode records what ran.  A Book over that join, against the declared
+ manifest, reds on two complaints: **declared, never called** (today 22 of the 36 `CREDULER_GHOSTS` load on every
+  music page, mostly Story `*Testing` code only some Books use) and **called, undeclared**.  Then a manifest can't go
+   stale without someone hearing about it.  Test code should hot-load too.
+
+### Asked and answered (2026-10-20)
+
+| question | ruling |
+|---|---|
+| sphere names | Said / Held / Was / Regard as working names |
+| the holster's name | one per use, named for what it holds |
+| code digest scope | a digest over the chain's file digests (above) |
+| isolation | one heap; note it as improvable |
+| Atheory's tests as IOexpr recipes? | undecided; wants the scheduler sketched further first |
+| where this doc lives | stays in `O/spec`; Atheory code goes in `src/lib/A/` when it exists |
+
+**Still open:** snap filtering for spheres; rollback; time beyond "versions + a Story grid"; whether Sion and the
+ scheduler are one organ; the next wave (IOing in harmony with all this).
+
+## 0.2 The sketch, continued — shapes, one pass, the first tests (2026-10-20, all candidate)
+
+*Every name here is a candidate for the owner to rule.  The worked example is `Ghost/Play/Pond.g`: one world on a
+ 700ms clock, eggs and fish and a heron, rules that push on each other.  Small enough to hold in your head, and
+  already a Workshop creation, so a Book about it is the kind a kid would copy.*
+
+### The names, each one meaning
+
+| name | means | lives |
+|---|---|---|
+| `%TheACode` | which code this A runs: `TheACode:<Name>,variant,dige`; dige = the chain digest | on the A; snaps |
+| `%TheALayer` | one `.go` on that chain, with its own digest | under `%TheACode`; snaps |
+| `%TheAHandles` | "particles of this mainkey, in this aspect, are handled by this method" | under its `%TheALayer`; read off method names |
+| `%TheAClobber` | a method name two of the A's layers both define: which won | under `%TheACode` |
+| `%TheAWire` | a standing pathway: where pulses run and what they wake | on the compartment it wakes |
+| `%TheAPulse` | one elvis waiting on a wire | in a holster on the wire; never snaps |
+| `%TheATurn` | one pass of one compartment: the batch it ate, the version it made | the compartment's history; Was-sphere |
+| `%TheATurf` | a leased region one writer holds | at the relay, mirrored on the holder |
+| `%OtherSphere` | a non-basis sphere (Was, Regard), one per organ | on the compartment; skipped by the snap unless declared |
+| `%Sunpit` | an iterating gathering of sources, compiled from `%IO` rows | on the world that commissions it; a holster |
+
+### The A, holding its code
+
+**Slice 1 BUILT 2026-10-20** (Book `AthePond`, tests 1–2): `Ghost/A/Theory.g` (`TheA_code_stand`, `TheA_layer_stand`,
+ `TheA_handle_of`, `TheA_handler_for`, `TheA_clobbers_stand`) and `Ghost/A/AtheTesting.g`.  Where each method came from is
+  recorded by `Housing.ghostsHaunt` (`ghost_origin`, `ghost_clobbers` on the top House): every eatfunc hash is one compiled
+   `.g` and carries exactly one `Ghostmeta_*`, which is also the layer digest.  The Book harnesses its OWN plaything (owner:
+    test playthings live in the Testing file, not in `Ghost/Play/`): a tank with Pond's rules and one method per kind,
+     `Egg_step` / `Fish_step` / `Heron_step`, in a world `AtheTank`; `Ghost/Play/Pond.g` stays the kids' creation.  Not yet: the base Housing as a layer, a
+     `do_fn_for` rung that consults the table, code pushes.
+
+```
+H:Mundo
+  A:Pond
+    %TheACode:Pond,variant:plain,dige:9f3a…     ← digest over the layer digests below
+      %TheALayer:Housing,dige:…                 ← the base House
+      %TheALayer:Pond,go:Ghost/Play/Pond.go,dige:ab12…
+        %TheAHandles:Egg,aspect:step,by:Egg_step       ← compiled from a method named Egg_step
+        %TheAHandles:Fish,aspect:step,by:Fish_step
+        %TheAHandles:Heron,aspect:step,by:Heron_step
+    w:Pond
+      %Egg:minnow 1 …  %Fish:perch 2 …  %Heron:grey
+```
+
+Pond has `Pond_step` walking eggs, fish and the heron in one method (and stays that way: it's a kids' creation).  The test's
+ own copy is written as `Egg_step` / `Fish_step` / `Heron_step`, so the table says *which code a particle wants*, so the pass can hand each kind to its handler, and Vyto (or a
+  Story) holding a `%Fish` can ask the same table what a fish does.  `do_fn_for` gains one rung: **look up the mainkey in
+   the A's table** before the old naming tricks.
+
+**A code push is a new `%TheACode` beside the old one.**  The A adopts it at the next seam between passes, and the old one
+ stays readable until no Turn refers to it.  A clobber (two layers giving one `%TheAHandles` row) is a row the compiler
+  writes on the `%TheACode`, shown and accepted, never a silent mask.
+
+### Wires and pulses on Pond
+
+```
+w:Pond
+  %TheAWire:clock,every:700,wake:step            ← the only clock-driven work Pond has, declared
+  %TheAWire:heron,on:Fish,wake:Heron_step        ← "fish count changed → the heron reconsiders"
+```
+
+The clock wire posts a `%TheAPulse,kind:step` every 700ms.  Today `Pond(A,w)` checks `Date.now() - w.c.last` on every belief
+ pass, so it rides every pass to do work once in 700ms.  With the wire, the pass doesn't visit Pond at all between steps.
+
+**How pulses sum is the receptor's declaration, not a global rule.**  Three step pulses must mean three steps, or the pond
+ skips time; three "fish changed" pulses mean one reconsideration.  So a wake says:
+- `sum:count`: the handler gets all of them (Pond loops three steps);
+- `sum:latest`: one wake, carrying the newest;
+- `sum:all`: one wake, carrying the list (the wants accumulator's behaviour).
+
+### One pass of the scheduler
+
+```
+1. ready   = pulses whose needs are met (the versions they name exist)
+2. batches = group ready pulses by (compartment, wake), summed as each wake declares
+3. order   = along the wire-tree: a compartment after the ones wired into it;
+             ties broken by declared identity, never by arrival time        ← determinism for Books
+4. for each batch:
+     take the turf if the wake writes one
+     run the handler once, with the batch
+     commit one %TheATurn: batch pulse ids, code digest, what changed (the Seem's neus/goners/drift)
+     follow the compartment's outgoing wires → new pulses
+5. compartments with no ready batch are not visited at all
+```
+
+Step 3 is what keeps Story honest: two compartments with no wire between them may run in either order, so the snap must
+ not depend on that order.  A Book can pin the order, or swear it doesn't matter (see the tests).
+
+**A Turn is not a counter.**  `%TheATurn` records which pulses made it, under which `%TheACode`, and what changed.  That's the
+ version.  Turns live in the compartment's Was-sphere and drop when no reader is behind them.  Wall-clock time rides on
+  `.c` for instruments; Story's grid folds Turns into steps for snaps.
+
+### A Sunpit — to study (the first attempt was not worked out)
+
+*Owner, 2026-10-20, on a first compiled form (a `w.sunpit(...)?.({records:{watch, cursor, land}})` call): ugly, doing a lot of
+ normal-looking work we may not need, and its `land()` turning each row into a tuple made no sense.  Withdrawn.*  What is
+  actually known:
+- **Sunpits iterate** (owner).  In LangSion a Sunpit is the iterating form: `Sunpit → _o_iter`, the flat frontier, with
+   `_io_cursor` as its slow-motion twin, pulled a row at a time (`LangSolver_report.md`).
+- **They compile like `doai`** (owner): the way `oai … + block` becomes a req whose `do_fn` is set once, a Sunpit gets
+   callbacks set once, informed by whatever the compiler can work out ahead of time.
+- **The designed shapes keep identity** (`vyto_workingouts/commission.md` §3): `mirror` places the SAME refs; `pick` and
+   `slope` make referring rows wearing `of:`.  Nothing should copy a row into a tuple; the withdrawn `land()` broke that.
+- **The compiler must know how to migrate one** (owner).  When the source of `%Sunpit:shelf` changes, the Sunpit already
+   standing has to move to the new shape, so its compiled form carries its own version and a way to migrate.
+- **Not built:** `Vyto_sunpit` returns `null`; the recipe form is still "wild speculation until a tenant proves it".
+
+- **Lexical names and grouping** (owner, the frontier).  A Sunpit row wants a way to say which of the names it refers to
+   become **lexical variables in the handler**, and which are **grouped**, so the handler can get a list of rows per such
+    row (all the `%Card`s per `%Mag`, say).  That's the "ark" read-ahead in LangSolver (`parkar`: fold a fanned leg into
+     columns) and Sion's `@name` reuse, seen from the handler's side.
+
+**Order of work (owner): do the A first** (`%TheACode`, `%TheALayer`, `%TheAHandles`); the Sunpit is the frontier after it.
+
+To work out: what a compiled Sunpit hands the runtime, what its iteration produces each pass, its version, and its
+ migration.  Read first: `commission.md` §3–4 in full, `LangSolver_report.md` (`_io_plan`, `_io_cursor`, Sion), and how
+  the `.g` compiler lowers `oai … + block` today.  Expect it to start messy, start working, then get tidier.
+
+### Spheres on Pond
+
+```
+w:Pond
+  %Fish:perch 2                       ← Said: the particle
+  %OtherSphere:'Vyto'                 ← Regard: Vyto's opinion of each point
+    %At,of:<D id of perch 2>,x:…,y:…,calm:1
+  %OtherSphere:'Story'                ← Was: what each point was at the last step
+    %Was,of:<D id of perch 2>,age:4
+```
+
+Entries name their point by the **D identity** (the Se's first-sight id), not by the particle ref, so they follow the
+ point through re-mints.  When the Held point drops, its entries drop with it: teardown is the alignment's job.
+
+### The first Atheory tests
+
+**Where the code lives:** the organ in `Ghost/A/Theory.g`, its proof in `Ghost/A/AtheTesting.g` (the `<Name>Testing.g`
+ convention).  Particle names all start `TheA` so one grep finds every one of them; they're deliberately cumbersome
+  while unsure, and get shorter names once they've earned them.
+
+The music app rests; these come first.  One Book, **`AthePond`**, on a runner, stepping Pond by hand:
+
+1. **The A says which code it runs.**  Stand Pond as an A; its `%TheACode` names the chain digest and the Pond layer's
+    digest.  *"an A says which code it runs — a digest you can read off the tree"*
+2. **The table finds the code.**  A `%Fish` dispatches to `Fish_step` through `%TheAHandles`, not by name-guessing.
+3. **A push swaps between passes.**  Recompile Pond with `HERON_AT` changed mid-run; the new `%TheACode` is adopted at a seam,
+    and no Turn mixes the two digests.  *"a code change lands between passes and never inside one"*
+4. **Unwatched work costs nothing.**  Between clock pulses, Pond is not visited: zero Turns between pulses.
+5. **Order doesn't leak.**  Stand Garden beside Pond (no wire between them); run the same pulses in both orders; the
+    snaps are identical.
+6. **Counts are kept.**  Three step pulses in one batch make three steps (`sum:count`); three fish-changed pulses make one
+    heron Turn (`sum:latest`).
+7. **The manifest is checked.**  Electrode during the run, joined with Atlas: every method called is on a declared layer,
+    and every declared layer was called.
+
+Each test is a sentence a person would say, and each can be sabotaged once to prove it bites (Homethink §3).
+
+### What the sketch still doesn't say
+
+- **Where Turns and pulses sit relative to the existing belief walk.**  The first build may run the scheduler *inside*
+   today's `beliefs()` as one more leg, before replacing it.
+- **Turf leases for compartments inside one tab** (no relay round-trip needed) versus across bodies.
+- **Snap filtering** for OtherSpheres and holsters (§0.1).
+- **How `%TheAHandles` meets ghosts that aren't written `Class_Aspect_Verb`** (most of today's code): probably the old naming
+   tricks stay as fallback rungs, so nothing breaks.
+
+## 0.3 Foundation ledger — every adjustment to Stuff|Housing (and what sits right beside them)
+
+*The owner, 2026-10-20: "I want to track everything we adjust in Stuff|Housing."  Atheory grows out of the foundation,
+ so each change to `Stuff.svelte.ts`, `Housing.svelte.ts` (and their close neighbours) gets a row here: what moved, why,
+  who reads it, and how to take it back out.  Add a row in the same change that makes the edit.  Newest first.*
+
+### `src/lib/Stuff.svelte.ts`
+
+No Atheory adjustments yet.
+
+### `src/lib/O/Housing.svelte.ts`
+
+| date | where | what | why | read by | to undo |
+|---|---|---|---|---|---|
+| 2026-10-20 | `House.ghost_origin` (:565), `House.ghost_clobbers` (:568), `ghostsHaunt` (:670–677) | `ghostsHaunt` finds the one `Ghostmeta_*` key in each eaten hash and records, on the **top** House, which file every method came from (`ghost_origin[method] = 'Ghostmeta_…'`).  A method name arriving from a second file is pushed onto `ghost_clobbers` as `{method, was, now}` before being overwritten.  A hash with no `Ghostmeta_*` (a hand-written `.svelte` ghost) records nothing. | `H.ghosts` is flat, so nothing could say which code an actor runs or where a method came from.  Each compiled `.g` arrives as exactly one hash carrying exactly one `Ghostmeta_*`, which is also its digest, so this is the one cheap place to learn it. | `Ghost/A/Theory.g` (`TheA_layer_methods`, `TheA_clobbers_stand`); Book `AthePond` | delete the two fields and the `if (meta) {…}` block; nothing else depends on them yet |
+| 2026-10-18 | AppTreeNav root (:2645), creds mounts (:2661–2662), the serve wall (:2812), import (:9) | the literal `'.jamsend'` became `APP_DATA_DIR` from `src/lib/app_data_dir.ts` | one spelling of the app's private corner; the serve wall and NodeWormholeNav's 0600 must agree on it (§ "The app's own storage") | — (same value) | inline the literal again; the value never changed |
+
+### Beside the foundation (tooling and the app shell)
+
+| date | where | what | why |
+|---|---|---|---|
+| 2026-10-20 | `scripts/LocalGen.spec.ts` | creates `gen/<dir>/` before writing, so a new `Ghost/<dir>/` compiles without a hand `mkdir` | `gen/` mirrors `Ghost/`; the relay's `gen_write` already did this (`relay.ts:997`), LocalGen didn't (met making `Ghost/A/`) |
+| 2026-10-19 | `src/service-worker.js` | a `.go` module the worker re-fetches asks with `?import`; cache bumped to `jamsend-shell-v2` | a worker's re-fetch arrives `Sec-Fetch-Dest: empty`, Vite then served raw `.go` source, the browser sniffed it as HTML, and every Creduler ghost failed on the music page |
+| 2026-10-18 | `src/lib/app_data_dir.ts` (new) | `APP_DATA_DIR = '.jamsend'`, dependency-free | read by Housing, NodeWormholeNav, the daemon, and ghosts via `IMPORT()` |
 
 ## The load-list inventory — DONE 2026-09-05 (the "when it starts" step below, paid)
 
@@ -194,11 +524,14 @@ The 16 are a platform layer nobody designed: `Radio_trace` · `Ra_recs` · `Ra_r
 
 ### Open decisions
 
-- **What the dige covers.**  A bundle's dige is over a SET (its transitive closure — Radio's is 14 of
-   36), so any member changing invalidates every class containing it, and the mutually-recursive core is
-    both the biggest set and the most-edited.  Per-ghost dige or per-closure dige is unruled.
-- **Generated classes cannot declare reactive state.**  No rune compilation at runtime, so `$state`
-   fields can only be inherited from `Housing`.  Behaviour only; a hard constraint, not a preference.
+- **What the dige covers.**  *Ruled 2026-10-20 (§0.1): an A's version is a digest over the digests of each `.go` on
+   its chain.*  The old framing (a per-ghost dige vs a per-"closure" dige over the files Radio's methods reach, 14 of
+    36) was confusing: everything sits on H, nothing includes anything.
+- **Reactive state in generated code.**  *Corrected 2026-10-20:* a class built at RUNTIME from a dige can't use rune
+   syntax (no rune compilation at runtime).  But the `.go` files are compiled by the Svelte compiler, so code generated
+    at COMPILE time can hold classes with `$state`, and `svelte/reactivity` gives reactive classes with no compiler.
+     Auto-generated Svelte components carrying `$state` classes are fine.  `$state` is only needed to reach the UI, so
+      keep it to what the UI needs.
 - **Where the 150 single-caller reaches land** — the audit above is unstarted.
 
 ## Case studies — what to feed Atheory
@@ -246,6 +579,8 @@ Owner, 2026-10-15: *"we will hand off Atheory, but give more case studies for it
   a forged frame until the era turns.  And the whole music plane (`repli_*` frames) went out with **no swarm bag at
    all**, admitted on `header.from` alone, until the relay check closed it at the transport.  Then `Signed_call_todo.md`
     designs a fifth thing, signed RPC from the command line, which is a sixth place to get proof right.
+ *Owner, 2026-10-20: this reach is over-bearing.  Signatures (authority among Piers) are a scope above Seem, and
+  `by|rule|hid|pass` belongs to the Voro processor as an organisation of Seems; read what follows as inspiration (§0.1).*
  *For Atheory:* **provenance is a property of every saying, not of a channel.**  `Cstructures_todo.md` §3 already wants each
   saying to carry `by:` / `rule:` / `hid:` / `pass:`; a frame, a verb call and a particle arriving over the wire are all
    sayings, so "signed by whom, over what" belongs in the same slot.  A frame with no proof should be as unrepresentable as
@@ -408,10 +743,9 @@ The **"space of deformity"** is then concrete: it's the difference between `n**`
 
 ### Still the owner's (don't guess)
 
-- **The names.**  `K**` and `O**` are the owner's working letters.  This doc reads K as memory over time and O as
-   overlays; that reading is offered, not ruled.
-- **One sphere per organ, or one per kind?**  Vyto alone holds a dozen overlay keys.  One `O` per organ (Vyto's, the
-   Supervisor's) matches "an owner who isn't the particle"; one per kind is simpler to snap.
+- **The names.**  *Answered 2026-10-20 (§0.1): K = Was, this point's past as its own keeper remembers it; O = Regard,
+   its present as another organ sees it.  Working names.*
+- **One sphere per organ, or one per kind?**  *Answered 2026-10-20: per organ, as `%OtherSphere:'<label>'/*`.*
 - **Cost.**  A node per key per particle is a lot of nodes (`Repli_design` §5).  A sphere may store one node per point
    carrying a was-map, and that's an engine choice, not a model one.
 

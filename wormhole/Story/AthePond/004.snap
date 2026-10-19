@@ -1,0 +1,29 @@
+Snap:H
+  H:AthePond,Run
+    A:AthePond
+      w:AthePond
+        req:wrangle,eternal,ok
+        req:stand_wait,finished
+        saw:code,step_kinds:Egg Fish Heron
+        saw:table,fish:Fish_step,rock:none
+    A:AtheTank
+      TheACode:AtheTank,variant:plain,dige:8afe39f344973a04
+        TheALayer:Ghost/A/AtheTesting.g,dige:312f83a9e9e0d1a0~g1
+          TheAHandles:AthePond,aspect:A,by:AthePond_A
+          TheAHandles:AthePond,aspect:at,by:AthePond_at
+          TheAHandles:AthePond,aspect:await,by:AthePond_await
+          TheAHandles:AthePond,aspect:code,by:AthePond_code
+          TheAHandles:AthePond,aspect:drive,by:AthePond_drive
+          TheAHandles:AthePond,aspect:stand,by:AthePond_stand
+          TheAHandles:AthePond,aspect:table,by:AthePond_table
+          TheAHandles:AthePond,aspect:tw,by:AthePond_tw
+          TheAHandles:AthePond,aspect:witness,by:AthePond_witness
+          TheAHandles:AtheTank,aspect:count,by:AtheTank_count
+          TheAHandles:AtheTank,aspect:name,by:AtheTank_name
+          TheAHandles:AtheTank,aspect:turn,by:AtheTank_turn
+          TheAHandles:Egg,aspect:step,by:Egg_step
+          TheAHandles:Fish,aspect:step,by:Fish_step
+          TheAHandles:Heron,aspect:step,by:Heron_step
+      w:AtheTank
+        Fish:minnow 1
+        Fish:perch 2

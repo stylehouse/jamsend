@@ -13,7 +13,7 @@
 //   CHECK=1 …    # compile only, DON'T write — diff the output against the committed .go (a safety gate)
 import { test, expect } from 'vitest'
 import { mount } from 'svelte'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import Story_cli from './Story_cli.svelte'
 
@@ -58,6 +58,8 @@ test('LocalGen: compile each .g and write its real gen/.go', async () => {
             const same = prev.trim() === (source as string).trim()
             console.log(`${same ? '=' : '≠'} ${f} → ${gen_path}  (${(source as string).length}c vs ${prev.length}c committed)`)
         } else {
+            // gen/ mirrors Ghost/: a new Ghost/<dir>/ needs its gen/<dir>/ (the relay's gen_write does the same, relay.ts)
+            mkdirSync(path.dirname(real), { recursive: true })
             writeFileSync(real, source as string)
             wrote++
             console.log(`✓ ${f} → src/lib/${gen_path}  (${(source as string).length}c)`)
