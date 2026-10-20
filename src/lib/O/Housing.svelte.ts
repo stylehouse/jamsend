@@ -563,9 +563,10 @@ export class House extends StorableHousing {
     //   from; H.ghosts alone is flat and can't.  Atheory reads it to stand an A's code as layers
     //    (Ghost/A/Theory.g, spec/Atheory_todo.md §0.2).  Kept on the top House only; plain, not $state.
     ghost_origin: Record<string, string> = {}
-    // a method name eaten from a SECOND file overwrites the first (H.ghosts is flat), so note it here
-    //  rather than lose it: { method, was, now }, both Ghostmeta_* names.  Read by Theory.g as %TheAClobber.
-    ghost_clobbers: { method: string, was: string, now: string }[] = []
+    // each file's CURRENT method list: Ghostmeta_* name → the methods its latest hash carried.  Replaced whole on every
+    //  re-haunt, so a method deleted from a file leaves it, and a method two files define shows up in both lists — a
+    //   clobber is current state (Theory.g reads it as %TheAClobber), not a log that only grows.
+    ghost_files: Record<string, string[]> = {}
 
     // ghosts must have arrived before we are truly started
     override start_checks(): (boolean | null)[] {
@@ -669,11 +670,9 @@ export class House extends StorableHousing {
         if (meta) {
             let top: House = this as House
             while (top.up) top = top.up as House
-            for (const k of Object.keys(hash)) {
-                const was = top.ghost_origin[k]
-                if (was && was !== meta) top.ghost_clobbers.push({ method: k, was, now: meta })
-                top.ghost_origin[k] = meta
-            }
+            const methods = Object.keys(hash).filter(k => k !== meta)
+            top.ghost_files[meta] = methods
+            for (const k of methods) top.ghost_origin[k] = meta
         }
         // merge that into everything
         for (const h of this.all_House) {

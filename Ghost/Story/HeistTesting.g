@@ -4171,7 +4171,10 @@ MusuPress_note(w, sc):
 //  press (3), re-press = the twin control (4).  The witness runs every pass so each %see fires the first
 //   pass its truth holds.
 async MusuPress_drive(w, req):
-    let n = (this.c.run)?.c.step_n
+    // a new recording starts at 1 step (Story builds up by Resume); say how many this Book takes, or it records hollow
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) this.MusuPress_setup(w)
@@ -4426,7 +4429,10 @@ MusuQuarter_note(w, sc):
 // one scene per beat off a req-local did_step (the family style): setup (2), the sit-down (3), the
 //  unchanged re-sit (4), the taste shift (5).  The witness runs every pass.
 async MusuQuarter_drive(w, req):
-    let n = (this.c.run)?.c.step_n
+    // a new recording starts at 1 step (Story builds up by Resume); say how many this Book takes, or it records hollow
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 5
+    let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) this.MusuQuarter_setup(w)
@@ -4815,7 +4821,10 @@ MusuSteward_note(w, sc):
     return n
 
 async MusuSteward_drive(w, req):
-    let n = (this.c.run)?.c.step_n
+    // a new recording starts at 1 step (Story builds up by Resume); say how many this Book takes, or it records hollow
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) this.MusuSteward_setup(w)
@@ -4954,7 +4963,10 @@ MusuSmuggle_note(w, sc):
     return n
 
 async MusuSmuggle_drive(w, req):
-    let n = (this.c.run)?.c.step_n
+    // a new recording starts at 1 step (Story builds up by Resume); say how many this Book takes, or it records hollow
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) this.MusuSmuggle_setup(w)

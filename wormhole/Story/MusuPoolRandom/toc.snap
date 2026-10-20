@@ -4,8 +4,7 @@ story:MusuPoolRandom
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.057
-      sample=0.053,at=1790040306
+    TimeTotal:beliefs,avg=0.062
       sample=0.025,at=1790043629
       sample=0.034,at=1790043861
       sample=0.031,at=1790047163
@@ -15,8 +14,8 @@ story:MusuPoolRandom
       sample=0.031,at=1790727996
       sample=0.035,at=1790746998
       sample=0.024,at=1792134852
+      sample=0.096,at=1792466439
     TimeTotal:step,avg=0.012
-      sample=0.011,at=1790040306
       sample=0.005,at=1790043629
       sample=0.007,at=1790043861
       sample=0.006,at=1790047163
@@ -26,10 +25,16 @@ story:MusuPoolRandom
       sample=0.006,at=1790727996
       sample=0.007,at=1790746998
       sample=0.005,at=1792134852
+      sample=0.019,at=1792466439
   step,dige:85d660e1b7d42c9f
   step=2,dige:c0fd0dfd299db04a
+    Assertion:a-random-pool-draws,sentence:a random pool draws whole tracks from everyone who shares with me — crewmate and friend alike — each want naming its holder and never my own shelf
+    Assertion:the-draw-is-clockless,sentence:the draw is clockless — the same three in the same order on every sit-down — and a new salt is the shuffle-again
   step=3,dige:c052af5b8a9df909
+    Assertion:declaring-the-pool-is,sentence:declaring the pool is the consent — its wants stand as bookings toward their holders — the crewmate at its body name and the friend at its pier — and a re-run books nothing twice
+    Assertion:the-reach-road-admits,sentence:the reach road admits a Music-granted friend as it admits kin — the people's music — a stranger is still refused and the report finds its way back over the pier
   step=4,dige:9276ab4bbef67fd8
+    Assertion:pools-are-crud,sentence:pools are CRUD — resize in place — list in declaration order — drop one and its wants fall out at the next sit-down — drop the last and the composition is the anonymous taste pool again
   step=5,dige:cdb18643f871e766
     {"Assertion":"sediment-survives-a-thin","sentence":"sediment survives a thin session — a pooled track keeps its earned rank even when this session has not yet re-mirrored the holder who has it, so a reload cannot evict what nothing currently contradicts"}
     {"Assertion":"and-eviction-still-fires","sentence":"and eviction still fires for cause — a genuinely better-ranked arrival still crowds out the worst of the sediment, never the better-ranked tracks beside it"}

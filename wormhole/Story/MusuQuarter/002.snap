@@ -1,0 +1,21 @@
+Snap:H
+  H:MusuQuarter,Run
+    A:MusuQuarter
+      self,round=2	{"mung":["age"]}
+      w:MusuQuarter
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+        Library,name:quarterlib
+          Record,id:o1,title:One
+          Record,id:o2,title:Two
+          Record,id:o3,title:Three
+          Mag:heard,heard_ttl:30,take_ttl:90
+            Cloud,page:1,created_at:1788400001
+              Card,id:o1,pub:pal,title:One,take:1,at:1788400001,mire:1
+              Card,id:o2,pub:pal,title:Two,keep:k2,at:1788400002,mire:1
+              Card,id:f1,pub:pal,title:Faraway,take:1,at:1788400003,mire:1
+        Library,name:pool
+          Record,id:o1
+          Record,id:z9

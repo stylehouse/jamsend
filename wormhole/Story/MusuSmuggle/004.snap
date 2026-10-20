@@ -1,0 +1,21 @@
+Snap:H
+  H:MusuSmuggle,Run
+    A:MusuSmuggle
+      self,round=4	{"mung":["age"]}
+      w:MusuSmuggle
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          reached:step_3
+          scanned,queued:1,held:1,up_o2,no_up_o1,no_up_junk,stable
+          reached:step_4
+          arrived,queued:0,held:2,o2_dropped
+        Library,name:cavelib
+          Record,id:o1,artist:Auteur,title:One
+          Record,id:o2,artist:Auteur,title:Two
+        Library,name:backup
+          Record,id:L1,of:o1,grade:ogg128,title:One (lofi)
+          Record,id:L2,of:o2,grade:ogg128,title:Two (lofi)
+          Record,id:j1,title:a bare backup
+        Upgrades

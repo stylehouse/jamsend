@@ -1,0 +1,27 @@
+Snap:H
+  H:MusuSteward,Run
+    A:MusuSteward
+      self,round=4	{"mung":["age"]}
+      w:MusuSteward
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          reached:step_3
+          served,pressed:0,evicted:0,deferred:0,fails:0,pool:z9
+          reached:step_4
+          reserved,pressed:0,evicted:0,deferred:0,pool:z9,o1cards:0
+        Library,name:stewardlib
+          Record,id:o1,artist:Auteur,title:One,path:music/a/one.wav,ext:wav
+          Record,id:o2,artist:Auteur,title:Two,path:music/a/two.wav,ext:wav
+          Mag:heard,heard_ttl:30,take_ttl:90
+            Cloud,page:1,created_at:1788400001
+              Card,id:o1,pub:pal,title:One,take:1,at:1788400001,mire:1
+              Card,id:o2,pub:pal,title:Two,take:1,at:1788400002,mire:1
+              Card,id:f1,pub:pal,title:Faraway,take:1,at:1788400003,mire:1
+        Library,name:pool
+          Record,id:z9,title:Stale
+        Mine,pub:e747cbed6a9ca919
+          shop,pub:e747cbed6a9ca919
+        SoundPooling,pub:me
+          Provisions

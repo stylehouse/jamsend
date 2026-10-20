@@ -4,8 +4,7 @@ story:MusuPoolBytes
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=1.142
-      sample=0.222,at=1790040311
+    TimeTotal:beliefs,avg=1.151
       sample=0.192,at=1790043634
       sample=1.606,at=1790043867
       sample=1.117,at=1790047170
@@ -15,8 +14,8 @@ story:MusuPoolBytes
       sample=2.07,at=1790728081
       sample=0.381,at=1790980947
       sample=0.213,at=1792134708
-    TimeTotal:step,avg=0.228
-      sample=0.044,at=1790040311
+      sample=0.311,at=1792469617
+    TimeTotal:step,avg=0.23
       sample=0.038,at=1790043634
       sample=0.321,at=1790043867
       sample=0.223,at=1790047170
@@ -26,8 +25,12 @@ story:MusuPoolBytes
       sample=0.414,at=1790728081
       sample=0.076,at=1790980947
       sample=0.043,at=1792134708
+      sample=0.062,at=1792469617
   step,dige:c2a03cd0fd442b8a
   step=2,dige:332438624c02d652
   step=3,dige:622d63e94af7e31d
+    Assertion:the-last-mile,sentence:the last mile — a keep that says into:pool lands its bytes under pool and its card on the pool shelf through the very same landing the album heist ends in — and nothing touches the library
   step=4,dige:7da049f37ff66df7
+    Assertion:off-means-the-space,sentence:off means the space comes back — the yes is taken — the budget is zero — and every pooled card goes with its file
   step=5,dige:3ecb4f2756917b59
+    Assertion:a-pooled-track-is,sentence:a pooled track is DIALABLE — the landing carries the source preview and its chunks onto the pool card so the dial itself picks it out of the pocket — and a lofi rendition refuses the carry because its bytes are not those bytes

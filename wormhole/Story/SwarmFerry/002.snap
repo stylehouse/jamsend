@@ -1,0 +1,15 @@
+Snap:H
+  H:SwarmFerry,Run
+    A:SwarmFerry
+      self,round=2	{"mung":["age"]}
+      w:SwarmFerry,now=1751700000
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Account,of:Alice
+          Identity:ba32314f46bb7760,prepub:ba32314f46bb7760,friendly:Alice
+            Peering,name:ba32314f46bb7760,friendly:Alice
+              Idzeug:ferry_1,to:Music,genre:Jazz
+            Crew,soul:ba32314f46bb7760bbb8ab271903cb86b0d41ba09a28d065f00a31c4f698f325
+              mate:ba32314f46bb7760,role:Captain,pub:ba32314f46bb7760bbb8ab271903cb86b0d41ba09a28d065f00a31c4f698f325
+              Key,pub:ba32314f46bb7760bbb8ab271903cb86b0d41ba09a28d065f00a31c4f698f325	{"mung":["secret"]}

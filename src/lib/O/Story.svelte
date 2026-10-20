@@ -256,7 +256,7 @@
     },
 
     // story_swear — the one idempotent latch: a Book swears a sentence ONCE per run.
-    //   this.story_swear(w, 'the machine stood — no commas; use an em-dash', subjectC?)
+    //   this.story_swear(w, 'the machine stood — prefer an em-dash to a comma', subjectC?)
     //  Checks the shelf (sworn earlier this run), then w (latched this step, awaiting harvest),
     //   then mints %sworn on w.  With a subject, the sworn carries c.microsnap — what the
     //    assertion POINTS AT, encoded at go-off time.  Call it in Atime ONLY (a beat / the
@@ -312,34 +312,56 @@
             .split('-').slice(0, 4).join('-')
     },
 
-    // e_story_declare — the DOOR into the contract (the ruled Accept-harvest, as a button):
-    //  promote ONE undeclared sworn into `The/step=N/%Assertion`, N = the step it latched
-    //   this run (the shelf's n: stamp — the by-when the evidence itself proposes).  From the
-    //    next run on its ABSENCE COMPLAINS (Cred_assertion_gaps) — that is the point; undo is
-    //     deleting the toc line.  Only the human clicks this (the explorer's declare button);
-    //      code never self-promotes evidence.
+    // e_story_declare — the DOOR into the contract, one sentence at a time (the explorer's declare
+    //  button, `runner_ask declare`): promote ONE undeclared sworn into `The/step=N/%Assertion`, N = the
+    //   step it latched this run (the shelf's n: stamp — the by-when the evidence itself proposes).  From
+    //    the next run on its ABSENCE COMPLAINS (Cred_assertion_gaps) — that is the point; undo is deleting
+    //     the toc line.
     async e_story_declare(A: TheC, w: TheC, e?: TheC) {
         const H = this
         const sentence = e?.sc.sentence as string | undefined
+        if (!sentence) return
+        if (!(H as any).story_declare_one(w, sentence)) return
+        H.story_analysis(w)
+        H.story_save()
+    },
+
+    // story_declare_one — promote one sworn sentence into the contract.  Returns true when it added a row;
+    //  false when it was already declared (anywhere — no twins), or has no latch record this run.
+    story_declare_one(w: TheC, sentence: string): boolean {
+        const H = this
         const The = w.c.The as TheC | undefined
-        if (!sentence || !The) return
-        // already declared anywhere → no-op (the button only rides undeclared rows, but a
-        //  double-click or a stale panel must not mint twins)
+        if (!sentence || !The) return false
         for (const st of The.o({ step: 1 }) as TheC[])
-            if ((st.o({ Assertion: 1 }) as TheC[]).some(a => a.sc.sentence === sentence)) return
+            if ((st.o({ Assertion: 1 }) as TheC[]).some(a => a.sc.sentence === sentence)) return false
         const shelf = (H as any).story_assertioning(w) as TheC | undefined
         const row   = shelf?.o({ sworn: sentence })[0] as TheC | undefined
         const n     = Number(row?.sc.n) || 0
-        if (!n) { console.warn(`story_declare: no latch record for «${sentence}» — declare by hand in the toc`); return }
+        if (!n) { console.warn(`story_declare: no latch record for «${sentence}» — declare by hand in the toc`); return false }
         let slug = (H as any).story_slug(sentence) as string
         const taken = (s: string) => (The.o({ step: 1 }) as TheC[]).some(st => st.o({ Assertion: s }).length)
         if (taken(slug)) { let k = 2; while (taken(`${slug}-${k}`)) k++; slug = `${slug}-${k}` }
         const a = ((H as any).The_step(w, n) as TheC).oai({ Assertion: slug })
         a.sc.sentence = sentence
         The.bump_version()
-        H.story_analysis(w)
-        H.story_save()
         ;V.Story && console.log(`📜 story_declare: The/step=${n}/%Assertion:${slug}`)
+        return true
+    },
+
+    // story_declare_all — every sentence sworn this run becomes part of the contract (owner, 2026-10-20: "these
+    //  story_swear calls should all get nailed down or be missed if they don't turn up").  Called when a Book is
+    //   RECORDED (new mode completes) and when its fixtures are ACCEPTED: a swear is its author's promise, so it is
+    //    declared with the recording rather than waiting for someone to click.  Only adds; removing an oath stays a
+    //     deliberate act (delete its toc line).  The caller saves.  (This replaces the old rule that only a human may
+    //      declare: you just need to know what you're doing.)
+    story_declare_all(w: TheC): number {
+        const shelf = (this as any).story_assertioning(w) as TheC | undefined
+        let added = 0
+        for (const row of (shelf?.o({ sworn: 1 }) ?? []) as TheC[]) {
+            if ((this as any).story_declare_one(w, row.sc.sworn as string)) added++
+        }
+        if (added) console.log(`📜 story_declare_all: ${added} sentence(s) declared on ${w.sc.Book}`)
+        return added
     },
 
     The_frontier(w: TheC): number {
@@ -861,6 +883,7 @@
         //  rewrites the drifted fixtures alongside the genuine mismatches.
         const allBad = (w.c.This?.o({ Step: 1 }) ?? []).filter(s => !s.sc.ok || H.disk_bad(s))
         ;V.Story && console.log(`✅ story_accept_all: ${allBad.length} steps`)
+        H.story_declare_all(w)   // accepting the run's evidence accepts its oaths too (story_declare_all)
         for (const step of allBad) {
             const n = step.sc.Step
             if (step.sc.dige) H.The_step(w, n).sc.dige = step.sc.dige
@@ -2362,6 +2385,7 @@
                 run.c.driving = false; run.sc.paused = 2
                 H.Story_release_clock(Run)   // the run is over — hand the heartbeat back to the room
                 H.collect_time_sample(w)   // append to The/TimeSpool before save
+                H.story_declare_all(w)     // a recording declares what it swore (story_declare_all)
                 H.story_analysis(w)
                 H.story_save()
                 await update_status('recorded ✓', 'start')

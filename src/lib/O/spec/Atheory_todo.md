@@ -50,19 +50,17 @@ The next Housing.  Code and time become matter like everything else: which code 
  that holds it, and every change is a recorded event that advances a version.  It spreads space out and loads code
   more efficiently first; harmonising all IO with it (IOexpr, streams) is the next wave, and it looms.
 
-### Dispatch is the centre, not the prototype
+### Code, and who finds it
 
-The A\*\* shape below (`TheA_<Name>_<Variant>_<dige>` prototypes) makes `A.*` callable, but that's the surface.
- The organ underneath is **`do_fn_for`: given a node, find the code that handles it.**  Today it resolves by naming
-  tricks: `e_<elvis>`, the world's own method, `req_<kind>`, and, the precedent that matters, a typed serial req
-   dispatching **by its mainkey** (`%Pier,req:N` → `req_Pier`, `Housing.svelte.ts:1498`).
-- **Candidate: the handler table as data.**  Methods named `Class_Aspect_Verb` (`Record_play_start`) compile into rows:
-   mainkey `Record`, aspect `play`, this method.  Any machinery holding a `%Record` (Story, Vyto, a Sunpit) asks its A's
-    table for the code, the way a `%req` already carries its `do_fn`.  The naming convention IS the table; method
-     resolution by prototype chain becomes one way the table answers, not the model.
-- **Clobbers are events.**  Two layers defining one name is noted and accepted in a graph of all the code coming
-   together: a space mirroring `Ghost/*/*` that talks about it, where versions written out form trees and branches,
-    like git.  Never a silent own-property mask.
+The A\*\* shape below (`TheA_<Name>_<Variant>_<dige>` prototypes) is how code would attach to an A.  What the A can say
+ about its code today is **which files it runs and their digests** (`%TheACode` → `%TheALayer`, slice 1).
+- **No method lookup of Atheory's own** (owner, 2026-10-20, after a day of goofy code chasing one).  Code calls methods by
+   name; req dispatch stays in `do_fn_for` (Hovercraft), predictable: `req:Fish` is the kind, and that particle is two
+    Classes at once.  In `Class_Aspect` the Class is any key a particle carries (`req_Pier` is Class `req`).
+- **Joining data to code in general is the Sunpit's job**, much later.  How to get from everything to the Sunpit is open,
+   and may involve leaving traces around while everything runs.
+- **Clobbers are state.**  Two layers defining one name is shown (`%TheAClobber`, with whose copy won), never a silent
+   own-property mask.  Later, a space mirroring `Ghost/*/*` where versions written out form trees and branches, like git.
 
 ### Spheres — what hangs off a particle
 
@@ -167,7 +165,13 @@ Atlas knows what the code says it calls; Electrode records what ran.  A Book ove
 | code digest scope | a digest over the chain's file digests (above) |
 | isolation | one heap; note it as improvable |
 | Atheory's tests as IOexpr recipes? | undecided; wants the scheduler sketched further first |
-| where this doc lives | stays in `O/spec`; Atheory code goes in `src/lib/A/` when it exists |
+| where this doc lives | stays in `O/spec`; Atheory code lives in `Ghost/A/` (`Theory.g`, `AtheTesting.g`) |
+| who looks methods up (2026-10-20) | **not Atheory.**  Code calls methods by name (9,487 direct `this.X_y()` calls in `Ghost/`); req dispatch stays in `do_fn_for`; the Sunpit, much later, is where data and code get joined in general.  An attempt at a handler table (`%TheAHandles`) was built and removed the same day: it made goofy code. |
+
+**Ruled 2026-10-20 — the toy gets its own testing file, `Ghost/A/AtheFishTesting.g`** (loaded as modular A code
+ inside a test; never by real applications).  A Book's snap holds two As: the routine (`A:<Book>`, code in `AtheTesting.g`,
+  where `req:wrangle` does the thinking) and the toy it tests (`A:Athe_Tank`, whose `%TheACode` names only its own file).
+   The routine calls across into the toy.  The name ends in `Testing.g` so `src/lib/L/testing.ts` marks it as test code.
 
 **Still open:** snap filtering for spheres; rollback; time beyond "versions + a Story grid"; whether Sion and the
  scheduler are one organ; the next wave (IOing in harmony with all this).
@@ -182,10 +186,9 @@ Atlas knows what the code says it calls; Electrode records what ran.  A Book ove
 
 | name | means | lives |
 |---|---|---|
-| `%TheACode` | which code this A runs: `TheACode:<Name>,variant,dige`; dige = the chain digest | on the A; snaps |
-| `%TheALayer` | one `.go` on that chain, with its own digest | under `%TheACode`; snaps |
-| `%TheAHandles` | "particles of this mainkey, in this aspect, are handled by this method" | under its `%TheALayer`; read off method names |
-| `%TheAClobber` | a method name two of the A's layers both define: which won | under `%TheACode` |
+| `%TheACode` | which code this A runs: `TheACode:<Name>,variant,dige`; dige = the chain digest (absent until every layer loads) | on the A; snaps (for now: owner, 2026-10-20) |
+| `%TheALayer` | one compiled `.g` on that chain, with the digest of the code loaded for it | under `%TheACode`; snaps |
+| `%TheAClobber` | a method two of the A's layers both define, and whose copy is live (`won`) | under `%TheACode` |
 | `%TheAWire` | a standing pathway: where pulses run and what they wake | on the compartment it wakes |
 | `%TheAPulse` | one elvis waiting on a wire | in a holster on the wire; never snaps |
 | `%TheATurn` | one pass of one compartment: the batch it ate, the version it made | the compartment's history; Was-sphere |
@@ -193,37 +196,75 @@ Atlas knows what the code says it calls; Electrode records what ran.  A Book ove
 | `%OtherSphere` | a non-basis sphere (Was, Regard), one per organ | on the compartment; skipped by the snap unless declared |
 | `%Sunpit` | an iterating gathering of sources, compiled from `%IO` rows | on the world that commissions it; a holster |
 
-### The A, holding its code
-
-**Slice 1 BUILT 2026-10-20** (Book `AthePond`, tests 1–2): `Ghost/A/Theory.g` (`TheA_code_stand`, `TheA_layer_stand`,
- `TheA_handle_of`, `TheA_handler_for`, `TheA_clobbers_stand`) and `Ghost/A/AtheTesting.g`.  Where each method came from is
-  recorded by `Housing.ghostsHaunt` (`ghost_origin`, `ghost_clobbers` on the top House): every eatfunc hash is one compiled
-   `.g` and carries exactly one `Ghostmeta_*`, which is also the layer digest.  The Book harnesses its OWN plaything (owner:
-    test playthings live in the Testing file, not in `Ghost/Play/`): a tank with Pond's rules and one method per kind,
-     `Egg_step` / `Fish_step` / `Heron_step`, in a world `AtheTank`; `Ghost/Play/Pond.g` stays the kids' creation.  Not yet: the base Housing as a layer, a
-     `do_fn_for` rung that consults the table, code pushes.
+### The A, holding its code — slice 1 BUILT 2026-10-20 (Book `AthePondCode`)
 
 ```
-H:Mundo
-  A:Pond
-    %TheACode:Pond,variant:plain,dige:9f3a…     ← digest over the layer digests below
-      %TheALayer:Housing,dige:…                 ← the base House
-      %TheALayer:Pond,go:Ghost/Play/Pond.go,dige:ab12…
-        %TheAHandles:Egg,aspect:step,by:Egg_step       ← compiled from a method named Egg_step
-        %TheAHandles:Fish,aspect:step,by:Fish_step
-        %TheAHandles:Heron,aspect:step,by:Heron_step
-    w:Pond
-      %Egg:minnow 1 …  %Fish:perch 2 …  %Heron:grey
+H:AthePondCode,Run
+  A:AthePondCode                       the test routine (every Book runs inside an A named after it)
+    w:AthePondCode
+      req:wrangle,eternal,ok
+  A:Athe_Tank                          the toy it tests (Athe_Tank, not AtheTank: Books match Athe[A-Za-z]+)
+    TheACode:Athe_Tank,variant:plain,dige:…
+      TheALayer:Ghost/A/AtheFishTesting.g,dige:…
+    w:Athe_Tank
+      Turns,count=4                    the tank's own clock (a 1 renders bare, `Turns,count`: fine, the code
+                                        knows it's a count — owner)
+      EggsNamed,count=2
+      Fish:minnow 1,born=4             age = Turns.count − born; nothing on .c
+      Fish:perch 2,born=4
 ```
+- **Where methods came from** is kept by `Housing.ghostsHaunt` (§0.3): `ghost_origin` (method → the file that last
+   defined it) and `ghost_files` (file → the methods its latest load carried, replaced whole each load, so deleted methods
+    leave and a clobber is current state).  Each compiled `.g` arrives as one hash with one `Ghostmeta_*`, which is also its
+     layer digest.
+- **`TheA_code_stand(A, name, paths)`** (`Ghost/A/Theory.g`) stands the code rows; an unloaded layer has no `dige`, the chain
+   digest waits for every layer, clobbers are read off `ghost_files`.  No method lookup.
+- **The toy** (`Ghost/A/AtheFishTesting.g`, its own file since 2026-10-20 so `A:Athe_Tank`'s code names only it; the
+   routines in `AtheTesting.g` call across into it): Pond's rules on the tank's own turn clock; every egg and fish
+   carries `born`; the world line stays its name (*"w means w"*).  `Ghost/Play/Pond.g` stays the kids' creation.
+- **The test routine** turns the toy by hand (its world's own tick `Athe_Tank(A,w)` does nothing) and swears three things,
+   reading only the tree: the A carries the digest of the code loaded for it, an empty tank plants two eggs on its first
+    turn, and the eggs hatch into two fish on turn four.  All three are declared in the toc, so a missing sentence reds the
+     run.  The runner `ghost_load`s Theory.g, AtheFishTesting.g and AtheTesting.g; the Book loads no code itself.
+- **Status:** re-recorded after the toy split (2026-10-20, runner e747): 5 steps, `TheALayer` names `AtheFishTesting.g`,
+   assertions 3/3, gaps 0; 3 check runs green, caveat 0.
+- **Not yet:** the base Housing as a layer (it has
+   no `Ghostmeta`, so it isn't covered — say so, don't fake it); code pushes; the Sunpit.
 
-Pond has `Pond_step` walking eggs, fish and the heron in one method (and stays that way: it's a kids' creation).  The test's
- own copy is written as `Egg_step` / `Fish_step` / `Heron_step`, so the table says *which code a particle wants*, so the pass can hand each kind to its handler, and Vyto (or a
-  Story) holding a `%Fish` can ask the same table what a fish does.  `do_fn_for` gains one rung: **look up the mainkey in
-   the A's table** before the old naming tricks.
+### The loop queue (re-ordered 2026-10-20 after the adversarial review: finish the A before the frontier)
 
-**A code push is a new `%TheACode` beside the old one.**  The A adopts it at the next seam between passes, and the old one
- stays readable until no Turn refers to it.  A clobber (two layers giving one `%TheAHandles` row) is a row the compiler
-  writes on the `%TheACode`, shown and accepted, never a silent mask.
+Work top to bottom.  Each item ends with its Book green (3 check runs, caveat 0, via the Sonnet subagent pinned to one
+ runner, **never released**), this doc current (§0.2 status, §0.3 ledger for any Stuff/Housing touch), and memory current.
+  Stop a thread and write the question into §0.1's open list rather than guess anything the owner names or rules.
+
+1. ~~The toy's code apart from the routine's~~: done: ruled into its own file, `Ghost/A/AtheFishTesting.g` (§0.1), and `AthePondCode` re-recorded against it.
+2. **A code swap between turns** (`AthePondCodeSwap`): change the toy's code mid-run (a second variant, or a recompile) and
+    swear that the A's `%TheACode` changes only between turns.  The tank now has turns; what records "this turn ran under
+     digest X" is the first design question, and it may be `%TheATurn`'s first slice.  Propose before building.
+3. **The Sunpit's base layer, prototyped gradually** (owner, 2026-10-20: *"prototype the base layer of what we can see
+    Sunpit doing, gradually… you might get away with oa() and o() to build the illusion of some majestic Sunpit rule engine
+     giving us exactly the compute we need"*).  Plain `o()`/`oa()` over the toy, written so that what a Sunpit WOULD do is
+      visible, starting with **order** (eggs → fish → heron as a declared order, sworn by showing a changed order changes
+       the outcome).  Read first: `src/lib/O/LangSion.svelte` (`_o_drill`, `_i_drill`, `_o_iter` "Sunpit iteration",
+        `_io_cursor`), `LangCompiling.svelte`'s comments on how `S o a/b` lowers to `_o_iter`, and
+         `Ghost/test/Story/Hoho/HohoTiles.g` (the future code language itself).  No rule engine, no method lookup, no
+          req-machine rebuild.  Small steps, each a green Book; stop and write it up when unsure.
+4. ~~The snapped-digest churn~~: **deferred (owner): the digest stays in the snap while we prototype.**  Revisit once an
+    A can load its own code and run it like before (the foundation Story_future builds on).  For then: EntropyArrest's
+     `means,drop` omits a whole LINE; dropping one KEY (`dige`) needs the `key`/`these_sc` path half-built in
+      `Hovercraft.svelte` (`means_of`, `lematch_to_rule`).
+
+**Runners:** never share one with another agent.  If a sweep or another session holds the pinned runner, wait for it or
+ pin a different idle one.
+
+**Don'ts for the loop:** never `release` a run (it tears H:Story down while the tab keeps drawing the dead Story face,
+ so the owner can't open steps; that face staying clickable is its own open bug); before handing a Book back, print one
+  `NNN.snap` and read it as the owner will (memory `w-means-w`); no method lookup or handler tables; no commits or staging;
+   declare a Book's oaths (`runner_ask declare`) once its sentences settle; no renaming of anything the owner named; `Ghost/Play` untouched; no changes to Story, Lies or the
+    relay; Housing/Stuff only with a §0.3 ledger row.
+
+**A code push is a new `%TheACode` beside the old one** (design, unbuilt).  The A adopts it at the next seam between turns,
+ and the old one stays readable until nothing refers to it.
 
 ### Wires and pulses on Pond
 
@@ -284,7 +325,19 @@ Step 3 is what keeps Story honest: two compartments with no wire between them ma
     row (all the `%Card`s per `%Mag`, say).  That's the "ark" read-ahead in LangSolver (`parkar`: fold a fanned leg into
      columns) and Sion's `@name` reuse, seen from the handler's side.
 
-**Order of work (owner): do the A first** (`%TheACode`, `%TheALayer`, `%TheAHandles`); the Sunpit is the frontier after it.
+- **Cultures, not one iterator** (owner, 2026-10-20).  The keys a Sunpit row carries (`req`, `req:Pier`, `req` plus
+   something else) give a generic processor a *culture*: how to behave.  It might iterate differently, run some other
+    handler first, take all of `%SomeSuch` within some distance first, or something not yet imagined.  **So types of Sunpit
+     get prototyped by hand first, and compiling them comes after**, once the prototypes show what they share.  Cultures
+      already in the code, as raw material:
+   - the req machine: highest `maz` first, skip finished or already-ok, bow out on a ttlilt;
+   - the tank's step (and Pond's): eggs, then fish, then the heron, where order matters, since fish hatched this turn
+      also age this turn ("this handler over all of these, before that one");
+   - Vyto's commission drive: watch each source, coalesce the trailing edge, one scan per burst;
+   - none yet for "all of `%SomeSuch` within some distance": the tank could grow one (the heron eats only nearby fish).
+  Prototypes live in `AtheTesting.g` with the tank as their ground, one Book per culture (`AthePondSunpit…`).
+
+**Order of work (owner): do the A first** (`%TheACode`, `%TheALayer`); the Sunpit is the frontier after it.
 
 To work out: what a compiled Sunpit hands the runtime, what its iteration produces each pass, its version, and its
  migration.  Read first: `commission.md` §3–4 in full, `LangSolver_report.md` (`_io_plan`, `_io_cursor`, Sion), and how
@@ -310,19 +363,19 @@ Entries name their point by the **D identity** (the Se's first-sight id), not by
  convention).  Particle names all start `TheA` so one grep finds every one of them; they're deliberately cumbersome
   while unsure, and get shorter names once they've earned them.
 
-The music app rests; these come first.  One Book, **`AthePond`**, on a runner, stepping Pond by hand:
+**Book names (owner, 2026-10-20):** `Athe`, then the toy, then what it proves: `AthePondCode`, later `AthePondCodeSwap`,
+ `AthePondWireSum`…  Ugly is fine if it informs.  The toy (`Athe_Tank`) lives in `AtheTesting.g` and is shared by the series;
+  its name has an underscore so it can't be taken for a Book.
 
-1. **The A says which code it runs.**  Stand Pond as an A; its `%TheACode` names the chain digest and the Pond layer's
-    digest.  *"an A says which code it runs — a digest you can read off the tree"*
-2. **The table finds the code.**  A `%Fish` dispatches to `Fish_step` through `%TheAHandles`, not by name-guessing.
-3. **A push swaps between passes.**  Recompile Pond with `HERON_AT` changed mid-run; the new `%TheACode` is adopted at a seam,
-    and no Turn mixes the two digests.  *"a code change lands between passes and never inside one"*
-4. **Unwatched work costs nothing.**  Between clock pulses, Pond is not visited: zero Turns between pulses.
-5. **Order doesn't leak.**  Stand Garden beside Pond (no wire between them); run the same pulses in both orders; the
-    snaps are identical.
-6. **Counts are kept.**  Three step pulses in one batch make three steps (`sum:count`); three fish-changed pulses make one
-    heron Turn (`sum:latest`).
-7. **The manifest is checked.**  Electrode during the run, joined with Atlas: every method called is on a declared layer,
+The music app rests; these come first.  **Built: `AthePondCode`** (§0.2 above): the toy stands as an A and turns by hand,
+ and the A carries the digest of the code loaded for it.  **Candidates**, each a later Book:
+
+1. **A code change lands between turns, never inside one** (`AthePondCodeSwap`; loop queue item 2).
+2. **Unwatched work costs nothing**: between clock pulses the toy isn't visited at all (needs `%TheAWire`).
+3. **Order doesn't leak**: two toys with no wire between them, the same pulses in either order, identical snaps.
+4. **Counts are kept**: three step pulses make three turns (`sum:count`); three "fish changed" pulses make one heron
+    reconsideration (`sum:latest`).
+5. **The manifest is checked**: Electrode during the run, joined with Atlas: every method called is on a declared layer,
     and every declared layer was called.
 
 Each test is a sentence a person would say, and each can be sabotaged once to prove it bites (Homethink §3).
@@ -333,8 +386,6 @@ Each test is a sentence a person would say, and each can be sabotaged once to pr
    today's `beliefs()` as one more leg, before replacing it.
 - **Turf leases for compartments inside one tab** (no relay round-trip needed) versus across bodies.
 - **Snap filtering** for OtherSpheres and holsters (§0.1).
-- **How `%TheAHandles` meets ghosts that aren't written `Class_Aspect_Verb`** (most of today's code): probably the old naming
-   tricks stay as fallback rungs, so nothing breaks.
 
 ## 0.3 Foundation ledger — every adjustment to Stuff|Housing (and what sits right beside them)
 
@@ -350,16 +401,72 @@ No Atheory adjustments yet.
 
 | date | where | what | why | read by | to undo |
 |---|---|---|---|---|---|
-| 2026-10-20 | `House.ghost_origin` (:565), `House.ghost_clobbers` (:568), `ghostsHaunt` (:670–677) | `ghostsHaunt` finds the one `Ghostmeta_*` key in each eaten hash and records, on the **top** House, which file every method came from (`ghost_origin[method] = 'Ghostmeta_…'`).  A method name arriving from a second file is pushed onto `ghost_clobbers` as `{method, was, now}` before being overwritten.  A hash with no `Ghostmeta_*` (a hand-written `.svelte` ghost) records nothing. | `H.ghosts` is flat, so nothing could say which code an actor runs or where a method came from.  Each compiled `.g` arrives as exactly one hash carrying exactly one `Ghostmeta_*`, which is also its digest, so this is the one cheap place to learn it. | `Ghost/A/Theory.g` (`TheA_layer_methods`, `TheA_clobbers_stand`); Book `AthePond` | delete the two fields and the `if (meta) {…}` block; nothing else depends on them yet |
-| 2026-10-18 | AppTreeNav root (:2645), creds mounts (:2661–2662), the serve wall (:2812), import (:9) | the literal `'.jamsend'` became `APP_DATA_DIR` from `src/lib/app_data_dir.ts` | one spelling of the app's private corner; the serve wall and NodeWormholeNav's 0600 must agree on it (§ "The app's own storage") | — (same value) | inline the literal again; the value never changed |
+| 2026-10-20 | `House.ghost_origin`, `House.ghost_files`, the `if (meta) {…}` block in `ghostsHaunt` | `ghostsHaunt` finds the one `Ghostmeta_*` key in each eaten hash and records, on the **top** House: `ghost_files[meta]` = the methods this load carried (replaced whole each load, so a deleted method leaves), and `ghost_origin[method] = meta` (the file that last defined it).  A hash with no `Ghostmeta_*` (a hand-written `.svelte` ghost) records nothing.  (The first version kept a `ghost_clobbers` log that only grew; replaced the same day.) | `H.ghosts` is flat, so nothing could say which code an actor runs or where a method came from.  Each compiled `.g` arrives as exactly one hash with exactly one `Ghostmeta_*`, which is also its digest: the one cheap place to learn it. | `Ghost/A/Theory.g` (`TheA_clobbers_stand`); Book `AthePondCode` | delete the two fields and the `if (meta) {…}` block; nothing else depends on them yet |
+| 2026-10-18 | `Wormhole_compose_app_tree` (AppTreeNav root), `Wormhole_mount_creds`, the serve wall (the `.jamsend` segment refusal), the import | the literal `'.jamsend'` became `APP_DATA_DIR` from `src/lib/app_data_dir.ts` | one spelling of the app's private corner; the serve wall and NodeWormholeNav's 0600 must agree on it (§ "The app's own storage") | — (same value) | inline the literal again; the value never changed |
 
 ### Beside the foundation (tooling and the app shell)
 
 | date | where | what | why |
 |---|---|---|---|
+| 2026-10-20 | `src/lib/O/Story.svelte` (`story_declare_one`, `story_declare_all`; called in accept-all and on a new recording's completion) | every sworn sentence is declared into the toc when a Book is recorded or accepted; the old "only the human clicks" rule is gone (owner: *"you just need to know what you're doing"*) | swears were sitting sworn but ungated, so a sentence that stopped turning up went unnoticed |
 | 2026-10-20 | `scripts/LocalGen.spec.ts` | creates `gen/<dir>/` before writing, so a new `Ghost/<dir>/` compiles without a hand `mkdir` | `gen/` mirrors `Ghost/`; the relay's `gen_write` already did this (`relay.ts:997`), LocalGen didn't (met making `Ghost/A/`) |
 | 2026-10-19 | `src/service-worker.js` | a `.go` module the worker re-fetches asks with `?import`; cache bumped to `jamsend-shell-v2` | a worker's re-fetch arrives `Sec-Fetch-Dest: empty`, Vite then served raw `.go` source, the browser sniffed it as HTML, and every Creduler ghost failed on the music page |
 | 2026-10-18 | `src/lib/app_data_dir.ts` (new) | `APP_DATA_DIR = '.jamsend'`, dependency-free | read by Housing, NodeWormholeNav, the daemon, and ghosts via `IMPORT()` |
+
+## 0.4 Antipatterns — what the rebuild measures itself against (2026-10-20)
+
+*How we code now, seen from the new era.  Each: the tell, a case we actually hit, what Atheory does instead.  A change
+ that adds one of these needs a reason written beside it.*
+
+**1. State hidden from the community**
+- **The unlabelled drawer.**  `.c.anything`: 1,234 undeclared keys with no kind, lifetime or basis (`voucher_ok` outlived a
+   revocation; `repli_sent_sc` split twins across a reload; the tank's egg counter on `w.c.n`).  *Instead:* `.c` holds only
+    fingers (refs), flesh (functions, handles, buffers), a run's scratch, and caches that name their basis.  Facts go in
+     `sc`, and are snapped, munged (EntropyArrest's `mung`: key shown, value hidden) or omitted (`omit_sc`, generalised
+      to a declared list) by declaration.
+- **Packed strings.**  Several facts in one value (`step_kinds:'Egg Fish Heron'`).  *Instead:* one child row per fact
+   ("structured sc children over clever packed strings", `vyto_workingouts/commission.md`).
+- **Placeholder values.**  A stand-in where absence belongs (`'unloaded'` as a digest; `undef` mints).  *Instead:* absence.
+
+**2. Correctness that depends on every reader remembering**
+- **Per-reader gates.**  `humdinger`, `Story_replaying()`, `w === radio_w && !w.c.Run`; a reader that forgets shows up only
+   as a flaky Book (MusuRadioAim, red 5/5).  *Instead:* nearest-enclosing lookup, with the world as the wall.
+- **Reaching for the top.**  `top_House()` finds the tab's Supervisor, not the scope's.  *Instead:* scoped lookup.
+- **Side roads past a general mechanism.**  The music plane admitted on `from` alone; the service worker's re-fetch dropped
+   the signal Vite needed.  *Instead:* one road.
+
+**3. Behaviour in the wrong place**
+- **App work inside test beats.**  `if (n === k)` doing boot work, so a short toc meant no music.  *Instead:* the machine
+   stands itself; Books only watch and swear.
+- **Test playthings in real code.**  A Book's needs reshaping `Ghost/Play/Pond.g`.  *Instead:* playthings live in the
+   `*Testing.g`.
+- **Existence tied to drawing.**  `Lies_ghost_set`: the mount is the load.  *Instead:* the manifest stands code.
+
+**4. Time handled by polling**
+- **Wall-clock checks every pass.**  `Date.now() - w.c.last` in Pond and Garden.  *Instead:* a declared clock wire, and no
+   visit between pulses.
+- **Polling for what could be pushed.**  `Creduler_reswap` every 2s; test helpers looping `setTimeout(200)`.  *Instead:*
+   pushes addressed by the manifest; waits that are events.
+- **Anonymous wakes.**  A bare `think`, then every pass re-derives the world (60–80% of a core on the idle daemon).
+   *Instead:* pulses addressed to compartments that know they changed.
+
+**5. Structure that is only a convention**
+- **Lists that disagree.**  `CREDULER_GHOSTS` / `GFILES` / `Siphon_include`; scattered `.jamsend` (fixed: `APP_DATA_DIR`).
+   *Instead:* one declared source, checked against Atlas × Electrode.
+- **Everything flat on H.**  9,487 direct `this.X_y()` calls, 21 mutually recursive ghost pairs, no boundary.  *Instead:*
+   A layers; lookup only where something genuinely looks up (req, e, the Sunpit).
+- **One idea, several names.**  Four numberings of identity; LE, Repli and five hand-rolled merges.  *Instead:* one organ
+   with policies.
+
+**6. The tooling lies quietly**
+- **Checks that look like passes.**  LocalGen had no `mkdir` (fixed); the esbuild parse misses duplicate imports; `accept`
+   skips forgiven steps; a compile ack can claim a change that didn't land.  *Instead:* each check proves the thing:
+    the module loads, the digest flipped, `caveat:0`.
+- **Fixtures that snap their own volatility.**  A layer's own digest in the snap (four re-records in a day); wall clock in
+   `sc`.  *Instead:* compare live in the witness; snap the verdict, not the value.
+
+**Unsure: dated narrative comments.**  Long dated comment-essays keep the why, but rot silently (the "un-buffered cyto"
+ claim was false for six weeks).  The rationale is worth keeping; the changelog may belong in the docs.
 
 ## The load-list inventory — DONE 2026-09-05 (the "when it starts" step below, paid)
 

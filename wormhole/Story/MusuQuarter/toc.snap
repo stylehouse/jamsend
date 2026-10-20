@@ -4,26 +4,31 @@ story:MusuQuarter
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.004
-      sample=0.002,at=1789455016
-      sample=0.004,at=1789455169
-      sample=0.014,at=1789464007
-      sample=0.003,at=1789549063
-      sample=0.002,at=1789563980
+    TimeTotal:beliefs,avg=0.021
       sample=0.002,at=1789612162
       sample=0.003,at=1789615286
       sample=0.007,at=1789616454
       sample=0.002,at=1789622229
       sample=0.002,at=1792134561
-    TimeTotal:step,avg=0.004
-      sample=0.002,at=1789455016
-      sample=0.004,at=1789455169
-      sample=0.014,at=1789464007
-      sample=0.003,at=1789549063
-      sample=0.002,at=1789563980
+      sample=0.005,at=1792469248
+      sample=0.044,at=1792471282
+      sample=0.061,at=1792471313
+      sample=0.021,at=1792471320
+      sample=0.062,at=1792471434
+    TimeTotal:step,avg=0.006
       sample=0.002,at=1789612162
       sample=0.003,at=1789615286
       sample=0.007,at=1789616454
       sample=0.002,at=1789622229
       sample=0.002,at=1792134561
+      sample=0.005,at=1792469248
+      sample=0.009,at=1792471282
+      sample=0.012,at=1792471313
+      sample=0.004,at=1792471320
+      sample=0.012,at=1792471434
   step,dige:6982c323e929bc0c
+  step=2,dige:c37a81c0da3094da
+  step=3,dige:40337c721ff518e1
+  step=4,dige:54fd7c83e1e55647
+  step=5,dige:cbbfe4a1ef645c50
+    Assertion:a-good-stash-stays,sentence:a good stash stays the stash — an unchanged world re-sits to the very same want rows and the steward mints nothing

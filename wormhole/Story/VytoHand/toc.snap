@@ -5,7 +5,6 @@ story:VytoHand
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.05
-      sample=0.048,at=1790973498
       sample=0.029,at=1790973505
       sample=0.064,at=1790974392
       sample=0.052,at=1790974431
@@ -15,8 +14,8 @@ story:VytoHand
       sample=0.068,at=1790984989
       sample=0.042,at=1791114404
       sample=0.052,at=1791154795
-    TimeTotal:step,avg=0.009
-      sample=0.008,at=1790973498
+      sample=0.048,at=1792469421
+    TimeTotal:step,avg=0.008
       sample=0.005,at=1790973505
       sample=0.011,at=1790974392
       sample=0.009,at=1790974431
@@ -26,9 +25,14 @@ story:VytoHand
       sample=0.011,at=1790984989
       sample=0.007,at=1791114404
       sample=0.009,at=1791154795
+      sample=0.008,at=1792469421
   step,dige:8b9e9c9698a3828b
   step=2,desc:six stones from plain objects — the producer names each one by its own id,dige:f1c13e2d08e6dd7d
   step=3,desc:stand the stones as foam with no hand on them — each rests where the pile puts it,dige:5e11a2bbcfd0706e
   step=4,desc:the hand puts two stones — chert pinned low left and jade drawn toward the high right,dige:e65e62249cb573f9
+    Assertion:a-pinned-put-sits,sentence:a pinned put sits exactly where the hand put it
+    Assertion:an-attracted-put-falls,sentence:an attracted put falls toward its place — nearer than it rested free — and its neighbours still press
   step=5,desc:tear the glass down and stand it fresh — the producer hands over the same puts,dige:af5be2094358e425
+    Assertion:a-glass-torn-down,sentence:a glass torn down and stood fresh is put back exactly as the hand left it
   step=6,desc:the hand lifts — the producer hands over no puts and the stones go free,dige:a83c53aede49cd01
+    Assertion:lifting-the-hand-frees,sentence:lifting the hand frees the stone and the put rows leave the world

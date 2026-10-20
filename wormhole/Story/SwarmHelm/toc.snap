@@ -4,8 +4,7 @@ story:SwarmHelm
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.131
-      sample=0.092,at=1790040352
+    TimeTotal:beliefs,avg=0.151
       sample=0.07,at=1790043685
       sample=0.076,at=1790043994
       sample=0.092,at=1790047215
@@ -15,8 +14,8 @@ story:SwarmHelm
       sample=0.367,at=1790655346
       sample=0.173,at=1790727963
       sample=0.071,at=1790746938
-    TimeTotal:step,avg=0.026
-      sample=0.018,at=1790040352
+      sample=0.292,at=1792466462
+    TimeTotal:step,avg=0.03
       sample=0.014,at=1790043685
       sample=0.015,at=1790043994
       sample=0.018,at=1790047215
@@ -26,8 +25,16 @@ story:SwarmHelm
       sample=0.073,at=1790655346
       sample=0.035,at=1790727963
       sample=0.014,at=1790746938
+      sample=0.058,at=1792466462
   step,dige:0f22bab5b3fb3d23
   step=2,dige:c497559343f5d9ba
+    Assertion:every-crewmate-carries-the,sentence:every crewmate carries the whole ledger and the soul secret — a Cave still hellos as its own key — held not wielded — the Captain alone signs as the soul and a friend admits every mate by its cert
   step=3,dige:1b724bd122ab9b1b
+    Assertion:the-on-a-mate,sentence:the ✕ on a mate ejects it — a soul-signed NotGrant:Crew rides the ledger — every other mate drops its row and its key
+    Assertion:the-ejected-body-finds,sentence:the ejected body finds itself off the ledger and leaves — a crew of one again with its cert and the soul secret dropped
+    Assertion:a-friend-of-the,sentence:a friend of the soul keeps the ejection on its pier — the ejected body is refused at the door even with its old cert while a standing mate still passes
   step=4,dige:6325920d4f6f2d7a
+    Assertion:the-helm-passes-by,sentence:the helm passes by flipping two roles — the new Captain hellos as the soul with no key moved — the founder stands down to a fresh key and name — a friend dialling the soul reaches the new Captain
   step=5,dige:8bbe65c4bdddaec2
+    Assertion:a-fresh-device-that,sentence:a fresh device that ferried the ledger off any mate resumes the Captaincy by the same flip — every crewmate online falls in line and the three ledgers agree byte for byte
+    Assertion:the-soul-secret-a,sentence:the soul secret a Cave holds survives a reload through the crew stash — resume works from any mate after any boot

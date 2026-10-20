@@ -31,8 +31,8 @@ Waft:Credence
     Funkcion:Storying,of_Book:SwarmCohort
     Funkcion:Storying,of_Book:SwarmRole
     Funkcion:Storying,of_Book:SwarmSeal
-    Funkcion:Storying,of_Book:SwarmFerry
-    Funkcion:Storying,of_Book:EmojiConfirm
+    Funkcion:Storying,of_Book:SwarmFerry,wire:no wire — Swarm_export and import composed with Sealbox at the model layer,doc:Portability_doc §10 — LinkDevice_leak_todo (the key-cloning leak runs through this path),desc:LinkDevice Phase 3 — the whole account crosses a sealed channel — re-exports byte-identical — no private key in clear — a wrong code lands nothing — keys ride .c only,found:2026-10-20 recorded as a 1-step stub since birth — a new run starts at total 1 and its drive never set run.sc.total so no run ever reached the oaths — re-recorded after the drive learnt its total
+    Funkcion:Storying,of_Book:EmojiConfirm,wire:no wire — pure sha256 over Emojiconfirm.ts,doc:Crew_todo — the live Crew ceremony does not call it yet — slated to come back,desc:the SAS emoji row that catches a relay MITM — honest bodies read the same row — an interposed pub changes it — empty agrees with nothing,found:2026-10-20 recorded as a 1-step stub since birth — a new run starts at total 1 and its drive never set run.sc.total so no run ever reached the oaths — re-recorded after the drive learnt its total
     Funkcion:Storying,of_Book:SwarmDivide
     Funkcion:Storying,of_Book:SwarmBody
     Funkcion:Storying,of_Book:SwarmCharter
@@ -81,7 +81,7 @@ Waft:Credence
         Funkcion:Storying,of_Book:MusuBuddy,needsFSA:1,needMusic:1,born:2026-07-14,wire:the social session over a loopback link — no relay
         Funkcion:Storying,of_Book:MusuMag,needsFSA:1,needMusic:1,born:2026-07-19,wire:the Mag husk crosses loopback — no relay
       What:the pipeline,desc:the live listening session on real tracks — the paced playhead and the village chase plus the test-data seeder — NOTE these scenes still ride the pre-Mag FLAT mirror shape — the pacing mechanisms are canonical the scene shape is not
-        Funkcion:Storying,of_Book:MusuGenerateTestsMusic,needsFSA:1,unusual:test-data-seeding
+        Funkcion:Storying,of_Book:MusuGenerateTestsMusic,needsFSA:1,unusual:a once-only utility script dressed as a Book — renders the pure-tone testsounds/ collection that MusuReap and the Ra Books stock from — never swept — its old last-run date means nothing,desc:Musu_gen_testsounds writes each Artist - Title.wav (freq = the track's label) into testsounds/
         Funkcion:Storying,of_Book:MusuRaStream,needsFSA:1,needMusic:1,born:2026-07-08,wire:a real listening session over the loopback wire
         Funkcion:Storying,of_Book:MusuRaChase,needsFSA:1,needMusic:1,born:2026-07-11,wire:multi-source restock chase over two loopback links
         Funkcion:Storying,of_Book:RaBreach,born:2026-07-22,desc:the rung-0 content-address gate on Repli chunk arrival — bad bytes that do not hash to the chunk cid are refused and marked a breach while honest bytes land untouched
@@ -103,9 +103,9 @@ Waft:Credence
         Funkcion:Storying,of_Book:MusuRecast,wire:goner re-publish crosses loopback — leaves no orphan
         Funkcion:Storying,of_Book:MusuRename,wire:rename redirect rides the loopback pipe — no socket
         Funkcion:Storying,of_Book:MusuFreeze,born:2026-07-17,wire:revoked mirror frozen over loopback — no remote edit
-        Funkcion:Storying,of_Book:MusuReap
+        Funkcion:Storying,of_Book:MusuReap,needsFSA:1,wire:no wire — real testsounds stocked into .jamsend/radiostock under its own pub,doc:Radio_spec §12.2 M4 — Radio_todo (Musica_forget),desc:forgetting an old era of Clouds also unlinks those tracks' radiostock files from disk while a kept track's file stands (bias-to-keep),found:2026-10-20 last green 2026-08-07 — the stalest Book after MusuBounce — cause unknown (runner tabs do hold the FSA) — owner leans to dropping it
       What:replication,desc:the wire protocol itself — offers husks wants pages and crush proven on FLAT shelves — flat stays prod-legal for quarantines and strays but the canonical friend mirror is now the paged Mag of the wire cut
-        Funkcion:Storying,of_Book:MusuBounce,needMusic:1,wire:real tracks dribble over one loopback link — receiver skips
+        Funkcion:Storying,of_Book:MusuBounce,needMusic:1,unusual:runner-killer — it wedges the runner tab and nobody knows why (Perf_todo guessed the peering standup — never diagnosed) — run only on a tab you can lose,wire:real tracks dribble over one loopback link — receiver skips,doc:Radio_todo — Clerkdesk_todo (left a runner wedged),desc:the only Book that plays real audio through two live AudioContexts and checks what was heard against a seeded skip schedule,found:2026-10-20 last green 2026-08-06
         Funkcion:Storying,of_Book:MusuReplica,wire:repli collection browse over loopback
         Funkcion:Storying,of_Book:ParkCull,born:2026-08-15,wire:no wire — a bare pier holder and hand-minted wants in one world,desc:the want-lease — every re-ask restamps its lease and the pump culls a want nobody asks about — the daemon's immortal-want leak pinned
     What:lowlevels,desc:the ladder of tiny aspect proofs — spec Radio_lowlevel.md — kept for regression hunts not for direction
@@ -125,11 +125,11 @@ Waft:Credence
     Funkcion:Storying,of_Book:MusuRaTerm
     Funkcion:Storying,of_Book:MusuNeGrind
     Funkcion:Storying,of_Book:MusuFloor
-    Funkcion:Storying,of_Book:MusuPress
-    Funkcion:Storying,of_Book:MusuQuarter
+    Funkcion:Storying,of_Book:MusuPress,wire:no wire — in-memory Records and a stubbed nav — needs no music,doc:Portability_doc §6 — SoundPooling_todo,desc:the pool press v1 — Ra_press lands a byte-for-byte copy through the one catalog door — pressing twice yields one card,found:2026-10-20 recorded as a 1-step stub since birth — a new run starts at total 1 and its drive never set run.sc.total so no run ever reached the oaths — re-recorded after the drive learnt its total
+    Funkcion:Storying,of_Book:MusuQuarter,wire:no wire — not one byte — a Jam ledger of taste and a held library,doc:Portability_doc §6 — SoundPooling_todo,desc:the Quartermaster's propose half — Ra_quarter computes a cap-sized goal stash and mints press pull evict wants — an unchanged world mints nothing — a shifted taste shifts the stash,found:2026-10-20 recorded as a 1-step stub since birth — a new run starts at total 1 and its drive never set run.sc.total so no run ever reached the oaths — re-recorded after the drive learnt its total — then only 1 of its 4 oaths fires (an unchanged world mints nothing) — the goal order and the propose and taste-shift tallies never match what Ra_quarter makes — a real gap between the Book and the code
     Funkcion:Storying,of_Book:MusuPressLossy
-    Funkcion:Storying,of_Book:MusuSteward
-    Funkcion:Storying,of_Book:MusuSmuggle
+    Funkcion:Storying,of_Book:MusuSteward,wire:no wire — in-memory Records and a stubbed nav — needs no music,doc:Portability_doc §6 — SoundPooling_todo,desc:the Quartermaster's dispose half — Ra_quarter_serve enacts each want by its kind through the proven press door — re-serving an unchanged world does nothing,found:2026-10-20 recorded as a 1-step stub since birth — a new run starts at total 1 and its drive never set run.sc.total so no run ever reached the oaths — re-recorded after the drive learnt its total — then none of its 4 oaths fires — step 3 serves with pressed 0 and evicted 0 so the pool never fills — a real gap between the Book and Ra_quarter_serve
+    Funkcion:Storying,of_Book:MusuSmuggle,wire:no wire — a Cave library and a backup crate in one world,doc:Portability_doc §8 Flow 4,desc:the backup is also the upgrade queue — Ra_upgrade_scan queues a fetch for a smuggled lofi whose original the Cave lacks — and drops it when the original arrives,found:2026-10-20 recorded as a 1-step stub since birth — a new run starts at total 1 and its drive never set run.sc.total so no run ever reached the oaths — re-recorded after the drive learnt its total
     Funkcion:Storying,of_Book:MusuPoolFill
     Funkcion:Storying,of_Book:MusuPoolRadio
     Funkcion:Storying,of_Book:MusuPoolRandom
@@ -189,6 +189,9 @@ Waft:Credence
   What:Boot,desc:arrival machinery — the boot permission gate and its capability honesty — the phone-arc Books pile on here
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:BootGateNoFSA,born:2026-08-15,wire:no wire — the boot_gate module driven directly with the picker shadowed per beat,desc:the no-picker browser gets a sentence not a dead button — plus the capable-browser negative control
+  What:Athe,desc:Atheory — the next Housing — code and time become matter on each A — the toy Athe_Tank lives in Ghost/A/AtheFishTesting.g — the routines in AtheTesting.g
+    Funkcion:StoryTimes
+    Funkcion:Storying,of_Book:AthePondCode,born:2026-10-20,wire:no wire — the toy Athe_Tank turned by hand on the Run House,desc:an A arrives with the digest of its code — and the toy's eggs hatch on its fourth turn — one turn per step
   What:Misc,inline
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:GhoghoDrone

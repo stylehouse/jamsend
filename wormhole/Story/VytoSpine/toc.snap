@@ -4,7 +4,7 @@ story:VytoSpine
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.62
+    TimeTotal:beliefs,avg=0.597
       sample=0.541,at=1790982635
       sample=0.481,at=1790982661
       sample=0.463,at=1790982675
@@ -14,7 +14,8 @@ story:VytoSpine
       sample=1.184,at=1790984136
       sample=0.344,at=1790985199
       sample=0.349,at=1791154660
-    TimeTotal:step,avg=0.069
+      sample=0.387,at=1792466505
+    TimeTotal:step,avg=0.066
       sample=0.06,at=1790982635
       sample=0.053,at=1790982661
       sample=0.051,at=1790982675
@@ -24,12 +25,20 @@ story:VytoSpine
       sample=0.132,at=1790984136
       sample=0.038,at=1790985199
       sample=0.039,at=1791154660
+      sample=0.043,at=1792466505
   step,dige:1fcc5bcdd71c806a
   step=2,desc:a code search lands — the Door hits across twelve files fetched from the sample in the Searchbar hit shape,dige:254f9557d6288f57
   step=3,desc:stand the search as a spine — every file a vertebra behind the head and every crowded file folded to a few ribs by kind,dige:a870aca422c1b562
+    Assertion:a-code-search-stands,sentence:a code search stands as a spine — every file a vertebra behind the head and every crowded file folded to a few ribs
   step=4,desc:re-search Door to Heist in the same world — the creature re-forms around twenty-one files and the head morphs,dige:9811e99f9cbbb24e
+    Assertion:a-re-search-re,sentence:a re-search re-forms the creature in the same world — the head morphs to the new query
   step=5,desc:press the Def crest of Heist.g — the crest presses like its members and the expedition goes down into the file,dige:a487e6cf07243f0c
+    Assertion:a-crest-presses-like,sentence:a crest presses like its members — the expedition goes down into the file narrowed to that kind
   step=6,desc:press the busiest region of the file — its methods become the vertebrae with their hits as ribs,dige:ce92b1e3858f8b93
+    Assertion:a-region-opens-from,sentence:a region opens from the file — its own methods become the vertebrae with their hits as ribs
   step=7,desc:press the busiest method — the chamber opens with its paragraphs as vertebrae and its source lines as ribs,dige:250e3da117b68376
+    Assertion:a-method-opens-as,sentence:a method opens as a chamber — its paragraphs are vertebrae and its own source lines are the ribs
   step=8,desc:press the head — the rope climbs back up to the region and its methods return,dige:08dbbf70f42d7fb9
+    Assertion:the-head-is-the,sentence:the head is the rope — pressing it climbs one level and the region returns
   step=9,desc:walk a tunnel — in a chamber a line that calls another method is pressed and the expedition lands in that method,dige:e9cdb03cf74f5492
+    Assertion:a-line-that-calls,sentence:a line that calls another method is a tunnel — pressing it lands in that method chamber

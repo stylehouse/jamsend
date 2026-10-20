@@ -4,8 +4,7 @@ story:SwarmReboot
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.062
-      sample=0.046,at=1790040141
+    TimeTotal:beliefs,avg=0.063
       sample=0.041,at=1790040153
       sample=0.066,at=1790040163
       sample=0.027,at=1790040347
@@ -15,8 +14,8 @@ story:SwarmReboot
       sample=0.06,at=1790679421
       sample=0.142,at=1790727978
       sample=0.03,at=1790746947
+      sample=0.049,at=1792469648
     TimeTotal:step,avg=0.012
-      sample=0.009,at=1790040141
       sample=0.008,at=1790040153
       sample=0.013,at=1790040163
       sample=0.005,at=1790040347
@@ -26,6 +25,7 @@ story:SwarmReboot
       sample=0.012,at=1790679421
       sample=0.028,at=1790727978
       sample=0.006,at=1790746947
+      sample=0.01,at=1792469648
   step,dige:f508e4cd43e96afe
   step=2,dige:cbf6af3eca2719de
   step=3,dige:147581c04496d429
@@ -41,3 +41,5 @@ story:SwarmReboot
     Assertion:a-nay-survives-the,sentence:a nay survives the reboot beside the heart — the stash carries every reaction as one snap under one rule so no reaction kind can be forgotten by a copy loop
     Assertion:an-identity-encoded-under,sentence:an identity encoded under the account protocol then decoded and grafted onto a bare container encodes again to the same bytes — one serializer can be the stash and the folder snap at once
     Assertion:the-whole-identity-comes,sentence:the whole identity comes back from one text alone — piers crew roots pools bookings and roster re-stand from the account snap under the stash law with no copy loop between the tree and the disk
+    Assertion:the-pool-compartments-a,sentence:the pool compartments a device declares survive its reload through the stash alone — names and policies and caps and the shuffle salt — and in declaration order so the priority they were given is the priority they come back with
+    Assertion:a-heart-pressed-on,sentence:a heart pressed on a device with no folder survives that device rebooting — with the holder and the listing it had learned — while the bare hearings it sat among are left behind rather than hoarded

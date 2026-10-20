@@ -8,8 +8,7 @@ story:LagoonCave
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.107
-      sample=0.178,at=1791336705
+    TimeTotal:beliefs,avg=0.124
       sample=0.139,at=1791336722
       sample=0.011,at=1791758570
       sample=0.1,at=1791758729
@@ -19,8 +18,8 @@ story:LagoonCave
       sample=0.151,at=1791957590
       sample=0.066,at=1791957609
       sample=0.096,at=1791957646
-    TimeTotal:step,avg=0.012
-      sample=0.02,at=1791336705
+      sample=0.348,at=1792466388
+    TimeTotal:step,avg=0.014
       sample=0.015,at=1791336722
       sample=0.001,at=1791758570
       sample=0.011,at=1791758729
@@ -30,12 +29,25 @@ story:LagoonCave
       sample=0.017,at=1791957590
       sample=0.007,at=1791957609
       sample=0.011,at=1791957646
+      sample=0.039,at=1792466388
   step,dige:46f0d4746b79dccf
   step=2,desc:load Atlas and Lagoon on demand — stand Atlas on the frozen corpus and the reader beside it,dige:8072b19f8378bd2f
   step=3,desc:open the hole — the head is a field to type into and the families stand around it,dige:2080d71d27accc4c
+    Assertion:the-head-reads-what,sentence:the head reads what was typed and is the biggest bone of the creature
+    Assertion:with-nothing-typed-the,sentence:with nothing typed the code families stand around the hole
   step=4,desc:type into the hole — one vertebra per file and its ribs the stem families holding hits,dige:f5b5f10d5e86dbb3
+    Assertion:a-search-stands-as,sentence:a search stands as a spine — one vertebra per file stemmed by its directory
+    Assertion:a-file-says-its,sentence:a file says its hits as stem families — and a family never crosses the bead its author drew
   step=5,desc:press the file — its methods in file order with a family named once and fused by stem,dige:55015c6ce8295590
+    Assertion:a-file-is-its,sentence:a file is its methods in file order — a family names itself once and its members by what they add
+    Assertion:a-family-wears-one,sentence:a family wears one stem so the glass fuses it — two families never share one
   step=6,desc:press a method — its code lands and the glass becomes its doors,dige:b14e8700fe4bd559
+    Assertion:pressing-a-method-lands,sentence:pressing a method lands its code — the face is told and the glass folds to a rail
+    Assertion:a-method-is-a,sentence:a method is a place with doors — what it calls and its family — and an empty door is not drawn
   step=7,desc:press what it calls — the walk lands in that method and its door back is its caller,dige:640cce9245235350
+    Assertion:pressing-what-it-calls,sentence:pressing what it calls walks there — and the door back is the caller
   step=8,desc:press the head — the rope climbs back one step,dige:e756733689a3ea56
+    Assertion:a-click-on-the,sentence:a click on the head seeks the box and climbs — the head used to be the box
+    Assertion:the-head-is-the,sentence:the head is the rope — pressing it climbs back one step
   step=9,dige:28a78e6fed5ab60a,desc:climb past the surface — the seeker leaves and the cave tells the face
+    Assertion:climbing-past-the-surface,sentence:climbing past the surface leaves the cave — and the face is told

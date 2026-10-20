@@ -132,10 +132,11 @@ A **snap** is the text serialisation of the C tree which Story makes between ste
        graph noise.
  New test assertions are SWORN: `this.story_swear(w, 'sentence')` — idempotent per run,
   harvested off the world to the `ave/%Assertioning` shelf before encode, and DECLARED in the
-   Book's toc as `Assertion:<slug>,sentence:…` under its latch step, so an absence reds the run
+   Book's toc as `Assertion:<slug>,sentence:…` under its latch step — AUTOMATICALLY when a Book is recorded or
+    accepted (`story_declare_all`, 2026-10-20; removing an oath = deleting its toc line) — so an absence reds the run
     by name even at `ok_pct:1` (`Cred_assertion_gaps` joins on the SENTENCE; slugs must be unique
-     per step or Story wedges at `begun`). No commas in a sentence — the peel parser splits on
-      them; use an em-dash. `%see:'sentence'` still exists but OBSERVES: it is expected to drop,
+     per step or Story wedges at `begun`). Prefer an em-dash to a comma in a sentence: a comma is safe (the
+      encoder falls back to a JSON line) but reads worse. `%see:'sentence'` still exists but OBSERVES: it is expected to drop,
        and a drop is signal, not failure (`Seen_split_todo.md` is the migration ledger; 2026-09-08
         corrected — the older "authored as %see" reading here was stale). The snap-fixture diff
          stays the gate and the place to notice un-asserted detail.

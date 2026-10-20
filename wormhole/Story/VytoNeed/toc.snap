@@ -4,8 +4,7 @@ story:VytoNeed
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.033
-      sample=0.015,at=1789118327
+    TimeTotal:beliefs,avg=0.038
       sample=0.02,at=1789118608
       sample=0.033,at=1790973910
       sample=0.023,at=1790973951
@@ -15,8 +14,8 @@ story:VytoNeed
       sample=0.047,at=1790983000
       sample=0.057,at=1790983014
       sample=0.017,at=1790985150
-    TimeTotal:step,avg=0.008
-      sample=0.004,at=1789118327
+      sample=0.066,at=1792469708
+    TimeTotal:step,avg=0.01
       sample=0.005,at=1789118608
       sample=0.008,at=1790973910
       sample=0.006,at=1790973951
@@ -26,7 +25,10 @@ story:VytoNeed
       sample=0.012,at=1790983000
       sample=0.014,at=1790983014
       sample=0.004,at=1790985150
+      sample=0.017,at=1792469708
   step,dige:dc40af5f4c50fba5
   step=2,dige:fde1716fa9281cda,desc:seed three doseless cogs — one wearing a preposterously long name
   step=3,dige:8f2823aaf4ed6115,desc:commission the glass need-floored — the measured label must lift its cell
+    Assertion:the-wide-label-cell,sentence:the wide label cell grew to hold its measured content — the need floor is honored
   step=4,dige:aa2c646c58880e84,desc:re-commission plain — the same fat label keeps the bare dose box
+    Assertion:with-the-floor-unarmed,sentence:with the floor unarmed the same label keeps its plain dose box — the gate is additive

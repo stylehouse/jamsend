@@ -8,7 +8,7 @@ story:WorkshopStaple
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.025
+    TimeTotal:beliefs,avg=0.041
       sample=0.029,at=1791500526
       sample=0.023,at=1791500541
       sample=0.024,at=1791500549
@@ -16,7 +16,8 @@ story:WorkshopStaple
       sample=0.026,at=1791500594
       sample=0.022,at=1791500603
       sample=0.025,at=1791501243
-    TimeTotal:step,avg=0.004
+      sample=0.153,at=1792466533
+    TimeTotal:step,avg=0.007
       sample=0.005,at=1791500526
       sample=0.004,at=1791500541
       sample=0.004,at=1791500549
@@ -24,9 +25,17 @@ story:WorkshopStaple
       sample=0.004,at=1791500594
       sample=0.004,at=1791500603
       sample=0.004,at=1791501243
+      sample=0.026,at=1792466533
   step,dige:014dbce8783be880
   step=2,desc:load the Workshop and the Garden — stand the garden on this run,dige:a8fe148557b850ef
+    Assertion:a-creation-is-a,sentence:a creation is a ghost with one world — the Workshop loads it and stands its world
   step=3,desc:step the garden — a seed is planted then sprouts then flowers with five petals,dige:6ab939d1a0812c08
+    Assertion:an-empty-garden-plants,sentence:an empty garden plants its first seed
+    Assertion:a-seed-sprouts-and,sentence:a seed sprouts and a sprout flowers — the same plant by name
+    Assertion:a-flower-grows-five,sentence:a flower grows five petals and drops a new seed
   step=4,desc:keep stepping — the flower drops a new seed and in its time wilts away,dige:dfaef64d054e97f8
+    Assertion:a-flower-wilts-away,sentence:a flower wilts away in its time and the garden goes on without it
   step=5,desc:a creation nobody watches gets no heart — it stops itself,dige:f068b152ef4d1ce2
+    Assertion:a-creation-gets-a,sentence:a creation gets a heart only while it is watched — unwatched it stops itself
   step=6,desc:the Workshop lists its creations — the Garden among them,dige:de1166cafbc0a5b0
+    Assertion:the-workshop-lists-its,sentence:the Workshop lists its creations — the Garden among them

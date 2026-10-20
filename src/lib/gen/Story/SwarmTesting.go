@@ -15,7 +15,7 @@ import { sas_transcript, sas_row, sas_agree } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_SwarmTesting(): string { return '143ff067c7a718ec~g1' },
+    Ghostmeta_Ghost_Story_SwarmTesting(): string { return 'd59c792bb5d695a3~g1' },
 
 // SwarmTesting.g — né Swarmation.g (the `<Name>Testing.g` convention, owner ruling 2026-09-09;
 //  src/lib/L/testing.ts is the one predicate).  Book NAMES did not move with the file.
@@ -2526,7 +2526,10 @@ SwarmFerry_note(w, sc) {
 
 },
 async SwarmFerry_drive(w, req) {
-    let n = (this.c.run)?.c.step_n
+    // a new recording starts at 1 step (Story builds up by Resume); say how many this Book takes, or it records hollow
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 3
+    let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) await this.SwarmFerry_stand(w)
@@ -2648,7 +2651,10 @@ EmojiConfirm_note(w, sc) {
 
 },
 async EmojiConfirm_drive(w, req) {
-    let n = (this.c.run)?.c.step_n
+    // a new recording starts at 1 step (Story builds up by Resume); say how many this Book takes, or it records hollow
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 3
+    let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) this.EmojiConfirm_setup(w)

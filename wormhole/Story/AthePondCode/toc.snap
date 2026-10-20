@@ -1,0 +1,40 @@
+story:AthePondCode
+  Styles
+  Plan
+  Opt
+    For
+  EntropyArrest
+    Entcase:Self_round
+      lematch,self,round
+        means,drop
+  TimeSpool
+    TimeTotal:beliefs,avg=0.05
+      sample=0.016,at=1792465358
+      sample=0.062,at=1792469834
+      sample=0.062,at=1792469842
+      sample=0.062,at=1792469843
+      sample=0.062,at=1792469844
+      sample=0.062,at=1792469844
+      sample=0.025,at=1792469849
+      sample=0.039,at=1792469870
+      sample=0.03,at=1792469882
+      sample=0.081,at=1792469894
+    TimeTotal:step,avg=0.01
+      sample=0.003,at=1792465358
+      sample=0.012,at=1792469834
+      sample=0.012,at=1792469842
+      sample=0.012,at=1792469843
+      sample=0.012,at=1792469844
+      sample=0.012,at=1792469844
+      sample=0.005,at=1792469849
+      sample=0.008,at=1792469870
+      sample=0.006,at=1792469882
+      sample=0.016,at=1792469894
+  step,dige:157069eb2831c36e
+  step=2,desc:stand the toy as an A with the code it runs — and take its first turn,dige:eebacfc7f669d937
+    Assertion:an-a-arrives-with,sentence:an A arrives with the digest of the code loaded for it — read off the tree
+    Assertion:an-empty-tank-plants,sentence:an empty tank plants two eggs on its first turn
+  step=3,desc:the toy takes one more turn,dige:9528cb4b863ede94
+  step=4,desc:the toy takes one more turn,dige:a0380d26ae8a572b
+  step=5,desc:the toy takes one more turn,dige:83acda5db5e1d202
+    Assertion:the-eggs-hatch-into,sentence:the eggs hatch into two fish on the fourth turn

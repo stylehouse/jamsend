@@ -1,0 +1,12 @@
+Snap:H
+  H:MusuPress,Run
+    A:MusuPress
+      self,round=2	{"mung":["age"]}
+      w:MusuPress
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+        Library,name:presslib
+          Record,id:o1,artist:Auteur,title:One,path:music/a/one.wav,ext:wav
+        Library,name:pool

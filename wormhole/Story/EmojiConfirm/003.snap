@@ -1,0 +1,11 @@
+Snap:H
+  H:EmojiConfirm,Run
+    A:EmojiConfirm
+      self,round=3	{"mung":["age"]}
+      w:EmojiConfirm
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          reached:step_3
+          proved,row_len:16,honest_agree,mitm_diverge,empty_refused

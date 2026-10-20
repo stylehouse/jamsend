@@ -4,12 +4,27 @@ story:EmojiConfirm
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.006
+    TimeTotal:beliefs,avg=0.012
       sample=0.007,at=1789085659
       sample=0.003,at=1789108240
       sample=0.008,at=1789109417
+      sample=0.003,at=1792469453
+      sample=0.028,at=1792471591
+      sample=0.012,at=1792471600
+      sample=0.016,at=1792471606
+      sample=0.015,at=1792471611
     TimeTotal:step,avg=0.006
       sample=0.007,at=1789085659
       sample=0.003,at=1789108240
       sample=0.008,at=1789109417
+      sample=0.003,at=1792469453
+      sample=0.009,at=1792471591
+      sample=0.004,at=1792471600
+      sample=0.005,at=1792471606
+      sample=0.005,at=1792471611
   step,dige:3d624edc1861c31c
+  step=2,dige:270e1208d6c5f3c7
+  step=3,dige:ce2cb350ab80d22a
+    Assertion:both-honest-bodies-read,sentence:both honest bodies read the same emoji row — the same transcript folds to the same short authentication string so a clean channel confirms
+    Assertion:an-interposed-pub-changes,sentence:an interposed pub changes the row — a relay MITM cannot forge the emoji string because it depends on both endpoint keys so the humans see the mismatch
+    Assertion:empty-agrees-with-nothing,sentence:empty agrees with nothing — comparing two empty rows is refused so the confirmation is a genuine match not a vacuous pass

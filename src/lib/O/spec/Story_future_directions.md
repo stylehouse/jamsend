@@ -387,3 +387,44 @@ Found live 2026-09-28 on a listener (940f, `App_todo.md §0.5`): a music page ru
    MusuRadioAim) were all first runs by absence; they'd pass `--new` instead.
 - Separately, not Story's job but the same bite: autoplay on a humdinger shouldn't wait on `n >= 6`
    (`Sounditron.g:3560`) at all — see `App_todo.md §0.5` "Owed".
+
+## 6 — Every oath is declared; the comma advice was wrong (owner, 2026-10-20)
+
+### The hole
+
+`story_swear` sentences were meant to be gates: declared in the toc, so a sentence that stops turning up reds the run.
+ But declaring was a separate, manual act ("only the human clicks this… code never self-promotes evidence", the old
+  comment on `e_story_declare`), and nothing insisted on it.  A survey on 2026-10-20 found **152 sworn sentences
+   undeclared across 37 Books** (LagoonCave 12, SwarmGot 8, five Books at 7…), beside 325 declared, so a third of the
+    oaths could silently vanish.  Seven Books swear but have no fixture directory at all (SwarmDivide, MusuPressLossy,
+     SuperCull, SwarmSeal, SwarmRole, MusuFloor, VytoPosed).
+
+The advice around it was also wrong.  CLAUDE.md and the notes said *"no commas in a sentence — the peel parser splits on
+ them"*.  The encoder already handles it: `encode_stringies` (`Text.svelte`) writes peel format and **falls back to a JSON
+  line** whenever a value holds a comma, tab or newline, and the decoder parses any line starting with `{`.  A comma is
+   safe; it just reads worse.  So: **prefer an em-dash**, never fear a comma.
+
+### Landed (2026-10-20)
+
+- `story_declare_all` (`Story.svelte`): a Book's sworn sentences are declared automatically when it is **recorded** (new
+   mode completes) and when its fixtures are **accepted**, each under the step it latched.  Removing an oath stays
+    deliberate (delete its toc line).  The "only the human" rule is gone: you just need to know what you're doing.
+- First proven on `AthePondCode`: its recording wrote all three `Assertion` rows by itself.
+
+### Owed
+
+- **The sweep**: run and `accept` each recorded Book with undeclared sentences, so `story_declare_all` catches them up
+   (skip the runner-killers, MusuBounce and Editron, and the seven unrecorded Books).
+- **The seven unrecorded Books**: record them, or retire them.
+- **The wider lesson**: a rule that lives only in a comment ("declare by hand", "no commas") and is enforced by nobody
+   decays into either a gap (152 undeclared) or a superstition (the comma).  Where Story wants a property, Story should
+    make it happen by default and let a person opt out, not the reverse.
+
+## 7 — A Book declares its steps; Story calls each once (wanted from the Atheory side, 2026-10-20)
+
+Every Book re-implements "do this once when step n begins": a tick method `<Book>(A,w)` that Story calls every pass,
+ an eternal `req:wrangle` to give the async drive a home (and let a step hold Story by staying unfinished), and a
+  `req.c.did_step` guard so each step's action fires once.  Owner: *"kinda naff… a layer of indirection"*.  The wish,
+   for whoever works on Story: a Book declares its steps (e.g. `<Book>_steps()` → `{ 2: 'stand the toy', 3: 'turn' }`)
+    and Story calls `<Book>_step(w, n)` once per new step, so the wrangle req and the bookkeeping leave Books.  A step that
+     must hold arms a req inside itself.  Older Books keep working if Story only looks for `<Book>_step` when it exists.

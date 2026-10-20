@@ -2339,7 +2339,10 @@ SwarmFerry_note(w, sc):
     return n
 
 async SwarmFerry_drive(w, req):
-    let n = (this.c.run)?.c.step_n
+    // a new recording starts at 1 step (Story builds up by Resume); say how many this Book takes, or it records hollow
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 3
+    let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) await this.SwarmFerry_stand(w)
@@ -2452,7 +2455,10 @@ EmojiConfirm_note(w, sc):
     return n
 
 async EmojiConfirm_drive(w, req):
-    let n = (this.c.run)?.c.step_n
+    // a new recording starts at 1 step (Story builds up by Resume); say how many this Book takes, or it records hollow
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 3
+    let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) this.EmojiConfirm_setup(w)
