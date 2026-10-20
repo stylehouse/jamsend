@@ -1167,7 +1167,11 @@
                 { matching_any: [{ sc_has: { known: 1, kind: 'read' } }],
                   means: {
                       munging: [{ these_sc: { at: 1 }, type: 'time' }],
-                      spay: { re: 'dige:[0-9a-f]+', tol: 'any' },
+                      // tol:same, not any (2026-10-20): collect_spayers flattens every spayer out of its rule, so this
+                      //  one reaches EVERY `dige:` line in every snap (code digests too, %TheACode/%TheALayer), not
+                      //   only GhostList reads.  Each digest may change, but consistently across the run: one old value
+                      //    → one new value everywhere, never two into one (EntropyArrest.md §11)
+                      spay: { re: 'dige:[0-9a-f]+', tol: 'same' },
                   } },
             ] },
         },
@@ -2053,7 +2057,8 @@
                 step.sc.disk_dige = disk_dige
                 H.set_disk_ok(step, disk_dige === H.The_step_dige(w, n))  // honest: fixture vs toc
                 step.sc.ok        = true
-                step.sc.caveat    = true
+                // a step forgiven by tol:same digests alone is plainly ok (EntropyArrest §11), as in snap_step
+                if (!H.entropy_forgive_muted(w, step.sc.got_snap as string, disk_snap as string, n)) step.sc.caveat = true
                 delete run.sc.failed_at
                 delete run.sc.fetch_snap
                 run.sc.paused   = 0          // line ~1407 re-drives; do_step advances to n+1
@@ -2107,7 +2112,8 @@
                 step.sc.disk_dige = disk_dige
                 H.set_disk_ok(step, disk_dige === H.The_step_dige(w, n))   // honest: fixture vs toc
                 step.sc.ok        = true
-                step.sc.caveat    = true
+                // a step forgiven by tol:same digests alone is plainly ok (EntropyArrest §11), as in snap_step
+                if (!H.entropy_forgive_muted(w, step.sc.got_snap as string, disk_snap, n)) step.sc.caveat = true
                 delete step.sc.unexpected
                 console.log(`⚖ Story: step ${H.pad(n)} forgiven (caveat) — post-run sweep`)
             } else {
@@ -2260,6 +2266,8 @@
 
     story_drive(Run: House, w: TheC, run: TheC) {
         Run.c.run = run
+        // a fresh tol:same map for this run: each digest may change, but the same way at every step (EntropyArrest.md §11)
+        w.c.dige_same = { fwd: {}, back: {} }
         ;(this as any).diag(`story_drive entered driving=${run.c.driving} awaiting_wave=${run.c.awaiting_wave_done} awaiting_anim=${run.c.awaiting_anim_done}`)
         if (run.c.driving) return
         if (run.c.awaiting_wave_done || run.c.awaiting_anim_done) {
@@ -2784,7 +2792,15 @@
                 //      cached fixture falls through to the pause (editor) / post-run sweep (runner).
                 if (!ok) {
                     const exp = (w.c.exp_snaps as Record<number, string | null> | undefined)?.[n]
-                    if (exp && H.entropy_forgive(w, snap, exp, n)) { ok = true; step.sc.caveat = true }
+                    if (exp && H.entropy_forgive(w, snap, exp, n)) {
+                        ok = true
+                        // digests that moved together are pseudo-muted: no caveat (EntropyArrest.md §11)
+                        if (!H.entropy_forgive_muted(w, snap, exp, n)) step.sc.caveat = true
+                    }
+                } else if (!H.entropy_same_note(w, snap)) {
+                    // an exact step that keeps a digest an earlier forgiven step said had changed: the run moved it
+                    //  in one place and not another — not noise (EntropyArrest.md §11)
+                    ok = false
                 }
                 if (ok) step.sc.ok = true
                 else delete step.sc.ok

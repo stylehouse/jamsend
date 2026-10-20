@@ -1,0 +1,40 @@
+story:AthePondLoop
+  Styles
+  Plan
+  Opt
+    For
+  EntropyArrest
+    Entcase:Self_round
+      lematch,self,round
+        means,drop
+  TimeSpool
+    TimeTotal:beliefs,avg=0.053
+      sample=0.043,at=1792493147
+      sample=0.05,at=1792493161
+      sample=0.037,at=1792493165
+      sample=0.03,at=1792493168
+      sample=0.072,at=1792493815
+      sample=0.058,at=1792494230
+      sample=0.047,at=1792494377
+      sample=0.095,at=1792494522
+      sample=0.054,at=1792494603
+      sample=0.044,at=1792494864
+    TimeTotal:step,avg=0.013
+      sample=0.011,at=1792493147
+      sample=0.013,at=1792493161
+      sample=0.009,at=1792493165
+      sample=0.008,at=1792493168
+      sample=0.018,at=1792493815
+      sample=0.015,at=1792494230
+      sample=0.012,at=1792494377
+      sample=0.024,at=1792494522
+      sample=0.013,at=1792494603
+      sample=0.011,at=1792494864
+  step,dige:2343a48d4f4a8651
+  step=2,desc:stand four looped pairs with P nine turns ahead of Q — two with a lag on the wire back — and wake each as asked,dige:61375936b017dc5b
+  step=3,desc:12 clock pulses each — each pair woken in its asked order,dige:cfb3c1648782fe01
+  step=4,desc:8 clock pulses each — each pair woken in its asked order,dige:b84b043ae5834049
+    Assertion:a-loop-of-wires,sentence:a loop of wires leaks which tank was asked to wake first — the two pairs come out different
+    Assertion:a-lag-on-one,sentence:a lag on one wire of the loop breaks it — asked either way the pair comes out the same
+    Assertion:each-tank-on-a,sentence:each tank on a loop with no lag is told so — a TheALoop row names the loop — and a loop with a lag says nothing
+    Assertion:the-first-two-fish,sentence:the first two fish go round the loop — at turn 30 they wait on the lagged wire back into the tank they hatched in — older than any fish there

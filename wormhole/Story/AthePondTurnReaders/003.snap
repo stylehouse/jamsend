@@ -1,0 +1,35 @@
+Snap:H
+  H:AthePondTurnReaders,Run
+    A:AthePondTurnReaders
+      self,round=3	{"mung":["age"]}
+      w:AthePondTurnReaders
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        ReadBy:eye,turns:2
+    A:Athe_Tank_Read
+      TheACode:Athe_Tank,variant:plain,dige:78ec7f46d3d86596
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:18dbd5138fe3d46b~g1
+      self,round	{"mung":["age"]}
+      w:Athe_Tank
+        TheAWire:clock,wake:turn,sum:count
+          TheAWoke,count=4,pulses=4
+        TheAWas,keep=2,made=2
+          TheAReader:eye,at:2
+          TheAReader:slow
+          TheATurn:1,wire:clock,pulses,code_dige:78ec7f46d3d86596
+            TheANeu:Egg,of:minnow 1
+            TheANeu:Egg,of:perch 2
+          TheATurn:2,wire:clock,pulses=3,code_dige:78ec7f46d3d86596
+            TheANeu:Fish,of:minnow 1
+            TheANeu:Fish,of:perch 2
+            TheAGoner:Egg,of:minnow 1
+            TheAGoner:Egg,of:perch 2
+        Turns,count=4
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+          TheAPass:Heron
+        EggsNamed,count=2
+        self,round	{"mung":["age"]}
+        Fish:minnow 1,born=4
+        Fish:perch 2,born=4

@@ -1,0 +1,29 @@
+story:AthePondWireOrder
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.02
+      sample=0.02,at=1792491828
+      sample=0.023,at=1792491834
+      sample=0.019,at=1792491841
+      sample=0.036,at=1792491967
+      sample=0.02,at=1792492575
+      sample=0.013,at=1792492795
+      sample=0.016,at=1792493195
+      sample=0.016,at=1792494622
+    TimeTotal:step,avg=0.007
+      sample=0.007,at=1792491828
+      sample=0.008,at=1792491834
+      sample=0.006,at=1792491841
+      sample=0.012,at=1792491967
+      sample=0.007,at=1792492575
+      sample=0.004,at=1792492795
+      sample=0.005,at=1792493195
+      sample=0.005,at=1792494622
+  step,dige:e3a8f734165d437c
+  step=2,desc:stand two pairs whose Q names its eggs from its P through a wire — and wake each pair in its asked order,dige:394b07c685348a8a
+  step=3,desc:8 more clock pulses — each pair woken along its wire,dige:9bafaac1d793f97c
+    Assertion:a-tank-holding-a,sentence:a tank holding a wire from another wakes after it — whatever order the two were asked in
+    Assertion:two-tanks-sharing-a,sentence:two tanks sharing a name counter through a wire come out the same whichever was asked to wake first

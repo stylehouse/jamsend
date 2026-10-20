@@ -13,8 +13,7 @@ story:HohoSurfer
         wantPantheate
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=0.523
-      sample=0.489,at=1785933652
+    TimeTotal:beliefs,avg=0.562
       sample=0.927,at=1785995567
       sample=0.124,at=1789110634
       sample=0.208,at=1789548709
@@ -24,8 +23,8 @@ story:HohoSurfer
       sample=0.592,at=1789565840
       sample=0.546,at=1789565857
       sample=0.405,at=1789565869
-    TimeTotal:step,avg=0.261
-      sample=0.245,at=1785933652
+      sample=0.879,at=1792491411
+    TimeTotal:step,avg=0.281
       sample=0.463,at=1785995567
       sample=0.062,at=1789110634
       sample=0.104,at=1789548709
@@ -35,6 +34,7 @@ story:HohoSurfer
       sample=0.296,at=1789565840
       sample=0.273,at=1789565857
       sample=0.203,at=1789565869
+      sample=0.439,at=1792491411
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
   step,dige:1a8ef1000c113322

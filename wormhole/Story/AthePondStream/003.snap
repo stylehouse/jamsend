@@ -1,0 +1,52 @@
+Snap:H
+  H:AthePondStream,Run
+    A:AthePondStream
+      self,round=3	{"mung":["age"]}
+      w:AthePondStream
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+    A:Athe_Tank_P
+      TheACode:Athe_Tank,variant:plain,dige:cc2ef351a236d7a0
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:4ae01763091f73d2~g1
+      self,round	{"mung":["age"]}
+      w:Athe_Tank
+        TheAWire:clock,wake:turn,sum:count
+          TheAWoke,count=21,pulses=21
+        Turns,count=21
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+          TheAPass:Heron
+        EggsNamed,count=16
+        Fish:minnow 1,born=4
+        Fish:perch 2,born=4
+        self,round	{"mung":["age"]}
+        Fish:carp 3,born=13
+        Fish:trout 4,born=13
+        Fish:tench 7,born=16
+        Fish:dace 8,born=16
+        Fish:chub 9,born=19
+        Fish:rudd 10,born=19
+        Egg:minnow 11,born=19
+        Egg:perch 12,born=19
+        Egg:carp 13,born=19
+        Egg:trout 14,born=19
+    A:Athe_Tank_Q
+      TheACode:Athe_Tank,variant:plain,dige:cc2ef351a236d7a0
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:4ae01763091f73d2~g1
+      self,round	{"mung":["age"]}
+      w:Athe_Tank
+        TheAWire:clock,wake:turn,sum:count
+          TheAWoke,count=12,pulses=12
+        TheAWire:names,from:Athe_Tank_P
+        TheAWire:stream,from:Athe_Tank_P,wake:arrive,sum:count
+        Turns,count=12
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+          TheAPass:Heron
+        self,round	{"mung":["age"]}
+        Fish:roach 5,born=4
+        Fish:bream 6,born=4
+        Egg:roach 15,born=10
+        Egg:bream 16,born=10

@@ -19,8 +19,7 @@ story:HohoSearch
       lematch,self,round
         means,spayer,re:self.round={INT},tol:any
   TimeSpool
-    TimeTotal:beliefs,avg=0.561
-      sample=0.156,at=1788602085
+    TimeTotal:beliefs,avg=0.585
       sample=0.19,at=1788602089
       sample=0.454,at=1789108732
       sample=0.466,at=1789110589
@@ -30,8 +29,8 @@ story:HohoSearch
       sample=0.602,at=1789565193
       sample=0.434,at=1789565204
       sample=0.593,at=1789565341
-    TimeTotal:step,avg=0.561
-      sample=0.156,at=1788602085
+      sample=0.392,at=1792491343
+    TimeTotal:step,avg=0.585
       sample=0.19,at=1788602089
       sample=0.454,at=1789108732
       sample=0.466,at=1789110589
@@ -41,4 +40,5 @@ story:HohoSearch
       sample=0.602,at=1789565193
       sample=0.434,at=1789565204
       sample=0.593,at=1789565341
+      sample=0.392,at=1792491343
   step,dige:d6e87291ec292a31

@@ -248,7 +248,7 @@ Work top to bottom.  Each item ends with its Book green (3 check runs, caveat 0,
         `_io_cursor`), `LangCompiling.svelte`'s comments on how `S o a/b` lowers to `_o_iter`, and
          `Ghost/test/Story/Hoho/HohoTiles.g` (the future code language itself).  No rule engine, no method lookup, no
           req-machine rebuild.  Small steps, each a green Book; stop and write it up when unsure.
-4. ~~The snapped-digest churn~~: **deferred (owner): the digest stays in the snap while we prototype.**  Revisit once an
+4. ~~The snapped-digest churn~~: **done as EntropyArrest `tol:same`, see item 8.**  (Was deferred: the digest stays in the snap — it still does, now muted.)  Revisit once an
     A can load its own code and run it like before (the foundation Story_future builds on).  For then: EntropyArrest's
      `means,drop` omits a whole LINE; dropping one KEY (`dige`) needs the `key`/`these_sc` path half-built in
       `Hovercraft.svelte` (`means_of`, `lematch_to_rule`).
@@ -257,8 +257,31 @@ Work top to bottom.  Each item ends with its Book green (3 check runs, caveat 0,
 
 6. **Order doesn't leak** (`AthePondWakeOrder`, candidate test 3): four pairs of tanks woken in opposite orders; a pair
     sharing a name counter (`%NamesFrom`) with no wire leaks its order — **BUILT 2026-10-20**, `Atheory_design.md` §1.6.
-     Next: a wire BETWEEN two compartments (so the shared counter can be declared and ordered along), or candidate 2
-      "unwatched work costs nothing" (touches Housing — ask first).
+7. **A wire between two compartments** (`AthePondWireOrder`): the shared counter declared as `%TheAWire:names,from:<A>`;
+    `Athe_Tanks_wake` orders a batch along wires — **BUILT 2026-10-20**, `Atheory_design.md` §1.6.
+8. ~~Item 4, the digest churn~~ — **DONE 2026-10-20 as EntropyArrest `tol:same`** (`EntropyArrest.md` §11, owner's design):
+    a toy edit no longer re-baselines anything.  Next candidates: pulses that travel along a wire between tanks (the fish
+     of one tank feeding another's heron); candidate 2 "unwatched work costs nothing" (touches Housing — ask first).
+9. **A pulse that carries something** (`AthePondStream`): `%TheAWire:stream,from:<P>,wake:arrive` — an old fish swims from P
+    into Q with its AGE (Q's clock is nine turns behind), `Athe_Tank_wake` hands each run its pulse — **BUILT 2026-10-20**,
+     `Atheory_design.md` §1.8.
+10. **A loop of wires** (`AthePondLoop`): streams both ways leak the asked order; `lag:1` on one wire takes it out of the
+     ordering and breaks the loop — **BUILT 2026-10-20**, `Atheory_design.md` §1.8.  A lagless loop is marked on its tanks, `%TheALoop`
+      (BUILT, same Book).  Next candidates: candidate 2 "unwatched work
+       costs nothing" (touches Housing, so ask first); candidate 5, the manifest check (needs Electrode × Atlas, the
+        Land's L ghosts; which one is the truth is a design call for the owner).
+11. **tol:same on the pause and sweep paths** — both now mute like `snap_step` (Atheory_design §2 ledger row); not yet
+     exercised live.
+12. **Art school: the Pond Atlas** (2026-10-20) — a private artifact page drawing every recorded Athe snap as ponds (fish
+     by age, wires, lags, loops): https://claude.ai/artifact/Uoma1XYQnvVGtBfSNQLkbm.  Built from the fixtures by a
+      scratch extractor (parse NNN.snap → tanks JSON); to keep it current, that extractor wants a home in `scripts/`.
+13. **The Turn, by hand** (`AthePondTurns`): opt-in `%TheAWas,keep` on a tank; one `%TheATurn` per wire woken, with
+     its pulses, code digest, `%TheANeu`/`%TheAGoner` — **BUILT 2026-10-21**, `Atheory_design.md` §1.9.  Readers behind the
+      Turns (`%TheAReader`, `AthePondTurnReaders`) BUILT 2026-10-21.  Each new oath was sabotaged once and bit
+       (`Atheory_design.md` §1.10).  Next there: a reader that is a real compartment (a downstream tank reading upstream's
+        history instead of pulses?) — ask the owner, it touches what a wire IS.
+  (Seen in passing: a new Book's
+        recording rewrites its toc without the seeded `EntropyArrest` Self_round block; WireOrder and Stream pass without it.)
 
 **Runners:** never share one with another agent.  If a sweep or another session holds the pinned runner, wait for it or
  pin a different idle one.

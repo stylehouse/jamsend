@@ -67,9 +67,7 @@ story:HohoNets
     quiesce_snap_time=0.4
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=1.094
-      sample=0.659,at=1785995513
-      sample=0.516,at=1785998309
+    TimeTotal:beliefs,avg=1.293
       sample=0.516,at=1785998324
       sample=0.377,at=1785998529
       sample=1.277,at=1789110566
@@ -78,9 +76,9 @@ story:HohoNets
       sample=1.528,at=1789565073
       sample=1.595,at=1789565112
       sample=1.595,at=1789565142
-    TimeTotal:step,avg=0.084
-      sample=0.051,at=1785995513
-      sample=0.04,at=1785998309
+      sample=1.708,at=1792491561
+      sample=1.453,at=1792491631
+    TimeTotal:step,avg=0.1
       sample=0.04,at=1785998324
       sample=0.029,at=1785998529
       sample=0.098,at=1789110566
@@ -89,6 +87,8 @@ story:HohoNets
       sample=0.118,at=1789565073
       sample=0.123,at=1789565112
       sample=0.123,at=1789565142
+      sample=0.131,at=1792491561
+      sample=0.112,at=1792491631
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
     Entcase:wants_want

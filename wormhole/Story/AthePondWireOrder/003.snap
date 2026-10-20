@@ -1,0 +1,73 @@
+Snap:H
+  H:AthePondWireOrder,Run
+    A:AthePondWireOrder
+      self,round=3	{"mung":["age"]}
+      w:AthePondWireOrder
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        WakeOrder:5,asked:Athe_Tank_P5 Athe_Tank_Q5,woke:Athe_Tank_P5 Athe_Tank_Q5
+        WakeOrder:6,asked:Athe_Tank_Q6 Athe_Tank_P6,woke:Athe_Tank_P6 Athe_Tank_Q6
+    A:Athe_Tank_P5
+      TheACode:Athe_Tank,variant:plain,dige:4325cbf927bb2474
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:4bc4df699734cf46~g1
+      self,round	{"mung":["age"]}
+      w:Athe_Tank
+        TheAWire:clock,wake:turn,sum:count
+          TheAWoke,count=9,pulses=9
+        Turns,count=9
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+          TheAPass:Heron
+        EggsNamed,count=4
+        self,round	{"mung":["age"]}
+        Fish:minnow 1,born=4
+        Fish:perch 2,born=4
+    A:Athe_Tank_Q5
+      TheACode:Athe_Tank,variant:plain,dige:4325cbf927bb2474
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:4bc4df699734cf46~g1
+      self,round	{"mung":["age"]}
+      w:Athe_Tank
+        TheAWire:clock,wake:turn,sum:count
+          TheAWoke,count=9,pulses=9
+        TheAWire:names,from:Athe_Tank_P5
+        Turns,count=9
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+          TheAPass:Heron
+        self,round	{"mung":["age"]}
+        Fish:carp 3,born=4
+        Fish:trout 4,born=4
+    A:Athe_Tank_Q6
+      TheACode:Athe_Tank,variant:plain,dige:4325cbf927bb2474
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:4bc4df699734cf46~g1
+      self,round	{"mung":["age"]}
+      w:Athe_Tank
+        TheAWire:clock,wake:turn,sum:count
+          TheAWoke,count=9,pulses=9
+        TheAWire:names,from:Athe_Tank_P6
+        Turns,count=9
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+          TheAPass:Heron
+        self,round	{"mung":["age"]}
+        Fish:carp 3,born=4
+        Fish:trout 4,born=4
+    A:Athe_Tank_P6
+      TheACode:Athe_Tank,variant:plain,dige:4325cbf927bb2474
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:4bc4df699734cf46~g1
+      self,round	{"mung":["age"]}
+      w:Athe_Tank
+        TheAWire:clock,wake:turn,sum:count
+          TheAWoke,count=9,pulses=9
+        Turns,count=9
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+          TheAPass:Heron
+        EggsNamed,count=4
+        self,round	{"mung":["age"]}
+        Fish:minnow 1,born=4
+        Fish:perch 2,born=4

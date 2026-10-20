@@ -64,10 +64,81 @@ Two compartments with nothing between them come out the same whichever is woken 
    eggs swap names.  The rule this proves: **anything two compartments share must be a wire**, so the scheduler can order
     along it.
 
-### 1.7 Still to design
+**The fix, `AthePondWireOrder`.**  The same sharing, declared as a wire: the Q holds `%TheAWire:names,from:<P>`, and
+ `Athe_Tanks_wake(names)` (the toy file, plain `o()`) wakes a batch in the order asked except that a tank holding a wire
+  FROM another tank in the batch wakes after it.  Asked P-then-Q or Q-then-P, both pairs come out the same, and the routine's
+   `%WakeOrder` rows show the asked order and the order it actually woke.
 
-*From the todo's sketch, not yet built:* `%TheATurn` (one pass of one compartment, as history), `%TheATurf` (a leased
- region), the spheres (`%OtherSphere`), the scheduler proper (unwatched work costs nothing), a wire between two compartments, the
+### 1.7 Code digests are pseudo-muted — `tol:same` (`EntropyArrest.md` §11)
+
+Every edit to a toy moves its digest in every snap that shows it.  The `dige:` spayer now forgives that only as a
+ consistent substitution over the run (each old digest → one new one everywhere, never two into one), and such a step is
+  plainly ok, no caveat.  So a code edit costs no re-baselining, and a digest that moves in one place but not another reds.
+   Proven 2026-10-20: a comment-only toy edit left all six Athe Books green, caveat 0, fixtures untouched.
+
+### 1.8 A pulse that carries something — `AthePondStream`
+
+Until now a pulse only said "something happened"; here one carries a thing between compartments.  Q holds
+ `%TheAWire:stream,from:<P>,wake:arrive,sum:count`.  A fish too old for P (`OLD_AT`) swims down it instead of leaving for
+  good — P posts `%TheAPulse,swims:<name>,age:<n>` on Q's wire (`Athe_Tank_downstream` finds the wires leading out: like
+   names, the wire is held by the tank it leads INTO).  `Athe_Tank_wake` now hands each run its pulse (sum:latest the last
+    one), and `wake:arrive` mints the fish in Q.
+**What crosses is the age, never the birth turn.**  Each tank's time is its own (`Turns,count`); P is stood nine turns
+ ahead of Q, so the two old fish arrive at Q's turn 13 born at −5 (`came:<P>`), and leave Q on its turn 14 — while Q's
+  own oldest are ten.  A naive copy of `born` would have made them young in Q.  The rule: **a pulse between compartments
+   carries quantities in the receiver's terms or in no one's** (an age, a count) — never a reading of the sender's clock.
+    Batches are asked Q-then-P; the wires (`from:`) order them P first, so what P lets go is in Q the same wake.
+
+**A loop, `AthePondLoop`.**  Streams both ways (P→Q and Q→P) can't be ordered: each tank waits on the other, so
+ `Athe_Tanks_wake`'s visit stops where it started and the batch wakes as asked, and the loop leaks the asked order again
+  (pairs 7 and 8 come out different).  A wire marked `lag:1` doesn't order the batch, and what comes down it waits for
+   the receiver's next wake, because the receiver has already been woken.  It breaks the loop the way a register breaks a loop in a
+    circuit (pairs 9 and 10 come out the same).  The rule: **every loop of wires carries at least one lag**.  A loop without
+     one is said on the tree: `Athe_Tanks_wake` gives each tank on it a `%TheALoop:<its tanks, sorted>` row (current state —
+      it goes when the loop is broken).  It warns, it doesn't refuse: the batch still wakes as asked.  And P's first two fish keep going round: each time they
+      arrive too old, they leave on the fish pass before the heron's pass can take them.  At P's turn 30 they're in transit,
+       `%TheAPulse,swims:minnow 1,age=19` waiting on P's lagged wire, which is how a lag looks on the tree.
+
+### 1.9 The Turn, by hand — `AthePondTurns`
+
+Step 4 of the scheduler sketch ("commit one `%TheATurn`"), opt-in on the toy.  A tank holding `%TheAWas,keep:<n>` (the
+ Was-sphere, by its working name) commits one Turn each time a wire wakes it:
+
+    TheAWas,keep=3,made=5
+      TheATurn:3,wire:clock,pulses=9,code_dige:…
+        TheANeu:Fish,of:carp 3        ← a row that wasn't there before the wake
+        TheANeu:Egg,of:roach 5
+        TheAGoner:Egg,of:…            ← a row that's gone
+
+**A Turn is not a counter.**  Three clock pulses woken together are three pond turns (the tank's `Turns,count`, its
+ clock) and ONE Turn.  What a Turn says changed is what changed ACROSS it: an egg laid and hatched inside one wake shows
+  only as the fish it became.  A Turn that changes nothing is still a Turn.  `code_dige` is the A's `%TheACode` digest, so
+   `tol:same` mutes it with the rest.
+
+**Readers behind the history — `AthePondTurnReaders`.**  "Turns drop when no reader is behind them": a
+ `%TheAReader:<name>,at:<Turn id>` on `%TheAWas` has read every Turn up to `at` (`Athe_Tank_read(w, name)` returns what's
+  new and moves `at`).  A Turn stays while any reader hasn't read it, whatever `keep` says; once every reader has, only
+   the last `keep` stay; with no readers, `keep` alone decides (`Athe_Tank_was_trim`).  So the slowest reader holds the
+    history: with keep:2, a reader that waits keeps Turns 1–3 alive, and its catching up drops Turn 1.
+
+### 1.10 Each oath bites — sabotaged once (2026-10-21)
+
+Homethink §3: each test can be sabotaged once to prove it bites.  Three sabotages went into the toy together, the three
+ newest Books ran once in check mode, and the toy was put back byte for byte (checksums) and re-run green:
+
+| sabotage | Book | oaths that stopped swearing | still sworn |
+|---|---|---|---|
+| S1: an arriving fish is `born: turn` (its age resets) | AthePondStream | keeps its age · the old fish leave on Q's next turn | carries nothing while young · swims down, gone from the first |
+| S2: `Athe_Tanks_wake` ignores `lag` (and S1) | AthePondLoop | a lag breaks it · each lagless-loop tank is told · the first two fish go round | the loop leaks the asked order |
+| S3: the Turn's "before" is taken after the runs | AthePondTurns | says what changed across it · laid-and-hatched shows only as fish | one Turn per wake · names its code · empty Turn kept |
+
+Each oath fell to the sabotage aimed at it, and only to that: the unrelated oaths in each Book kept swearing.
+
+### 1.11 Still to design
+
+*From the todo's sketch, not yet built:* `%TheATurf` (a leased
+ region), the spheres (`%OtherSphere`), the scheduler proper (unwatched work costs nothing), a wire whose pulses go
+  somewhere other than a tank woken by the same batch (across Houses; across a network), the
   manifest check (Electrode joined with Atlas), and the A** shape that makes an A really run its own code.
 
 ## 2. The foundation ledger — every change Atheory makes to Stuff or Housing
@@ -83,8 +154,8 @@ Two compartments with nothing between them come out the same whichever is woken 
 - **Audit it against git** whenever unsure: `git log --oneline -- src/lib/Stuff.svelte.ts src/lib/O/Housing.svelte.ts
    src/lib/O/Story.svelte` since `d88d2aed` (the commit before Atheory began), and `git diff` the working tree for the same
     files.  Every hunk there must have a row here.
-- **Last audited 2026-10-20** against git through `1843be58` (CodePush): Housing — three rows, complete; Stuff — untouched;
-   Story — two rows, complete.
+- **Last audited 2026-10-21** against git through `5efb5cc7` plus the working tree: Housing — three rows, complete; Stuff —
+   untouched; Story (+ Text, Hovercraft) — the working tree's hunks are the two `tol:same` rows, complete.
 
 ### `src/lib/Stuff.svelte.ts`
 
@@ -102,6 +173,8 @@ No Atheory adjustments yet.
 
 | date | where | what | why |
 |---|---|---|---|
+| 2026-10-20 | `src/lib/O/Story.svelte`: the editor's pause-verify forgive (`run.sc.check_snap`) and the post-run forgive sweep (`run.sc.sweeping`) | each now sets `caveat` only when `entropy_forgive_muted` says the step needed more than `tol:same` | the two other places a step gets forgiven still caveated a digest-only move; `snap_step` already didn't.  Not yet exercised live (every Athe Book passes on the inline path) |
+| 2026-10-20 | EntropyArrest `tol:same` (`EntropyArrest.md` §11): `Text.svelte` (`spay_same_pairs`, `spay_graft`'s `same` arg, `spay_within`), `Hovercraft.svelte` (`entropy_forgive`, `entropy_same_of`, `entropy_same_note`, `entropy_forgive_muted`), `Story.svelte` (`story_drive` makes `w.c.dige_same`; `snap_step`'s inline check notes exact steps and mutes; the GhostList read rule's `dige:` spayer `any` → `same`) | a `dige:` may change only as a consistent substitution over the run; a step forgiven by that alone passes with no caveat | every code edit moved the toy's digest in every Athe snap, costing a hand re-baseline of every Athe Book; and `tol:any` let a real digest move pass as noise.  Touches EVERY Book (the spayer reaches every `dige:` line) |
 | 2026-10-20 | `src/lib/O/Story.svelte`, the step seam right after `run.c.step_n = n` (`TheA_code_pushes_let`) | at the start of every step, the As in the run take in any code pushed to them while they waited | Story mediates how code comes through a Book (owner): a push to an A in a run waits on it as `%TheACodePush` until the next step, so a snap shows exactly when code changes |
 | 2026-10-20 | `src/lib/O/Story.svelte` (`story_declare_one`, `story_declare_all`; called in accept-all and on a new recording's completion) | every sworn sentence is declared into the toc when a Book is recorded or accepted; the old "only the human clicks" rule is gone (owner: *"you just need to know what you're doing"*) | swears were sitting sworn but ungated, so a sentence that stopped turning up went unnoticed |
 | 2026-10-20 | `scripts/LocalGen.spec.ts` | creates `gen/<dir>/` before writing, so a new `Ghost/<dir>/` compiles without a hand `mkdir` | `gen/` mirrors `Ghost/`; the relay's `gen_write` already did this (`relay.ts:997`), LocalGen didn't (met making `Ghost/A/`) |

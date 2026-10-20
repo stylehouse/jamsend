@@ -8,24 +8,28 @@ story:AthePondWireSum
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.031
-      sample=0.022,at=1792485078
-      sample=0.027,at=1792485093
-      sample=0.021,at=1792485101
+    TimeTotal:beliefs,avg=0.042
       sample=0.034,at=1792485107
       sample=0.026,at=1792485383
       sample=0.024,at=1792486824
       sample=0.071,at=1792486858
       sample=0.021,at=1792486908
-    TimeTotal:step,avg=0.006
-      sample=0.004,at=1792485078
-      sample=0.005,at=1792485093
-      sample=0.004,at=1792485101
+      sample=0.04,at=1792491102
+      sample=0.113,at=1792492168
+      sample=0.029,at=1792492559
+      sample=0.033,at=1792493842
+      sample=0.026,at=1792494244
+    TimeTotal:step,avg=0.008
       sample=0.007,at=1792485107
       sample=0.005,at=1792485383
       sample=0.005,at=1792486824
       sample=0.014,at=1792486858
       sample=0.004,at=1792486908
+      sample=0.008,at=1792491102
+      sample=0.023,at=1792492168
+      sample=0.006,at=1792492559
+      sample=0.007,at=1792493842
+      sample=0.005,at=1792494244
   step,dige:3b88ba6df9702ffe
   step=2,desc:stand two wired tanks that differ only in how their fish wire sums — and wake one clock pulse,dige:806e6c2a34b653d0
   step=3,desc:3 clock pulses wait on each tank,dige:8a5e08ec6a41ab93

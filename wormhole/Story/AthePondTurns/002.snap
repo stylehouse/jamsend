@@ -1,0 +1,23 @@
+Snap:H
+  H:AthePondTurns,Run
+    A:AthePondTurns
+      w:AthePondTurns
+        req:wrangle,eternal,ok
+    A:Athe_Tank_Was
+      TheACode:Athe_Tank,variant:plain,dige:1a50625d4fd90658
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:7e188b9c2a616285~g1
+      w:Athe_Tank
+        TheAWire:clock,wake:turn,sum:count
+          TheAWoke,count,pulses
+        TheAWas,keep=3,made
+          TheATurn:1,wire:clock,pulses,code_dige:1a50625d4fd90658
+            TheANeu:Egg,of:minnow 1
+            TheANeu:Egg,of:perch 2
+        Turns,count
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+          TheAPass:Heron
+        EggsNamed,count=2
+        Egg:minnow 1,born
+        Egg:perch 2,born

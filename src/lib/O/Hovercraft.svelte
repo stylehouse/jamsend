@@ -828,7 +828,50 @@
         // mirror the runner's stale-fixture shim (mo:main lives only in old fixtures) +
         //  trimEnd, so the in-app and headless verdicts align line-for-line.
         const hide = (s: string) => s.split('\n').filter(l => !/\bmo:main\b/.test(l)).join('\n').trimEnd()
-        return this.spay_graft(hide(got), hide(expected), spayers, step_n).forgiven
+        return this.spay_graft(hide(got), hide(expected), spayers, step_n, this.entropy_same_of(w)).forgiven
+    },
+
+    // entropy_forgive_muted — after entropy_forgive passed, was the step forgiven by tol:same substitution ALONE?
+    //  Then it's pseudo-muted (EntropyArrest.md §11): the digests moved together, which the suite doesn't care about,
+    //   so the step is plainly ok — no caveat.  Any other spayer needed → a caveat, as before.  Reads the run's map
+    //    without extending it (the forgive just did).
+    entropy_forgive_muted(w: TheC, got: string, expected: string, step_n: number): boolean {
+        const sames = this.collect_spayers([
+            ...(this.story_matching ?? []),
+            ...this.entropy_rules((w?.c.The) as TheC | undefined),
+        ]).filter((sp: any) => sp.tol === 'same')
+        if (!sames.length) return false
+        const same = this.entropy_same_of(w)
+        const copy = same ? { fwd: { ...same.fwd }, back: { ...same.back } } : undefined
+        const hide = (s: string) => s.split('\n').filter(l => !/\bmo:main\b/.test(l)).join('\n').trimEnd()
+        return this.spay_graft(hide(got), hide(expected), sames, step_n, copy).forgiven
+    },
+
+    // entropy_same_of — the run's tol:same substitution map (EntropyArrest.md §11): every step of a run must change
+    //  each digest the same way.  story_drive makes it fresh as each run starts; the post-run sweep and a pip opened
+    //   afterwards keep reading that run's map.  None yet → undefined, and the check is per-snap.
+    entropy_same_of(w: TheC): any {
+        return w?.c.dige_same
+    },
+
+    // entropy_same_note — an EXACT step pins every tol:same value it holds to itself, so a later step can't
+    //  quietly change one of them (exp A unchanged at step 3, A→A' at step 5, is a real move).  Called where
+    //   the dige matched, with the step's snap (got = exp).  Returns false if this step contradicts the run so
+    //    far — the caller then knows an earlier forgiven step changed a value this one kept.
+    entropy_same_note(w: TheC, snap: string): boolean {
+        const same = this.entropy_same_of(w)
+        if (!same || !snap) return true
+        const spayers = this.collect_spayers([
+            ...(this.story_matching ?? []),
+            ...this.entropy_rules((w?.c.The) as TheC | undefined),
+        ]).filter((sp: any) => sp.tol === 'same')
+        if (!spayers.length) return true
+        const lines = snap.split('\n')
+        const next = this.spay_same_pairs(lines, lines, spayers, same)
+        if (!next) return false
+        same.fwd = next.fwd
+        same.back = next.back
+        return true
     },
 
     // entropy_diagnose — console-callable chain dump for "why isn't my cap applying?".

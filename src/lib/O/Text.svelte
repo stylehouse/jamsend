@@ -130,6 +130,9 @@
     //    author sees in the field AND what rides to disk in toc.snap; it expands to a
     //     real capturing group only when the RegExp is built (spay_desugar).  A legacy
     //      raw regex carries no tag and passes through untouched.
+    // the run's tol:same substitution map (spay_same_pairs): expected value → got value, and back
+    type SpaySame = { fwd: Record<string, string>, back: Record<string, string> }
+
     const SPAY_RE_SUGAR: Record<string, string> = {
         '{NUM}': '(\\d+(?:\\.\\d+)?)',   // a possibly-fractional number (timings, ratios)
         '{INT}': '(\\d+)',               // a plain integer run (dates, times, ids, counters)
@@ -969,6 +972,8 @@
 
     // spay_within — is the got capture tolerable against its exp pair?
     //   tol:any  → always (hashes / signatures / timestamps — graft wholesale).
+    //   tol:same → a member of a set of values that may all change at once (code digests): forgiven only
+    //               as a CONSISTENT substitution — see spay_same_pairs.  Tolerated here; spay_graft checks.
     //   tol:band → numeric: within factor× either way, PLUS an absolute ±slack added AFTER
     //               the factor — `max(a,b) <= factor*min(a,b) + slack` (slack=0 default).  slack
     //                catches a value that jumps in ABSOLUTE terms but not ratio (compile ms: 100↔600
@@ -977,6 +982,8 @@
     //   Legacy: a spayer with no `tol` is read as band when kind:band, else any.
     spay_within(g: string, e: string, tol: string, factor?: number, slack?: number): boolean {
         if (tol === 'any') return true
+        if (tol === 'same') return true      // consistency is checked across the whole snap (and run) by spay_graft
+
         if (tol === 'band') {
             const gv = parseFloat(g), ev = parseFloat(e)
             if (Number.isNaN(gv) || Number.isNaN(ev)) return false
@@ -1028,12 +1035,16 @@
     //    noise) → not forgiven (the §2.4 ordering caveat landing correctly).  Each differing
     //     line must reconstruct EXACTLY into exp via grafts, else the step is a real surprise.
     //      Returns the graft log too, for the future §4.3 index (which spans got→exp rewrote).
-    spay_graft(got: string, exp: string, spayers: Array<any>, step_n?: number):
+    //  `same` is the run's substitution map for tol:same spayers (spay_same_pairs); a forgiven step commits
+    //   its pairs into it, so every later step must agree.  Omitted → a fresh map, consistent within this snap.
+    spay_graft(got: string, exp: string, spayers: Array<any>, step_n?: number, same?: SpaySame):
             { forgiven: boolean, grafts: Array<{ line: number, from: string, to: string }> } {
         const grafts: Array<{ line: number, from: string, to: string }> = []
         if (!spayers?.length) return { forgiven: got === exp, grafts }
         const gl = got.split('\n'), el = exp.split('\n')
         if (gl.length !== el.length) return { forgiven: false, grafts }
+        const tentative = this.spay_same_pairs(gl, el, spayers, same ?? { fwd: {}, back: {} })
+        if (!tentative) return { forgiven: false, grafts }
         let forgiven = true
         for (let i = 0; i < gl.length; i++) {
             if (gl[i] === el[i]) continue
@@ -1041,7 +1052,41 @@
             if (rebuilt === el[i]) grafts.push({ line: i, from: gl[i], to: el[i] })
             else forgiven = false
         }
+        if (forgiven && same) { same.fwd = tentative.fwd; same.back = tentative.back }
         return { forgiven, grafts }
+    },
+
+    // spay_same_pairs — the tol:same check (EntropyArrest.md §11).  The values a tol:same spayer captures in the
+    //  EXPECTED snaps are a set of things the test talks about (each code digest is one of them, wherever it
+    //   appears).  Any of them may change, several at once, but only as a consistent substitution: each expected
+    //    value becomes exactly one got value everywhere, and no two expected values become the same one.  Walks
+    //     EVERY line pair, equal ones too (an unchanged value is pinned to itself), on top of the run's map so far.
+    //      Returns the extended map, or null on the first inconsistency.  No tol:same spayer → the map unchanged.
+    spay_same_pairs(gl: string[], el: string[], spayers: Array<any>, same: SpaySame): SpaySame | null {
+        const sames = spayers.filter(sp => sp?.re && sp.tol === 'same')
+        const fwd = { ...same.fwd }, back = { ...same.back }
+        for (const sp of sames) {
+            let rx: RegExp
+            try { rx = new RegExp(this.spay_desugar(sp.re), this._spay_flags(sp)) }
+            catch { continue }
+            for (let i = 0; i < el.length; i++) {
+                const gms = [...gl[i].matchAll(rx)], ems = [...el[i].matchAll(rx)]
+                if (gms.length !== ems.length) continue          // the line won't reconstruct; spay_graft says so
+                for (let mi = 0; mi < ems.length; mi++) {
+                    const ng = ems[mi].length - 1
+                    const groups = ng > 0 ? Array.from({ length: ng }, (_, k) => k + 1) : [0]
+                    for (const grp of groups) {
+                        const e = ems[mi][grp], g = gms[mi][grp]
+                        if (e == null || g == null) continue
+                        if (fwd[e] != null && fwd[e] !== g) return null    // one old value, two new ones
+                        if (back[g] != null && back[g] !== e) return null  // two old values, one new one
+                        fwd[e] = g
+                        back[g] = e
+                    }
+                }
+            }
+        }
+        return { fwd, back }
     },
 
     // spay_classify_line — for the diff glow (Storui): does any spayer's `re` touch this

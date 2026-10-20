@@ -671,3 +671,43 @@ Remaining (the lean cache, the §10.2 vision):
      only: the NNN pre-load above is already correct, and a stale/absent sidecar must defer to NNN.
 - **Substitution forgive** — the `spay_graft_line`-style variant that substitutes stored `exp`
    tokens into got and re-diges against `The_step_dige`, the in-memory half of the sidecar path.
+
+---
+
+## 11. `tol:same` — digests that move together (2026-10-20)
+
+*Owner, 2026-10-20: a feature "that resolves flocks of diges that regularly change in the background of tests… but
+ isn't worth accepting on its own" — replace each dige respectively, requiring that each unique value changes all over the
+  place at once; match as usual, but also check which of the set of diges being talked about it is; any of them could be
+   changing at once.  They're prone to change, and we pseudo-mute them to the test suite.  The set is materialised by the EA
+    rules; it's expected to be consistent over the run.*
+
+**The problem it ends.**  A code digest (`%TheACode`/`%TheALayer` `dige:`, a GhostList read's dirlist `dige:`) sits in
+ many snaps.  Every edit to the code moves it, so every step showing it diverged — forgiven by the old `tol:any`
+  `dige:` spayer with a caveat, never re-baselined by `accept`, so each toy edit meant hand re-baselining every Athe Book
+   (≈25 steps across six Books).  And `tol:any` forgave ANY hex in ANY `dige:` — a real move passed as noise.
+
+**The rule.**  A spayer with `tol:'same'`.  The values it captures in the expected snaps are a set — each one a thing the
+ test talks about, wherever it appears.  At compare:
+- every expected value may become a new got value, several at once;
+- but as a **consistent substitution**: one old value → exactly one new value everywhere it occurs, and no two old values
+   → the same new one;
+- across the **whole run**: the map (`w.c.dige_same`, fresh in `story_drive`) carries from step to step, and an EXACT step
+   pins each value it holds to itself (`entropy_same_note`) — so a value kept at step 3 and moved at step 5 is a real move,
+    and the step that contradicts the run goes red.
+A chain is fine (`aa→bb` while `bb→cc`): each value replaced everywhere at once is all the rule asks.
+
+**Pseudo-muted.**  A step forgiven by `tol:same` substitution **alone** passes plainly ok — no caveat
+ (`entropy_forgive_muted`).  The snap on disk keeps the old digests (it still reads true: the same digests, different
+  values), so nothing needs re-recording when code changes.  A step that needed any other spayer gets its caveat as before.
+
+**Where.**  `Text.svelte`: `spay_same_pairs` (the check), `spay_graft(…, same?)` (runs it first, commits the pairs on a
+ forgive), `spay_within` (`same` tolerated, the check is snap-level).  `Hovercraft.svelte`: `entropy_forgive` passes the
+  run's map; `entropy_same_of`, `entropy_same_note`, `entropy_forgive_muted`.  `Story.svelte`: `story_drive` makes the map;
+   the inline check in `snap_step` notes exact steps and mutes; the GhostList read rule's spayer went `tol:any` →
+    `tol:same`.  ⚠ `collect_spayers` flattens every spayer out of its rule, so that "GhostList" spayer has always reached
+     EVERY `dige:` line in every snap — it is, in effect, the global digest rule.  Scoping spayers to their rule is a
+      separate fix.
+
+**Not yet.**  The pause path and the post-run sweep mute too since 2026-10-20 (`entropy_forgive_muted`), but neither has
+ been exercised live yet.  The headless `Story_cli.spec.ts` checks per snap (no run map).
