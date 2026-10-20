@@ -238,9 +238,7 @@ Work top to bottom.  Each item ends with its Book green (3 check runs, caveat 0,
   Stop a thread and write the question into §0.1's open list rather than guess anything the owner names or rules.
 
 1. ~~The toy's code apart from the routine's~~: done: ruled into its own file, `Ghost/A/AtheFishTesting.g` (§0.1), and `AthePondCode` re-recorded against it.
-2. **A code swap between turns** (`AthePondCodeSwap`): change the toy's code mid-run (a second variant, or a recompile) and
-    swear that the A's `%TheACode` changes only between turns.  **PROPOSED 2026-10-20, awaiting the owner's ruling** (below,
-     "The code swap — a proposal").  Not built.
+2. **CodePush** (`AthePondCodePush`): code pushed to the As that hold it, Story letting it through between steps — **BUILT 2026-10-20**, see "CodePush" below.
 3. **The Sunpit's base layer, prototyped gradually** — **first slice (order) BUILT 2026-10-20**, see "The Sunpit by hand —
     order" below (owner, 2026-10-20: *"prototype the base layer of what we can see
     Sunpit doing, gradually… you might get away with oa() and o() to build the illusion of some majestic Sunpit rule engine
@@ -261,38 +259,46 @@ Work top to bottom.  Each item ends with its Book green (3 check runs, caveat 0,
 **Don'ts for the loop:** never `release` a run (it tears H:Story down while the tab keeps drawing the dead Story face,
  so the owner can't open steps; that face staying clickable is its own open bug); before handing a Book back, print one
   `NNN.snap` and read it as the owner will (memory `w-means-w`); no method lookup or handler tables; no commits or staging;
-   oaths declare themselves when a Book is recorded or accepted (`story_declare_all`); no renaming of anything the owner named; `Ghost/Play` untouched; no changes to Story, Lies or the
-    relay; Housing/Stuff only with a §0.3 ledger row.
+   oaths declare themselves when a Book is recorded or accepted (`story_declare_all`); no renaming of anything the owner named; `Ghost/Play` untouched; no changes to Lies or the
+    relay; Housing/Stuff/Story only with a §0.3 ledger row (Story mediates CodePush, owner 2026-10-20).
 
-### The code swap — a proposal (loop item 2; rewritten 2026-10-20 after the owner's correction; nothing built)
+### CodePush (loop item 2; BUILT 2026-10-20, Book `AthePondCodePush`)
 
-*The first draft (per-A method objects over `Object.create(H)`) was withdrawn: it isolated code per A, which is not the
- posture.  The posture (owner): code is compiled centrally, hot-updated, and **pushed to the As that hold it**; it arrives
-  at each A **as an elvis that does a blank `think()`** (or more, as the A needs).*
+*Owner, 2026-10-20: code is compiled centrally, hot-updated, and **pushed to the As that hold it**; it arrives at each A
+ **as an elvis that does a blank `think()`** (or more, as the A needs).  The operation is called **CodePush**, and **Story
+  mediates how pushes come through a Book**.  (A first draft isolated code per A over `Object.create(H)`; withdrawn.)*
 
-**What already happens.**  A `.g` compiles to a `.go`; the tab hot-loads it; `Housing.ghostsHaunt` merges its methods
- onto the House and records which methods came from which file (`ghost_files`).  So the code is already updated
-  centrally.  Nobody is *told*: an A that runs that file doesn't hear that its code changed.
+```
+A:Athe_Tank
+  %TheACodePush:Ghost/A/AtheFishTesting.g   ← this file arrived; the A hasn't taken it in yet (one row per file,
+                                               however many times it arrives before it's let through)
+  %TheACodeTaken,count:2                    ← how many pushes this A has taken in
+  %TheACode:Athe_Tank,variant:plain,dige:…  ← re-stood by each push taken in
+```
 
-**What's missing: the push.**
-1. **Who holds a file.**  An A says which files it runs: its `%TheALayer` rows (the A's sense of where its code lives).
-2. **The arrival.**  When `ghostsHaunt` takes a file in, it hands the news to Theory (one call, one §0.3 ledger row).
-    Theory finds the As whose `%TheALayer` names that file, and posts each one an elvis.  As that don't hold the file
-     hear nothing.
-3. **The elvis.**  It re-stands the A's `%TheACode` (the new layer digest, and so a new chain digest), then a blank
-    `think()` so the A runs again on the new code.  More, later, as an A needs it (migrations, a re-read).
-4. **Between turns, for free.**  An elvis runs between ticks, never inside one, so the code change lands between turns
-    because of how it's delivered, not because of a rule we wrote.
+1. **Arrival.**  `Housing.ghostsHaunt` takes in every compiled `.g`; after the merge it calls `TheA_code_push(meta)` with
+    the file's `Ghostmeta_*` name (§0.3).  Theory walks every House's As; an A whose `%TheALayer` names that file gets a
+     `%TheACodePush` row.  An A that doesn't hold the file hears nothing.
+2. **Mediation.**  An A in a Story run (its House, or one above, has `sc.Run`) keeps the row.  Story, at the start of each
+    step (right after `run.c.step_n = n`), calls `TheA_code_pushes_let(Run)`, and every A in the run with a row waiting
+     takes it in.  Outside a run the push goes through at once.
+3. **Going through.**  `TheA_code_push_deliver` posts an elvis to the A's w; `e_TheA_code_arrive` stands the A's code again
+    from the files it names (a changed file → a new digest), counts it in `%TheACodeTaken`, drops the waiting rows, and
+     posts a blank `think` to the w.  Between turns for free: an elvis runs between ticks, never inside one.
 
-**The Book** (`AthePondCodeSwap`), two As: the tank (holding `AtheFishTesting.g`) and a bystander holding some other file.
- Mid-run, the routine makes the file arrive again (the same entry Housing calls).  Oaths:
-- the tank's `%TheACode` re-stands, and its `think` runs, on the next tick, not in the middle of one;
-- the bystander hears nothing;
-- an arrival that changes nothing changes nothing (same digest → same rows).
+**The Book** `AthePondCodePush` (6 steps): the tank and a bystander (`A:Athe_Bystander`, holding `Ghost/A/Theory.g`).
+ Step 3 announces the toy's file once (calling `TheA_code_push` as `ghostsHaunt` would); step 4 Story lets it through;
+  step 5 announces it twice; step 6 lets the two through.  Oaths: a push waits on the A until Story lets it through and the
+   bystander hears nothing; let through, it's taken in once and the same file stands the same code; two arrivals wait as one
+    push and are taken in once.  The elvis only thinks the tank, so the routine's witness also runs at the START of each
+     step to read what the last let-through did.
 
-**Open:** how the routine makes "a different version" arrive inside a Book.  The honest options are a real recompile from
- outside (not something a Book can do) or re-delivering the same file.  The first Book proves the routing and the timing
-  only; a real version change waits for a way to deliver one.
+**Open / next:**
+- A real version change inside a Book: the Book re-announces the same file, so the digest can't change.  Needs a way to
+   deliver a second version (owner).
+- "Or more": what an A does on arrival beyond a blank think (migrations, a re-read) — none needed yet.
+- A real recompile during a held (finished) run leaves a `%TheACodePush` row waiting forever on its As — the run will never
+   step again.  Harmless and honest, but it shows in a re-snap.
 
 ### The Sunpit by hand — order (loop item 3, first slice BUILT 2026-10-20, Book `AthePondSunpitPassOrder`)
 
@@ -433,14 +439,14 @@ Entries name their point by the **D identity** (the Se's first-sight id), not by
  convention).  Particle names all start `TheA` so one grep finds every one of them; they're deliberately cumbersome
   while unsure, and get shorter names once they've earned them.
 
-**Book names (owner, 2026-10-20):** `Athe`, then the toy, then what it proves: `AthePondCode`, later `AthePondCodeSwap`,
+**Book names (owner, 2026-10-20):** `Athe`, then the toy, then what it proves: `AthePondCode`, later `AthePondCodePush`,
  `AthePondWireSum`…  Ugly is fine if it informs.  The toy (`Athe_Tank`) lives in `AtheFishTesting.g` and is shared by the series;
   its name has an underscore so it can't be taken for a Book.
 
 The music app rests; these come first.  **Built: `AthePondCode`** (§0.2 above): the toy stands as an A and turns by hand,
  and the A carries the digest of the code loaded for it.  **Candidates**, each a later Book:
 
-1. **A code change lands between turns, never inside one** (`AthePondCodeSwap`; loop queue item 2).
+1. **A code change lands between turns, never inside one** (`AthePondCodePush`; loop queue item 2).
 2. **Unwatched work costs nothing**: between clock pulses the toy isn't visited at all (needs `%TheAWire`).
 3. **Order doesn't leak**: two toys with no wire between them, the same pulses in either order, identical snaps.
 4. **Counts are kept**: three step pulses make three turns (`sum:count`); three "fish changed" pulses make one heron
@@ -471,6 +477,7 @@ No Atheory adjustments yet.
 
 | date | where | what | why | read by | to undo |
 |---|---|---|---|---|---|
+| 2026-10-20 | the CodePush line at the end of `ghostsHaunt` (`if (meta) (this as any).TheA_code_push?.(meta)`) | after the merge, every compiled file that arrives is announced to Theory by its `Ghostmeta_*` name | CodePush: code compiles centrally and is pushed to the As that hold it; `ghostsHaunt` is the one place every compiled `.g` arrives | `Ghost/A/Theory.g` (`TheA_code_push`); Book `AthePondCodePush` | delete the line |
 | 2026-10-20 | `House.ghost_origin`, `House.ghost_files`, the `if (meta) {…}` block in `ghostsHaunt` | `ghostsHaunt` finds the one `Ghostmeta_*` key in each eaten hash and records, on the **top** House: `ghost_files[meta]` = the methods this load carried (replaced whole each load, so a deleted method leaves), and `ghost_origin[method] = meta` (the file that last defined it).  A hash with no `Ghostmeta_*` (a hand-written `.svelte` ghost) records nothing.  (The first version kept a `ghost_clobbers` log that only grew; replaced the same day.) | `H.ghosts` is flat, so nothing could say which code an actor runs or where a method came from.  Each compiled `.g` arrives as exactly one hash with exactly one `Ghostmeta_*`, which is also its digest: the one cheap place to learn it. | `Ghost/A/Theory.g` (`TheA_clobbers_stand`); Book `AthePondCode` | delete the two fields and the `if (meta) {…}` block; nothing else depends on them yet |
 | 2026-10-18 | `Wormhole_compose_app_tree` (AppTreeNav root), `Wormhole_mount_creds`, the serve wall (the `.jamsend` segment refusal), the import | the literal `'.jamsend'` became `APP_DATA_DIR` from `src/lib/app_data_dir.ts` | one spelling of the app's private corner; the serve wall and NodeWormholeNav's 0600 must agree on it (§ "The app's own storage") | — (same value) | inline the literal again; the value never changed |
 
@@ -478,6 +485,7 @@ No Atheory adjustments yet.
 
 | date | where | what | why |
 |---|---|---|---|
+| 2026-10-20 | `src/lib/O/Story.svelte`, the step seam right after `run.c.step_n = n` (`TheA_code_pushes_let`) | at the start of every step, the As in the run take in any code pushed to them while they waited | Story mediates how code comes through a Book (owner): a push to an A in a run waits on it as `%TheACodePush` until the next step, so a snap shows exactly when code changes |
 | 2026-10-20 | `src/lib/O/Story.svelte` (`story_declare_one`, `story_declare_all`; called in accept-all and on a new recording's completion) | every sworn sentence is declared into the toc when a Book is recorded or accepted; the old "only the human clicks" rule is gone (owner: *"you just need to know what you're doing"*) | swears were sitting sworn but ungated, so a sentence that stopped turning up went unnoticed |
 | 2026-10-20 | `scripts/LocalGen.spec.ts` | creates `gen/<dir>/` before writing, so a new `Ghost/<dir>/` compiles without a hand `mkdir` | `gen/` mirrors `Ghost/`; the relay's `gen_write` already did this (`relay.ts:997`), LocalGen didn't (met making `Ghost/A/`) |
 | 2026-10-19 | `src/service-worker.js` | a `.go` module the worker re-fetches asks with `?import`; cache bumped to `jamsend-shell-v2` | a worker's re-fetch arrives `Sec-Fetch-Dest: empty`, Vite then served raw `.go` source, the browser sniffed it as HTML, and every Creduler ghost failed on the music page |

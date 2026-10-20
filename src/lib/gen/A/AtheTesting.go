@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheTesting(): string { return 'd8fa0cb2e77526da~g1' },
+    Ghostmeta_Ghost_A_AtheTesting(): string { return '433579426cf080bc~g1' },
 
 // AtheTesting.g — Atheory's proof (Ghost/A/Theory.g; spec/Atheory_todo.md §0.2 "The first Atheory tests").
 //
@@ -274,6 +274,94 @@ AthePondSunpitFrontier_witness(w) {
     }
     if (this.AthePondSunpitPassOrder_rows(skip) === this.AthePondSunpitPassOrder_rows(pass)) {
         this.story_swear(w, 'a turn-start frontier that passes over what has left comes out the same as one taken at the start of each pass')
+    }
+},
+//#endregion
+
+//#region the test routine — Book AthePondCodePush
+
+// CodePush (Theory.g): the toy's file arrives again mid-run and is pushed to the A that holds it.  Story mediates: the push
+//  waits on the tank as a %TheACodePush row until the next step lets it through, then arrives as one elvis that stands the
+//   code again and thinks once.  A bystander A holding other code (Theory.g) hears nothing.  The same file arriving again
+//    stands the same rows — a real version change waits for a way to deliver one inside a Book.
+//  Step 2 stands both and takes turn 1; 3 the file arrives; 4 Story lets it through (and the tank turns); 5 it arrives
+//   twice; 6 Story lets the two through as one
+AthePondCodePush(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.AthePondCodePush_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// the witness runs before the step's work as well as after: an elvis lands on the tank alone, so what it did is read at
+//  the start of the step after
+async AthePondCodePush_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 6
+    let n = run?.c.step_n
+    this.AthePondCodePush_witness(w)
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.AthePondCodePush_stand(w)
+        if (n === 3) this.AthePondCodePush_arrive(w, 1)
+        if (n === 4) this.AthePondCodePush_turn(w)
+        if (n === 5) this.AthePondCodePush_arrive(w, 2)
+        if (n === 6) this.AthePondCodePush_turn(w)
+    }
+    this.AthePondCodePush_witness(w)
+
+},
+AthePondCodePush_stand(w) {
+    w.i({desc: 'stand the tank and a bystander holding other code — and take turn one'})
+    if (typeof this.TheA_stand !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
+        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
+        return
+    }
+    for (const name of ['Athe_Tank', 'Athe_Bystander']) {
+        let old = this.o({ A: name })[0]
+        if (old) this.drop(old)
+    }
+    this.AthePond_tank_stand({ name: 'Athe_Tank' })
+    let by = this.TheA_stand(this, 'Athe_Bystander', ['Ghost/A/Theory.g'])
+    by.i({ w: 'Athe_Bystander' })
+
+},
+// the toy's file arrives, as Housing.ghostsHaunt would announce it — `times` arrivals before Story lets any through
+AthePondCodePush_arrive(w, times) {
+    let said = times === 1 ? 'once' : times + ' times'
+    w.i({desc: `the toy file arrives ${said} — the push waits on the tank`})
+    let meta = this.Lang_ghostmeta_name('Ghost/A/AtheFishTesting.g')
+    for (let k = 0; k < times; k++) this.TheA_code_push(meta)
+
+},
+AthePondCodePush_turn(w) {
+    w.i({desc: 'Story lets the push through — and the tank takes one more turn'})
+    let tank = this.AthePondSunpitPassOrder_tank('Athe_Tank')
+    if (tank) this.Athe_Tank_turn(tank)
+
+},
+// the witness reads the two As' trees: what waits on each, what each has taken in, and the tank's code row
+AthePondCodePush_witness(w) {
+    let tank = this.o({ A: 'Athe_Tank' })[0]
+    let by = this.o({ A: 'Athe_Bystander' })[0]
+    if (!tank || !by) return
+    let n = this.c.run?.c.step_n ?? 0
+    let waiting = (A) => A.o({ TheACodePush: 1 }).map(p => p.sc.TheACodePush).join(' ')
+    let taken = (A) => A.o({ TheACodeTaken: 1 })[0]?.sc.count || 0
+    let code = tank.o({ TheACode: 'Athe_Tank' })[0]
+    let live = this.Lies_ghost_get('Ghost/A/AtheFishTesting.g')
+    let same = !!live && code?.sc.dige === this.TheA_digest(live) && code?.o({ TheALayer: 'Ghost/A/AtheFishTesting.g' })[0]?.sc.dige === live
+    if (n === 3 && waiting(tank) === 'Ghost/A/AtheFishTesting.g' && taken(tank) === 0 && !waiting(by) && !taken(by)) {
+        this.story_swear(w, 'a pushed file waits on the A that holds it until Story lets it through — an A holding other code hears nothing')
+    }
+    if (n >= 4 && n <= 5 && !waiting(tank) && taken(tank) === 1 && same && !taken(by)) {
+        this.story_swear(w, 'Story lets the push through at the next step — the A takes it in once and the same file stands the same code')
+    }
+    if (n === 5 && waiting(tank) === 'Ghost/A/AtheFishTesting.g' && taken(tank) === 1) {
+        this.story_swear(w, 'a file that arrives twice before Story lets it through waits as one push')
+    }
+    if (n >= 6 && !waiting(tank) && taken(tank) === 2 && same && !taken(by)) {
+        this.story_swear(w, 'two arrivals let through together are taken in once')
     }
 },
 //#endregion

@@ -678,6 +678,9 @@ export class House extends StorableHousing {
         for (const h of this.all_House) {
             Object.assign(h, this.ghosts)
         }
+        // CodePush: tell Atheory which file just arrived, so the As that hold it hear (Ghost/A/Theory.g TheA_code_push;
+        //  spec/Atheory_todo.md §0.3).  No-op until Theory.g is loaded, and for a hand-written ghost (no Ghostmeta_*).
+        if (meta) (this as any).TheA_code_push?.(meta)
         // this.tlog(`Got ghostsHaunt`)
         // Every haunt is an HMR (or initial mount): fresh code + its Ghostmeta dige is now live.
         //  Run the guaranteed reaction here, in the core path, rather than behind the optional

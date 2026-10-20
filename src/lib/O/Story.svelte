@@ -2427,6 +2427,9 @@
 
             run.c.step_n     = n
             run.c.began_step = now_in_seconds_with_ms()
+            // CodePush (Ghost/A/Theory.g): code that arrived for an A in this run has waited on the A; Story lets it
+            //  through here, between steps, so a Book sees exactly when code changes.  No-op until Theory.g is loaded.
+            ;(Run as any).TheA_code_pushes_let?.(Run)
             // settingoff: once before the first step — toc decoded, Run wired, Opt gifts given.
             if (n === 1 && !run.c.settled_off) {
                 run.c.settled_off = true

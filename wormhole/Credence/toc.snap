@@ -194,6 +194,7 @@ Waft:Credence
     Funkcion:Storying,of_Book:AthePondCode,born:2026-10-20,wire:no wire — the toy Athe_Tank turned by hand on the Run House,desc:an A arrives with the digest of its code — and the toy's eggs hatch on its fourth turn — one turn per step
     Funkcion:Storying,of_Book:AthePondSunpitPassOrder,born:2026-10-20,wire:no wire — three tanks with the same code turned together by hand,doc:Atheory_todo §0.2 (The Sunpit by hand — order),desc:a tank declares the order its turn takes (TheASunpit and TheAPass) — a heron that looks before the hatch comes a turn late — swapping eggs and fish changes nothing
     Funkcion:Storying,of_Book:AthePondSunpitFrontier,born:2026-10-20,wire:no wire — three heron-first tanks turned together by hand,doc:Atheory_todo §0.2 (The Sunpit by hand — the frontier),desc:a frontier taken at the start of the turn still holds the fish the heron just ate so they lay two eggs — passing over what has left makes it the same as the pass-start frontier
+    Funkcion:Storying,of_Book:AthePondCodePush,born:2026-10-20,wire:no wire — the toy file announced by hand as ghostsHaunt would,doc:Atheory_todo §0.2 (CodePush),desc:a pushed file waits on the A that holds it until Story lets it through at the next step — a bystander hears nothing — two arrivals are taken in once
   What:Misc,inline
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:GhoghoDrone
