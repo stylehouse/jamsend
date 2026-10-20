@@ -3,183 +3,98 @@ Snap:H
     A:AthePondLoop
       w:AthePondLoop
         req:wrangle,eternal,ok
-        WakeOrder:7,asked:Athe_Tank_P7 Athe_Tank_Q7,woke:Athe_Tank_Q7 Athe_Tank_P7
-        WakeOrder:8,asked:Athe_Tank_Q8 Athe_Tank_P8,woke:Athe_Tank_P8 Athe_Tank_Q8
-        WakeOrder:9,asked:Athe_Tank_P9 Athe_Tank_Q9,woke:Athe_Tank_P9 Athe_Tank_Q9
-        WakeOrder:10,asked:Athe_Tank_Q10 Athe_Tank_P10,woke:Athe_Tank_P10 Athe_Tank_Q10
+        FirstFish:7,at:Q and Q,age:18 18
     A:Athe_Tank_P7
-      TheACode:Athe_Tank,variant:plain,dige:a63e8329dc36d9e9
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:f211783ebf1fc3fc~g1
+      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
       w:Athe_Tank
         TheAWire:clock,wake:turn,sum:count
           TheAWoke,count=30,pulses=30
+        TheAOutlet:stream
+        NamesAs:P
         TheAWire:stream,from:Athe_Tank_Q7,wake:arrive,sum:count
         Turns,count=30
         TheASunpit:turn
           TheAPass:Egg
           TheAPass:Fish
           TheAPass:Heron
-        EggsNamed,count=30
-        TheALoop:Athe_Tank_P7 Athe_Tank_Q7
-        Fish:chub 29,born=28
-        Fish:rudd 30,born=28
+        EggsNamed,count=18
+        Fish:P tench 17,born=28
+        Fish:P dace 18,born=28
     A:Athe_Tank_Q7
-      TheACode:Athe_Tank,variant:plain,dige:a63e8329dc36d9e9
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:f211783ebf1fc3fc~g1
+      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
       w:Athe_Tank
         TheAWire:clock,wake:turn,sum:count
           TheAWoke,count=21,pulses=21
-        TheAWire:names,from:Athe_Tank_P7
         TheAWire:stream,from:Athe_Tank_P7,wake:arrive,sum:count
           TheAWoke,count=2,pulses=2
-        TheALoop:Athe_Tank_P7 Athe_Tank_Q7
+        NamesAs:Q
+        TheAOutlet:stream
         Turns,count=21
         TheASunpit:turn
           TheAPass:Egg
           TheAPass:Fish
           TheAPass:Heron
-        Fish:carp 3,born=4
-        Fish:trout 4,born=4
-        Fish:tench 7,born=13
-        Fish:dace 8,born=13
-        Fish:chub 9,born=16
-        Fish:rudd 10,born=16
-        Fish:carp 23,born=19
-        Fish:trout 24,born=19
-        Egg:roach 25,born=19
-        Egg:bream 26,born=19
-        Egg:tench 27,born=19
-        Egg:dace 28,born=19
-        Fish:minnow 1,born=3,came:Athe_Tank_P7
-        Fish:perch 2,born=3,came:Athe_Tank_P7
+        EggsNamed,count=12
+        Fish:Q minnow 1,born=4
+        Fish:Q perch 2,born=4
+        Fish:Q carp 3,born=13
+        Fish:Q trout 4,born=13
+        Fish:Q roach 5,born=16
+        Fish:Q bream 6,born=16
+        Fish:Q tench 7,born=19
+        Fish:Q dace 8,born=19
+        Egg:Q chub 9,born=19
+        Egg:Q rudd 10,born=19
+        Egg:Q minnow 11,born=19
+        Egg:Q perch 12,born=19
+        Fish:P minnow 1,born=3,came:Athe_Tank_P7
+        Fish:P perch 2,born=3,came:Athe_Tank_P7
     A:Athe_Tank_P8
-      TheACode:Athe_Tank,variant:plain,dige:a63e8329dc36d9e9
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:f211783ebf1fc3fc~g1
+      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
       w:Athe_Tank
         TheAWire:clock,wake:turn,sum:count
           TheAWoke,count=30,pulses=30
+        TheAOutlet:stream
+        NamesAs:P
         TheAWire:stream,from:Athe_Tank_Q8,wake:arrive,sum:count
-          TheAPulse,swims:minnow 1,age=19
-          TheAPulse,swims:perch 2,age=19
         Turns,count=30
         TheASunpit:turn
           TheAPass:Egg
           TheAPass:Fish
           TheAPass:Heron
-        EggsNamed,count=30
-        TheALoop:Athe_Tank_P8 Athe_Tank_Q8
-        Fish:carp 23,born=28
-        Fish:trout 24,born=28
+        EggsNamed,count=18
+        Fish:P tench 17,born=28
+        Fish:P dace 18,born=28
     A:Athe_Tank_Q8
-      TheACode:Athe_Tank,variant:plain,dige:a63e8329dc36d9e9
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:f211783ebf1fc3fc~g1
+      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
       w:Athe_Tank
         TheAWire:clock,wake:turn,sum:count
           TheAWoke,count=21,pulses=21
-        TheAWire:names,from:Athe_Tank_P8
         TheAWire:stream,from:Athe_Tank_P8,wake:arrive,sum:count
           TheAWoke,count=2,pulses=2
-        TheALoop:Athe_Tank_P8 Athe_Tank_Q8
+        NamesAs:Q
+        TheAOutlet:stream
         Turns,count=21
         TheASunpit:turn
           TheAPass:Egg
           TheAPass:Fish
           TheAPass:Heron
-        Fish:roach 5,born=4
-        Fish:bream 6,born=4
-        Fish:chub 19,born=13
-        Fish:rudd 20,born=13
-        Fish:minnow 21,born=16
-        Fish:perch 22,born=16
-        Fish:roach 25,born=19
-        Fish:bream 26,born=19
-        Egg:tench 27,born=19
-        Egg:dace 28,born=19
-        Egg:chub 29,born=19
-        Egg:rudd 30,born=19
-    A:Athe_Tank_P9
-      TheACode:Athe_Tank,variant:plain,dige:a63e8329dc36d9e9
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:f211783ebf1fc3fc~g1
-      w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
-          TheAWoke,count=30,pulses=30
-        TheAWire:stream,from:Athe_Tank_Q9,wake:arrive,sum:count,lag
-          TheAPulse,swims:minnow 1,age=19
-          TheAPulse,swims:perch 2,age=19
-        Turns,count=30
-        TheASunpit:turn
-          TheAPass:Egg
-          TheAPass:Fish
-          TheAPass:Heron
-        EggsNamed,count=30
-        Fish:carp 23,born=28
-        Fish:trout 24,born=28
-    A:Athe_Tank_Q9
-      TheACode:Athe_Tank,variant:plain,dige:a63e8329dc36d9e9
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:f211783ebf1fc3fc~g1
-      w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
-          TheAWoke,count=21,pulses=21
-        TheAWire:names,from:Athe_Tank_P9
-        TheAWire:stream,from:Athe_Tank_P9,wake:arrive,sum:count
-          TheAWoke,count=2,pulses=2
-        Turns,count=21
-        TheASunpit:turn
-          TheAPass:Egg
-          TheAPass:Fish
-          TheAPass:Heron
-        Fish:roach 5,born=4
-        Fish:bream 6,born=4
-        Fish:chub 19,born=13
-        Fish:rudd 20,born=13
-        Fish:minnow 21,born=16
-        Fish:perch 22,born=16
-        Fish:roach 25,born=19
-        Fish:bream 26,born=19
-        Egg:tench 27,born=19
-        Egg:dace 28,born=19
-        Egg:chub 29,born=19
-        Egg:rudd 30,born=19
-    A:Athe_Tank_P10
-      TheACode:Athe_Tank,variant:plain,dige:a63e8329dc36d9e9
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:f211783ebf1fc3fc~g1
-      w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
-          TheAWoke,count=30,pulses=30
-        TheAWire:stream,from:Athe_Tank_Q10,wake:arrive,sum:count,lag
-          TheAPulse,swims:minnow 1,age=19
-          TheAPulse,swims:perch 2,age=19
-        Turns,count=30
-        TheASunpit:turn
-          TheAPass:Egg
-          TheAPass:Fish
-          TheAPass:Heron
-        EggsNamed,count=30
-        Fish:carp 23,born=28
-        Fish:trout 24,born=28
-    A:Athe_Tank_Q10
-      TheACode:Athe_Tank,variant:plain,dige:a63e8329dc36d9e9
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:f211783ebf1fc3fc~g1
-      w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
-          TheAWoke,count=21,pulses=21
-        TheAWire:names,from:Athe_Tank_P10
-        TheAWire:stream,from:Athe_Tank_P10,wake:arrive,sum:count
-          TheAWoke,count=2,pulses=2
-        Turns,count=21
-        TheASunpit:turn
-          TheAPass:Egg
-          TheAPass:Fish
-          TheAPass:Heron
-        Fish:roach 5,born=4
-        Fish:bream 6,born=4
-        Fish:chub 19,born=13
-        Fish:rudd 20,born=13
-        Fish:minnow 21,born=16
-        Fish:perch 22,born=16
-        Fish:roach 25,born=19
-        Fish:bream 26,born=19
-        Egg:tench 27,born=19
-        Egg:dace 28,born=19
-        Egg:chub 29,born=19
-        Egg:rudd 30,born=19
+        EggsNamed,count=12
+        Fish:Q minnow 1,born=4
+        Fish:Q perch 2,born=4
+        Fish:Q carp 3,born=13
+        Fish:Q trout 4,born=13
+        Fish:Q roach 5,born=16
+        Fish:Q bream 6,born=16
+        Fish:Q tench 7,born=19
+        Fish:Q dace 8,born=19
+        Egg:Q chub 9,born=19
+        Egg:Q rudd 10,born=19
+        Egg:Q minnow 11,born=19
+        Egg:Q perch 12,born=19
+        Fish:P minnow 1,born=3,came:Athe_Tank_P8
+        Fish:P perch 2,born=3,came:Athe_Tank_P8

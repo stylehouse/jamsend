@@ -1,7 +1,5 @@
 Snap:H
   H:AthePondStream,Run
     A:AthePondStream
-      self,round	{"mung":["age"]}
       w:AthePondStream
-        self,round	{"mung":["age"]}
         req:wrangle,eternal,ok

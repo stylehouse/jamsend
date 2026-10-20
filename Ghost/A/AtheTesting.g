@@ -333,13 +333,13 @@ AthePondCodePush_witness(w):
 //#endregion
 
 //#region the test routine — Book AthePondWireSum
-
-// two tanks wired the same but for how their fish wire sums (the scheduler by hand, Theory's %TheAWire): a clock wire wakes a
-//  turn once per pulse (sum:count); a fish wire, pulsed each turn the fish change, wakes the heron — once for however many
-//   piled up (sum:latest) in one tank, once per pulse (sum:count) in the other.  Neither tank has a heron pass in its turn.
-//  Step 2 stands them and wakes one clock pulse (turn 1); step 3 leaves three clock pulses waiting; step 4 wakes them
-//   (turn 4); step 5 sends eighteen more and wakes them (turn 22), four fish-changed pulses pile up on the way (simulated
-//    first, scratchpad wiresim.mjs) — the latest-summed heron arrives and eats nothing, the count-summed one arrives and eats six
+// two tanks wired the same but for how their fish wire sums: a clock wire wakes a turn once per pulse (sum:count); a fish
+//  wire wakes the heron — once for however many piled up (sum:latest) in one tank, once per pulse (sum:count) in the other.
+//   Neither tank has a heron pass in its turn.  A turn whose fish change SENDS on the fish wire, so the pulse lands at the
+//    boundary and wakes the heron at the tank's next move, never inside the move that sent it.
+//  Step 2 stands them and wakes one clock pulse (turn 1); step 3 leaves three clock pulses waiting; step 4 wakes them (turn 4:
+//   the eggs hatch, one fish pulse lands); step 5 eighteen more and a wake (turn 22: the waiting pulse wakes the heron, and
+//    more land); step 6 a wake with nothing on the clock (the piled-up pulses wake the heron, once or once each)
 AthePondWireSum(A,w):
     w oai %req:wrangle,eternal
         await &AthePondWireSum_drive,w,req
@@ -347,7 +347,7 @@ AthePondWireSum(A,w):
 
 async AthePondWireSum_drive(w, req):
     let run = this.c.run
-    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 5
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 6
     let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
@@ -355,6 +355,7 @@ async AthePondWireSum_drive(w, req):
         if (n === 3) this.AthePondWireSum_pulse(w, 3)
         if (n === 4) this.AthePondWireSum_wake(w)
         if (n === 5) this.AthePondWireSum_pulse_wake(w, 18)
+        if (n === 6) this.AthePondWireSum_wake(w)
     }
     this.AthePondWireSum_witness(w)
 
@@ -370,7 +371,7 @@ AthePondWireSum_tanks():
 
 AthePondWireSum_stand(w):
     i %desc:'stand two wired tanks that differ only in how their fish wire sums — and wake one clock pulse'
-    if (typeof this.TheA_stand !== 'function' || typeof this.Athe_Tank_wake !== 'function') {
+    if (typeof this.TheA_stand !== 'function' || typeof this.TheA_move !== 'function') {
         w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
         return
     }
@@ -407,22 +408,20 @@ AthePondWireSum_witness(w):
     let wire = (tank, name) => tank.o({ TheAWire: name })[0]
     let waiting = (tank, name) => wire(tank, name)?.o({ TheAPulse: 1 }).length || 0
     let woke = (tank, name) => wire(tank, name)?.o({ TheAWoke: 1 })[0]?.sc || {}
-    let ate = (tank) => tank.o({ Heron: 1 })[0]?.o({ Ate: 1 }).length ?? -1
-    if (n === 3 && turns(latest) === 1 && waiting(latest, 'clock') === 3 && turns(counted) === 1 && waiting(counted, 'clock') === 3) {
+    let both = (fn) => fn(latest) && fn(counted)
+    if (n === 3 && both(t => turns(t) === 1 && waiting(t, 'clock') === 3)) {
         this.story_swear(w, 'clock pulses wait on the wire until the tank is woken — they turn nothing by themselves')
     }
-    if (n === 4 && turns(latest) === 4 && turns(counted) === 4 && !waiting(latest, 'clock') && woke(latest, 'clock').count === 4) {
+    if (n === 4 && both(t => turns(t) === 4 && !waiting(t, 'clock') && woke(t, 'clock').count === 4)) {
         this.story_swear(w, 'three clock pulses woken together make three turns — a wire summed by count runs once per pulse')
+    }
+    if (n === 4 && both(t => waiting(t, 'fish') === 1 && !t.o({ Heron: 1 }).length && !woke(t, 'fish').count)) {
+        this.story_swear(w, 'a turn that changes the fish sends a pulse — it lands on the fish wire at the boundary and waits for the next move')
     }
     let l = woke(latest, 'fish')
     let c = woke(counted, 'fish')
-    if (n === 5 && turns(latest) === 22 && l.pulses === 5 && l.count === 2 && ate(latest) === 0) {
-        this.story_swear(w, 'four fish-changed pulses piled up wake a heron summed to the latest once — it arrives and eats nothing yet')
-    }
-    // six eaten, read as six fewer fish than the other tank: a heron keeps only its last five meals (Athe_Tank_heron)
-    let fish = (tank) => tank.o({ Fish: 1 }).length
-    if (n === 5 && turns(counted) === 22 && c.pulses === 5 && c.count === 5 && fish(latest) - fish(counted) === 6 && ate(counted) === 5) {
-        this.story_swear(w, 'the same pulses summed by count wake the heron once each — it arrives and eats six fish at once')
+    if (n === 6 && l.pulses > 2 && l.pulses === c.pulses && l.count === 2 && c.count === c.pulses) {
+        this.story_swear(w, 'pulses piled up on the fish wire wake a heron summed to the latest once — and one summed by count once per pulse')
     }
 //#endregion
 
@@ -511,12 +510,11 @@ AthePondWakeOrder_witness(w):
 //#endregion
 
 //#region the test routine — Book AthePondWireOrder
-
-// the fix for AthePondWakeOrder's leak: what two tanks share is declared as a wire.  Each Q names its eggs from its P
-//  through %TheAWire:names,from:<P> — and Athe_Tanks_wake orders a batch along wires, so the tank a wire comes from wakes
-//   first, whichever order it was asked in.  Pair 5 is asked P then Q, pair 6 Q then P; both come out the same.
-//  Step 2 stands them and wakes one clock pulse each (turn 1); step 3 eight more (turn 9).  The routine notes each
-//   batch's asked and actual order on its own world (%WakeOrder), so the snap shows the reordering
+// stopping between moves changes nothing.  A batch is moves then the boundary; a move sees only its own rows and its inbox,
+//  and what it sends waits in its outbox until the boundary.  So Story may pause between the moves of a batch for as long as
+//   it likes.  Two pairs, each P streaming into Q (P stood nine turns ahead, tagged names): pair 5 is woken whole every step;
+//    pair 6's crossing batch is taken one move per Story step — P moves (step 3), Q moves (step 4: P's two old fish sit in P's
+//     outbox), the boundary (step 5).  Step 6 wakes both pairs whole once more, in opposite orders, and the fish arrive
 AthePondWireOrder(A,w):
     w oai %req:wrangle,eternal
         await &AthePondWireOrder_drive,w,req
@@ -524,78 +522,109 @@ AthePondWireOrder(A,w):
 
 async AthePondWireOrder_drive(w, req):
     let run = this.c.run
-    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 3
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 6
     let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) this.AthePondWireOrder_stand(w)
-        if (n === 3) this.AthePondWireOrder_wake(w, 8)
+        if (n === 3) this.AthePondWireOrder_three(w)
+        if (n === 4) this.AthePondWireOrder_four(w)
+        if (n === 5) this.AthePondWireOrder_five(w)
+        if (n === 6) this.AthePondWireOrder_six(w)
     }
     this.AthePondWireOrder_witness(w)
 
-// each pair in the order it is asked to wake
-AthePondWireOrder_pairs():
-    return [
-        { pair: '5', asked: ['Athe_Tank_P5', 'Athe_Tank_Q5'] },
-        { pair: '6', asked: ['Athe_Tank_Q6', 'Athe_Tank_P6'] },
-    ]
+// a P streaming into a Q: P nine turns ahead, both on clocks, names tagged so a fish that crosses keeps a name nobody else has
+AthePond_stream_pair(P_name, Q_name, back):
+    for (const name of [P_name, Q_name]) {
+        let old = this.o({ A: name })[0]
+        if (old) this.drop(old)
+    }
+    let P = this.TheA_stand(this, P_name, ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
+    P.i({ TheAWire: 'clock', wake: 'turn', sum: 'count' })
+    P.i({ TheAOutlet: 'stream' })
+    P.i({ NamesAs: 'P' })
+    if (back) P.i({ TheAWire: 'stream', from: Q_name, wake: 'arrive', sum: 'count' })
+    this.AthePond_clock(P, 9)
+    this.Athe_Tank_wake(P)
+    let Q = this.TheA_stand(this, Q_name, ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
+    Q.i({ TheAWire: 'clock', wake: 'turn', sum: 'count' })
+    Q.i({ TheAWire: 'stream', from: P_name, wake: 'arrive', sum: 'count' })
+    Q.i({ NamesAs: 'Q' })
+    if (back) Q.i({ TheAOutlet: 'stream' })
+
+// n clock pulses on each of these tanks
+AthePond_clocks(names, n):
+    for (const name of names) this.AthePond_clock(this.Athe_Tank_of(name), n)
 
 AthePondWireOrder_stand(w):
-    i %desc:'stand two pairs whose Q names its eggs from its P through a wire — and wake each pair in its asked order'
-    if (typeof this.TheA_stand !== 'function' || typeof this.Athe_Tanks_wake !== 'function') {
+    i %desc:'stand two pairs — P streaming into Q nine turns behind — and wake each pair whole'
+    if (typeof this.TheA_stand !== 'function' || typeof this.TheA_boundary !== 'function') {
         w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
         return
     }
-    for (const p of this.AthePondWireOrder_pairs()) {
-        for (const name of p.asked) {
-            let old = this.o({ A: name })[0]
-            if (old) this.drop(old)
-            let A = this.TheA_stand(this, name, ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank')
-            let tank = A.i({ w: 'Athe_Tank' })
-            tank.i({ TheAWire: 'clock', wake: 'turn', sum: 'count' })
-            if (name.includes('_Q')) tank.i({ TheAWire: 'names', from: name.replace('_Q', '_P') })
-        }
-    }
-    this.AthePondWireOrder_wake(w, 1)
-
-AthePondWireOrder_wake(w, n):
-    if (n > 1) {
-        i %desc:`${n} more clock pulses — each pair woken along its wire`
-    }
-    for (const p of this.AthePondWireOrder_pairs()) {
-        for (const name of p.asked) this.AthePond_clock(this.AthePondSunpitPassOrder_tank(name), n)
-        let order = this.Athe_Tanks_wake(p.asked)
-        w.oai({ WakeOrder: p.pair }, { asked: p.asked.join(' '), woke: order.join(' ') })
+    for (const k of ['5', '6']) {
+        this.AthePond_stream_pair('Athe_Tank_P' + k, 'Athe_Tank_Q' + k)
+        this.AthePond_clocks(['Athe_Tank_P' + k, 'Athe_Tank_Q' + k], 1)
+        this.Athe_Tanks_wake(['Athe_Tank_P' + k, 'Athe_Tank_Q' + k])
     }
 
-// the witness compares pair 5 with pair 6, tank by tank (each Q's names wire says which P, so it's left out)
+AthePondWireOrder_three(w):
+    i %desc:'12 clock pulses each — pair 5 woken whole and in pair 6 only P moves'
+    this.AthePond_clocks(['Athe_Tank_P5', 'Athe_Tank_Q5', 'Athe_Tank_P6', 'Athe_Tank_Q6'], 12)
+    this.Athe_Tanks_wake(['Athe_Tank_P5', 'Athe_Tank_Q5'])
+    this.Athe_Tank_move('Athe_Tank_P6')
+
+AthePondWireOrder_four(w):
+    i %desc:'pair 6 — Q moves while what P sent waits in its outbox'
+    this.Athe_Tank_move('Athe_Tank_Q6')
+
+AthePondWireOrder_five(w):
+    i %desc:'pair 6 — the boundary'
+    this.TheA_boundary(['Athe_Tank_P6', 'Athe_Tank_Q6'])
+
+AthePondWireOrder_six(w):
+    i %desc:'one clock pulse each — pair 5 woken Q first and pair 6 P first'
+    this.AthePond_clocks(['Athe_Tank_P5', 'Athe_Tank_Q5', 'Athe_Tank_P6', 'Athe_Tank_Q6'], 1)
+    this.Athe_Tanks_wake(['Athe_Tank_Q5', 'Athe_Tank_P5'])
+    this.Athe_Tanks_wake(['Athe_Tank_P6', 'Athe_Tank_Q6'])
+
+// one tank as rows, its pair's names written plain, so the two pairs compare
+AthePond_pair_rows(name, pair):
+    let rows = this.AthePondSunpitPassOrder_rows(this.Athe_Tank_of(name))
+    for (const [from, to] of pair) rows = rows.split(from).join(to)
+    return rows
+
 AthePondWireOrder_witness(w):
     let n = this.c.run?.c.step_n ?? 0
-    if (n !== 3) return
-    let names = ['P5', 'Q5', 'P6', 'Q6']
-    let tanks = {}
-    for (const k of names) tanks[k] = this.AthePondSunpitPassOrder_tank('Athe_Tank_' + k)
-    if (names.some(k => !tanks[k] || tanks[k].o({ Turns: 1 })[0]?.sc.count !== 9)) return
-    let rows = (k) => this.AthePondSunpitPassOrder_rows(tanks[k]).split('\n').filter(l => !l.includes('"names"')).join('\n')
-    let six = w.o({ WakeOrder: '6' })[0]?.sc
-    if (six?.asked === 'Athe_Tank_Q6 Athe_Tank_P6' && six?.woke === 'Athe_Tank_P6 Athe_Tank_Q6') {
-        this.story_swear(w, 'a tank holding a wire from another wakes after it — whatever order the two were asked in')
+    let P6 = this.Athe_Tank_of('Athe_Tank_P6')
+    let Q6 = this.Athe_Tank_of('Athe_Tank_Q6')
+    if (!P6 || !Q6) return
+    let came = (t) => t.o({ Fish: 1 }).filter(f => f.sc.came).length
+    if (n === 4 && this.TheA_outbox(P6).length === 2 && !Q6.o({ TheAWire: 'stream' })[0]?.o({ TheAPulse: 1 }).length && !came(Q6)) {
+        this.story_swear(w, 'between moves what a tank sent waits in its own outbox — nobody hears it before the boundary')
     }
-    if (rows('P5') === rows('P6') && rows('Q5') === rows('Q6')) {
-        this.story_swear(w, 'two tanks sharing a name counter through a wire come out the same whichever was asked to wake first')
+    let same = () => {
+        let five = [['Athe_Tank_P5', 'P'], ['Athe_Tank_Q5', 'Q']]
+        let six = [['Athe_Tank_P6', 'P'], ['Athe_Tank_Q6', 'Q']]
+        return this.AthePond_pair_rows('Athe_Tank_P5', five) === this.AthePond_pair_rows('Athe_Tank_P6', six)
+            && this.AthePond_pair_rows('Athe_Tank_Q5', five) === this.AthePond_pair_rows('Athe_Tank_Q6', six)
+    }
+    if (n === 5 && same()) {
+        this.story_swear(w, 'a batch taken one move at a time — Story pausing between the moves — comes out the same as one taken whole')
+    }
+    if (n === 6 && same() && came(Q6) === 2) {
+        this.story_swear(w, 'woken in opposite orders the two pairs still come out the same — the fish arrive in both')
     }
 //#endregion
 
 //#region the test routine — Book AthePondStream
-
-// a pulse that carries something: a stream wire.  Q holds %TheAWire:stream,from:P — a fish too old for P swims down it
-//  instead of leaving for good, one pulse carrying its name and its age.  The tanks keep their own clocks — P is stood
-//   nine turns ahead of Q — so what crosses is the fish's age, and it is born again on Q's clock (Athe_Tank_arrive).
-//    Q also names its eggs from P (the names wire), so no fish in either tank shares a name.  Each batch is asked Q then P;
-//     the wires order it P first, so a fish P lets go is in Q the same wake.
-//  Step 2 stands P and turns it nine turns alone, then stands Q and wakes both (P 10, Q 1); step 3 eleven pulses each
-//   (P 21, Q 12: nothing has crossed); step 4 one (P 22: its first two fish are eighteen and swim down — Q 13); step 5
-//    one more (Q 14: the two are nineteen by Q's clock and leave it, though Q's own first fish are ten)
+// a pulse that carries something: P has a stream outlet and Q a wire from it.  A fish too old for P is sent down it with its
+//  name and its age, lands on Q's wire at the boundary, and arrives at Q's next move.  The tanks keep their own clocks — P is
+//   stood nine turns ahead — so what crosses is the fish's age, and it is born again on Q's clock (Athe_Tank_arrive).
+//  Step 2 stands the pair (P 10, Q 1); step 3 eleven pulses (P 21, Q 12: nothing has crossed); step 4 one (P 22: its first two
+//   fish are eighteen, sent, waiting on Q's wire); step 5 one (Q 13 then they arrive); step 6 one (Q 14: they are nineteen by
+//    Q's clock and leave it, though Q's own first fish are ten)
 AthePondStream(A,w):
     w oai %req:wrangle,eternal
         await &AthePondStream_drive,w,req
@@ -603,69 +632,56 @@ AthePondStream(A,w):
 
 async AthePondStream_drive(w, req):
     let run = this.c.run
-    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 5
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 6
     let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) this.AthePondStream_stand(w)
         if (n === 3) this.AthePondStream_wake(w, 11)
-        if (n === 4) this.AthePondStream_wake(w, 1)
-        if (n === 5) this.AthePondStream_wake(w, 1)
+        if (n >= 4) this.AthePondStream_wake(w, 1)
     }
     this.AthePondStream_witness(w)
 
 AthePondStream_stand(w):
-    i %desc:'stand P and turn it nine turns alone — then stand Q downstream of it, and wake both'
-    if (typeof this.TheA_stand !== 'function' || typeof this.Athe_Tank_arrive !== 'function') {
+    i %desc:'stand P nine turns ahead with Q downstream of it — and wake both'
+    if (typeof this.TheA_stand !== 'function' || typeof this.TheA_boundary !== 'function') {
         w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
         return
     }
-    for (const name of ['Athe_Tank_P', 'Athe_Tank_Q']) {
-        let old = this.o({ A: name })[0]
-        if (old) this.drop(old)
-    }
-    let P = this.TheA_stand(this, 'Athe_Tank_P', ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
-    P.i({ TheAWire: 'clock', wake: 'turn', sum: 'count' })
-    this.AthePond_clock(P, 9)
-    this.Athe_Tank_wake(P)
-    let Q = this.TheA_stand(this, 'Athe_Tank_Q', ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
-    Q.i({ TheAWire: 'clock', wake: 'turn', sum: 'count' })
-    Q.i({ TheAWire: 'names', from: 'Athe_Tank_P' })
-    Q.i({ TheAWire: 'stream', from: 'Athe_Tank_P', wake: 'arrive', sum: 'count' })
+    this.AthePond_stream_pair('Athe_Tank_P', 'Athe_Tank_Q')
     this.AthePondStream_wake(w, 1)
 
-// n clock pulses on each tank, then the pair woken — asked Q first, woken along the wires
+// n clock pulses on each tank, then one batch, asked Q first (it can't matter)
 AthePondStream_wake(w, n):
     if (n > 1) {
-        i %desc:`${n} clock pulses each — the pair woken along its wires`
+        i %desc:`${n} clock pulses each — one batch`
     } else if (this.c.run?.c.step_n > 2) {
-        i %desc:'one clock pulse each — the pair woken along its wires'
+        i %desc:'one clock pulse each — one batch'
     }
-    let asked = ['Athe_Tank_Q', 'Athe_Tank_P']
-    for (const name of asked) this.AthePond_clock(this.AthePondSunpitPassOrder_tank(name), n)
-    this.Athe_Tanks_wake(asked)
+    this.AthePond_clocks(['Athe_Tank_Q', 'Athe_Tank_P'], n)
+    this.Athe_Tanks_wake(['Athe_Tank_Q', 'Athe_Tank_P'])
 
-// fish(tank, k): the fish rows; came: those that swam down from P
 AthePondStream_witness(w):
     let n = this.c.run?.c.step_n ?? 0
-    let P = this.AthePondSunpitPassOrder_tank('Athe_Tank_P')
-    let Q = this.AthePondSunpitPassOrder_tank('Athe_Tank_Q')
+    let P = this.Athe_Tank_of('Athe_Tank_P')
+    let Q = this.Athe_Tank_of('Athe_Tank_Q')
     if (!P || !Q) return
     let turns = (t) => t.o({ Turns: 1 })[0]?.sc.count || 0
     let came = Q.o({ Fish: 1 }).filter(f => f.sc.came === 'Athe_Tank_P')
     let stream = Q.o({ TheAWire: 'stream' })[0]
-    let woke = stream?.o({ TheAWoke: 1 })[0]?.sc
-    if (n === 3 && turns(P) === 21 && turns(Q) === 12 && !woke && !came.length) {
+    let waiting = stream?.o({ TheAPulse: 1 }) || []
+    let first = ['P minnow 1', 'P perch 2']
+    if (n === 3 && turns(P) === 21 && turns(Q) === 12 && !waiting.length && !stream?.o({ TheAWoke: 1 }).length && !came.length) {
         this.story_swear(w, 'a stream carries nothing while the fish upstream are young — the tank downstream holds only its own')
     }
-    if (n === 4 && turns(P) === 22 && turns(Q) === 13 && woke?.pulses === 2 && came.length === 2
-        && came.every(f => !P.o({ Fish: f.sc.Fish }).length)) {
-        this.story_swear(w, 'a fish too old for one tank swims down the stream into the next — one pulse each — and is gone from the first')
+    if (n === 4 && turns(P) === 22 && waiting.length === 2 && waiting.every(p => first.includes(p.sc.swims) && p.sc.age === 18)
+        && first.every(name => !P.o({ Fish: name }).length) && !came.length) {
+        this.story_swear(w, 'a fish too old for one tank is sent down the stream — gone from the first and waiting on the wire into the next')
     }
-    if (n === 4 && came.length === 2 && came.every(f => turns(Q) - f.sc.born === 18)) {
+    if (n === 5 && turns(Q) === 14 && came.length === 2 && came.every(f => turns(Q) - f.sc.born === 18 && f.sc.born < 0)) {
         this.story_swear(w, 'a fish keeps its age crossing to a tank on another clock — born on that clock before its first turn')
     }
-    if (n === 5 && turns(Q) === 14 && !came.length && woke?.pulses === 2) {
+    if (n === 6 && turns(Q) === 15 && !came.length && stream?.o({ TheAWoke: 1 })[0]?.sc.pulses === 2) {
         let own = Q.o({ Fish: 1 }).map(f => turns(Q) - f.sc.born)
         if (own.length && Math.max(...own) < 18) {
             this.story_swear(w, 'the old fish leave the tank downstream on its next turn — while its own oldest are far younger')
@@ -674,14 +690,10 @@ AthePondStream_witness(w):
 //#endregion
 
 //#region the test routine — Book AthePondLoop
-
-// a loop of wires: P's old fish swim down to Q (%TheAWire:stream,from:P on Q), and Q's back up to P (the same, from:Q, on
-//  P).  A loop can't be ordered — each tank waits on the other — so Athe_Tanks_wake's visit stops where it started and the
-//   batch wakes in whatever order it was asked: the loop leaks it.  A wire marked lag:1 doesn't order the batch, and what
-//    comes down it waits for the next wake (the receiving tank was woken first), as a register breaks a loop in a circuit.
-//  Four pairs, P stood nine turns ahead of Q each time: 7 and 8 with no lag, asked P-first and Q-first; 9 and 10 with
-//   lag:1 on the wire back into P, asked the same two ways.  Athe_Tanks_wake marks the tanks of a lagless loop %TheALoop.  Step 2 stands them (P 10, Q 1); step 3 twelve pulses (P 22:
-//    its first two fish are old and go down to Q); step 4 eight more (P 30 — they have come back, and gone again)
+// a loop of wires: each tank streams into the other.  With the boundary there's nothing to order — no move sees another move
+//  of its batch — so a loop is simply two batches round.  Pair 7 is woken P first, pair 8 Q first, every batch; P stood nine
+//   turns ahead of Q, names tagged.  Step 2 stands them (P 10, Q 1); step 3 twelve pulses (P 22: its first two fish are old
+//    and go down to Q); step 4 eight more (P 30 — they have been round)
 AthePondLoop(A,w):
     w oai %req:wrangle,eternal
         await &AthePondLoop_drive,w,req
@@ -701,74 +713,55 @@ async AthePondLoop_drive(w, req):
 
 AthePondLoop_pairs():
     return [
-        { pair: '7', P: 'Athe_Tank_P7', Q: 'Athe_Tank_Q7', lag: false, asked: ['Athe_Tank_P7', 'Athe_Tank_Q7'] },
-        { pair: '8', P: 'Athe_Tank_P8', Q: 'Athe_Tank_Q8', lag: false, asked: ['Athe_Tank_Q8', 'Athe_Tank_P8'] },
-        { pair: '9', P: 'Athe_Tank_P9', Q: 'Athe_Tank_Q9', lag: true, asked: ['Athe_Tank_P9', 'Athe_Tank_Q9'] },
-        { pair: '10', P: 'Athe_Tank_P10', Q: 'Athe_Tank_Q10', lag: true, asked: ['Athe_Tank_Q10', 'Athe_Tank_P10'] },
+        { pair: '7', P: 'Athe_Tank_P7', Q: 'Athe_Tank_Q7', asked: ['Athe_Tank_P7', 'Athe_Tank_Q7'] },
+        { pair: '8', P: 'Athe_Tank_P8', Q: 'Athe_Tank_Q8', asked: ['Athe_Tank_Q8', 'Athe_Tank_P8'] },
     ]
 
 AthePondLoop_stand(w):
-    i %desc:'stand four looped pairs with P nine turns ahead of Q — two with a lag on the wire back — and wake each as asked'
-    if (typeof this.TheA_stand !== 'function' || typeof this.Athe_Tank_arrive !== 'function') {
+    i %desc:'stand two looped pairs with P nine turns ahead of Q — and wake each in its own order'
+    if (typeof this.TheA_stand !== 'function' || typeof this.TheA_boundary !== 'function') {
         w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
         return
     }
-    for (const p of this.AthePondLoop_pairs()) {
-        for (const name of [p.P, p.Q]) {
-            let old = this.o({ A: name })[0]
-            if (old) this.drop(old)
-        }
-        let P = this.TheA_stand(this, p.P, ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
-        P.i({ TheAWire: 'clock', wake: 'turn', sum: 'count' })
-        P.i({ TheAWire: 'stream', from: p.Q, wake: 'arrive', sum: 'count', ...(p.lag ? { lag: 1 } : {}) })
-        this.AthePond_clock(P, 9)
-        this.Athe_Tank_wake(P)
-        let Q = this.TheA_stand(this, p.Q, ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
-        Q.i({ TheAWire: 'clock', wake: 'turn', sum: 'count' })
-        Q.i({ TheAWire: 'names', from: p.P })
-        Q.i({ TheAWire: 'stream', from: p.P, wake: 'arrive', sum: 'count' })
-    }
+    for (const p of this.AthePondLoop_pairs()) this.AthePond_stream_pair(p.P, p.Q, true)
     this.AthePondLoop_wake(w, 1)
 
-// n clock pulses on each tank of each pair, then the pair woken in its asked order — the order it actually woke is noted
+// n clock pulses on each tank, then each pair's batch in its asked order
 AthePondLoop_wake(w, n):
     if (n > 1) {
-        i %desc:`${n} clock pulses each — each pair woken in its asked order`
+        i %desc:`${n} clock pulses each — each pair woken in its own order`
     }
     for (const p of this.AthePondLoop_pairs()) {
-        for (const name of p.asked) this.AthePond_clock(this.AthePondSunpitPassOrder_tank(name), n)
-        let order = this.Athe_Tanks_wake(p.asked)
-        w.oai({ WakeOrder: p.pair }, { asked: p.asked.join(' '), woke: order.join(' ') })
+        this.AthePond_clocks(p.asked, n)
+        this.Athe_Tanks_wake(p.asked)
     }
 
-// one tank of a pair as rows, its pair's names written plain P and Q, so pairs compare
-AthePondLoop_rows(p, which):
-    let rows = this.AthePondSunpitPassOrder_rows(this.AthePondSunpitPassOrder_tank(p[which]))
-    return rows.split(p.P).join('P').split(p.Q).join('Q')
+// where P7's first two fish are now: in a tank (age by that tank's clock) or on a stream wire (the age it left with)
+AthePondLoop_where(p, name):
+    for (const k of ['P', 'Q']) {
+        let t = this.Athe_Tank_of(p[k])
+        let turns = t.o({ Turns: 1 })[0]?.sc.count || 0
+        let fish = t.o({ Fish: name })[0]
+        if (fish) return { at: k, age: turns - fish.sc.born }
+        let pulse = t.o({ TheAWire: 'stream' })[0]?.o({ TheAPulse: 1 }).find(pl => pl.sc.swims === name)
+        if (pulse) return { at: 'wire into ' + k, age: pulse.sc.age }
+    }
+    return null
 
 AthePondLoop_witness(w):
     let n = this.c.run?.c.step_n ?? 0
     if (n !== 4) return
-    let pairs = this.AthePondLoop_pairs()
-    if (pairs.some(p => this.AthePondSunpitPassOrder_tank(p.P)?.o({ Turns: 1 })[0]?.sc.count !== 30)) return
-    let same = (a, b) => this.AthePondLoop_rows(a, 'P') === this.AthePondLoop_rows(b, 'P') && this.AthePondLoop_rows(a, 'Q') === this.AthePondLoop_rows(b, 'Q')
-    if (!same(pairs[0], pairs[1])) {
-        this.story_swear(w, 'a loop of wires leaks which tank was asked to wake first — the two pairs come out different')
+    let [seven, eight] = this.AthePondLoop_pairs()
+    if ([seven, eight].some(p => this.Athe_Tank_of(p.P)?.o({ Turns: 1 })[0]?.sc.count !== 30)) return
+    let plain = (p) => [[p.P, 'P'], [p.Q, 'Q']]
+    if (this.AthePond_pair_rows(seven.P, plain(seven)) === this.AthePond_pair_rows(eight.P, plain(eight))
+        && this.AthePond_pair_rows(seven.Q, plain(seven)) === this.AthePond_pair_rows(eight.Q, plain(eight))) {
+        this.story_swear(w, 'a loop of wires needs no order — asked either way the two pairs come out the same')
     }
-    if (same(pairs[2], pairs[3])) {
-        this.story_swear(w, 'a lag on one wire of the loop breaks it — asked either way the pair comes out the same')
-    }
-    let told = (p) => [p.P, p.Q].every(name => this.AthePondSunpitPassOrder_tank(name).o({ TheALoop: 1 }).map(row => row.sc.TheALoop).join() === [p.P, p.Q].sort().join(' '))
-    let quiet = (p) => [p.P, p.Q].every(name => !this.AthePondSunpitPassOrder_tank(name).o({ TheALoop: 1 }).length)
-    if (told(pairs[0]) && told(pairs[1]) && quiet(pairs[2]) && quiet(pairs[3])) {
-        this.story_swear(w, 'each tank on a loop with no lag is told so — a TheALoop row names the loop — and a loop with a lag says nothing')
-    }
-    let P = this.AthePondSunpitPassOrder_tank(pairs[2].P)
-    let back = P.o({ TheAWire: 'stream' })[0]?.o({ TheAPulse: 1 }) || []
-    let first = ['minnow 1', 'perch 2']
-    let ages = P.o({ Fish: 1 }).map(f => 30 - f.sc.born)
-    if (back.length === 2 && back.every(p => first.includes(p.sc.swims) && p.sc.age > Math.max(...ages))) {
-        this.story_swear(w, 'the first two fish go round the loop — at turn 30 they wait on the lagged wire back into the tank they hatched in — older than any fish there')
+    let found = ['P minnow 1', 'P perch 2'].map(name => this.AthePondLoop_where(seven, name))
+    if (found.every(f => f && f.age >= 18)) {
+        w.oai({ FirstFish: '7' }, { at: found.map(f => f.at).join(' and '), age: found.map(f => f.age).join(' ') })
+        this.story_swear(w, 'the first two fish go round the loop and are never lost — always in a tank or on the wire between — still old')
     }
 //#endregion
 
@@ -800,7 +793,7 @@ async AthePondTurns_drive(w, req):
 
 AthePondTurns_stand(w):
     i %desc:'stand a tank that keeps its last three Turns — and wake one clock pulse'
-    if (typeof this.TheA_stand !== 'function' || typeof this.Athe_Tank_turn_commit !== 'function') {
+    if (typeof this.TheA_stand !== 'function' || typeof this.TheA_turn_commit !== 'function') {
         w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
         return
     }
@@ -882,7 +875,7 @@ AthePondTurnReaders_tank():
 
 AthePondTurnReaders_stand(w):
     i %desc:'stand a tank that keeps two Turns with two readers — eye reads every step and slow waits — and wake one pulse'
-    if (typeof this.TheA_stand !== 'function' || typeof this.Athe_Tank_read !== 'function') {
+    if (typeof this.TheA_stand !== 'function' || typeof this.TheA_read !== 'function') {
         w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
         return
     }
@@ -911,7 +904,7 @@ AthePondTurnReaders_slow(w):
 
 // one reader reads; what it got is noted on the routine's world
 AthePondTurnReaders_read(w, name):
-    let got = this.Athe_Tank_read(this.AthePondTurnReaders_tank(), name)
+    let got = this.TheA_read(this.AthePondTurnReaders_tank(), name)
     w.oai({ ReadBy: name }, { turns: got.map(turn => turn.sc.TheATurn).join(' ') || 'none' })
 
 AthePondTurnReaders_witness(w):

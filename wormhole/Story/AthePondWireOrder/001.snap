@@ -1,7 +1,5 @@
 Snap:H
   H:AthePondWireOrder,Run
     A:AthePondWireOrder
-      self,round	{"mung":["age"]}
       w:AthePondWireOrder
-        self,round	{"mung":["age"]}
         req:wrangle,eternal,ok

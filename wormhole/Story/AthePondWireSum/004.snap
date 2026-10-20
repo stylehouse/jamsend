@@ -4,8 +4,8 @@ Snap:H
       w:AthePondWireSum
         req:wrangle,eternal,ok
     A:Athe_Tank_Latest
-      TheACode:Athe_Tank,variant:plain,dige:ca1cd7119b282e45
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:53558d4199bb17c2~g1
+      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
       w:Athe_Tank
         TheASunpit:turn
           TheAPass:Egg
@@ -13,14 +13,14 @@ Snap:H
         TheAWire:clock,wake:turn,sum:count
           TheAWoke,count=4,pulses=4
         TheAWire:fish,on:Fish,wake:heron,sum:latest
-          TheAWoke,count,pulses
+          TheAPulse,turn=4,fish=2
         Turns,count=4
         EggsNamed,count=2
         Fish:minnow 1,born=4
         Fish:perch 2,born=4
     A:Athe_Tank_Counted
-      TheACode:Athe_Tank,variant:plain,dige:ca1cd7119b282e45
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:53558d4199bb17c2~g1
+      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
       w:Athe_Tank
         TheASunpit:turn
           TheAPass:Egg
@@ -28,7 +28,7 @@ Snap:H
         TheAWire:clock,wake:turn,sum:count
           TheAWoke,count=4,pulses=4
         TheAWire:fish,on:Fish,wake:heron,sum:count
-          TheAWoke,count,pulses
+          TheAPulse,turn=4,fish=2
         Turns,count=4
         EggsNamed,count=2
         Fish:minnow 1,born=4

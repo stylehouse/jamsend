@@ -10,6 +10,39 @@ A capture doc, not yet a plan — the owner has reached for this three times in 
    simpler and easier to moonwalk through these such transpirings?"* — said while reading a boot
     log of the world-1-destroy → world-2-mount churn at storyFinished.
 
+## 0.0 START HERE — where it stands and what's next (2026-10-21)
+
+**Where it stands.**  `Ghost/A/Theory.g` runs compartments: an A holds its code (`%TheACode`), code is pushed and let
+ through by Story (CodePush), and a batch is **moves then the boundary** (`TheA_move`, `TheA_send` into `%TheAOutbox`,
+  `TheA_boundary`), each move committing a `%TheATurn` to a history that readers trim.  The toy (`AtheFishTesting.g`) is
+   only handlers.  11 `AthePond*` Books are green, and every oath was sabotaged once and bit.  The words are
+    `Atheory_design.md` §0, and what's built is §1.
+
+**Ruled 2026-10-21 (owner):**
+- **Synapse + Axon** replace wire + outlet ("might as well have science"): `%TheAWire` → `%TheASynapse` (held by the
+   receiver, says `wake`, `sum`, `from`), `%TheAOutlet` → `%TheAAxon`.  Reason: "the wire" already means the network
+    (Waft:Everything's first What; about 50 files say "over the wire").  **Not done yet — first move below.**
+- **One event particle, in the background.**  Elvis and pulse are one idea seen from two ends (sender-addressed vs
+   receiver-declared).  The theme: a single transcendent event particle with subtypes, an elvis that shows on the tree.
+    Review the pulse interface toward that; don't rip elvis out meanwhile.
+- **Atlas is the claim, Electrode is the evidence** for the manifest check: observed ⊆ predicted ⊆ declared, and where
+   Electrode saw a call Atlas didn't predict, that's Atlas's blind spot (dynamic calls), shown on the tree.
+- **Book proofing goes to subagents after a hacking stretch**, not during it: a compile hot-swaps the runner's ghosts and
+   breaks a run in flight.
+
+**Next moves, in order:**
+1. The Synapse/Axon rename across `Theory.g`, the toy, `AtheTesting.g`, `Atheory_design.md`; then re-record the Books whose
+    snaps show the names (WireSum, WireOrder, Stream, Loop, Turns, TurnReaders, SunpitPassOrder, SunpitFrontier, WakeOrder —
+     the ones that stand wired tanks).  Particle names change, so `tol:same` won't cover it.
+2. **Resisting CodePush during a run.**  Story already holds pushes for As in a run until the step seam.  What still breaks
+    a run is code NOT loaded through `%TheACode` (the routines, the runner's own ghosts) hot-swapping mid-step.  Once
+     everything a Book runs comes in through `%TheACode`, compiling during a run becomes safe — the push just waits.
+3. A Book that shuffles move order at random every run (the boundary says order can't matter; prove it continuously).
+4. CodePush with a visible effect — needs the A** shape (two versions in one heap) so a Book can push the second.
+5. Owner-gated: candidate 2 "unwatched work costs nothing" (touches Housing); the manifest check (Atlas × Electrode, as
+    ruled above).
+- *Aside, being looked into:* in BigWordland's Lies tree only Waft:Ghost/Net/Easy of Waft:Everything's area Wafts loads.
+
 ## 0. What this is about
 
 *2026-10-20 — §0.1 below is the current sketch and the owner's rulings; read it first.  What follows here is the
@@ -272,7 +305,7 @@ Work top to bottom.  Each item ends with its Book green (3 check runs, caveat 0,
         Land's L ghosts; which one is the truth is a design call for the owner).
 11. **tol:same on the pause and sweep paths** — both now mute like `snap_step` (Atheory_design §2 ledger row); not yet
      exercised live.
-12. **Art school: the Pond Atlas** (2026-10-20) — a private artifact page drawing every recorded Athe snap as ponds (fish
+12. **Art school: Pond Plates** (renamed from "Pond Atlas" 2026-10-21 — it is not Atlas.g) (2026-10-20) — a private artifact page drawing every recorded Athe snap as ponds (fish
      by age, wires, lags, loops): https://claude.ai/artifact/Uoma1XYQnvVGtBfSNQLkbm.  Built from the fixtures by a
       scratch extractor (parse NNN.snap → tanks JSON); to keep it current, that extractor wants a home in `scripts/`.
 13. **The Turn, by hand** (`AthePondTurns`): opt-in `%TheAWas,keep` on a tank; one `%TheATurn` per wire woken, with
@@ -282,6 +315,12 @@ Work top to bottom.  Each item ends with its Book green (3 check runs, caveat 0,
         history instead of pulses?) — ask the owner, it touches what a wire IS.
   (Seen in passing: a new Book's
         recording rewrites its toc without the seeded `EntropyArrest` Self_round block; WireOrder and Stream pass without it.)
+14. **The boundary** (owner, 2026-10-21: "whatever is going to make more flawless compute… stepped through one coherent move
+     at a time"): moves, sends, outboxes, the boundary, Turns and readers moved into `Theory.g` (`TheA_move`, `TheA_send`,
+      `TheA_boundary`, `TheA_turn_commit`, `TheA_read`); the toy keeps only its handlers.  The wire-ordered scheduler, `lag`,
+       `%TheALoop` and the names wire are gone.  WireSum, WireOrder (now: stopping between moves changes nothing), Stream and
+        Loop re-recorded.  Words: `Atheory_design.md` §0.  The boundary was sabotaged once and bit (`Atheory_design.md`
+         §1.10).  Next: a Book that reorders moves at random each run; CodePush with a visible effect (needs A**).
 
 **Runners:** never share one with another agent.  If a sweep or another session holds the pinned runner, wait for it or
  pin a different idle one.

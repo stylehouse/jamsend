@@ -1,65 +1,73 @@
 Snap:H
   H:AthePondWireOrder,Run
     A:AthePondWireOrder
-      self,round=2	{"mung":["age"]}
       w:AthePondWireOrder
-        self,round=2	{"mung":["age"]}
         req:wrangle,eternal,ok
-        WakeOrder:5,asked:Athe_Tank_P5 Athe_Tank_Q5,woke:Athe_Tank_P5 Athe_Tank_Q5
-        WakeOrder:6,asked:Athe_Tank_Q6 Athe_Tank_P6,woke:Athe_Tank_P6 Athe_Tank_Q6
     A:Athe_Tank_P5
-      TheACode:Athe_Tank,variant:plain,dige:4325cbf927bb2474
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:4bc4df699734cf46~g1
+      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
       w:Athe_Tank
         TheAWire:clock,wake:turn,sum:count
-          TheAWoke,count,pulses
-        Turns,count
+          TheAWoke,count=10,pulses=10
+        TheAOutlet:stream
+        NamesAs:P
+        Turns,count=10
         TheASunpit:turn
           TheAPass:Egg
           TheAPass:Fish
           TheAPass:Heron
         EggsNamed,count=4
-        Egg:minnow 1,born
-        Egg:perch 2,born
+        Fish:P minnow 1,born=4
+        Fish:P perch 2,born=4
+        Egg:P carp 3,born=10
+        Egg:P trout 4,born=10
     A:Athe_Tank_Q5
-      TheACode:Athe_Tank,variant:plain,dige:4325cbf927bb2474
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:4bc4df699734cf46~g1
+      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
       w:Athe_Tank
         TheAWire:clock,wake:turn,sum:count
           TheAWoke,count,pulses
-        TheAWire:names,from:Athe_Tank_P5
+        TheAWire:stream,from:Athe_Tank_P5,wake:arrive,sum:count
+        NamesAs:Q
         Turns,count
         TheASunpit:turn
           TheAPass:Egg
           TheAPass:Fish
           TheAPass:Heron
-        Egg:carp 3,born
-        Egg:trout 4,born
-    A:Athe_Tank_Q6
-      TheACode:Athe_Tank,variant:plain,dige:4325cbf927bb2474
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:4bc4df699734cf46~g1
-      w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
-          TheAWoke,count,pulses
-        TheAWire:names,from:Athe_Tank_P6
-        Turns,count
-        TheASunpit:turn
-          TheAPass:Egg
-          TheAPass:Fish
-          TheAPass:Heron
-        Egg:carp 3,born
-        Egg:trout 4,born
+        EggsNamed,count=2
+        Egg:Q minnow 1,born
+        Egg:Q perch 2,born
     A:Athe_Tank_P6
-      TheACode:Athe_Tank,variant:plain,dige:4325cbf927bb2474
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:4bc4df699734cf46~g1
+      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
       w:Athe_Tank
         TheAWire:clock,wake:turn,sum:count
-          TheAWoke,count,pulses
-        Turns,count
+          TheAWoke,count=10,pulses=10
+        TheAOutlet:stream
+        NamesAs:P
+        Turns,count=10
         TheASunpit:turn
           TheAPass:Egg
           TheAPass:Fish
           TheAPass:Heron
         EggsNamed,count=4
-        Egg:minnow 1,born
-        Egg:perch 2,born
+        Fish:P minnow 1,born=4
+        Fish:P perch 2,born=4
+        Egg:P carp 3,born=10
+        Egg:P trout 4,born=10
+    A:Athe_Tank_Q6
+      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
+      w:Athe_Tank
+        TheAWire:clock,wake:turn,sum:count
+          TheAWoke,count,pulses
+        TheAWire:stream,from:Athe_Tank_P6,wake:arrive,sum:count
+        NamesAs:Q
+        Turns,count
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+          TheAPass:Heron
+        EggsNamed,count=2
+        Egg:Q minnow 1,born
+        Egg:Q perch 2,born

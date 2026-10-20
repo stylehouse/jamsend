@@ -3,27 +3,29 @@ story:AthePondWireOrder
   Plan
   Opt
     For
+  EntropyArrest
+    Entcase:Self_round
+      lematch,self,round
+        means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.02
-      sample=0.02,at=1792491828
-      sample=0.023,at=1792491834
-      sample=0.019,at=1792491841
-      sample=0.036,at=1792491967
-      sample=0.02,at=1792492575
-      sample=0.013,at=1792492795
-      sample=0.016,at=1792493195
-      sample=0.016,at=1792494622
-    TimeTotal:step,avg=0.007
-      sample=0.007,at=1792491828
-      sample=0.008,at=1792491834
-      sample=0.006,at=1792491841
-      sample=0.012,at=1792491967
-      sample=0.007,at=1792492575
-      sample=0.004,at=1792492795
-      sample=0.005,at=1792493195
-      sample=0.005,at=1792494622
-  step,dige:e3a8f734165d437c
-  step=2,desc:stand two pairs whose Q names its eggs from its P through a wire — and wake each pair in its asked order,dige:394b07c685348a8a
-  step=3,desc:8 more clock pulses — each pair woken along its wire,dige:9bafaac1d793f97c
-    Assertion:a-tank-holding-a,sentence:a tank holding a wire from another wakes after it — whatever order the two were asked in
-    Assertion:two-tanks-sharing-a,sentence:two tanks sharing a name counter through a wire come out the same whichever was asked to wake first
+    TimeTotal:beliefs,avg=0.06
+      sample=0.07,at=1792533233
+      sample=0.079,at=1792533244
+      sample=0.058,at=1792533256
+      sample=0.033,at=1792533674
+      sample=0.06,at=1792534274
+    TimeTotal:step,avg=0.01
+      sample=0.012,at=1792533233
+      sample=0.013,at=1792533244
+      sample=0.01,at=1792533256
+      sample=0.006,at=1792533674
+      sample=0.01,at=1792534274
+  step,dige:36ec3a16f4ffb23f
+  step=2,desc:stand two pairs — P streaming into Q nine turns behind — and wake each pair whole,dige:c0249c3e5d8a389d
+  step=3,desc:12 clock pulses each — pair 5 woken whole and in pair 6 only P moves,dige:587062b93c021e88
+  step=4,desc:pair 6 — Q moves while what P sent waits in its outbox,dige:73b95015f4a0eb11
+    Assertion:between-moves-what-a,sentence:between moves what a tank sent waits in its own outbox — nobody hears it before the boundary
+  step=5,desc:pair 6 — the boundary,dige:4949f25e03ed12e7
+    Assertion:a-batch-taken-one,sentence:a batch taken one move at a time — Story pausing between the moves — comes out the same as one taken whole
+  step=6,desc:one clock pulse each — pair 5 woken Q first and pair 6 P first,dige:5e1625d8502702e4
+    Assertion:woken-in-opposite-orders,sentence:woken in opposite orders the two pairs still come out the same — the fish arrive in both

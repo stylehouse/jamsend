@@ -1,73 +1,116 @@
 Snap:H
   H:AthePondWireOrder,Run
     A:AthePondWireOrder
-      self,round=3	{"mung":["age"]}
       w:AthePondWireOrder
-        self,round=3	{"mung":["age"]}
         req:wrangle,eternal,ok
-        WakeOrder:5,asked:Athe_Tank_P5 Athe_Tank_Q5,woke:Athe_Tank_P5 Athe_Tank_Q5
-        WakeOrder:6,asked:Athe_Tank_Q6 Athe_Tank_P6,woke:Athe_Tank_P6 Athe_Tank_Q6
     A:Athe_Tank_P5
-      TheACode:Athe_Tank,variant:plain,dige:4325cbf927bb2474
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:4bc4df699734cf46~g1
-      self,round	{"mung":["age"]}
+      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
       w:Athe_Tank
         TheAWire:clock,wake:turn,sum:count
-          TheAWoke,count=9,pulses=9
-        Turns,count=9
+          TheAWoke,count=22,pulses=22
+        TheAOutlet:stream
+        NamesAs:P
+        Turns,count=22
         TheASunpit:turn
           TheAPass:Egg
           TheAPass:Fish
           TheAPass:Heron
-        EggsNamed,count=4
-        self,round	{"mung":["age"]}
-        Fish:minnow 1,born=4
-        Fish:perch 2,born=4
+        EggsNamed,count=16
+        Fish:P carp 3,born=13
+        Fish:P trout 4,born=13
+        Fish:P roach 5,born=16
+        Fish:P bream 6,born=16
+        Fish:P tench 7,born=19
+        Fish:P dace 8,born=19
+        Fish:P chub 9,born=22
+        Fish:P rudd 10,born=22
+        Fish:P minnow 11,born=22
+        Fish:P perch 12,born=22
+        Egg:P carp 13,born=22
+        Egg:P trout 14,born=22
+        Egg:P roach 15,born=22
+        Egg:P bream 16,born=22
+        Heron:grey
     A:Athe_Tank_Q5
-      TheACode:Athe_Tank,variant:plain,dige:4325cbf927bb2474
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:4bc4df699734cf46~g1
-      self,round	{"mung":["age"]}
+      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
       w:Athe_Tank
         TheAWire:clock,wake:turn,sum:count
-          TheAWoke,count=9,pulses=9
-        TheAWire:names,from:Athe_Tank_P5
-        Turns,count=9
+          TheAWoke,count=13,pulses=13
+        TheAWire:stream,from:Athe_Tank_P5,wake:arrive,sum:count
+          TheAPulse,swims:P minnow 1,age=18
+          TheAPulse,swims:P perch 2,age=18
+        NamesAs:Q
+        Turns,count=13
         TheASunpit:turn
           TheAPass:Egg
           TheAPass:Fish
           TheAPass:Heron
-        self,round	{"mung":["age"]}
-        Fish:carp 3,born=4
-        Fish:trout 4,born=4
-    A:Athe_Tank_Q6
-      TheACode:Athe_Tank,variant:plain,dige:4325cbf927bb2474
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:4bc4df699734cf46~g1
-      self,round	{"mung":["age"]}
-      w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
-          TheAWoke,count=9,pulses=9
-        TheAWire:names,from:Athe_Tank_P6
-        Turns,count=9
-        TheASunpit:turn
-          TheAPass:Egg
-          TheAPass:Fish
-          TheAPass:Heron
-        self,round	{"mung":["age"]}
-        Fish:carp 3,born=4
-        Fish:trout 4,born=4
+        EggsNamed,count=6
+        Fish:Q minnow 1,born=4
+        Fish:Q perch 2,born=4
+        Fish:Q carp 3,born=13
+        Fish:Q trout 4,born=13
+        Egg:Q roach 5,born=13
+        Egg:Q bream 6,born=13
     A:Athe_Tank_P6
-      TheACode:Athe_Tank,variant:plain,dige:4325cbf927bb2474
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:4bc4df699734cf46~g1
-      self,round	{"mung":["age"]}
+      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
       w:Athe_Tank
         TheAWire:clock,wake:turn,sum:count
-          TheAWoke,count=9,pulses=9
-        Turns,count=9
+          TheAWoke,count=22,pulses=22
+        TheAOutlet:stream
+        NamesAs:P
+        Turns,count=22
         TheASunpit:turn
           TheAPass:Egg
           TheAPass:Fish
           TheAPass:Heron
-        EggsNamed,count=4
-        self,round	{"mung":["age"]}
-        Fish:minnow 1,born=4
-        Fish:perch 2,born=4
+        EggsNamed,count=16
+        Fish:P carp 3,born=13
+        Fish:P trout 4,born=13
+        Fish:P roach 5,born=16
+        Fish:P bream 6,born=16
+        Fish:P tench 7,born=19
+        Fish:P dace 8,born=19
+        Fish:P chub 9,born=22
+        Fish:P rudd 10,born=22
+        Fish:P minnow 11,born=22
+        Fish:P perch 12,born=22
+        TheAOutbox
+          TheAPulse,wire:stream,swims:P minnow 1,age=18
+          TheAPulse,wire:stream,swims:P perch 2,age=18
+        Egg:P carp 13,born=22
+        Egg:P trout 14,born=22
+        Egg:P roach 15,born=22
+        Egg:P bream 16,born=22
+        Heron:grey
+    A:Athe_Tank_Q6
+      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
+      w:Athe_Tank
+        TheAWire:clock,wake:turn,sum:count
+          TheAWoke,count,pulses
+          TheAPulse
+          TheAPulse
+          TheAPulse
+          TheAPulse
+          TheAPulse
+          TheAPulse
+          TheAPulse
+          TheAPulse
+          TheAPulse
+          TheAPulse
+          TheAPulse
+          TheAPulse
+        TheAWire:stream,from:Athe_Tank_P6,wake:arrive,sum:count
+        NamesAs:Q
+        Turns,count
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+          TheAPass:Heron
+        EggsNamed,count=2
+        Egg:Q minnow 1,born
+        Egg:Q perch 2,born

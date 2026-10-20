@@ -4,8 +4,8 @@ Snap:H
       w:AthePondWireSum
         req:wrangle,eternal,ok
     A:Athe_Tank_Latest
-      TheACode:Athe_Tank,variant:plain,dige:ca1cd7119b282e45
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:53558d4199bb17c2~g1
+      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
       w:Athe_Tank
         TheASunpit:turn
           TheAPass:Egg
@@ -18,8 +18,8 @@ Snap:H
         Egg:minnow 1,born
         Egg:perch 2,born
     A:Athe_Tank_Counted
-      TheACode:Athe_Tank,variant:plain,dige:ca1cd7119b282e45
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:53558d4199bb17c2~g1
+      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
       w:Athe_Tank
         TheASunpit:turn
           TheAPass:Egg

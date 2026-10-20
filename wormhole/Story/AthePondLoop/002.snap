@@ -3,139 +3,75 @@ Snap:H
     A:AthePondLoop
       w:AthePondLoop
         req:wrangle,eternal,ok
-        WakeOrder:7,asked:Athe_Tank_P7 Athe_Tank_Q7,woke:Athe_Tank_Q7 Athe_Tank_P7
-        WakeOrder:8,asked:Athe_Tank_Q8 Athe_Tank_P8,woke:Athe_Tank_P8 Athe_Tank_Q8
-        WakeOrder:9,asked:Athe_Tank_P9 Athe_Tank_Q9,woke:Athe_Tank_P9 Athe_Tank_Q9
-        WakeOrder:10,asked:Athe_Tank_Q10 Athe_Tank_P10,woke:Athe_Tank_P10 Athe_Tank_Q10
     A:Athe_Tank_P7
-      TheACode:Athe_Tank,variant:plain,dige:a63e8329dc36d9e9
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:f211783ebf1fc3fc~g1
+      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
       w:Athe_Tank
         TheAWire:clock,wake:turn,sum:count
           TheAWoke,count=10,pulses=10
+        TheAOutlet:stream
+        NamesAs:P
         TheAWire:stream,from:Athe_Tank_Q7,wake:arrive,sum:count
         Turns,count=10
         TheASunpit:turn
           TheAPass:Egg
           TheAPass:Fish
           TheAPass:Heron
-        EggsNamed,count=6
-        Fish:minnow 1,born=4
-        Fish:perch 2,born=4
-        TheALoop:Athe_Tank_P7 Athe_Tank_Q7
-        Egg:roach 5,born=10
-        Egg:bream 6,born=10
+        EggsNamed,count=4
+        Fish:P minnow 1,born=4
+        Fish:P perch 2,born=4
+        Egg:P carp 3,born=10
+        Egg:P trout 4,born=10
     A:Athe_Tank_Q7
-      TheACode:Athe_Tank,variant:plain,dige:a63e8329dc36d9e9
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:f211783ebf1fc3fc~g1
+      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
       w:Athe_Tank
         TheAWire:clock,wake:turn,sum:count
           TheAWoke,count,pulses
-        TheAWire:names,from:Athe_Tank_P7
         TheAWire:stream,from:Athe_Tank_P7,wake:arrive,sum:count
-        TheALoop:Athe_Tank_P7 Athe_Tank_Q7
+        NamesAs:Q
+        TheAOutlet:stream
         Turns,count
         TheASunpit:turn
           TheAPass:Egg
           TheAPass:Fish
           TheAPass:Heron
-        Egg:carp 3,born
-        Egg:trout 4,born
+        EggsNamed,count=2
+        Egg:Q minnow 1,born
+        Egg:Q perch 2,born
     A:Athe_Tank_P8
-      TheACode:Athe_Tank,variant:plain,dige:a63e8329dc36d9e9
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:f211783ebf1fc3fc~g1
+      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
       w:Athe_Tank
         TheAWire:clock,wake:turn,sum:count
           TheAWoke,count=10,pulses=10
+        TheAOutlet:stream
+        NamesAs:P
         TheAWire:stream,from:Athe_Tank_Q8,wake:arrive,sum:count
         Turns,count=10
         TheASunpit:turn
           TheAPass:Egg
           TheAPass:Fish
           TheAPass:Heron
-        EggsNamed,count=6
-        Fish:minnow 1,born=4
-        Fish:perch 2,born=4
-        TheALoop:Athe_Tank_P8 Athe_Tank_Q8
-        Egg:carp 3,born=10
-        Egg:trout 4,born=10
+        EggsNamed,count=4
+        Fish:P minnow 1,born=4
+        Fish:P perch 2,born=4
+        Egg:P carp 3,born=10
+        Egg:P trout 4,born=10
     A:Athe_Tank_Q8
-      TheACode:Athe_Tank,variant:plain,dige:a63e8329dc36d9e9
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:f211783ebf1fc3fc~g1
+      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
       w:Athe_Tank
         TheAWire:clock,wake:turn,sum:count
           TheAWoke,count,pulses
-        TheAWire:names,from:Athe_Tank_P8
         TheAWire:stream,from:Athe_Tank_P8,wake:arrive,sum:count
-        TheALoop:Athe_Tank_P8 Athe_Tank_Q8
+        NamesAs:Q
+        TheAOutlet:stream
         Turns,count
         TheASunpit:turn
           TheAPass:Egg
           TheAPass:Fish
           TheAPass:Heron
-        Egg:roach 5,born
-        Egg:bream 6,born
-    A:Athe_Tank_P9
-      TheACode:Athe_Tank,variant:plain,dige:a63e8329dc36d9e9
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:f211783ebf1fc3fc~g1
-      w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
-          TheAWoke,count=10,pulses=10
-        TheAWire:stream,from:Athe_Tank_Q9,wake:arrive,sum:count,lag
-        Turns,count=10
-        TheASunpit:turn
-          TheAPass:Egg
-          TheAPass:Fish
-          TheAPass:Heron
-        EggsNamed,count=6
-        Fish:minnow 1,born=4
-        Fish:perch 2,born=4
-        Egg:carp 3,born=10
-        Egg:trout 4,born=10
-    A:Athe_Tank_Q9
-      TheACode:Athe_Tank,variant:plain,dige:a63e8329dc36d9e9
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:f211783ebf1fc3fc~g1
-      w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
-          TheAWoke,count,pulses
-        TheAWire:names,from:Athe_Tank_P9
-        TheAWire:stream,from:Athe_Tank_P9,wake:arrive,sum:count
-        Turns,count
-        TheASunpit:turn
-          TheAPass:Egg
-          TheAPass:Fish
-          TheAPass:Heron
-        Egg:roach 5,born
-        Egg:bream 6,born
-    A:Athe_Tank_P10
-      TheACode:Athe_Tank,variant:plain,dige:a63e8329dc36d9e9
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:f211783ebf1fc3fc~g1
-      w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
-          TheAWoke,count=10,pulses=10
-        TheAWire:stream,from:Athe_Tank_Q10,wake:arrive,sum:count,lag
-        Turns,count=10
-        TheASunpit:turn
-          TheAPass:Egg
-          TheAPass:Fish
-          TheAPass:Heron
-        EggsNamed,count=6
-        Fish:minnow 1,born=4
-        Fish:perch 2,born=4
-        Egg:carp 3,born=10
-        Egg:trout 4,born=10
-    A:Athe_Tank_Q10
-      TheACode:Athe_Tank,variant:plain,dige:a63e8329dc36d9e9
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:f211783ebf1fc3fc~g1
-      w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
-          TheAWoke,count,pulses
-        TheAWire:names,from:Athe_Tank_P10
-        TheAWire:stream,from:Athe_Tank_P10,wake:arrive,sum:count
-        Turns,count
-        TheASunpit:turn
-          TheAPass:Egg
-          TheAPass:Fish
-          TheAPass:Heron
-        Egg:roach 5,born
-        Egg:bream 6,born
+        EggsNamed,count=2
+        Egg:Q minnow 1,born
+        Egg:Q perch 2,born

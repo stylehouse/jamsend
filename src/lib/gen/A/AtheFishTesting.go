@@ -17,7 +17,7 @@ const NAMES = ['minnow', 'perch', 'carp', 'trout', 'roach', 'bream', 'tench', 'd
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheFishTesting(): string { return '18dbd5138fe3d46b~g1' },
+    Ghostmeta_Ghost_A_AtheFishTesting(): string { return '8e0bf9159e807c30~g1' },
 
 // AtheFishTesting.g — the TOY that Atheory's Books test: Athe_Tank, a small pond with its own turn clock (and its own code digest, which moves on every edit — EntropyArrest §11 mutes that).
 //
@@ -56,12 +56,12 @@ Athe_Tank_turn(w) {
         let kind = pass.sc.TheAPass
         this.Athe_Tank_pass(w, kind, turn, at_start[kind] || w.o({ [kind]: 1 }), pit.sc.gone === 'skip')
     }
-    // the fish changed this turn: a pulse on every wire that listens for it (only a turn posts these — a wake never pulses
-    //  its own wire, or a heron eating would wake itself)
+    // the fish changed this turn: the tank tells itself, on every one of its wires that listens for it (only a turn sends
+    //  these — a wake never does, or a heron eating would wake itself).  Sent, so it lands at the boundary, not this move
     let fish_after = w.o({ Fish: 1 }).length
     if (fish_after !== fish_before) {
         for (const wire of w.o({ TheAWire: 1 })) {
-            if (wire.sc.on === 'Fish') wire.i({ TheAPulse: 1, turn, fish: fish_after })
+            if (wire.sc.on === 'Fish') this.TheA_send(w, wire.sc.TheAWire, { turn, fish: fish_after })
         }
     }
 
@@ -108,13 +108,13 @@ Athe_Tank_egg(w, egg, turn) {
     }
 
 },
-// a fish lays eggs once grown, and swims away when old — for good, or down the stream into a tank holding
-//  %TheAWire:stream,from:<this tank> (one pulse each, carrying its name and its age)
+// a fish lays eggs once grown, and swims away when old — for good, or, from a tank with a stream outlet (%TheAOutlet:stream),
+//  down the stream: sent with its name and its age, heard by any tank wired from this one (Theory's boundary finds them)
 Athe_Tank_fish(w, fish, turn) {
     let age = turn - fish.sc.born
     if (age >= OLD_AT) {
         w.drop(fish)
-        for (const wire of this.Athe_Tank_downstream(w)) wire.i({ TheAPulse: 1, swims: fish.sc.Fish, age })
+        if (w.o({ TheAOutlet: 'stream' }).length) this.TheA_send(w, 'stream', { swims: fish.sc.Fish, age })
     } else if (age >= GROWN_AT && age % LAY_EVERY === 0 && this.Athe_Tank_count(w) < CROWDED) {
         w.i({ Egg: this.Athe_Tank_name(w), born: turn })
     }
@@ -145,86 +145,36 @@ Athe_Tank_heron(w) {
     }
 
 },
-// wires — the scheduler by hand (Atheory_todo §0.2, "Wires by hand").  A %TheAWire on the tank is a standing pathway: what
-//  it wakes, and how the pulses waiting on it sum.  sum:count runs the wake once per pulse (three clock pulses are three
-//   turns); sum:latest runs it once for however many piled up (three "the fish changed" mean one reconsideration).
-//    Wires wake in the order they're declared, so pulses a turn posts on a later wire are woken in the same pass.
+// wires — the tank's inlets (Theory.g, "Moves and the boundary").  A %TheAWire on the tank is a standing pathway: what it
+//  wakes, and how the pulses waiting on it sum.  sum:count runs the wake once per pulse (three clock pulses are three turns);
+//   sum:latest runs it once for however many piled up (three "the fish changed" mean one reconsideration).
 //  The tank only moves when woken; without wires it moves only when turned by hand, as before
-//     A run is handed its pulse — sum:latest the last one — so a pulse can carry something (a fish down a stream).
-//      A tank holding %TheAWas commits one %TheATurn per wire woken (AthePondTurns)
+
+// one batch of one tank: its move, then the boundary (what it sent lands — on its own wires too, for the next wake)
 Athe_Tank_wake(w) {
-    let was = w.o({ TheAWas: 1 })[0]
-    for (const wire of w.o({ TheAWire: 1 })) {
-        let pulses = wire.o({ TheAPulse: 1 })
-        if (!pulses.length) continue
-        let before = was ? this.Athe_Tank_rows(w) : null
-        let runs = wire.sc.sum === 'latest' ? [pulses[pulses.length - 1]] : pulses
-        for (const pulse of pulses) wire.drop(pulse)
-        for (const pulse of runs) this.Athe_Tank_woken(w, wire, pulse)
-        let woke = wire.o({ TheAWoke: 1 })[0]
-        wire.oai({ TheAWoke: 1 }, { count: (woke?.sc.count || 0) + runs.length, pulses: (woke?.sc.pulses || 0) + pulses.length })
-        if (was) this.Athe_Tank_turn_commit(w, was, wire, pulses.length, before)
+    this.TheA_move(w, (w, wire, pulse) => this.Athe_Tank_woken(w, wire, pulse))
+    this.TheA_boundary([this.TheA_A(w)?.sc.A])
+
+},
+// a batch of tanks (A names): each one's move, in the order given — which can't matter — then the boundary
+Athe_Tanks_wake(names) {
+    for (const name of names) {
+        let t = this.Athe_Tank_of(name)
+        if (t) this.TheA_move(t, (w, wire, pulse) => this.Athe_Tank_woken(w, wire, pulse))
     }
+    this.TheA_boundary(names)
 
 },
-// the Turn, by hand (Atheory_todo "One pass of the scheduler", step 4: "commit one %TheATurn").  A Turn is not a counter:
-//  it says which wire woke the tank, how many pulses it ate, the code it ran under (the A's %TheACode digest), and what
-//   changed across it — %TheANeu for a row that wasn't there before, %TheAGoner for one that's gone.  Across it, not
-//    inside it: an egg laid and hatched within one wake shows only as the fish it became.  The tank's own Turns,count is
-//     the pond's clock, a different thing — three clock pulses are three pond turns and one TheATurn.
-//  %TheAWas,keep:<n> is the history (the Was-sphere, by its working name).  made counts every Turn ever committed.
-//   Turns drop when no reader is behind them (Athe_Tank_was_trim)
-Athe_Tank_turn_commit(w, was, wire, pulses, before) {
-    let after = this.Athe_Tank_rows(w)
-    let made = (was.sc.made || 0) + 1
-    w.oai({ TheAWas: 1 }, { keep: was.sc.keep, made })
-    let code = this.Athe_Tank_A(w)?.o({ TheACode: 1 })[0]?.sc.dige
-    let turn = was.i({ TheATurn: String(made), wire: wire.sc.TheAWire, pulses, ...(code ? { code_dige: code } : {}) })
-    let label = (row) => Object.keys(row.sc)[0]
-    for (const row of after) {
-        if (!before.includes(row)) turn.i({ TheANeu: label(row), of: row.sc[label(row)] })
-    }
-    for (const row of before) {
-        if (!after.includes(row)) turn.i({ TheAGoner: label(row), of: row.sc[label(row)] })
-    }
-    this.Athe_Tank_was_trim(was)
+// one tank's move alone, the boundary left for later (Theory's TheA_boundary(names)) — so Story can pause between the moves
+//  of a batch (AthePondWireOrder)
+Athe_Tank_move(name) {
+    let t = this.Athe_Tank_of(name)
+    if (t) this.TheA_move(t, (w, wire, pulse) => this.Athe_Tank_woken(w, wire, pulse))
 
 },
-// readers behind the history: a %TheAReader:<name>,at:<Turn id> on %TheAWas has read every Turn up to at (none yet = no
-//  at).  A Turn stays while any reader hasn't read it; once every reader has, only the last keep stay.  No readers, and
-//   keep alone decides.  (AthePondTurnReaders)
-Athe_Tank_was_trim(was) {
-    let readers = was.o({ TheAReader: 1 })
-    let floor = readers.length ? Math.min(...readers.map(r => Number(r.sc.at || 0))) : Infinity
-    let turns = was.o({ TheATurn: 1 })
-    let extra = turns.length - (was.sc.keep || 1)
-    for (const turn of turns) {
-        if (extra <= 0 || Number(turn.sc.TheATurn) > floor) break
-        was.drop(turn)
-        extra--
-    }
-
-},
-// a reader reads the history: every Turn after where it got to, oldest first, and it is now up to date.  The reader is
-//  named, and stands on the history the first time it reads or is told to wait (at absent: it has read nothing)
-Athe_Tank_read(w, name) {
-    let was = w.o({ TheAWas: 1 })[0]
-    if (!was) return []
-    let reader = was.oai({ TheAReader: name })
-    let read = was.o({ TheATurn: 1 }).filter(turn => Number(turn.sc.TheATurn) > Number(reader.sc.at || 0))
-    if (was.sc.made) was.oai({ TheAReader: name }, { at: String(was.sc.made) })
-    this.Athe_Tank_was_trim(was)
-    return read
-
-},
-// what lives in the tank: its eggs, fish and heron (not its wires, clock or history)
-Athe_Tank_rows(w) {
-    return w.o().filter(row => row.sc.Egg || row.sc.Fish || row.sc.Heron)
-
-},
-// the A a tank world belongs to
-Athe_Tank_A(w) {
-    return this.o({ A: 1 }).find(A => A.o({ w: 'Athe_Tank' })[0] === w)
+// the tank world of an A, by its name
+Athe_Tank_of(name) {
+    return this.o({ A: name })[0]?.o({ w: 'Athe_Tank' })[0]
 
 },
 // what a wire wakes, named here and called by name — the wiring is data, the code that runs is not
@@ -249,77 +199,22 @@ Athe_Tank_arrive(w, wire, pulse) {
     w.i({ Fish: pulse.sc.swims, born: turn - pulse.sc.age, came: wire.sc.from })
 
 },
-// the stream wires leading out of this tank: every %TheAWire:stream,from:<this tank's A> on another tank.  The wire is
-//  held by the tank it leads into (as names is), so the one it comes from has to look for it
-Athe_Tank_downstream(w) {
-    let me = this.Athe_Tank_A(w)?.sc.A
-    if (!me) return []
-    let out = []
-    for (const A of this.o({ A: 1 })) {
-        let tank = A.o({ w: 'Athe_Tank' })[0]
-        if (tank && tank !== w) out.push(...tank.o({ TheAWire: 'stream' }).filter(wire => wire.sc.from === me))
-    }
-    return out
-
-},
-// Athe_Tanks_wake — wake these tanks (A names), in the order asked, EXCEPT that a tank holding a wire FROM another tank in
-//  the batch (%TheAWire:<name>,from:<A>) wakes after that tank: the wire-tree orders the batch, so what two tanks share
-//   can't leak which was asked first.  Ties keep the asked order.  Plain o(), no scheduler: what one would do, made visible.
-//    A loop of wires can't be ordered (the visit meets a tank it is still inside, so the loop wakes as asked — AthePondLoop
-//     shows the leak); each tank on such a loop is told so, %TheALoop:<its tanks, sorted>, until the loop is gone.  A wire
-//      marked lag:1 doesn't order the batch, and what comes down it waits for the next wake — it breaks the loop
-Athe_Tanks_wake(names) {
-    let tank = (name) => this.o({ A: name })[0]?.o({ w: 'Athe_Tank' })[0]
-    let from = (name) => (tank(name)?.o({ TheAWire: 1 }) || []).filter(wire => !wire.sc.lag).map(wire => wire.sc.from).filter(f => f && names.includes(f))
-    let done = {}
-    let inside = []
-    let order = []
-    let loops = {}
-    let visit = (name) => {
-        let at = inside.indexOf(name)
-        if (at >= 0) {
-            let loop = inside.slice(at).sort().join(' ')
-            for (const n of inside.slice(at)) (loops[n] = loops[n] || {})[loop] = 1
-            return
-        }
-        if (done[name]) return
-        done[name] = 1
-        inside.push(name)
-        for (const f of from(name)) visit(f)
-        inside.pop()
-        order.push(name)
-    }
-    for (const name of names) visit(name)
-    for (const name of names) {
-        let t = tank(name)
-        if (!t) continue
-        for (const row of t.o({ TheALoop: 1 })) {
-            if (!loops[name]?.[row.sc.TheALoop]) t.drop(row)
-        }
-        for (const loop of Object.keys(loops[name] || {})) t.oai({ TheALoop: loop })
-    }
-    for (const name of order) {
-        let t = tank(name)
-        if (t) this.Athe_Tank_wake(t)
-    }
-    return order
-
-},
 Athe_Tank_count(w) {
     return w.o({ Egg: 1 }).length + w.o({ Fish: 1 }).length
 
 },
 // a fresh name for a new egg: a fish's name and a number, so no two are ever confused.  How many names the tank has
-//  handed out is a fact it holds (EggsNamed,count), never a key twiddled onto the world line, never .c
-//  A tank holding %NamesFrom:<A name> takes its names from that tank's count instead — shared state, said on the tree but
-//   not wired, so nothing orders the two (AthePondWakeOrder).  A %TheAWire:names,from:<A name> shares the same way AS a wire,
-//    which Athe_Tanks_wake orders along (AthePondWireOrder)
+//  handed out is a fact it holds (EggsNamed,count), never a key twiddled onto the world line, never .c.  A tank holding
+//   %NamesAs:<tag> puts its tag first ("P minnow 1"), so fish that cross between tanks keep names nobody else has.
+//  A tank holding %NamesFrom:<A name> reaches into that tank's count instead — the one thing the boundary forbids: it reads and
+//   writes another compartment in the middle of a batch, so which woke first shows (AthePondWakeOrder keeps it as the sabotage)
 Athe_Tank_name(w) {
-    let from = w.o({ NamesFrom: 1 })[0]?.sc.NamesFrom || w.o({ TheAWire: 'names' })[0]?.sc.from
-    let namer = (from && this.o({ A: from })[0]?.o({ w: 'Athe_Tank' })[0]) || w
+    let from = w.o({ NamesFrom: 1 })[0]?.sc.NamesFrom
+    let namer = (from && this.Athe_Tank_of(from)) || w
     let n = (namer.o({ EggsNamed: 1 })[0]?.sc.count || 0) + 1
     namer.oai({ EggsNamed: 1 }, { count: n })
-    return NAMES[(n - 1) % NAMES.length] + ' ' + n
+    let tag = w.o({ NamesAs: 1 })[0]?.sc.NamesAs
+    return (tag ? tag + ' ' : '') + NAMES[(n - 1) % NAMES.length] + ' ' + n
 },
 //#endregion
 // (ends on a comment — a .g must not end on a method-final brace)

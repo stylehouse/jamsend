@@ -10,7 +10,7 @@ import { sha256_hex } from "$lib/Common"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_Theory(): string { return 'f8038eb543bf7d73~g1' },
+    Ghostmeta_Ghost_A_Theory(): string { return '6ca9548a7e9a2502~g1' },
 
 // Theory.g — Atheory's first organ: an A says which code it runs (spec/Atheory_todo.md §0.1 and §0.2).
 //
@@ -170,6 +170,151 @@ e_TheA_code_arrive(A, w, e) {
     A.oai({ TheACodeTaken: 1 }, { count: taken })
     for (const push of pushes) A.drop(push)
     this.i_elvisto(w, 'think')
+},
+// Moves and the boundary — how compartments run without their order mattering (spec/Atheory_design.md §0 has the words).
+//
+//      A:P
+//        w:Athe_Tank                              ← a compartment
+//          %TheAOutlet:stream                     ← what it sends (it never looks for who hears)
+//          %TheAWire:clock,wake:turn,sum:count    ← an inlet; its waiting %TheAPulse rows are the compartment's inbox
+//          %TheAOutbox                            ← what it sent this batch, not delivered yet (present only while in flight)
+//            %TheAPulse,wire:stream,swims:…
+//      A:Q
+//        w:Athe_Tank
+//          %TheAWire:stream,from:P,wake:arrive    ← hears P's stream
+//
+//  A MOVE is one compartment's go: it reads only its own rows and its inbox, writes only its own rows, and anything it sends
+//   goes to its own outbox.  THE BOUNDARY then delivers every outbox to the wires that hear it.  A BATCH is moves (any number,
+//    in any order, with Story free to pause between them) followed by the boundary.  No move can see another move of the same
+//     batch, so the order of moves can't change what comes out, and a loop of wires is just two batches round.
+//  Code calls code by name: whoever runs a move passes the compartment's own wake handler (no lookup here).
+
+// TheA_move — one compartment's move: each wire with pulses waiting, in the order declared, summed as it says (count: one run
+//  per pulse; latest: one run with the newest), each run handed its pulse.  A compartment holding %TheAWas commits one Turn per
+//   wire woken
+TheA_move(w, wake) {
+    let was = w.o({ TheAWas: 1 })[0]
+    for (const wire of w.o({ TheAWire: 1 })) {
+        let pulses = wire.o({ TheAPulse: 1 })
+        if (!pulses.length) continue
+        let before = was ? w.o() : null
+        let sent_before = was ? this.TheA_outbox(w) : null
+        let runs = wire.sc.sum === 'latest' ? [pulses[pulses.length - 1]] : pulses
+        for (const pulse of pulses) wire.drop(pulse)
+        for (const pulse of runs) wake(w, wire, pulse)
+        let woke = wire.o({ TheAWoke: 1 })[0]
+        wire.oai({ TheAWoke: 1 }, { count: (woke?.sc.count || 0) + runs.length, pulses: (woke?.sc.pulses || 0) + pulses.length })
+        if (was) this.TheA_turn_commit(w, was, wire, pulses.length, before, sent_before)
+    }
+
+},
+// TheA_send — a compartment sends on one of its wires: into its own outbox, carrying whatever it says (a fish's name and age).
+//  Nobody hears it until the boundary
+TheA_send(w, wire, sc) {
+    w.oai({ TheAOutbox: 1 }).i({ TheAPulse: 1, wire, ...sc })
+
+},
+// what waits in a compartment's outbox
+TheA_outbox(w) {
+    return w.o({ TheAOutbox: 1 })[0]?.o({ TheAPulse: 1 }) || []
+
+},
+// TheA_boundary — deliver the outboxes of a batch's compartments (names: their As; none = every A in this House), in one fixed order (senders by name, each outbox oldest first) so the
+//  order things happened in can't show.  A pulse goes to every wire of its name that is FROM its sender, or, for a wire with
+//   no from:, to the sender's own wire (a compartment telling itself, as the fish wire does).  An outbox is dropped once
+//    emptied.  Returns how many pulses landed
+TheA_boundary(names) {
+    let senders = []
+    for (const A of this.o({ A: 1 })) {
+        if (names && !names.includes(A.sc.A)) continue
+        for (const w of A.o({ w: 1 })) {
+            if (w.o({ TheAOutbox: 1 }).length) senders.push({ A, w })
+        }
+    }
+    senders.sort((a, b) => String(a.A.sc.A).localeCompare(String(b.A.sc.A)))
+    let landed = 0
+    for (const { A, w } of senders) {
+        let box = w.o({ TheAOutbox: 1 })[0]
+        for (const pulse of box.o({ TheAPulse: 1 })) {
+            let { TheAPulse, wire: name, ...rest } = pulse.sc
+            for (const B of this.o({ A: 1 })) {
+                for (const v of B.o({ w: 1 })) {
+                    for (const wire of v.o({ TheAWire: name })) {
+                        let hears = wire.sc.from ? wire.sc.from === A.sc.A : v === w
+                        if (!hears) continue
+                        wire.i({ TheAPulse: 1, ...rest })
+                        landed++
+                    }
+                }
+            }
+        }
+        w.drop(box)
+    }
+    return landed
+
+},
+// TheA_A — the A a compartment belongs to
+TheA_A(w) {
+    return this.o({ A: 1 }).find(A => A.o({ w: 1 }).includes(w))
+
+},
+// TheA_rows — what lives in a compartment: the kinds its Sunpit passes over (%TheAPass), or, with no Sunpit, everything that
+//  isn't Atheory's own furniture (TheA*)
+TheA_rows(w, rows) {
+    let pit = w.o({ TheASunpit: 1 })[0]
+    let kinds = pit ? pit.o({ TheAPass: 1 }).map(pass => pass.sc.TheAPass) : null
+    return rows.filter(row => {
+        let k = Object.keys(row.sc)[0]
+        return kinds ? kinds.includes(k) : !k.startsWith('TheA')
+    })
+
+},
+// TheA_turn_commit — one %TheATurn: which wire woke the compartment, how many pulses it ate, the code it ran under (its A's
+//  %TheACode digest), and what changed ACROSS the move — %TheANeu (a row that wasn't there before), %TheAGoner (one that's
+//   gone), %TheASent (a pulse it sent).  A Turn is not a counter: three clock pulses are three pond turns and one Turn
+TheA_turn_commit(w, was, wire, pulses, before_all, sent_before) {
+    let before = this.TheA_rows(w, before_all)
+    let after = this.TheA_rows(w, w.o())
+    let made = (was.sc.made || 0) + 1
+    w.oai({ TheAWas: 1 }, { keep: was.sc.keep, made })
+    let code = this.TheA_A(w)?.o({ TheACode: 1 })[0]?.sc.dige
+    let turn = was.i({ TheATurn: String(made), wire: wire.sc.TheAWire, pulses, ...(code ? { code_dige: code } : {}) })
+    let label = (row) => Object.keys(row.sc)[0]
+    for (const row of after) {
+        if (!before.includes(row)) turn.i({ TheANeu: label(row), of: row.sc[label(row)] })
+    }
+    for (const row of before) {
+        if (!after.includes(row)) turn.i({ TheAGoner: label(row), of: row.sc[label(row)] })
+    }
+    for (const pulse of this.TheA_outbox(w)) {
+        if (!sent_before.includes(pulse)) turn.i({ TheASent: pulse.sc.wire, ...(pulse.sc.swims ? { of: pulse.sc.swims } : {}) })
+    }
+    this.TheA_was_trim(was)
+
+},
+// TheA_was_trim — Turns drop when no reader is behind them: a %TheAReader:<name>,at:<Turn id> on %TheAWas has read every Turn up
+//  to at (no at = nothing yet).  A Turn stays while any reader hasn't read it; once every reader has, only the last keep stay
+TheA_was_trim(was) {
+    let readers = was.o({ TheAReader: 1 })
+    let floor = readers.length ? Math.min(...readers.map(r => Number(r.sc.at || 0))) : Infinity
+    let turns = was.o({ TheATurn: 1 })
+    let extra = turns.length - (was.sc.keep || 1)
+    for (const turn of turns) {
+        if (extra <= 0 || Number(turn.sc.TheATurn) > floor) break
+        was.drop(turn)
+        extra--
+    }
+
+},
+// TheA_read — a reader reads a compartment's history: every Turn after where it got to, oldest first, and it is now up to date
+TheA_read(w, name) {
+    let was = w.o({ TheAWas: 1 })[0]
+    if (!was) return []
+    let reader = was.oai({ TheAReader: name })
+    let read = was.o({ TheATurn: 1 }).filter(turn => Number(turn.sc.TheATurn) > Number(reader.sc.at || 0))
+    if (was.sc.made) was.oai({ TheAReader: name }, { at: String(was.sc.made) })
+    this.TheA_was_trim(was)
+    return read
 },
 // (a .g must end on a comment or a statement, never a method-final brace)
 

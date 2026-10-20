@@ -8,34 +8,25 @@ story:AthePondWireSum
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.042
-      sample=0.034,at=1792485107
-      sample=0.026,at=1792485383
-      sample=0.024,at=1792486824
-      sample=0.071,at=1792486858
-      sample=0.021,at=1792486908
-      sample=0.04,at=1792491102
-      sample=0.113,at=1792492168
-      sample=0.029,at=1792492559
-      sample=0.033,at=1792493842
-      sample=0.026,at=1792494244
-    TimeTotal:step,avg=0.008
-      sample=0.007,at=1792485107
-      sample=0.005,at=1792485383
-      sample=0.005,at=1792486824
-      sample=0.014,at=1792486858
-      sample=0.004,at=1792486908
-      sample=0.008,at=1792491102
-      sample=0.023,at=1792492168
-      sample=0.006,at=1792492559
-      sample=0.007,at=1792493842
-      sample=0.005,at=1792494244
+    TimeTotal:beliefs,avg=0.08
+      sample=0.079,at=1792533183
+      sample=0.119,at=1792533194
+      sample=0.088,at=1792533206
+      sample=0.025,at=1792533694
+      sample=0.087,at=1792534128
+    TimeTotal:step,avg=0.013
+      sample=0.013,at=1792533183
+      sample=0.02,at=1792533194
+      sample=0.015,at=1792533206
+      sample=0.004,at=1792533694
+      sample=0.014,at=1792534128
   step,dige:3b88ba6df9702ffe
-  step=2,desc:stand two wired tanks that differ only in how their fish wire sums — and wake one clock pulse,dige:806e6c2a34b653d0
-  step=3,desc:3 clock pulses wait on each tank,dige:8a5e08ec6a41ab93
+  step=2,desc:stand two wired tanks that differ only in how their fish wire sums — and wake one clock pulse,dige:e1431c0d7b5966dd
+  step=3,desc:3 clock pulses wait on each tank,dige:da71068635f62021
     Assertion:clock-pulses-wait-on,sentence:clock pulses wait on the wire until the tank is woken — they turn nothing by themselves
-  step=4,desc:wake both tanks,dige:f828535a177e8ac3
+  step=4,desc:wake both tanks,dige:3a606f45d553c8a8
     Assertion:three-clock-pulses-woken,sentence:three clock pulses woken together make three turns — a wire summed by count runs once per pulse
-  step=5,desc:18 more clock pulses — and wake both tanks,dige:691d86bf14e31b63
-    Assertion:four-fish-changed-pulses,sentence:four fish-changed pulses piled up wake a heron summed to the latest once — it arrives and eats nothing yet
-    Assertion:the-same-pulses-summed,sentence:the same pulses summed by count wake the heron once each — it arrives and eats six fish at once
+    Assertion:a-turn-that-changes,sentence:a turn that changes the fish sends a pulse — it lands on the fish wire at the boundary and waits for the next move
+  step=5,desc:18 more clock pulses — and wake both tanks,dige:d883d6dc181907a9
+  step=6,desc:wake both tanks,dige:88b5e953dd9b47bd
+    Assertion:pulses-piled-up-on,sentence:pulses piled up on the fish wire wake a heron summed to the latest once — and one summed by count once per pulse

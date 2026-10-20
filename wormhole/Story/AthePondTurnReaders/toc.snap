@@ -4,16 +4,20 @@ story:AthePondTurnReaders
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.022
+    TimeTotal:beliefs,avg=0.025
       sample=0.024,at=1792494779
       sample=0.023,at=1792494791
       sample=0.019,at=1792494806
       sample=0.021,at=1792494817
+      sample=0.03,at=1792533544
+      sample=0.032,at=1792534316
     TimeTotal:step,avg=0.005
       sample=0.005,at=1792494779
       sample=0.005,at=1792494791
       sample=0.004,at=1792494806
       sample=0.004,at=1792494817
+      sample=0.006,at=1792533544
+      sample=0.006,at=1792534316
   step,dige:6194012f1ce777c9
   step=2,desc:stand a tank that keeps two Turns with two readers — eye reads every step and slow waits — and wake one pulse,dige:ad39fa8350270836
   step=3,desc:3 clock pulses woken together — eye reads,dige:7d3dd3bc01ac2f75

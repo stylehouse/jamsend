@@ -12,6 +12,33 @@
  the antipatterns (§0.4), and the case studies.  When this doc and the todo disagree about what is BUILT, this one is
   meant to be right; about what to do NEXT, the todo is.  This is not a spec: only the owner promotes a doc.*
 
+## 0. Words
+
+*The words Atheory's design uses, as built.  The rows say which particle or function carries each.*
+
+| word | means | carried by |
+|---|---|---|
+| **compartment** | one place that holds state and runs code on it; today an A's world (the tank) | `A:<name>` › `w:Athe_Tank` |
+| **row** | a thing that lives in a compartment: an egg, a fish, the heron | the kinds its Sunpit passes over (`TheA_rows`) |
+| **pass** | one handler over all rows of one kind, before the next pass | `%TheAPass:<Kind>` under `%TheASunpit` |
+| **frontier** | which rows a pass sees: as they stood when the pass began (default) or when the turn began (`frontier:turn`) | the `%TheASunpit` line's culture |
+| **pond turn** | the toy's own clock tick: eggs hatch, fish lay, the heron eats | `Turns,count`; each row's `born` |
+| **wire** | a standing inlet on a compartment: what it wakes, how its pulses sum, who it hears (`from:`) | `%TheAWire:<name>,wake,sum[,from]` |
+| **outlet** | what a compartment sends on; it never looks for who hears | `%TheAOutlet:<wire name>` |
+| **pulse** | one message: "something happened", maybe carrying a thing (a fish's name and age) | `%TheAPulse` |
+| **inbox** | the pulses waiting on a compartment's wires when its move begins; nothing new arrives during a batch | the wires' `%TheAPulse` rows |
+| **outbox** | what a compartment sent during this batch, not yet heard by anyone | `%TheAOutbox` (present only while in flight) |
+| **move** | one compartment's go: reads only its own rows and inbox, writes only its own rows, sends only into its outbox | `TheA_move(w, wake)` |
+| **boundary** | the end of a batch: every outbox is delivered to the wires that hear it, in a fixed order | `TheA_boundary(names)` |
+| **batch** | some moves, in any order, then the boundary.  No move sees another move of its batch, so order can't show | `Athe_Tanks_wake(names)` |
+| **Turn** | the record of one wire's part in a move: pulses eaten, code it ran under, rows new and gone, pulses sent.  Not a counter | `%TheATurn` with `%TheANeu`, `%TheAGoner`, `%TheASent` |
+| **history** | a compartment's kept Turns (the Was-sphere, by its working name) | `%TheAWas,keep,made` |
+| **reader** | someone reading the history; a Turn stays until every reader has read it | `%TheAReader:<name>,at:<Turn>`, `TheA_read` |
+| **code push** | new code arriving at the As that hold it, let through by Story between steps | `%TheACodePush`, `%TheACodeTaken` |
+
+**One principle at two scales: nobody sees a write from the same round.**  Inside a compartment, the frontier gives each
+ pass a snapshot of the rows.  Between compartments, the boundary gives each move a snapshot of the pulses.
+
 ## 1. The design as it stands
 
 *Each part: what it is, where the code lives, the Book that proves it.  To flesh out.*
@@ -20,8 +47,8 @@
 
 - `Ghost/A/Theory.g` — the organ.  Particles all start `TheA`, so one grep finds every one.
 - `Ghost/A/AtheFishTesting.g` — the toy, `Athe_Tank`: Pond's rules on its own turn clock.  Its own file so the toy's
-   `%TheACode` names only the code it runs.  Prototypes of what Atheory will do (the Sunpit, wires) are written here in
-    plain `o()`/`i()`, so they can be seen working before any of it moves into Theory.
+   `%TheACode` names only the code it runs.  It holds only the toy's handlers (egg, fish, heron, arrive) and its hand-written
+    Sunpit; moves, sends, the boundary, Turns and readers are Theory's (since 2026-10-21).
 - `Ghost/A/AtheTesting.g` — the Books' routines.  Books are named `Athe` + toy + what they prove, and each has a row in
    Waft:Credence (`wormhole/Credence/toc.snap`, `What:Athe`).
 
@@ -41,8 +68,13 @@ An A arrives WITH its code (`TheA_stand`).  Where each method came from is read 
 Code compiles centrally and is pushed to the As that hold it.  `ghostsHaunt` announces each compiled file (§2); every A
  whose `%TheALayer` names it gets a `%TheACodePush` row.  In a Story run the row waits until Story lets it through at the
   next step (§2, the step seam); elsewhere it goes at once.  Going through is an elvis, `e_TheA_code_arrive`: the code is
-   stood again, counted in `%TheACodeTaken`, and the A thinks once.  Open: delivering a genuinely different version inside
-    a Book.
+   stood again, counted in `%TheACodeTaken`, and the A thinks once.
+**What you can observe today is bookkeeping only** (owner asked, 2026-10-21): the push waiting, the count of pushes taken,
+ and the digest, which every `%TheATurn` now carries as `code_dige`.  The Book pushes the SAME file, so behaviour can't
+  change.  Two ways to a visible effect: (a) a live hot-swap, where someone edits the toy mid-run, Story lets it through at
+   the next step, and the Turns after it show a new `code_dige` and the new behaviour.  That proves it once, but it can't be
+    a Book with fixtures.  (b) the A** shape (§1.11), so two versions of the code can live in one heap and a Book can push
+     the second one.  (b) is the real one.
 
 ### 1.4 The Sunpit, by hand — `AthePondSunpitPassOrder`, `AthePondSunpitFrontier`
 
@@ -50,24 +82,31 @@ A turn's order is declared on the world: `%TheASunpit:turn` holding `%TheAPass:<
  these, before the next".  Keys on the `%TheASunpit` line are its culture: `frontier:turn` (take every pass's rows once, at
   the turn's start) and `gone:skip` (pass over what has left since).  Order is data; which code runs for a kind is not.
 
-### 1.5 Wires, by hand — `AthePondWireSum`
+### 1.5 Wires, moves and the boundary — `AthePondWireSum`, `AthePondWireOrder`
 
-`%TheAWire` is a standing pathway on the world: what it wakes, and how its waiting `%TheAPulse` rows sum (`sum:count`, once
- per pulse; `sum:latest`, once for the lot).  `%TheAWoke` keeps how often it woke and how many pulses it ate.  Wires wake
-  in declared order, so pulses posted on a later wire wake in the same pass.
+`%TheAWire` is a standing inlet on a compartment: what it wakes, and how its waiting `%TheAPulse` rows sum (`sum:count`,
+ once per pulse; `sum:latest`, once for the lot).  `%TheAWoke` keeps how often it woke and how many pulses it ate.
+
+**The boundary (2026-10-21, replacing a wire-ordered scheduler).**  A batch is moves and then the boundary (`Theory.g`,
+ "Moves and the boundary").  A move reads only its own rows and its inbox, writes only its own rows, and sends only into its
+  own `%TheAOutbox`.  `TheA_boundary` delivers every outbox to the wires that hear it, senders by name, so nothing about
+   the order things happened in can show.  A compartment even tells itself this way: the turn that changes the fish sends on
+    the tank's own fish wire, and the heron wakes at the NEXT move (`AthePondWireSum`).
+**So the order of moves can't matter, and neither can stopping between them** (`AthePondWireOrder`): a batch taken one
+ move per Story step, with P's two old fish sitting in P's outbox while Q moves, comes out the same as one taken whole, and
+  pairs woken in opposite orders come out the same.  Every move is one coherent step to watch: `(rows, sealed inbox) →
+   (rows, outbox)`.  The cost is one batch per hop.
 
 ### 1.6 Order doesn't leak — `AthePondWakeOrder`
 
-Two compartments with nothing between them come out the same whichever is woken first, so the scheduler is free to wake
- them in any order and a Book needn't pin it.  What breaks that is shared state nobody declared: two tanks naming eggs from
-  one counter (`%NamesFrom:<A>` on the tank, said on the tree) with no wire between them leak their waking order — the
-   eggs swap names.  The rule this proves: **anything two compartments share must be a wire**, so the scheduler can order
-    along it.
+Two compartments with nothing between them come out the same whichever is woken first.  What breaks that is reaching into
+ another compartment: a tank naming its eggs from another tank's counter (`%NamesFrom:<A>`) reads and writes it in the
+  middle of a batch, so the eggs swap names depending on who woke first.  The boundary forbids exactly this, and the Book
+   keeps it as the sabotage.  **Anything compartments share travels as pulses** — or isn't shared (`%NamesAs:<tag>` makes
+    each tank's names its own).
 
-**The fix, `AthePondWireOrder`.**  The same sharing, declared as a wire: the Q holds `%TheAWire:names,from:<P>`, and
- `Athe_Tanks_wake(names)` (the toy file, plain `o()`) wakes a batch in the order asked except that a tank holding a wire
-  FROM another tank in the batch wakes after it.  Asked P-then-Q or Q-then-P, both pairs come out the same, and the routine's
-   `%WakeOrder` rows show the asked order and the order it actually woke.
+*Superseded 2026-10-21:* the first fix declared the sharing as `%TheAWire:names,from:<P>` and had `Athe_Tanks_wake` order
+ the batch along wires; loops then needed `lag:1` and a `%TheALoop` warning.  The boundary made all three unnecessary.
 
 ### 1.7 Code digests are pseudo-muted — `tol:same` (`EntropyArrest.md` §11)
 
@@ -76,32 +115,21 @@ Every edit to a toy moves its digest in every snap that shows it.  The `dige:` s
   plainly ok, no caveat.  So a code edit costs no re-baselining, and a digest that moves in one place but not another reds.
    Proven 2026-10-20: a comment-only toy edit left all six Athe Books green, caveat 0, fixtures untouched.
 
-### 1.8 A pulse that carries something — `AthePondStream`
+### 1.8 A pulse that carries something — `AthePondStream`, `AthePondLoop`
 
-Until now a pulse only said "something happened"; here one carries a thing between compartments.  Q holds
- `%TheAWire:stream,from:<P>,wake:arrive,sum:count`.  A fish too old for P (`OLD_AT`) swims down it instead of leaving for
-  good — P posts `%TheAPulse,swims:<name>,age:<n>` on Q's wire (`Athe_Tank_downstream` finds the wires leading out: like
-   names, the wire is held by the tank it leads INTO).  `Athe_Tank_wake` now hands each run its pulse (sum:latest the last
-    one), and `wake:arrive` mints the fish in Q.
+P holds `%TheAOutlet:stream`, Q holds `%TheAWire:stream,from:<P>,wake:arrive`.  A fish too old for P (`OLD_AT`) is sent
+ with its name and its age; it lands on Q's wire at the boundary and arrives at Q's next move.
 **What crosses is the age, never the birth turn.**  Each tank's time is its own (`Turns,count`); P is stood nine turns
- ahead of Q, so the two old fish arrive at Q's turn 13 born at −5 (`came:<P>`), and leave Q on its turn 14 — while Q's
-  own oldest are ten.  A naive copy of `born` would have made them young in Q.  The rule: **a pulse between compartments
-   carries quantities in the receiver's terms or in no one's** (an age, a count) — never a reading of the sender's clock.
-    Batches are asked Q-then-P; the wires (`from:`) order them P first, so what P lets go is in Q the same wake.
+ ahead of Q, so P's two old fish arrive born before Q's first turn (`came:<P>`), and leave Q on its next turn while Q's own
+  oldest are ten.  The rule: **a pulse between compartments carries quantities in the receiver's terms or in no one's** (an
+   age, a count), never a reading of the sender's clock.
 
-**A loop, `AthePondLoop`.**  Streams both ways (P→Q and Q→P) can't be ordered: each tank waits on the other, so
- `Athe_Tanks_wake`'s visit stops where it started and the batch wakes as asked, and the loop leaks the asked order again
-  (pairs 7 and 8 come out different).  A wire marked `lag:1` doesn't order the batch, and what comes down it waits for
-   the receiver's next wake, because the receiver has already been woken.  It breaks the loop the way a register breaks a loop in a
-    circuit (pairs 9 and 10 come out the same).  The rule: **every loop of wires carries at least one lag**.  A loop without
-     one is said on the tree: `Athe_Tanks_wake` gives each tank on it a `%TheALoop:<its tanks, sorted>` row (current state —
-      it goes when the loop is broken).  It warns, it doesn't refuse: the batch still wakes as asked.  And P's first two fish keep going round: each time they
-      arrive too old, they leave on the fish pass before the heron's pass can take them.  At P's turn 30 they're in transit,
-       `%TheAPulse,swims:minnow 1,age=19` waiting on P's lagged wire, which is how a lag looks on the tree.
+**A loop needs nothing special.**  With streams both ways, a loop is simply two batches round; pairs woken P-first and
+ Q-first come out the same, and P's first two fish go round for good, always in a tank or on the wire between.
 
 ### 1.9 The Turn, by hand — `AthePondTurns`
 
-Step 4 of the scheduler sketch ("commit one `%TheATurn`"), opt-in on the toy.  A tank holding `%TheAWas,keep:<n>` (the
+Step 4 of the scheduler sketch ("commit one `%TheATurn`"), in `Theory.g` (`TheA_turn_commit`, called by `TheA_move`).  A compartment holding `%TheAWas,keep:<n>` (the
  Was-sphere, by its working name) commits one Turn each time a wire wakes it:
 
     TheAWas,keep=3,made=5
@@ -121,7 +149,7 @@ Step 4 of the scheduler sketch ("commit one `%TheATurn`"), opt-in on the toy.  A
    the last `keep` stay; with no readers, `keep` alone decides (`Athe_Tank_was_trim`).  So the slowest reader holds the
     history: with keep:2, a reader that waits keeps Turns 1–3 alive, and its catching up drops Turn 1.
 
-### 1.10 Each oath bites — sabotaged once (2026-10-21)
+### 1.10 Each oath bites — sabotaged once (2026-10-21, before the boundary)
 
 Homethink §3: each test can be sabotaged once to prove it bites.  Three sabotages went into the toy together, the three
  newest Books ran once in check mode, and the toy was put back byte for byte (checksums) and re-run green:
@@ -133,6 +161,13 @@ Homethink §3: each test can be sabotaged once to prove it bites.  Three sabotag
 | S3: the Turn's "before" is taken after the runs | AthePondTurns | says what changed across it · laid-and-hatched shows only as fish | one Turn per wake · names its code · empty Turn kept |
 
 Each oath fell to the sabotage aimed at it, and only to that: the unrelated oaths in each Book kept swearing.
+
+**The boundary, sabotaged once (S4, 2026-10-21).**  `TheA_send` delivered straight to the hearing wires instead of the
+ outbox.  These stopped swearing: WireOrder "what a tank sent waits in its outbox" and "opposite orders come out the same";
+  Loop "a loop needs no order"; WireSum "the fish pulse waits for the next move".  Still sworn, rightly: WireOrder "a batch
+   taken one move at a time comes out the same" (with no outbox the stepped pair and the whole pair both deliver at once)
+    and all of Stream (its batch is asked Q first, so even instant delivery reaches Q a batch later; Stream proves the age,
+     not the boundary).  Restored by checksum and re-run green.
 
 ### 1.11 Still to design
 

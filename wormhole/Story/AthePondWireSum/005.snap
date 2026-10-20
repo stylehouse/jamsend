@@ -4,8 +4,8 @@ Snap:H
       w:AthePondWireSum
         req:wrangle,eternal,ok
     A:Athe_Tank_Latest
-      TheACode:Athe_Tank,variant:plain,dige:ca1cd7119b282e45
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:53558d4199bb17c2~g1
+      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
       w:Athe_Tank
         TheASunpit:turn
           TheAPass:Egg
@@ -13,7 +13,11 @@ Snap:H
         TheAWire:clock,wake:turn,sum:count
           TheAWoke,count=22,pulses=22
         TheAWire:fish,on:Fish,wake:heron,sum:latest
-          TheAWoke,count=2,pulses=5
+          TheAWoke,count,pulses
+          TheAPulse,turn=13,fish=4
+          TheAPulse,turn=16,fish=6
+          TheAPulse,turn=19,fish=8
+          TheAPulse,turn=22,fish=10
         Turns,count=22
         EggsNamed,count=16
         Fish:carp 3,born=13
@@ -32,8 +36,8 @@ Snap:H
         Egg:bream 16,born=22
         Heron:grey
     A:Athe_Tank_Counted
-      TheACode:Athe_Tank,variant:plain,dige:ca1cd7119b282e45
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:53558d4199bb17c2~g1
+      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
       w:Athe_Tank
         TheASunpit:turn
           TheAPass:Egg
@@ -41,9 +45,19 @@ Snap:H
         TheAWire:clock,wake:turn,sum:count
           TheAWoke,count=22,pulses=22
         TheAWire:fish,on:Fish,wake:heron,sum:count
-          TheAWoke,count=5,pulses=5
+          TheAWoke,count,pulses
+          TheAPulse,turn=13,fish=4
+          TheAPulse,turn=16,fish=6
+          TheAPulse,turn=19,fish=8
+          TheAPulse,turn=22,fish=10
         Turns,count=22
         EggsNamed,count=16
+        Fish:carp 3,born=13
+        Fish:trout 4,born=13
+        Fish:roach 5,born=16
+        Fish:bream 6,born=16
+        Fish:tench 7,born=19
+        Fish:dace 8,born=19
         Fish:chub 9,born=22
         Fish:rudd 10,born=22
         Fish:minnow 11,born=22
@@ -53,8 +67,3 @@ Snap:H
         Egg:roach 15,born=22
         Egg:bream 16,born=22
         Heron:grey
-          Ate:trout 4
-          Ate:roach 5
-          Ate:bream 6
-          Ate:tench 7
-          Ate:dace 8
