@@ -4,8 +4,8 @@ Snap:H
       w:AthePondSunpitPassOrder
         req:wrangle,eternal,ok
     A:Athe_Tank
-      TheACode:Athe_Tank,variant:plain,dige:b757c47e0ca92696
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:671113a739d01825~g1
+      TheACode:Athe_Tank,variant:plain,dige:1882a3d76cf320d1
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f75e8563bf69b41b~g1
       w:Athe_Tank
         Turns,count=21
         TheASunpit:turn
@@ -26,8 +26,8 @@ Snap:H
         Egg:minnow 11,born=19
         Egg:perch 12,born=19
     A:Athe_Tank_FishFirst
-      TheACode:Athe_Tank,variant:plain,dige:b757c47e0ca92696
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:671113a739d01825~g1
+      TheACode:Athe_Tank,variant:plain,dige:1882a3d76cf320d1
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f75e8563bf69b41b~g1
       w:Athe_Tank
         TheASunpit:turn
           TheAPass:Fish
@@ -48,8 +48,8 @@ Snap:H
         Fish:tench 7,born=19
         Fish:dace 8,born=19
     A:Athe_Tank_HeronFirst
-      TheACode:Athe_Tank,variant:plain,dige:b757c47e0ca92696
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:671113a739d01825~g1
+      TheACode:Athe_Tank,variant:plain,dige:1882a3d76cf320d1
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f75e8563bf69b41b~g1
       w:Athe_Tank
         TheASunpit:turn
           TheAPass:Heron

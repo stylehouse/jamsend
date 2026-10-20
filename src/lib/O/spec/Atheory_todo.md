@@ -213,7 +213,7 @@ H:AthePondCode,Run
       Fish:minnow 1,born=4             age = Turns.count − born; nothing on .c
       Fish:perch 2,born=4
 ```
-- **Where methods came from** is kept by `Housing.ghostsHaunt` (§0.3): `ghost_origin` (method → the file that last
+- **Where methods came from** is kept by `Housing.ghostsHaunt` (`Atheory_design.md` §2): `ghost_origin` (method → the file that last
    defined it) and `ghost_files` (file → the methods its latest load carried, replaced whole each load, so deleted methods
     leave and a clobber is current state).  Each compiled `.g` arrives as one hash with one `Ghostmeta_*`, which is also its
      layer digest.
@@ -234,7 +234,7 @@ H:AthePondCode,Run
 ### The loop queue (re-ordered 2026-10-20 after the adversarial review: finish the A before the frontier)
 
 Work top to bottom.  Each item ends with its Book green (3 check runs, caveat 0, via the Sonnet subagent pinned to one
- runner, **never released**), this doc current (§0.2 status, §0.3 ledger for any Stuff/Housing touch), and memory current.
+ runner, **never released**), this doc current (§0.2 status), `Atheory_design.md` current (§1 for what got built, §2 ledger for any Stuff/Housing touch), and memory current.
   Stop a thread and write the question into §0.1's open list rather than guess anything the owner names or rules.
 
 1. ~~The toy's code apart from the routine's~~: done: ruled into its own file, `Ghost/A/AtheFishTesting.g` (§0.1), and `AthePondCode` re-recorded against it.
@@ -253,6 +253,8 @@ Work top to bottom.  Each item ends with its Book green (3 check runs, caveat 0,
      `means,drop` omits a whole LINE; dropping one KEY (`dige`) needs the `key`/`these_sc` path half-built in
       `Hovercraft.svelte` (`means_of`, `lematch_to_rule`).
 
+5. **Wires and their sums** (`AthePondWireSum`): `%TheAWire`/`%TheAPulse` by hand on the toy, `sum:count` vs `sum:latest` — **BUILT 2026-10-20**, see "Wires by hand".  Next candidates there.
+
 **Runners:** never share one with another agent.  If a sweep or another session holds the pinned runner, wait for it or
  pin a different idle one.
 
@@ -260,7 +262,7 @@ Work top to bottom.  Each item ends with its Book green (3 check runs, caveat 0,
  so the owner can't open steps; that face staying clickable is its own open bug); before handing a Book back, print one
   `NNN.snap` and read it as the owner will (memory `w-means-w`); no method lookup or handler tables; no commits or staging;
    oaths declare themselves when a Book is recorded or accepted (`story_declare_all`); no renaming of anything the owner named; `Ghost/Play` untouched; no changes to Lies or the
-    relay; Housing/Stuff/Story only with a §0.3 ledger row (Story mediates CodePush, owner 2026-10-20).
+    relay; Housing/Stuff/Story only with a ledger row in `Atheory_design.md` §2 (Story mediates CodePush, owner 2026-10-20).
 
 ### CodePush (loop item 2; BUILT 2026-10-20, Book `AthePondCodePush`)
 
@@ -277,7 +279,7 @@ A:Athe_Tank
 ```
 
 1. **Arrival.**  `Housing.ghostsHaunt` takes in every compiled `.g`; after the merge it calls `TheA_code_push(meta)` with
-    the file's `Ghostmeta_*` name (§0.3).  Theory walks every House's As; an A whose `%TheALayer` names that file gets a
+    the file's `Ghostmeta_*` name (`Atheory_design.md` §2).  Theory walks every House's As; an A whose `%TheALayer` names that file gets a
      `%TheACodePush` row.  An A that doesn't hold the file hears nothing.
 2. **Mediation.**  An A in a Story run (its House, or one above, has `sc.Run`) keeps the row.  Story, at the start of each
     step (right after `run.c.step_n = n`), calls `TheA_code_pushes_let(Run)`, and every A in the run with a row waiting
@@ -339,8 +341,35 @@ w:Athe_Tank
 - **Cost seen:** every edit to the toy changes its layer digest, which sits in every Athe snap, so each toy edit re-accepts
    every Athe Book (loop item 4, deferred by the owner; the bill so far is two re-accepts per edit).
 
-**A code push is a new `%TheACode` beside the old one** (design, unbuilt).  The A adopts it at the next seam between turns,
- and the old one stays readable until nothing refers to it.
+### Wires by hand (loop item 5; BUILT 2026-10-20, Book `AthePondWireSum`)
+
+```
+w:Athe_Tank_Counted
+  TheASunpit:turn  /TheAPass:Egg /TheAPass:Fish          ← no heron pass: the heron is woken by a wire instead
+  TheAWire:clock,wake:turn,sum:count                     ← one turn per pulse
+    TheAPulse                                            ← a clock pulse waiting (the routine is the clock, by hand)
+    TheAWoke,count=22,pulses=22                          ← how many times it has woken, and how many pulses it ate
+  TheAWire:fish,on:Fish,wake:heron,sum:count             ← each turn the fish change posts a pulse here
+    TheAPulse,turn=19,fish=8
+    TheAWoke,count=5,pulses=5
+```
+- **Plain `o()`/`i()` in the toy's file** (`Athe_Tank_wake`, `Athe_Tank_woken`), for the same reason as the Sunpit: the
+   toy's `%TheACode` names only that file.  `Athe_Tank_wake` takes each wire in declared order, drops its waiting pulses, runs
+    the wake once per pulse (`sum:count`) or once for the lot (`sum:latest`), and adds to its `%TheAWoke`.  Pulses a wake
+     posts on a LATER wire are woken in the same pass (the clock's turns pulse the fish wire, which wakes after): the
+      wire-tree order, by hand.  Only a turn posts fish pulses: a wake never pulses its own wire (a heron eating would wake
+       itself).  A tank with no wires behaves exactly as before.
+- **The Book** stands two tanks that differ only in the fish wire's `sum`.  Step 3 leaves three clock pulses waiting (they
+   turn nothing by themselves); step 4 wakes them (three turns); step 5 sends eighteen more and wakes (turn 22).  Four
+    fish-changed pulses pile up on the way: summed to the latest, the heron wakes once, arrives and eats nothing; summed by
+     count it wakes four times, arrives and eats six fish at once (simulated first, `scratchpad/wiresim.mjs`).  That's
+      candidate test 4, "counts are kept", and the doc's own claim: three "fish changed" pulses mean one reconsideration.
+- **Pulses snap here**, against the names table's "never snaps": in a Book worked by hand, a pulse waiting between steps
+   is the thing to see.  Revisit when pulses come from something other than the routine.
+- **Next:** candidate test 2, "unwatched work costs nothing" — a tank with only wires is never visited between pulses.
+   It needs the A's own tick to stop riding every belief pass, which touches Housing (ask first); the toy's
+    `Athe_Tank(A, w)` already does nothing.  Candidate test 3, "order doesn't leak": two unwired tanks, the same pulses
+     woken in either order, identical snaps — buildable now.
 
 ### Wires and pulses on Pond
 
@@ -463,33 +492,10 @@ Each test is a sentence a person would say, and each can be sabotaged once to pr
 - **Turf leases for compartments inside one tab** (no relay round-trip needed) versus across bodies.
 - **Snap filtering** for OtherSpheres and holsters (§0.1).
 
-## 0.3 Foundation ledger — every adjustment to Stuff|Housing (and what sits right beside them)
+## 0.3 Foundation ledger — moved to `Atheory_design.md` §2 (2026-10-20)
 
-*The owner, 2026-10-20: "I want to track everything we adjust in Stuff|Housing."  Atheory grows out of the foundation,
- so each change to `Stuff.svelte.ts`, `Housing.svelte.ts` (and their close neighbours) gets a row here: what moved, why,
-  who reads it, and how to take it back out.  Add a row in the same change that makes the edit.  Newest first.*
-
-### `src/lib/Stuff.svelte.ts`
-
-No Atheory adjustments yet.
-
-### `src/lib/O/Housing.svelte.ts`
-
-| date | where | what | why | read by | to undo |
-|---|---|---|---|---|---|
-| 2026-10-20 | the CodePush line at the end of `ghostsHaunt` (`if (meta) (this as any).TheA_code_push?.(meta)`) | after the merge, every compiled file that arrives is announced to Theory by its `Ghostmeta_*` name | CodePush: code compiles centrally and is pushed to the As that hold it; `ghostsHaunt` is the one place every compiled `.g` arrives | `Ghost/A/Theory.g` (`TheA_code_push`); Book `AthePondCodePush` | delete the line |
-| 2026-10-20 | `House.ghost_origin`, `House.ghost_files`, the `if (meta) {…}` block in `ghostsHaunt` | `ghostsHaunt` finds the one `Ghostmeta_*` key in each eaten hash and records, on the **top** House: `ghost_files[meta]` = the methods this load carried (replaced whole each load, so a deleted method leaves), and `ghost_origin[method] = meta` (the file that last defined it).  A hash with no `Ghostmeta_*` (a hand-written `.svelte` ghost) records nothing.  (The first version kept a `ghost_clobbers` log that only grew; replaced the same day.) | `H.ghosts` is flat, so nothing could say which code an actor runs or where a method came from.  Each compiled `.g` arrives as exactly one hash with exactly one `Ghostmeta_*`, which is also its digest: the one cheap place to learn it. | `Ghost/A/Theory.g` (`TheA_clobbers_stand`); Book `AthePondCode` | delete the two fields and the `if (meta) {…}` block; nothing else depends on them yet |
-| 2026-10-18 | `Wormhole_compose_app_tree` (AppTreeNav root), `Wormhole_mount_creds`, the serve wall (the `.jamsend` segment refusal), the import | the literal `'.jamsend'` became `APP_DATA_DIR` from `src/lib/app_data_dir.ts` | one spelling of the app's private corner; the serve wall and NodeWormholeNav's 0600 must agree on it (§ "The app's own storage") | — (same value) | inline the literal again; the value never changed |
-
-### Beside the foundation (tooling and the app shell)
-
-| date | where | what | why |
-|---|---|---|---|
-| 2026-10-20 | `src/lib/O/Story.svelte`, the step seam right after `run.c.step_n = n` (`TheA_code_pushes_let`) | at the start of every step, the As in the run take in any code pushed to them while they waited | Story mediates how code comes through a Book (owner): a push to an A in a run waits on it as `%TheACodePush` until the next step, so a snap shows exactly when code changes |
-| 2026-10-20 | `src/lib/O/Story.svelte` (`story_declare_one`, `story_declare_all`; called in accept-all and on a new recording's completion) | every sworn sentence is declared into the toc when a Book is recorded or accepted; the old "only the human clicks" rule is gone (owner: *"you just need to know what you're doing"*) | swears were sitting sworn but ungated, so a sentence that stopped turning up went unnoticed |
-| 2026-10-20 | `scripts/LocalGen.spec.ts` | creates `gen/<dir>/` before writing, so a new `Ghost/<dir>/` compiles without a hand `mkdir` | `gen/` mirrors `Ghost/`; the relay's `gen_write` already did this (`relay.ts:997`), LocalGen didn't (met making `Ghost/A/`) |
-| 2026-10-19 | `src/service-worker.js` | a `.go` module the worker re-fetches asks with `?import`; cache bumped to `jamsend-shell-v2` | a worker's re-fetch arrives `Sec-Fetch-Dest: empty`, Vite then served raw `.go` source, the browser sniffed it as HTML, and every Creduler ghost failed on the music page |
-| 2026-10-18 | `src/lib/app_data_dir.ts` (new) | `APP_DATA_DIR = '.jamsend'`, dependency-free | read by Housing, NodeWormholeNav, the daemon, and ghosts via `IMPORT()` |
+Every change Atheory makes to Stuff or Housing (and beside them) is collected in **`Atheory_design.md` §2**, with the rules
+ for adding a row and how to audit the ledger against git.  Add rows there, in the same change as the edit.
 
 ## 0.4 Antipatterns — what the rebuild measures itself against (2026-10-20)
 

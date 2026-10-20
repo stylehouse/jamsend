@@ -1,0 +1,60 @@
+Snap:H
+  H:AthePondWireSum,Run
+    A:AthePondWireSum
+      w:AthePondWireSum
+        req:wrangle,eternal,ok
+    A:Athe_Tank_Latest
+      TheACode:Athe_Tank,variant:plain,dige:1882a3d76cf320d1
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f75e8563bf69b41b~g1
+      w:Athe_Tank
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+        TheAWire:clock,wake:turn,sum:count
+          TheAWoke,count=22,pulses=22
+        TheAWire:fish,on:Fish,wake:heron,sum:latest
+          TheAWoke,count=2,pulses=5
+        Turns,count=22
+        EggsNamed,count=16
+        Fish:carp 3,born=13
+        Fish:trout 4,born=13
+        Fish:roach 5,born=16
+        Fish:bream 6,born=16
+        Fish:tench 7,born=19
+        Fish:dace 8,born=19
+        Fish:chub 9,born=22
+        Fish:rudd 10,born=22
+        Fish:minnow 11,born=22
+        Fish:perch 12,born=22
+        Egg:carp 13,born=22
+        Egg:trout 14,born=22
+        Egg:roach 15,born=22
+        Egg:bream 16,born=22
+        Heron:grey
+    A:Athe_Tank_Counted
+      TheACode:Athe_Tank,variant:plain,dige:1882a3d76cf320d1
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f75e8563bf69b41b~g1
+      w:Athe_Tank
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+        TheAWire:clock,wake:turn,sum:count
+          TheAWoke,count=22,pulses=22
+        TheAWire:fish,on:Fish,wake:heron,sum:count
+          TheAWoke,count=5,pulses=5
+        Turns,count=22
+        EggsNamed,count=16
+        Fish:chub 9,born=22
+        Fish:rudd 10,born=22
+        Fish:minnow 11,born=22
+        Fish:perch 12,born=22
+        Egg:carp 13,born=22
+        Egg:trout 14,born=22
+        Egg:roach 15,born=22
+        Egg:bream 16,born=22
+        Heron:grey
+          Ate:trout 4
+          Ate:roach 5
+          Ate:bream 6
+          Ate:tench 7
+          Ate:dace 8

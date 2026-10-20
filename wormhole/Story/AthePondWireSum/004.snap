@@ -1,0 +1,35 @@
+Snap:H
+  H:AthePondWireSum,Run
+    A:AthePondWireSum
+      w:AthePondWireSum
+        req:wrangle,eternal,ok
+    A:Athe_Tank_Latest
+      TheACode:Athe_Tank,variant:plain,dige:1882a3d76cf320d1
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f75e8563bf69b41b~g1
+      w:Athe_Tank
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+        TheAWire:clock,wake:turn,sum:count
+          TheAWoke,count=4,pulses=4
+        TheAWire:fish,on:Fish,wake:heron,sum:latest
+          TheAWoke,count,pulses
+        Turns,count=4
+        EggsNamed,count=2
+        Fish:minnow 1,born=4
+        Fish:perch 2,born=4
+    A:Athe_Tank_Counted
+      TheACode:Athe_Tank,variant:plain,dige:1882a3d76cf320d1
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f75e8563bf69b41b~g1
+      w:Athe_Tank
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+        TheAWire:clock,wake:turn,sum:count
+          TheAWoke,count=4,pulses=4
+        TheAWire:fish,on:Fish,wake:heron,sum:count
+          TheAWoke,count,pulses
+        Turns,count=4
+        EggsNamed,count=2
+        Fish:minnow 1,born=4
+        Fish:perch 2,born=4

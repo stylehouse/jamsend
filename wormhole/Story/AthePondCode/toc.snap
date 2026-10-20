@@ -8,10 +8,7 @@ story:AthePondCode
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.04
-      sample=0.032,at=1792474019
-      sample=0.036,at=1792474026
-      sample=0.041,at=1792474033
+    TimeTotal:beliefs,avg=0.035
       sample=0.04,at=1792474041
       sample=0.071,at=1792474920
       sample=0.041,at=1792474953
@@ -19,10 +16,10 @@ story:AthePondCode
       sample=0.051,at=1792474969
       sample=0.028,at=1792476873
       sample=0.026,at=1792477636
-    TimeTotal:step,avg=0.008
-      sample=0.006,at=1792474019
-      sample=0.007,at=1792474026
-      sample=0.008,at=1792474033
+      sample=0.016,at=1792485124
+      sample=0.028,at=1792485184
+      sample=0.016,at=1792485344
+    TimeTotal:step,avg=0.007
       sample=0.008,at=1792474041
       sample=0.014,at=1792474920
       sample=0.008,at=1792474953
@@ -30,11 +27,14 @@ story:AthePondCode
       sample=0.01,at=1792474969
       sample=0.006,at=1792476873
       sample=0.005,at=1792477636
+      sample=0.003,at=1792485124
+      sample=0.006,at=1792485184
+      sample=0.003,at=1792485344
   step,dige:157069eb2831c36e
-  step=2,desc:stand the toy as an A with the code it runs — and take its first turn,dige:4973386b219173ef
+  step=2,desc:stand the toy as an A with the code it runs — and take its first turn,dige:34ef8fb908bccd8e
     Assertion:an-a-arrives-with,sentence:an A arrives with the digest of the code loaded for it — read off the tree
     Assertion:an-empty-tank-plants,sentence:an empty tank plants two eggs on its first turn
-  step=3,desc:the toy takes one more turn,dige:c99765c5bbe7a39b
-  step=4,desc:the toy takes one more turn,dige:2250c2a4a81a34c2
-  step=5,desc:the toy takes one more turn,dige:3d67203b46775ea9
+  step=3,desc:the toy takes one more turn,dige:35fa364f330b2a3b
+  step=4,desc:the toy takes one more turn,dige:28f53ba82f884807
+  step=5,desc:the toy takes one more turn,dige:52f70e576a9e4eaa
     Assertion:the-eggs-hatch-into,sentence:the eggs hatch into two fish on the fourth turn

@@ -17,7 +17,7 @@ const NAMES = ['minnow', 'perch', 'carp', 'trout', 'roach', 'bream', 'tench', 'd
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheFishTesting(): string { return '671113a739d01825~g1' },
+    Ghostmeta_Ghost_A_AtheFishTesting(): string { return 'f75e8563bf69b41b~g1' },
 
 // AtheFishTesting.g — the TOY that Atheory's Books test: Athe_Tank, a small pond with its own turn clock.
 //
@@ -41,6 +41,7 @@ Athe_Tank_turn(w) {
     let turn = (w.o({ Turns: 1 })[0]?.sc.count || 0) + 1
     w.oai({ Turns: 1 }, { count: turn })
     let pit = this.Athe_Tank_pit(w)
+    let fish_before = w.o({ Fish: 1 }).length
     if (!w.o({ Egg: 1 }).length && !w.o({ Fish: 1 }).length) {
         // an empty tank starts with two eggs
         w.i({ Egg: this.Athe_Tank_name(w), born: turn })
@@ -54,6 +55,14 @@ Athe_Tank_turn(w) {
     for (const pass of pit.o({ TheAPass: 1 })) {
         let kind = pass.sc.TheAPass
         this.Athe_Tank_pass(w, kind, turn, at_start[kind] || w.o({ [kind]: 1 }), pit.sc.gone === 'skip')
+    }
+    // the fish changed this turn: a pulse on every wire that listens for it (only a turn posts these — a wake never pulses
+    //  its own wire, or a heron eating would wake itself)
+    let fish_after = w.o({ Fish: 1 }).length
+    if (fish_after !== fish_before) {
+        for (const wire of w.o({ TheAWire: 1 })) {
+            if (wire.sc.on === 'Fish') wire.i({ TheAPulse: 1, turn, fish: fish_after })
+        }
     }
 
 },
@@ -131,6 +140,34 @@ Athe_Tank_heron(w) {
     while (meals.length > 5) {
         heron.drop(meals[0])
         meals = heron.o({ Ate: 1 })
+    }
+
+},
+// wires — the scheduler by hand (Atheory_todo §0.2, "Wires by hand").  A %TheAWire on the tank is a standing pathway: what
+//  it wakes, and how the pulses waiting on it sum.  sum:count runs the wake once per pulse (three clock pulses are three
+//   turns); sum:latest runs it once for however many piled up (three "the fish changed" mean one reconsideration).
+//    Wires wake in the order they're declared, so pulses a turn posts on a later wire are woken in the same pass.
+//  The tank only moves when woken; without wires it moves only when turned by hand, as before
+Athe_Tank_wake(w) {
+    for (const wire of w.o({ TheAWire: 1 })) {
+        let pulses = wire.o({ TheAPulse: 1 })
+        if (!pulses.length) continue
+        let runs = wire.sc.sum === 'latest' ? 1 : pulses.length
+        for (const pulse of pulses) wire.drop(pulse)
+        for (let k = 0; k < runs; k++) this.Athe_Tank_woken(w, wire.sc.wake)
+        let woke = wire.o({ TheAWoke: 1 })[0]
+        wire.oai({ TheAWoke: 1 }, { count: (woke?.sc.count || 0) + runs, pulses: (woke?.sc.pulses || 0) + pulses.length })
+    }
+
+},
+// what a wire wakes, named here and called by name — the wiring is data, the code that runs is not
+Athe_Tank_woken(w, wake) {
+    if (wake === 'turn') {
+        this.Athe_Tank_turn(w)
+    } else if (wake === 'heron') {
+        this.Athe_Tank_heron(w)
+    } else {
+        w.oai({ log: 'a wire wakes something this tank has no handler for: ' + wake })
     }
 
 },

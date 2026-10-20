@@ -8,8 +8,7 @@ story:AthePondSunpitFrontier
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.056
-      sample=0.056,at=1792473336
+    TimeTotal:beliefs,avg=0.045
       sample=0.075,at=1792474206
       sample=0.075,at=1792474210
       sample=0.035,at=1792474221
@@ -17,8 +16,10 @@ story:AthePondSunpitFrontier
       sample=0.035,at=1792474366
       sample=0.05,at=1792476866
       sample=0.061,at=1792477788
-    TimeTotal:step,avg=0.014
-      sample=0.014,at=1792473336
+      sample=0.023,at=1792485246
+      sample=0.02,at=1792485278
+      sample=0.016,at=1792485363
+    TimeTotal:step,avg=0.011
       sample=0.019,at=1792474206
       sample=0.019,at=1792474210
       sample=0.009,at=1792474221
@@ -26,9 +27,12 @@ story:AthePondSunpitFrontier
       sample=0.009,at=1792474366
       sample=0.012,at=1792476866
       sample=0.015,at=1792477788
+      sample=0.006,at=1792485246
+      sample=0.005,at=1792485278
+      sample=0.004,at=1792485363
   step,dige:97dd881c368116a3
-  step=2,desc:stand three heron-first tanks that differ only in when a pass takes its rows — and take turn one,dige:6f799c02cde07673
-  step=3,desc:turn every tank up to the turn this step names,dige:4d3afb19a982eedf
-  step=4,desc:turn every tank up to the turn this step names,dige:812890247c4eb083
+  step=2,desc:stand three heron-first tanks that differ only in when a pass takes its rows — and take turn one,dige:943c80665abf04a9
+  step=3,desc:turn every tank up to the turn this step names,dige:a7d4599b69d03a53
+  step=4,desc:turn every tank up to the turn this step names,dige:b2946a1a39b3d0cd
     Assertion:a-turn-start-frontier,sentence:a turn-start frontier that passes over what has left comes out the same as one taken at the start of each pass
     Assertion:a-frontier-taken-at,sentence:a frontier taken at the start of the turn still holds the fish the heron just ate — the eaten roach and bream lay two eggs

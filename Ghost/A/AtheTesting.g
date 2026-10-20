@@ -118,7 +118,8 @@ AthePondSunpitPassOrder_stand(w):
     for (const t of this.AthePondSunpitPassOrder_tanks()) this.AthePond_tank_stand(t)
 
 // one tank for a Sunpit Book: its own A running the toy's code, its world, the turn's Sunpit if the Book declares one
-//  (t.order, and t.culture for keys on the %TheASunpit line), and its first turn
+//  (t.order, and t.culture for keys on the %TheASunpit line), its wires if it has any (t.wires), and its first turn —
+//   by hand, or for a wired tank one clock pulse woken
 AthePond_tank_stand(t):
     let old = this.o({ A: t.name })[0]
     if (old) this.drop(old)
@@ -128,7 +129,18 @@ AthePond_tank_stand(t):
         let pit = tank.i({ TheASunpit: 'turn', ...(t.culture || {}) })
         for (const kind of t.order) pit.i({ TheAPass: kind })
     }
-    this.Athe_Tank_turn(tank)
+    for (const wire of (t.wires || [])) tank.i(wire)
+    if (t.wires) {
+        this.AthePond_clock(tank, 1)
+        this.Athe_Tank_wake(tank)
+    } else {
+        this.Athe_Tank_turn(tank)
+    }
+
+// the clock, by hand: n pulses on the tank's clock wire, left waiting until something wakes the tank
+AthePond_clock(tank, n):
+    let clock = tank.o({ TheAWire: 'clock' })[0]
+    for (let k = 0; k < n; k++) clock?.i({ TheAPulse: 1 })
 
 // turn each named tank until it has taken `upto` turns
 AthePond_turns(tanks, upto):
@@ -317,6 +329,100 @@ AthePondCodePush_witness(w):
     }
     if (n >= 6 && !waiting(tank) && taken(tank) === 2 && same && !taken(by)) {
         this.story_swear(w, 'two arrivals let through together are taken in once')
+    }
+//#endregion
+
+//#region the test routine — Book AthePondWireSum
+
+// two tanks wired the same but for how their fish wire sums (the scheduler by hand, Theory's %TheAWire): a clock wire wakes a
+//  turn once per pulse (sum:count); a fish wire, pulsed each turn the fish change, wakes the heron — once for however many
+//   piled up (sum:latest) in one tank, once per pulse (sum:count) in the other.  Neither tank has a heron pass in its turn.
+//  Step 2 stands them and wakes one clock pulse (turn 1); step 3 leaves three clock pulses waiting; step 4 wakes them
+//   (turn 4); step 5 sends eighteen more and wakes them (turn 22), four fish-changed pulses pile up on the way (simulated
+//    first, scratchpad wiresim.mjs) — the latest-summed heron arrives and eats nothing, the count-summed one arrives and eats six
+AthePondWireSum(A,w):
+    w oai %req:wrangle,eternal
+        await &AthePondWireSum_drive,w,req
+        req%ok = 1
+
+async AthePondWireSum_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 5
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.AthePondWireSum_stand(w)
+        if (n === 3) this.AthePondWireSum_pulse(w, 3)
+        if (n === 4) this.AthePondWireSum_wake(w)
+        if (n === 5) this.AthePondWireSum_pulse_wake(w, 18)
+    }
+    this.AthePondWireSum_witness(w)
+
+AthePondWireSum_tanks():
+    let wires = (sum) => [
+        { TheAWire: 'clock', wake: 'turn', sum: 'count' },
+        { TheAWire: 'fish', on: 'Fish', wake: 'heron', sum },
+    ]
+    return [
+        { name: 'Athe_Tank_Latest', order: ['Egg', 'Fish'], wires: wires('latest') },
+        { name: 'Athe_Tank_Counted', order: ['Egg', 'Fish'], wires: wires('count') },
+    ]
+
+AthePondWireSum_stand(w):
+    i %desc:'stand two wired tanks that differ only in how their fish wire sums — and wake one clock pulse'
+    if (typeof this.TheA_stand !== 'function' || typeof this.Athe_Tank_wake !== 'function') {
+        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
+        return
+    }
+    for (const t of this.AthePondWireSum_tanks()) this.AthePond_tank_stand(t)
+
+AthePondWireSum_each(fn):
+    for (const t of this.AthePondWireSum_tanks()) {
+        let tank = this.AthePondSunpitPassOrder_tank(t.name)
+        if (tank) fn(tank)
+    }
+
+AthePondWireSum_pulse(w, n):
+    i %desc:`${n} clock pulses wait on each tank`
+    this.AthePondWireSum_each(tank => this.AthePond_clock(tank, n))
+
+AthePondWireSum_wake(w):
+    i %desc:'wake both tanks'
+    this.AthePondWireSum_each(tank => this.Athe_Tank_wake(tank))
+
+AthePondWireSum_pulse_wake(w, n):
+    i %desc:`${n} more clock pulses — and wake both tanks`
+    this.AthePondWireSum_each(tank => {
+        this.AthePond_clock(tank, n)
+        this.Athe_Tank_wake(tank)
+    })
+
+// the witness reads the tanks' trees: their clocks, what waits on each wire, what each wire has woken, the heron
+AthePondWireSum_witness(w):
+    let latest = this.AthePondSunpitPassOrder_tank('Athe_Tank_Latest')
+    let counted = this.AthePondSunpitPassOrder_tank('Athe_Tank_Counted')
+    if (!latest || !counted) return
+    let n = this.c.run?.c.step_n ?? 0
+    let turns = (tank) => tank.o({ Turns: 1 })[0]?.sc.count || 0
+    let wire = (tank, name) => tank.o({ TheAWire: name })[0]
+    let waiting = (tank, name) => wire(tank, name)?.o({ TheAPulse: 1 }).length || 0
+    let woke = (tank, name) => wire(tank, name)?.o({ TheAWoke: 1 })[0]?.sc || {}
+    let ate = (tank) => tank.o({ Heron: 1 })[0]?.o({ Ate: 1 }).length ?? -1
+    if (n === 3 && turns(latest) === 1 && waiting(latest, 'clock') === 3 && turns(counted) === 1 && waiting(counted, 'clock') === 3) {
+        this.story_swear(w, 'clock pulses wait on the wire until the tank is woken — they turn nothing by themselves')
+    }
+    if (n === 4 && turns(latest) === 4 && turns(counted) === 4 && !waiting(latest, 'clock') && woke(latest, 'clock').count === 4) {
+        this.story_swear(w, 'three clock pulses woken together make three turns — a wire summed by count runs once per pulse')
+    }
+    let l = woke(latest, 'fish')
+    let c = woke(counted, 'fish')
+    if (n === 5 && turns(latest) === 22 && l.pulses === 5 && l.count === 2 && ate(latest) === 0) {
+        this.story_swear(w, 'four fish-changed pulses piled up wake a heron summed to the latest once — it arrives and eats nothing yet')
+    }
+    // six eaten, read as six fewer fish than the other tank: a heron keeps only its last five meals (Athe_Tank_heron)
+    let fish = (tank) => tank.o({ Fish: 1 }).length
+    if (n === 5 && turns(counted) === 22 && c.pulses === 5 && c.count === 5 && fish(latest) - fish(counted) === 6 && ate(counted) === 5) {
+        this.story_swear(w, 'the same pulses summed by count wake the heron once each — it arrives and eats six fish at once')
     }
 //#endregion
 // (ends on a comment — a .g must not end on a method-final brace)
