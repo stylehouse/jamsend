@@ -1,0 +1,32 @@
+story:AthePondSunpitFrontier
+  Styles
+  Plan
+  Opt
+    For
+  EntropyArrest
+    Entcase:Self_round
+      lematch,self,round
+        means,drop
+  TimeSpool
+    TimeTotal:beliefs,avg=0.055
+      sample=0.056,at=1792473336
+      sample=0.075,at=1792474206
+      sample=0.075,at=1792474210
+      sample=0.035,at=1792474221
+      sample=0.062,at=1792474354
+      sample=0.035,at=1792474366
+      sample=0.05,at=1792476866
+    TimeTotal:step,avg=0.014
+      sample=0.014,at=1792473336
+      sample=0.019,at=1792474206
+      sample=0.019,at=1792474210
+      sample=0.009,at=1792474221
+      sample=0.016,at=1792474354
+      sample=0.009,at=1792474366
+      sample=0.012,at=1792476866
+  step,dige:97dd881c368116a3
+  step=2,desc:stand three heron-first tanks that differ only in when a pass takes its rows — and take turn one,dige:6f799c02cde07673
+  step=3,desc:turn every tank up to the turn this step names,dige:4d3afb19a982eedf
+  step=4,desc:turn every tank up to the turn this step names,dige:812890247c4eb083
+    Assertion:a-turn-start-frontier,sentence:a turn-start frontier that passes over what has left comes out the same as one taken at the start of each pass
+    Assertion:a-frontier-taken-at,sentence:a frontier taken at the start of the turn still holds the fish the heron just ate — the eaten roach and bream lay two eggs

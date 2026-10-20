@@ -17,7 +17,7 @@ const NAMES = ['minnow', 'perch', 'carp', 'trout', 'roach', 'bream', 'tench', 'd
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheFishTesting(): string { return '345ea9ef80a29709~g1' },
+    Ghostmeta_Ghost_A_AtheFishTesting(): string { return '671113a739d01825~g1' },
 
 // AtheFishTesting.g — the TOY that Atheory's Books test: Athe_Tank, a small pond with its own turn clock.
 //
@@ -40,15 +40,54 @@ Athe_Tank(A, w) {
 Athe_Tank_turn(w) {
     let turn = (w.o({ Turns: 1 })[0]?.sc.count || 0) + 1
     w.oai({ Turns: 1 }, { count: turn })
+    let pit = this.Athe_Tank_pit(w)
     if (!w.o({ Egg: 1 }).length && !w.o({ Fish: 1 }).length) {
         // an empty tank starts with two eggs
         w.i({ Egg: this.Athe_Tank_name(w), born: turn })
         w.i({ Egg: this.Athe_Tank_name(w), born: turn })
         return
     }
-    for (const egg of w.o({ Egg: 1 })) this.Athe_Tank_egg(w, egg, turn)
-    for (const fish of w.o({ Fish: 1 })) this.Athe_Tank_fish(w, fish, turn)
-    this.Athe_Tank_heron(w)
+    // the frontier: by default each pass takes its rows as they stand when the pass starts.  A tank declaring
+    //  frontier:turn takes every pass's rows once, as they stood when the turn started, and gone:skip passes over any
+    //   of those that have left the tank since (an egg hatched, a fish eaten)
+    let at_start = pit.sc.frontier === 'turn' ? { Egg: w.o({ Egg: 1 }), Fish: w.o({ Fish: 1 }) } : {}
+    for (const pass of pit.o({ TheAPass: 1 })) {
+        let kind = pass.sc.TheAPass
+        this.Athe_Tank_pass(w, kind, turn, at_start[kind] || w.o({ [kind]: 1 }), pit.sc.gone === 'skip')
+    }
+
+},
+// how a turn goes, declared on the tank — a Sunpit written by hand (Atheory_todo §0.2 loop item 3).  Each %TheAPass is
+//  "this handler over all of these, before the next"; keys on the %TheASunpit line are its culture (frontier, gone).
+//   The tank declares eggs, fish, heron unless whoever stood it declared first.  Plain o() and i(), no rule engine:
+//    what a Sunpit would do, made visible
+Athe_Tank_pit(w) {
+    let pit = w.o({ TheASunpit: 'turn' })[0]
+    if (!pit) {
+        pit = w.i({ TheASunpit: 'turn' })
+        for (const kind of ['Egg', 'Fish', 'Heron']) pit.i({ TheAPass: kind })
+    }
+    return pit
+
+},
+// one pass: its handler over the rows it was given.  Named here, called by name — the order is data, the code that
+//  runs for each kind is not
+Athe_Tank_pass(w, kind, turn, rows, skip_gone) {
+    if (kind === 'Egg') {
+        for (const egg of rows) {
+            if (skip_gone && !w.o().includes(egg)) continue
+            this.Athe_Tank_egg(w, egg, turn)
+        }
+    } else if (kind === 'Fish') {
+        for (const fish of rows) {
+            if (skip_gone && !w.o().includes(fish)) continue
+            this.Athe_Tank_fish(w, fish, turn)
+        }
+    } else if (kind === 'Heron') {
+        this.Athe_Tank_heron(w)
+    } else {
+        w.oai({ log: 'a pass this tank has no handler for: ' + kind })
+    }
 
 },
 // an egg hatches into a fish with the same name, born this turn

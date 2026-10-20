@@ -239,9 +239,10 @@ Work top to bottom.  Each item ends with its Book green (3 check runs, caveat 0,
 
 1. ~~The toy's code apart from the routine's~~: done: ruled into its own file, `Ghost/A/AtheFishTesting.g` (§0.1), and `AthePondCode` re-recorded against it.
 2. **A code swap between turns** (`AthePondCodeSwap`): change the toy's code mid-run (a second variant, or a recompile) and
-    swear that the A's `%TheACode` changes only between turns.  The tank now has turns; what records "this turn ran under
-     digest X" is the first design question, and it may be `%TheATurn`'s first slice.  Propose before building.
-3. **The Sunpit's base layer, prototyped gradually** (owner, 2026-10-20: *"prototype the base layer of what we can see
+    swear that the A's `%TheACode` changes only between turns.  **PROPOSED 2026-10-20, awaiting the owner's ruling** (below,
+     "The code swap — a proposal").  Not built.
+3. **The Sunpit's base layer, prototyped gradually** — **first slice (order) BUILT 2026-10-20**, see "The Sunpit by hand —
+    order" below (owner, 2026-10-20: *"prototype the base layer of what we can see
     Sunpit doing, gradually… you might get away with oa() and o() to build the illusion of some majestic Sunpit rule engine
      giving us exactly the compute we need"*).  Plain `o()`/`oa()` over the toy, written so that what a Sunpit WOULD do is
       visible, starting with **order** (eggs → fish → heron as a declared order, sworn by showing a changed order changes
@@ -260,8 +261,77 @@ Work top to bottom.  Each item ends with its Book green (3 check runs, caveat 0,
 **Don'ts for the loop:** never `release` a run (it tears H:Story down while the tab keeps drawing the dead Story face,
  so the owner can't open steps; that face staying clickable is its own open bug); before handing a Book back, print one
   `NNN.snap` and read it as the owner will (memory `w-means-w`); no method lookup or handler tables; no commits or staging;
-   declare a Book's oaths (`runner_ask declare`) once its sentences settle; no renaming of anything the owner named; `Ghost/Play` untouched; no changes to Story, Lies or the
+   oaths declare themselves when a Book is recorded or accepted (`story_declare_all`); no renaming of anything the owner named; `Ghost/Play` untouched; no changes to Story, Lies or the
     relay; Housing/Stuff only with a §0.3 ledger row.
+
+### The code swap — a proposal (loop item 2; rewritten 2026-10-20 after the owner's correction; nothing built)
+
+*The first draft (per-A method objects over `Object.create(H)`) was withdrawn: it isolated code per A, which is not the
+ posture.  The posture (owner): code is compiled centrally, hot-updated, and **pushed to the As that hold it**; it arrives
+  at each A **as an elvis that does a blank `think()`** (or more, as the A needs).*
+
+**What already happens.**  A `.g` compiles to a `.go`; the tab hot-loads it; `Housing.ghostsHaunt` merges its methods
+ onto the House and records which methods came from which file (`ghost_files`).  So the code is already updated
+  centrally.  Nobody is *told*: an A that runs that file doesn't hear that its code changed.
+
+**What's missing: the push.**
+1. **Who holds a file.**  An A says which files it runs: its `%TheALayer` rows (the A's sense of where its code lives).
+2. **The arrival.**  When `ghostsHaunt` takes a file in, it hands the news to Theory (one call, one §0.3 ledger row).
+    Theory finds the As whose `%TheALayer` names that file, and posts each one an elvis.  As that don't hold the file
+     hear nothing.
+3. **The elvis.**  It re-stands the A's `%TheACode` (the new layer digest, and so a new chain digest), then a blank
+    `think()` so the A runs again on the new code.  More, later, as an A needs it (migrations, a re-read).
+4. **Between turns, for free.**  An elvis runs between ticks, never inside one, so the code change lands between turns
+    because of how it's delivered, not because of a rule we wrote.
+
+**The Book** (`AthePondCodeSwap`), two As: the tank (holding `AtheFishTesting.g`) and a bystander holding some other file.
+ Mid-run, the routine makes the file arrive again (the same entry Housing calls).  Oaths:
+- the tank's `%TheACode` re-stands, and its `think` runs, on the next tick, not in the middle of one;
+- the bystander hears nothing;
+- an arrival that changes nothing changes nothing (same digest → same rows).
+
+**Open:** how the routine makes "a different version" arrive inside a Book.  The honest options are a real recompile from
+ outside (not something a Book can do) or re-delivering the same file.  The first Book proves the routing and the timing
+  only; a real version change waits for a way to deliver one.
+
+### The Sunpit by hand — order (loop item 3, first slice BUILT 2026-10-20, Book `AthePondSunpitPassOrder`)
+
+```
+w:Athe_Tank
+  Turns,count=22
+  TheASunpit:turn            the order a turn takes, declared on the tank (a holster: its rows aren't tank contents)
+    TheAPass:Egg             "this handler over all of these, before the next"
+    TheAPass:Fish
+    TheAPass:Heron
+  Egg:… / Fish:… / Heron:grey
+```
+- **Plain `o()` and `i()`, in the toy's own file**, no Theory.g helper: if the toy called Theory.g, its `%TheACode`
+   (which names only `AtheFishTesting.g`) would be lying.  `Athe_Tank_order(w)` reads the passes, and stands
+    Egg/Fish/Heron if nobody declared an order first.  `Athe_Tank_pass(w, kind, turn)` names each kind's handler in code
+     (an if-chain, as `do_fn_for` does for reqs): the order is data, which code runs is not.
+- **The culture this slice has:** passes run in the declared order, and each pass takes its rows as they stand when it
+   starts.  So the Fish pass sees fish the Egg pass hatched this turn, which does no harm: a fish aged 0 doesn't act.
+- **The Book** stands three tanks with the same code: plain, fish-first, heron-first.  It turns them together to turn 23
+   (simulated first: `scratchpad tanksim.mjs`, and the turn-22 divergence is the only one in 40 turns).  The oaths:
+   - the plain tank declares eggs, fish, heron;
+   - on turn 22 the hatch calls the heron to the plain tank, but the heron-first tank's heron looked before the hatch and
+      stays away;
+   - fish-first and plain hold exactly the same rows on turn 23.
+   The last is candidate test 3, "order doesn't leak", in miniature: where order can't matter, it doesn't.
+- **Second slice, the frontier (BUILT 2026-10-20, Book `AthePondSunpitFrontier`).**  Keys on the `%TheASunpit` line are
+   its culture: `frontier:turn` takes every pass's rows once, as they stood when the turn started, and `gone:skip` passes
+    over any of those that have left since.  Three heron-first tanks, turned to 25 (simulated first, `tanksim2.mjs`):
+   - pass-start frontier (the default): the fish pass never meets a fish the heron just ate;
+   - **turn-start frontier: on turn 25 the roach and bream the heron ate still lay two eggs** (`Egg:tench 17`,
+      `Egg:dace 18`).  A stale frontier acts on rows that have left;
+   - turn-start with `gone:skip`: identical to the pass-start tank.
+  **Why it matters beyond the toy:** `_io_cursor` (LangSion) is "eager for now", meaning it takes its whole frontier up
+   front, exactly the turn-start culture.  A Sunpit pulled a row at a time across passes or ticks must skip rows that
+    left (or say it doesn't), or it acts on the dead.  The presence check here is plain `w.o().includes(row)`.
+- **Next:** "all within some distance" needs positions the tank doesn't have; ask before inventing them.  Or the Sunpit
+   compiled from these by hand-written prototypes, once two or three cultures show what they share.
+- **Cost seen:** every edit to the toy changes its layer digest, which sits in every Athe snap, so each toy edit re-accepts
+   every Athe Book (loop item 4, deferred by the owner; the bill so far is two re-accepts per edit).
 
 **A code push is a new `%TheACode` beside the old one** (design, unbuilt).  The A adopts it at the next seam between turns,
  and the old one stays readable until nothing refers to it.
@@ -364,7 +434,7 @@ Entries name their point by the **D identity** (the Se's first-sight id), not by
   while unsure, and get shorter names once they've earned them.
 
 **Book names (owner, 2026-10-20):** `Athe`, then the toy, then what it proves: `AthePondCode`, later `AthePondCodeSwap`,
- `AthePondWireSum`…  Ugly is fine if it informs.  The toy (`Athe_Tank`) lives in `AtheTesting.g` and is shared by the series;
+ `AthePondWireSum`…  Ugly is fine if it informs.  The toy (`Athe_Tank`) lives in `AtheFishTesting.g` and is shared by the series;
   its name has an underscore so it can't be taken for a Book.
 
 The music app rests; these come first.  **Built: `AthePondCode`** (§0.2 above): the toy stands as an A and turns by hand,

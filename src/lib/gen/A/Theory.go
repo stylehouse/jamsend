@@ -10,7 +10,7 @@ import { sha256_hex } from "$lib/Common"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_Theory(): string { return '900b6c39f130ed5f~g1' },
+    Ghostmeta_Ghost_A_Theory(): string { return '8602d9b624271e62~g1' },
 
 // Theory.g — Atheory's first organ: an A says which code it runs (spec/Atheory_todo.md §0.1 and §0.2).
 //
@@ -38,9 +38,10 @@ TheA_digest(s) {
 // TheA_stand — stand an A together with the code it runs: an A arrives WITH its code, because the code is what makes it
 //  that kind of actor (the code row isn't a label stuck on later).  Still written by whoever stands the A, from the paths
 //   it names; when A** prototypes really carry the methods, this is where the binding happens.  Returns the A.
-TheA_stand(H, name, paths, variant) {
+//  `code` names the code when it isn't the A's own name (three tanks, one toy: A:Athe_Tank_FishFirst runs %TheACode:Athe_Tank).
+TheA_stand(H, name, paths, variant, code) {
     let A = H.oai({ A: name })
-    this.TheA_code_stand(A, name, paths, variant)
+    this.TheA_code_stand(A, code || name, paths, variant)
     return A
 
 },

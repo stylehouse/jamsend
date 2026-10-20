@@ -1,0 +1,40 @@
+story:AthePondSunpitPassOrder
+  Styles
+  Plan
+  Opt
+    For
+  EntropyArrest
+    Entcase:Self_round
+      lematch,self,round
+        means,drop
+  TimeSpool
+    TimeTotal:beliefs,avg=0.057
+      sample=0.059,at=1792474049
+      sample=0.041,at=1792474059
+      sample=0.039,at=1792474508
+      sample=0.043,at=1792474556
+      sample=0.086,at=1792474634
+      sample=0.068,at=1792474768
+      sample=0.061,at=1792474907
+      sample=0.069,at=1792476834
+      sample=0.059,at=1792476842
+      sample=0.041,at=1792476850
+    TimeTotal:step,avg=0.011
+      sample=0.012,at=1792474049
+      sample=0.008,at=1792474059
+      sample=0.008,at=1792474508
+      sample=0.009,at=1792474556
+      sample=0.017,at=1792474634
+      sample=0.014,at=1792474768
+      sample=0.012,at=1792474907
+      sample=0.014,at=1792476834
+      sample=0.012,at=1792476842
+      sample=0.008,at=1792476850
+  step,dige:4343721050957733
+  step=2,desc:stand three tanks with the same code — two of them declaring another order — and take turn one,dige:75a3c9564e7dd88a
+    Assertion:a-tank-declares-the,sentence:a tank declares the order its turn takes — eggs then fish then the heron unless told otherwise
+  step=3,desc:turn every tank up to the turn this step names,dige:99b281265328012d
+  step=4,desc:turn every tank up to the turn this step names,dige:408eb83f5de082cc
+    Assertion:a-heron-that-looks,sentence:a heron that looks before the hatch stays away the turn the hatch calls it — the declared order changes the outcome
+  step=5,desc:turn every tank up to the turn this step names,dige:83e12dd0df97fe10
+    Assertion:swapping-the-egg-and,sentence:swapping the egg and fish passes changes nothing — a fish hatched this turn is too young to act

@@ -26,9 +26,10 @@ TheA_digest(s):
 // TheA_stand — stand an A together with the code it runs: an A arrives WITH its code, because the code is what makes it
 //  that kind of actor (the code row isn't a label stuck on later).  Still written by whoever stands the A, from the paths
 //   it names; when A** prototypes really carry the methods, this is where the binding happens.  Returns the A.
-TheA_stand(H, name, paths, variant):
+//  `code` names the code when it isn't the A's own name (three tanks, one toy: A:Athe_Tank_FishFirst runs %TheACode:Athe_Tank).
+TheA_stand(H, name, paths, variant, code):
     let A = H.oai({ A: name })
-    this.TheA_code_stand(A, name, paths, variant)
+    this.TheA_code_stand(A, code || name, paths, variant)
     return A
 
 // TheA_code_stand — stand (or refresh) what code an A runs, from the .g paths it's made of.  Idempotent: the same code

@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheTesting(): string { return '1146947f1ae8a433~g1' },
+    Ghostmeta_Ghost_A_AtheTesting(): string { return 'd8fa0cb2e77526da~g1' },
 
 // AtheTesting.g — Atheory's proof (Ghost/A/Theory.g; spec/Atheory_todo.md §0.2 "The first Atheory tests").
 //
@@ -90,6 +90,190 @@ AthePondCode_witness(w) {
     let fish = tank ? tank.o({ Fish: 1 }) : []
     if (turns === 4 && fish.length === 2 && fish.every(f => f.sc.born === 4) && !tank.o({ Egg: 1 }).length && this.AthePondCode_at(w, 5)) {
         this.story_swear(w, 'the eggs hatch into two fish on the fourth turn')
+    }
+},
+//#endregion
+
+//#region the test routine — Book AthePondSunpitPassOrder
+
+// three tanks with the same code, each turning in the order it declares (%TheASunpit:turn / %TheAPass, the toy's
+//  Sunpit by hand).  Eggs-then-fish and fish-then-eggs come out the same; a heron that looks before the hatch comes a turn
+//   late.  The tanks are turned together: step 2 stands them and takes turn 1, step 3 takes turns 2–21, step 4 turn 22
+//    (the heron comes to two tanks), step 5 turn 23 (it comes to the third)
+AthePondSunpitPassOrder(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.AthePondSunpitPassOrder_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async AthePondSunpitPassOrder_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 5
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.AthePondSunpitPassOrder_stand(w)
+        if (n === 3) this.AthePondSunpitPassOrder_turns(w, 21)
+        if (n === 4) this.AthePondSunpitPassOrder_turns(w, 22)
+        if (n === 5) this.AthePondSunpitPassOrder_turns(w, 23)
+    }
+    this.AthePondSunpitPassOrder_witness(w)
+
+},
+// each tank's A name, and the order it is stood with (null = the order the tank declares for itself)
+AthePondSunpitPassOrder_tanks() {
+    return [
+        { name: 'Athe_Tank', order: null },
+        { name: 'Athe_Tank_FishFirst', order: ['Fish', 'Egg', 'Heron'] },
+        { name: 'Athe_Tank_HeronFirst', order: ['Heron', 'Egg', 'Fish'] },
+    ]
+
+},
+AthePondSunpitPassOrder_tank(name) {
+    return this.o({ A: name })[0]?.o({ w: 'Athe_Tank' })[0] ?? null
+
+},
+AthePondSunpitPassOrder_stand(w) {
+    w.i({desc: 'stand three tanks with the same code — two of them declaring another order — and take turn one'})
+    if (typeof this.TheA_stand !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
+        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
+        return
+    }
+    for (const t of this.AthePondSunpitPassOrder_tanks()) this.AthePond_tank_stand(t)
+
+},
+// one tank for a Sunpit Book: its own A running the toy's code, its world, the turn's Sunpit if the Book declares one
+//  (t.order, and t.culture for keys on the %TheASunpit line), and its first turn
+AthePond_tank_stand(t) {
+    let old = this.o({ A: t.name })[0]
+    if (old) this.drop(old)
+    let A = this.TheA_stand(this, t.name, ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank')
+    let tank = A.i({ w: 'Athe_Tank' })
+    if (t.order) {
+        let pit = tank.i({ TheASunpit: 'turn', ...(t.culture || {}) })
+        for (const kind of t.order) pit.i({ TheAPass: kind })
+    }
+    this.Athe_Tank_turn(tank)
+
+},
+// turn each named tank until it has taken `upto` turns
+AthePond_turns(tanks, upto) {
+    for (const t of tanks) {
+        let tank = this.AthePondSunpitPassOrder_tank(t.name)
+        while (tank && (tank.o({ Turns: 1 })[0]?.sc.count || 0) < upto) this.Athe_Tank_turn(tank)
+    }
+
+},
+AthePondSunpitPassOrder_turns(w, upto) {
+    w.i({desc: 'turn every tank up to the turn this step names'})
+    this.AthePond_turns(this.AthePondSunpitPassOrder_tanks(), upto)
+
+},
+// what a tank holds, one line per row (a heron's line carries its meals), sorted — so two tanks that hold the same things
+//  compare equal whatever order their rows were minted in.  Everything but the declared order itself
+AthePondSunpitPassOrder_rows(tank) {
+    let out = []
+    for (const c of tank.o()) {
+        if (c.sc.TheASunpit) continue
+        out.push(JSON.stringify(c.sc) + c.o({ Ate: 1 }).map(meal => ' ate ' + meal.sc.Ate).join(''))
+    }
+    return out.sort().join('\n')
+
+},
+AthePondSunpitPassOrder_at(n) {
+    return (this.c.run?.c.step_n ?? 0) >= n
+
+},
+// the witness reads the three tanks' trees, and nothing else
+AthePondSunpitPassOrder_witness(w) {
+    let plain = this.AthePondSunpitPassOrder_tank('Athe_Tank')
+    let fishfirst = this.AthePondSunpitPassOrder_tank('Athe_Tank_FishFirst')
+    let heronfirst = this.AthePondSunpitPassOrder_tank('Athe_Tank_HeronFirst')
+    if (!plain || !fishfirst || !heronfirst) return
+    let turns = (tank) => tank.o({ Turns: 1 })[0]?.sc.count
+    let declared = plain.o({ TheASunpit: 'turn' })[0]?.o({ TheAPass: 1 }).map(p => p.sc.TheAPass).join(' ')
+    if (declared === 'Egg Fish Heron' && this.AthePondSunpitPassOrder_at(2)) {
+        this.story_swear(w, 'a tank declares the order its turn takes — eggs then fish then the heron unless told otherwise')
+    }
+    if (turns(plain) === 22 && turns(heronfirst) === 22 && plain.o({ Heron: 1 }).length && !heronfirst.o({ Heron: 1 }).length && this.AthePondSunpitPassOrder_at(4)) {
+        this.story_swear(w, 'a heron that looks before the hatch stays away the turn the hatch calls it — the declared order changes the outcome')
+    }
+    if (turns(plain) === 23 && turns(fishfirst) === 23 && this.AthePondSunpitPassOrder_rows(plain) === this.AthePondSunpitPassOrder_rows(fishfirst) && heronfirst.o({ Heron: 1 }).length && this.AthePondSunpitPassOrder_at(5)) {
+        this.story_swear(w, 'swapping the egg and fish passes changes nothing — a fish hatched this turn is too young to act')
+    }
+},
+//#endregion
+
+//#region the test routine — Book AthePondSunpitFrontier
+
+// three heron-first tanks that differ only in their frontier — when each pass takes its rows.  Taken at the pass's start
+//  (the default) the fish pass never meets a fish the heron just ate.  Taken once at the turn's start, it does: on turn 25
+//   the roach and bream the heron ate still lay two eggs.  Taken at the turn's start but skipping what has left (gone:skip),
+//    it comes out the same as the default.  Step 2 stands them and takes turn 1, step 3 turns 2–24, step 4 turn 25
+AthePondSunpitFrontier(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.AthePondSunpitFrontier_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async AthePondSunpitFrontier_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.AthePondSunpitFrontier_stand(w)
+        if (n === 3) this.AthePondSunpitFrontier_turns(w, 24)
+        if (n === 4) this.AthePondSunpitFrontier_turns(w, 25)
+    }
+    this.AthePondSunpitFrontier_witness(w)
+
+},
+AthePondSunpitFrontier_tanks() {
+    let order = ['Heron', 'Egg', 'Fish']
+    return [
+        { name: 'Athe_Tank_PassFrontier', order },
+        { name: 'Athe_Tank_TurnFrontier', order, culture: { frontier: 'turn' } },
+        { name: 'Athe_Tank_TurnFrontierSkipGone', order, culture: { frontier: 'turn', gone: 'skip' } },
+    ]
+
+},
+AthePondSunpitFrontier_stand(w) {
+    w.i({desc: 'stand three heron-first tanks that differ only in when a pass takes its rows — and take turn one'})
+    if (typeof this.TheA_stand !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
+        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
+        return
+    }
+    for (const t of this.AthePondSunpitFrontier_tanks()) this.AthePond_tank_stand(t)
+
+},
+AthePondSunpitFrontier_turns(w, upto) {
+    w.i({desc: 'turn every tank up to the turn this step names'})
+    this.AthePond_turns(this.AthePondSunpitFrontier_tanks(), upto)
+
+},
+// the witness reads the three tanks' trees, and nothing else
+AthePondSunpitFrontier_witness(w) {
+    let pass = this.AthePondSunpitPassOrder_tank('Athe_Tank_PassFrontier')
+    let turn = this.AthePondSunpitPassOrder_tank('Athe_Tank_TurnFrontier')
+    let skip = this.AthePondSunpitPassOrder_tank('Athe_Tank_TurnFrontierSkipGone')
+    if (!pass || !turn || !skip) return
+    let turns = (tank) => tank.o({ Turns: 1 })[0]?.sc.count
+    if (!(turns(pass) === 25 && turns(turn) === 25 && turns(skip) === 25 && (this.c.run?.c.step_n ?? 0) >= 4)) return
+    let ate = (tank) => (tank.o({ Heron: 1 })[0]?.o({ Ate: 1 }) || []).map(meal => meal.sc.Ate)
+    let eggs = (tank) => tank.o({ Egg: 1 }).length
+    // both herons ate the same four, roach and bream last; the turn-start tank holds two more eggs than the pass-start one
+    //  and nothing else differs — those two were laid by the eaten pair (no egg names here: the simulation named them wrong)
+    let same_meals = ate(turn).join(' ') === ate(pass).join(' ') && ate(turn).includes('roach 5') && ate(turn).includes('bream 6')
+    let named = (tank) => tank.o({ EggsNamed: 1 })[0]?.sc.count || 0
+    let fish = (tank) => tank.o({ Fish: 1 }).map(f => f.sc.Fish).sort().join(' ')
+    if (same_meals && eggs(turn) === eggs(pass) + 2 && named(turn) === named(pass) + 2 && fish(turn) === fish(pass)) {
+        this.story_swear(w, 'a frontier taken at the start of the turn still holds the fish the heron just ate — the eaten roach and bream lay two eggs')
+    }
+    if (this.AthePondSunpitPassOrder_rows(skip) === this.AthePondSunpitPassOrder_rows(pass)) {
+        this.story_swear(w, 'a turn-start frontier that passes over what has left comes out the same as one taken at the start of each pass')
     }
 },
 //#endregion
