@@ -56,10 +56,18 @@ A turn's order is declared on the world: `%TheASunpit:turn` holding `%TheAPass:<
  per pulse; `sum:latest`, once for the lot).  `%TheAWoke` keeps how often it woke and how many pulses it ate.  Wires wake
   in declared order, so pulses posted on a later wire wake in the same pass.
 
-### 1.6 Still to design
+### 1.6 Order doesn't leak — `AthePondWakeOrder`
+
+Two compartments with nothing between them come out the same whichever is woken first, so the scheduler is free to wake
+ them in any order and a Book needn't pin it.  What breaks that is shared state nobody declared: two tanks naming eggs from
+  one counter (`%NamesFrom:<A>` on the tank, said on the tree) with no wire between them leak their waking order — the
+   eggs swap names.  The rule this proves: **anything two compartments share must be a wire**, so the scheduler can order
+    along it.
+
+### 1.7 Still to design
 
 *From the todo's sketch, not yet built:* `%TheATurn` (one pass of one compartment, as history), `%TheATurf` (a leased
- region), the spheres (`%OtherSphere`), the scheduler proper (unwatched work costs nothing; order doesn't leak), the
+ region), the spheres (`%OtherSphere`), the scheduler proper (unwatched work costs nothing), a wire between two compartments, the
   manifest check (Electrode joined with Atlas), and the A** shape that makes an A really run its own code.
 
 ## 2. The foundation ledger — every change Atheory makes to Stuff or Housing

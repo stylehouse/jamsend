@@ -425,4 +425,88 @@ AthePondWireSum_witness(w):
         this.story_swear(w, 'the same pulses summed by count wake the heron once each — it arrives and eats six fish at once')
     }
 //#endregion
+
+//#region the test routine — Book AthePondWakeOrder
+
+// order doesn't leak (Atheory_todo "The first Atheory tests", candidate 3): two tanks with nothing between them come out the
+//  same whichever is woken first.  And the sabotage that proves the witness bites: two tanks that name their eggs from one
+//   counter (%NamesFrom), with no wire between them to say so, come out different depending on which woke first.
+//  Four pairs, each a P and a Q on a clock wire: pair 1 wakes P then Q, pair 2 Q then P; pairs 3 and 4 the same, but each Q
+//   names from its P.  Step 2 stands them in waking order (each takes turn 1); step 3 wakes eight more clock pulses (turn 9)
+AthePondWakeOrder(A,w):
+    w oai %req:wrangle,eternal
+        await &AthePondWakeOrder_drive,w,req
+        req%ok = 1
+
+async AthePondWakeOrder_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 3
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.AthePondWakeOrder_stand(w)
+        if (n === 3) this.AthePondWakeOrder_wake(w, 8)
+    }
+    this.AthePondWakeOrder_witness(w)
+
+// each pair's tanks, in the order they're woken
+AthePondWakeOrder_pairs():
+    let tank = (name, from) => ({ name, wires: [{ TheAWire: 'clock', wake: 'turn', sum: 'count' }], from })
+    return [
+        [tank('Athe_Tank_P1'), tank('Athe_Tank_Q1')],
+        [tank('Athe_Tank_Q2'), tank('Athe_Tank_P2')],
+        [tank('Athe_Tank_P3'), tank('Athe_Tank_Q3', 'Athe_Tank_P3')],
+        [tank('Athe_Tank_Q4', 'Athe_Tank_P4'), tank('Athe_Tank_P4')],
+    ]
+
+// stand every tank first (a Q that names from its P must find it), then wake them pair by pair in waking order
+AthePondWakeOrder_stand(w):
+    i %desc:'stand four pairs of tanks — two pairs sharing a name counter — and wake each in its pair order'
+    if (typeof this.TheA_stand !== 'function' || typeof this.Athe_Tank_wake !== 'function') {
+        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
+        return
+    }
+    for (const pair of this.AthePondWakeOrder_pairs()) {
+        for (const t of pair) {
+            let old = this.o({ A: t.name })[0]
+            if (old) this.drop(old)
+            let A = this.TheA_stand(this, t.name, ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank')
+            let tank = A.i({ w: 'Athe_Tank' })
+            for (const wire of t.wires) tank.i(wire)
+            if (t.from) tank.i({ NamesFrom: t.from })
+        }
+    }
+    this.AthePondWakeOrder_wake(w, 1)
+
+AthePondWakeOrder_wake(w, n):
+    if (n > 1) {
+        i %desc:`${n} more clock pulses — each pair woken in its order`
+    }
+    for (const pair of this.AthePondWakeOrder_pairs()) {
+        for (const t of pair) {
+            let tank = this.AthePondSunpitPassOrder_tank(t.name)
+            if (!tank) continue
+            this.AthePond_clock(tank, n)
+            this.Athe_Tank_wake(tank)
+        }
+    }
+
+// the witness compares each P and Q with its twin in the other waking order, row by row (a tank's %NamesFrom says which
+//  tank it names from, so it's left out of the comparison)
+AthePondWakeOrder_witness(w):
+    let n = this.c.run?.c.step_n ?? 0
+    if (n !== 3) return
+    let tank = (name) => this.AthePondSunpitPassOrder_tank(name)
+    let names = ['P1', 'Q1', 'P2', 'Q2', 'P3', 'Q3', 'P4', 'Q4']
+    let tanks = {}
+    for (const k of names) tanks[k] = tank('Athe_Tank_' + k)
+    if (names.some(k => !tanks[k] || tanks[k].o({ Turns: 1 })[0]?.sc.count !== 9)) return
+    let rows = (k) => this.AthePondSunpitPassOrder_rows(tanks[k]).split('\n').filter(l => !l.includes('NamesFrom')).join('\n')
+    if (rows('P1') === rows('P2') && rows('Q1') === rows('Q2')) {
+        this.story_swear(w, 'two tanks with nothing between them come out the same whichever is woken first')
+    }
+    if (rows('P3') !== rows('P4') && rows('Q3') !== rows('Q4')) {
+        this.story_swear(w, 'two tanks sharing a name counter with no wire to say so leak which woke first — their eggs swap names')
+    }
+//#endregion
 // (ends on a comment — a .g must not end on a method-final brace)

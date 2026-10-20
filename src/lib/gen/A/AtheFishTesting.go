@@ -17,7 +17,7 @@ const NAMES = ['minnow', 'perch', 'carp', 'trout', 'roach', 'bream', 'tench', 'd
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheFishTesting(): string { return 'f75e8563bf69b41b~g1' },
+    Ghostmeta_Ghost_A_AtheFishTesting(): string { return '53558d4199bb17c2~g1' },
 
 // AtheFishTesting.g — the TOY that Atheory's Books test: Athe_Tank, a small pond with its own turn clock.
 //
@@ -177,9 +177,12 @@ Athe_Tank_count(w) {
 },
 // a fresh name for a new egg: a fish's name and a number, so no two are ever confused.  How many names the tank has
 //  handed out is a fact it holds (EggsNamed,count), never a key twiddled onto the world line, never .c
+//  A tank holding %NamesFrom:<A name> takes its names from that tank's count instead — shared state, said on the tree
 Athe_Tank_name(w) {
-    let n = (w.o({ EggsNamed: 1 })[0]?.sc.count || 0) + 1
-    w.oai({ EggsNamed: 1 }, { count: n })
+    let from = w.o({ NamesFrom: 1 })[0]?.sc.NamesFrom
+    let namer = (from && this.o({ A: from })[0]?.o({ w: 'Athe_Tank' })[0]) || w
+    let n = (namer.o({ EggsNamed: 1 })[0]?.sc.count || 0) + 1
+    namer.oai({ EggsNamed: 1 }, { count: n })
     return NAMES[(n - 1) % NAMES.length] + ' ' + n
 },
 //#endregion

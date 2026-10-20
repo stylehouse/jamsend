@@ -8,7 +8,7 @@ story:AthePondCodePush
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.048
+    TimeTotal:beliefs,avg=0.047
       sample=0.072,at=1792477574
       sample=0.073,at=1792477582
       sample=0.041,at=1792477596
@@ -16,6 +16,9 @@ story:AthePondCodePush
       sample=0.038,at=1792485287
       sample=0.034,at=1792485337
       sample=0.035,at=1792485373
+      sample=0.03,at=1792486778
+      sample=0.073,at=1792486815
+      sample=0.03,at=1792486899
     TimeTotal:step,avg=0.008
       sample=0.012,at=1792477574
       sample=0.012,at=1792477582
@@ -24,13 +27,16 @@ story:AthePondCodePush
       sample=0.006,at=1792485287
       sample=0.006,at=1792485337
       sample=0.006,at=1792485373
+      sample=0.005,at=1792486778
+      sample=0.012,at=1792486815
+      sample=0.005,at=1792486899
   step,dige:c2f1728dc0b239b5
-  step=2,desc:stand the tank and a bystander holding other code — and take turn one,dige:ae9381f32ab352d2
-  step=3,desc:the toy file arrives once — the push waits on the tank,dige:640015cf264eff0a
+  step=2,desc:stand the tank and a bystander holding other code — and take turn one,dige:4476f6e6a52b821e
+  step=3,desc:the toy file arrives once — the push waits on the tank,dige:66c28940b9d54f5b
     Assertion:a-pushed-file-waits,sentence:a pushed file waits on the A that holds it until Story lets it through — an A holding other code hears nothing
-  step=4,desc:Story lets the push through — and the tank takes one more turn,dige:d9f40e14aa6baf84
+  step=4,desc:Story lets the push through — and the tank takes one more turn,dige:8f9691aa880322a5
     Assertion:story-lets-the-push,sentence:Story lets the push through at the next step — the A takes it in once and the same file stands the same code
-  step=5,desc:the toy file arrives 2 times — the push waits on the tank,dige:3202bd4059283ff9
+  step=5,desc:the toy file arrives 2 times — the push waits on the tank,dige:a937d11eff027be4
     Assertion:a-file-that-arrives,sentence:a file that arrives twice before Story lets it through waits as one push
-  step=6,desc:Story lets the push through — and the tank takes one more turn,dige:d8ad5f3ae414ef6d
+  step=6,desc:Story lets the push through — and the tank takes one more turn,dige:4c44ec700be513a9
     Assertion:two-arrivals-let-through,sentence:two arrivals let through together are taken in once

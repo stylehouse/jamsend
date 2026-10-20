@@ -196,6 +196,7 @@ Waft:Credence
     Funkcion:Storying,of_Book:AthePondSunpitFrontier,born:2026-10-20,wire:no wire — three heron-first tanks turned together by hand,doc:Atheory_todo §0.2 (The Sunpit by hand — the frontier),desc:a frontier taken at the start of the turn still holds the fish the heron just ate so they lay two eggs — passing over what has left makes it the same as the pass-start frontier
     Funkcion:Storying,of_Book:AthePondCodePush,born:2026-10-20,wire:no wire — the toy file announced by hand as ghostsHaunt would,doc:Atheory_todo §0.2 (CodePush),desc:a pushed file waits on the A that holds it until Story lets it through at the next step — a bystander hears nothing — two arrivals are taken in once
     Funkcion:Storying,of_Book:AthePondWireSum,born:2026-10-20,wire:no wire — two wired tanks pulsed and woken by hand,doc:Atheory_todo §0.2 (Wires by hand),desc:clock pulses wait until woken and make one turn each — fish-changed pulses summed to the latest wake the heron once where summed by count they wake it once each and it eats six
+    Funkcion:Storying,of_Book:AthePondWakeOrder,born:2026-10-20,wire:no wire — four pairs of tanks woken by hand in opposite orders,doc:Atheory_design §1.6 and Atheory_todo (The first Atheory tests — candidate 3),desc:two tanks with nothing between them come out the same whichever wakes first — two sharing a name counter with no wire to say so leak which woke first
   What:Misc,inline
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:GhoghoDrone

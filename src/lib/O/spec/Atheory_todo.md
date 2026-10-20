@@ -255,6 +255,11 @@ Work top to bottom.  Each item ends with its Book green (3 check runs, caveat 0,
 
 5. **Wires and their sums** (`AthePondWireSum`): `%TheAWire`/`%TheAPulse` by hand on the toy, `sum:count` vs `sum:latest` — **BUILT 2026-10-20**, see "Wires by hand".  Next candidates there.
 
+6. **Order doesn't leak** (`AthePondWakeOrder`, candidate test 3): four pairs of tanks woken in opposite orders; a pair
+    sharing a name counter (`%NamesFrom`) with no wire leaks its order — **BUILT 2026-10-20**, `Atheory_design.md` §1.6.
+     Next: a wire BETWEEN two compartments (so the shared counter can be declared and ordered along), or candidate 2
+      "unwatched work costs nothing" (touches Housing — ask first).
+
 **Runners:** never share one with another agent.  If a sweep or another session holds the pinned runner, wait for it or
  pin a different idle one.
 
@@ -477,9 +482,10 @@ The music app rests; these come first.  **Built: `AthePondCode`** (§0.2 above):
 
 1. **A code change lands between turns, never inside one** (`AthePondCodePush`; loop queue item 2).
 2. **Unwatched work costs nothing**: between clock pulses the toy isn't visited at all (needs `%TheAWire`).
-3. **Order doesn't leak**: two toys with no wire between them, the same pulses in either order, identical snaps.
+3. **Order doesn't leak**: two toys with no wire between them, the same pulses in either order, identical snaps.  **Built:
+    `AthePondWakeOrder`.**
 4. **Counts are kept**: three step pulses make three turns (`sum:count`); three "fish changed" pulses make one heron
-    reconsideration (`sum:latest`).
+    reconsideration (`sum:latest`).  **Built: `AthePondWireSum`.**
 5. **The manifest is checked**: Electrode during the run, joined with Atlas: every method called is on a declared layer,
     and every declared layer was called.
 
