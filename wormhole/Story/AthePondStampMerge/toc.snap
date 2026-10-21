@@ -8,14 +8,18 @@ story:AthePondStampMerge
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.061
+    TimeTotal:beliefs,avg=0.05
       sample=0.069,at=1792550465
       sample=0.079,at=1792550479
       sample=0.036,at=1792550489
-    TimeTotal:step,avg=0.012
+      sample=0.043,at=1792566835
+      sample=0.023,at=1792567861
+    TimeTotal:step,avg=0.01
       sample=0.014,at=1792550465
       sample=0.016,at=1792550479
       sample=0.007,at=1792550489
+      sample=0.009,at=1792566835
+      sample=0.005,at=1792567861
   step,dige:5602afeeadbdab62
   step=2,desc:stand M at 13 — declare how Fish merge — mark it fork — fork N,dige:7c74d12d304411a7
   step=3,desc:hands feed — carp 3 at 14 in M and 15 in N — trout 4 at 16 in M and 12 in N — perch 2 given food in N with no stamp,dige:92fb8ed2a2afc5b5

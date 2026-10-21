@@ -8,16 +8,20 @@ story:AthePondReload
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.1
+    TimeTotal:beliefs,avg=0.076
       sample=0.088,at=1792549804
       sample=0.037,at=1792550031
       sample=0.029,at=1792550041
       sample=0.246,at=1792551100
-    TimeTotal:step,avg=0.02
+      sample=0.021,at=1792566809
+      sample=0.036,at=1792567830
+    TimeTotal:step,avg=0.015
       sample=0.018,at=1792549804
       sample=0.007,at=1792550031
       sample=0.006,at=1792550041
       sample=0.049,at=1792551100
+      sample=0.004,at=1792566809
+      sample=0.007,at=1792567830
   step,dige:3ca761805094b4da
   step=2,desc:stand a tank with a Seem and the eye — turn to 10 — walk and look — mark it,dige:a355eafd65842755
   step=3,desc:reload the tank — said as text — dropped — stood again from the text — walk,dige:1c8a6f0154cae092

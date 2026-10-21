@@ -1679,4 +1679,141 @@ AthePondStampMerge_witness(w):
         this.story_swear(w, 'merged the other way N comes out as M did — stamps don’t care which side merges')
     }
 //#endregion
+//#region the test routine — Book AthePondRounds
+// the scheduler, by hand (Theory.g TheA_run).  Step 2 stands P nine turns ahead streaming into Q (AthePondStream's pair), and R, a
+//  tank with a clock and nothing on it.  Step 3 puts thirteen pulses (P to turn 22) on P's clock and runs: P moves (its first two fish grow old
+//   and swim), the boundary readies Q, Q moves, and nothing is left — the run goes quiet by itself.  R is never visited.
+//    Step 4 runs again with nothing poked
+AthePondRounds(A,w):
+    w oai %req:wrangle,eternal
+        await &AthePondRounds_drive,w,req
+        req%ok = 1
+
+async AthePondRounds_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.AthePondRounds_stand(w)
+        if (n === 3) this.AthePondRounds_poke(w)
+        if (n === 4) this.AthePondRounds_idle(w)
+    }
+    this.AthePondRounds_witness(w)
+
+AthePondRounds_stand(w):
+    i %desc:'stand P nine turns ahead streaming into Q — and R with a clock and nothing on it'
+    if (typeof this.TheA_run !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
+        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
+        return
+    }
+    this.AthePond_stream_pair('RP_P', 'RP_Q')
+    this.AthePond_tank_stand({ name: 'RP_R', synapses: [{ TheASynapse: 'clock', wake: 'turn', sum: 'count' }] })
+
+AthePondRounds_poke(w):
+    i %desc:'thirteen pulses on P’s clock — run until quiet'
+    this.AthePond_clock(this.Athe_Tank_of('RP_P'), 13)
+    this.TheA_run(w, 'Athe_Tank_woken', ['RP_P'])
+    w.oai({ Saw: 'R' }, { turns: this.Athe_Tank_of('RP_R')?.o({ Turns: 1 })[0]?.sc.count })
+
+AthePondRounds_idle(w):
+    i %desc:'run again with nothing poked'
+    this.TheA_run(w, 'Athe_Tank_woken', [])
+
+AthePondRounds_witness(w):
+    let n = this.c.run?.c.step_n ?? 0
+    let run = w.o({ TheARun: 1 })[0]
+    if (!run) return
+    let rounds = run.o({ TheARound: 1 })
+    let went = (round) => round.o({ TheAWent: 1 }).map(x => x.sc.TheAWent).join(' ')
+    let R = this.Athe_Tank_of('RP_R')
+    let Q = this.Athe_Tank_of('RP_Q')
+    if (n === 3) {
+        let anyR = rounds.some(round => went(round).includes('RP_R'))
+        if (!anyR && R?.o({ Turns: 1 })[0]?.sc.count === 1 && R.o({ TheASynapse: 'clock' })[0]?.o({ TheAWoke: 1 })[0]?.sc.count === 1) {
+            this.story_swear(w, 'only what has a pulse waiting moves — R with a clock and nothing on it is never visited')
+        }
+        let came = Q ? Q.o({ Fish: 1 }).filter(f => f.sc.came === 'RP_P').length : 0
+        if (rounds.length === 2 && went(rounds[0]) === 'RP_P' && went(rounds[1]) === 'RP_Q' && rounds[0].sc.landed === 2 && came === 2) {
+            this.story_swear(w, 'a pulse sent in one round readies its receiver for the next — P moves then Q and the two old fish land')
+        }
+        if (run.sc.quiet && run.sc.rounds === 2 && !run.sc.cut) {
+            this.story_swear(w, 'with nothing waiting the run goes quiet by itself — two rounds of the fifty it was allowed')
+        }
+    }
+    if (n === 4 && run.sc.quiet && !run.sc.rounds && !rounds.length) {
+        this.story_swear(w, 'a run with nothing poked takes no rounds at all')
+    }
+//#endregion
+//#region the test routine — Book AthePondClock
+// a clock is a compartment (AtheFishTesting.g Athe_Clock; Theory.g TheA_run).  Clock_A ticks into K_P and K_Q; Clock_B ticks into
+//  K_R.  Nothing is ambient: the Book pokes a clock (the one elvis from outside) and runs until quiet.  Step 2 pokes Clock_A once;
+//   step 3 three times; step 4 pokes Clock_B once
+AthePondClock(A,w):
+    w oai %req:wrangle,eternal
+        await &AthePondClock_drive,w,req
+        req%ok = 1
+
+async AthePondClock_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.AthePondClock_stand(w)
+        if (n === 3) this.AthePondClock_poke(w, 'Clock_A', 3, 'poke Clock_A three times — run until quiet')
+        if (n === 4) this.AthePondClock_poke(w, 'Clock_B', 1, 'poke Clock_B once — run until quiet')
+    }
+    this.AthePondClock_witness(w)
+
+AthePondClock_stand(w):
+    i %desc:'stand two clocks and three tanks — K_P and K_Q hear Clock_A — K_R hears Clock_B — poke Clock_A once and run'
+    if (typeof this.TheA_run !== 'function' || typeof this.Athe_Clock_woken !== 'function') {
+        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
+        return
+    }
+    for (const name of ['Clock_A', 'Clock_B', 'K_P', 'K_Q', 'K_R']) {
+        let old = this.o({ A: name })[0]
+        if (old) this.drop(old)
+    }
+    for (const name of ['Clock_A', 'Clock_B']) {
+        let c = this.TheA_stand(this, name, ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Clock').i({ w: 'Athe_Clock' })
+        c.i({ TheASynapse: 'poke', wake: 'tick', sum: 'count' })
+        c.i({ TheAAxon: 'clock' })
+    }
+    for (const [name, clock] of [['K_P', 'Clock_A'], ['K_Q', 'Clock_A'], ['K_R', 'Clock_B']]) {
+        let t = this.TheA_stand(this, name, ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
+        t.i({ TheASynapse: 'clock', from: clock, wake: 'turn', sum: 'count' })
+    }
+    this.AthePondClock_poke(w, 'Clock_A', 1)
+
+// n pokes on a clock's synapse, then a run from that clock alone
+AthePondClock_poke(w, clock, n, desc):
+    if (desc) w.i({ desc })
+    let c = this.o({ A: clock })[0]?.o({ w: 'Athe_Clock' })[0]
+    let poke = c?.o({ TheASynapse: 'poke' })[0]
+    for (let k = 0; k < n; k++) poke?.i({ TheAPulse: 1 })
+    this.TheA_run(w, null, [clock])
+
+AthePondClock_witness(w):
+    let n = this.c.run?.c.step_n ?? 0
+    let run = w.o({ TheARun: 1 })[0]
+    if (!run) return
+    let went = run.o({ TheARound: 1 }).map(round => round.o({ TheAWent: 1 }).map(x => x.sc.TheAWent).join(' '))
+    let turns = (name) => this.Athe_Tank_of(name)?.o({ Turns: 1 })[0]?.sc.count || 0
+    let ticks = (name) => this.o({ A: name })[0]?.o({ w: 'Athe_Clock' })[0]?.o({ Ticks: 1 })[0]?.sc.count || 0
+    let two = run.sc.quiet && went.length === 2
+    if (n === 2 && two && went[0] === 'Clock_A' && went[1] === 'K_P K_Q' && turns('K_P') === 1 && turns('K_Q') === 1 && ticks('Clock_A') === 1) {
+        this.story_swear(w, 'a clock is a compartment like any other — poked it ticks and the tanks joined to it move a round later')
+    }
+    if (n === 3 && two && went[1] === 'K_P K_Q' && turns('K_P') === 4 && turns('K_Q') === 4 && ticks('Clock_A') === 4) {
+        this.story_swear(w, 'three pokes are three ticks — each tank takes its three turns in one move')
+    }
+    if (n === 3 && !ticks('Clock_B') && !turns('K_R') && !this.Athe_Tank_of('K_R')?.o({ TheASynapse: 'clock' })[0]?.o({ TheAWoke: 1 }).length) {
+        this.story_swear(w, 'a clock nobody pokes never ticks — the tank joined to it is never visited')
+    }
+    if (n === 4 && two && went[0] === 'Clock_B' && went[1] === 'K_R' && turns('K_R') === 1 && turns('K_P') === 4 && turns('K_Q') === 4) {
+        this.story_swear(w, 'poke the other clock and only its tank moves — K_P and K_Q stay where they were')
+    }
+//#endregion
 // (ends on a comment — a .g must not end on a method-final brace)

@@ -24,6 +24,16 @@ IMPORT()
 TheA_digest(s):
     return sha256_hex(new TextEncoder().encode(String(s))).slice(0, 16)
 
+// TheA_meta — a compiled file's Ghostmeta_* name; TheA_loaded — the digest of the version loaded for it.  Lang and Lies say so
+//  when they're loaded; a House with only Theory and its toy (a page whose top is TheA_run) works it out from the path, the
+//   same way: Ghostmeta_ and the path with its separators flattened
+TheA_meta(path):
+    return this.Lang_ghostmeta_name?.(path) ?? 'Ghostmeta_' + String(path).replace(/\.g$/, '').replace(/[^A-Za-z0-9]/g, '_')
+
+TheA_loaded(path):
+    if (this.Lies_ghost_get) return this.Lies_ghost_get(path)
+    return this[this.TheA_meta(path)]?.()
+
 // TheA_stand — stand an A together with the code it runs: an A arrives WITH its code, because the code is what makes it
 //  that kind of actor (the code row isn't a label stuck on later).  Still written by whoever stands the A, from the paths
 //   it names; when A** prototypes really carry the methods, this is where the binding happens.  Returns the A.
@@ -37,7 +47,7 @@ TheA_stand(H, name, paths, variant, code):
 //  gives the same rows, and a changed file changes its layer's digest and so the chain's.  The chain digest is only said
 //   once every layer is loaded; a stale one is dropped and the code row stood again (its layers are re-stood below).
 TheA_code_stand(A, name, paths, variant, pinned):
-    let diges = paths.map(path => (pinned && pinned[path]) || this.Lies_ghost_get(path))
+    let diges = paths.map(path => (pinned && pinned[path]) || this.TheA_loaded(path))
     let all = diges.every(d => d)
     let code = A.o({ TheACode: name })[0]
     if (code && !all && code.sc.dige) {
@@ -79,7 +89,7 @@ TheA_clobbers_stand(code, paths):
     let origin = this.top_House().ghost_origin || {}
     let count = {}
     for (const path of paths) {
-        for (const m of (files[this.Lang_ghostmeta_name(path)] || [])) count[m] = (count[m] || 0) + 1
+        for (const m of (files[this.TheA_meta(path)] || [])) count[m] = (count[m] || 0) + 1
     }
     let seen = {}
     for (const m of Object.keys(count)) {
@@ -107,11 +117,11 @@ TheA_clobbers_stand(code, paths):
 TheA_code_push(meta):
     for (const h of this.every_House()) {
         for (const A of this.TheA_all(h)) {
-            let holds = A.o({ TheACode: 1 }).some(code => code.o({ TheALayer: 1 }).some(layer => this.Lang_ghostmeta_name(layer.sc.TheALayer) === meta))
+            let holds = A.o({ TheACode: 1 }).some(code => code.o({ TheALayer: 1 }).some(layer => this.TheA_meta(layer.sc.TheALayer) === meta))
             if (!holds) continue
             for (const code of A.o({ TheACode: 1 })) {
                 for (const layer of code.o({ TheALayer: 1 })) {
-                    if (this.Lang_ghostmeta_name(layer.sc.TheALayer) === meta) A.oai({ TheACodePush: layer.sc.TheALayer })
+                    if (this.TheA_meta(layer.sc.TheALayer) === meta) A.oai({ TheACodePush: layer.sc.TheALayer })
                 }
             }
             if (!this.TheA_in_run(h)) this.TheA_code_push_deliver(h, A)
@@ -246,7 +256,7 @@ TheA_as(A):
     let fns = {}
     let found = 0
     for (const l of chain) {
-        let v = l.dige ? versions[this.Lang_ghostmeta_name(l.path)]?.[l.dige] : null
+        let v = l.dige ? versions[this.TheA_meta(l.path)]?.[l.dige] : null
         if (!v) continue
         Object.assign(fns, v)
         found++
@@ -286,14 +296,14 @@ TheA_near(A, sc):
 TheA_version_keep(path, dige, hash):
     let top = this.top_House()
     top.ghost_versions ||= {}
-    let meta = this.Lang_ghostmeta_name(path)
+    let meta = this.TheA_meta(path)
     top.ghost_versions[meta] ||= {}
     top.ghost_versions[meta][dige] = hash
     return dige
 
 // TheA_version_of — the hash an A's layer runs for a file (its pinned version), or nothing
 TheA_version_of(path, dige):
-    return this.top_House().ghost_versions?.[this.Lang_ghostmeta_name(path)]?.[dige] || null
+    return this.top_House().ghost_versions?.[this.TheA_meta(path)]?.[dige] || null
 
 // TheA_code_push_to — push one version of a file to one A (a variant, say), rather than whatever arrived flat.  Waits for
 //  Story like any push
@@ -356,8 +366,8 @@ TheA_outbox(w):
 // TheA_boundary — deliver the outboxes of a batch's compartments (names: their As; none = every A in this House), in one fixed order (senders by name, each outbox oldest first) so the
 //  order things happened in can't show.  A pulse goes to every synapse of its name that is FROM its sender, or, for a synapse with
 //   no from:, to the sender's own synapse (a compartment telling itself, as the fish synapse does).  An outbox is dropped once
-//    emptied.  Returns how many pulses landed
-TheA_boundary(names):
+//    emptied.  Returns how many pulses landed.  Given a ready set, adds every A a pulse landed on (TheA_run's next round)
+TheA_boundary(names, ready):
     let senders = []
     for (const A of this.TheA_all(this)) {
         if (names && !names.includes(A.sc.A)) continue
@@ -378,6 +388,7 @@ TheA_boundary(names):
                         if (!hears) continue
                         synapse.i({ TheAPulse: 1, ...rest })
                         landed++
+                        if (ready) ready.add(B.sc.A)
                     }
                 }
             }
@@ -385,6 +396,34 @@ TheA_boundary(names):
         w.drop(box)
     }
     return landed
+
+// TheA_run — the scheduler, by hand (Atheory_todo §0.0 "From the top", item 1): rounds of pulses, nothing ambient.  It holds
+//  a READY set — the names of the As something has poked (the caller says who: an elvis from outside, in effect) — and never
+//   scans for work.  Each round, every ready A moves (one batch, in name order — which can't matter), then the boundary, which
+//    adds to the next round's ready set every A a pulse landed on.  When nothing is ready the run is quiet and stops by
+//     itself; `most` only caps a runaway.  So a compartment nobody pulsed is never visited: none of its handlers run and none
+//      of it is read.  Each run is the new %TheARun on `at`, its rounds as %TheARound:<n>,landed with a %TheAWent:<A> per mover.
+//  Runs in a House with no ambient think, so nothing else wakes the compartments (a Book's Run House, today).  With no `wake`,
+//   each world is woken by its own <w>_woken (w:Athe_Clock → Athe_Clock_woken) — a name, called by name, never looked up
+TheA_run(at, wake, ready, most):
+    let todo = new Set(ready || [])
+    for (const old of at.o({ TheARun: 1 })) at.drop(old)
+    let run = at.i({ TheARun: 1 })
+    let n = 0
+    while (todo.size && n < (most || 50)) {
+        n++
+        let names = [...todo].sort()
+        todo = new Set()
+        for (const name of names) {
+            let A = this.TheA_all(this).find(A => A.sc.A === name)
+            for (const w of A ? A.o({ w: 1 }) : []) this.TheA_move(w, wake || w.sc.w + '_woken')
+        }
+        let landed = this.TheA_boundary(names, todo)
+        let round = run.i({ TheARound: String(n), ...(landed ? { landed } : {}) })
+        for (const name of names) round.i({ TheAWent: name })
+    }
+    at.oai({ TheARun: 1 }, todo.size ? { rounds: n, cut: 1 } : { rounds: n, quiet: 1 })
+    return run
 
 // TheA_A — the A a compartment belongs to
 TheA_A(w):

@@ -1,0 +1,42 @@
+Snap:H
+  H:AthePondRounds,Run
+    A:AthePondRounds
+      w:AthePondRounds
+        req:wrangle,eternal,ok
+    A:RP_P
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
+      w:Athe_Tank
+        TheASynapse:clock,wake:turn,sum:count
+          TheAWoke,count=9,pulses=9
+        TheAAxon:stream
+        NamesAs:P
+        Turns,count=9
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+          TheAPass:Heron
+        EggsNamed,count=2
+        Fish:P minnow 1,born=4
+        Fish:P perch 2,born=4
+    A:RP_Q
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
+      w:Athe_Tank
+        TheASynapse:clock,wake:turn,sum:count
+        TheASynapse:stream,from:RP_P,wake:arrive,sum:count
+        NamesAs:Q
+    A:RP_R
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
+      w:Athe_Tank
+        TheASynapse:clock,wake:turn,sum:count
+          TheAWoke,count,pulses
+        Turns,count
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+          TheAPass:Heron
+        EggsNamed,count=2
+        Egg:minnow 1,born
+        Egg:perch 2,born

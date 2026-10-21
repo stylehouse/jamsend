@@ -216,6 +216,15 @@ Each oath fell to the sabotage aimed at it, and only to that: the unrelated oath
     `AthePondMerge` stayed green, as predicted: there both sides hatched alike, so key pairing got it right by luck.
  Restored by checksum before the next code went in.
 
+**The scheduler, sabotaged once each (S14, S15, 2026-10-21, `AthePondRounds`).**  Both predicted in the todo before running.
+- **S14 — the ambient way** (every A moves every round, as `think` does).  Lost all three step-3 oaths: R, and even the Book's
+   own A, went every round from round 2, and the run never went quiet (`rounds=50,cut`).  Held: "a run with nothing poked takes
+    no rounds" — with nothing ready the sabotaged loop never starts.
+- **S15 — the boundary readies nobody.**  The run stopped after round 1; P's two old fish sat as pulses on Q's stream synapse,
+   never arrived.  Lost: "a pulse sent in one round readies its receiver" and "goes quiet by itself — two rounds".  Held: R
+    never visited, and the step-4 oath.
+ Restored by checksum and recompiled; the runner needs a reload before its next Book.
+
 ### 1.11 A\*\* — As in As, each running its own code — `AthePondVersions`, `AthePondNest`
 
 **Owner, 2026-10-21:** A\*\* is a recursive pile of A (`A/A/A/A`), and where an A stands in it has meaning — what code it
@@ -304,10 +313,54 @@ w:Athe_Tank
        compartments by observed identity — the name holds still, the kind doesn't count.  So an egg hatched on one side is
         one change, and a hatch against a change is refused, never an egg plus a fish of one name (`AthePondMergeHatch`).
 
-### 1.13 Still to design
+### 1.13 The scheduler, by hand — `AthePondRounds`
+
+**Owner, 2026-10-21:** not a Housing change — a ghost that drives a House with no ambient think, until there's a lot of
+ experience in this field.  "It's made of elvises wanting to go places — do we group computables?"  Yes, nested: **pass**
+  (one kind of row, the Sunpit) ⊂ **move** (one compartment eats its pulses) ⊂ **batch** (moves, then one boundary) ⊂
+   **round** ⊂ **era** (everything run under one set of code versions; a push lands between eras).
+
+```
+w:AthePondRounds
+  TheARun,rounds=2,quiet              a run, stopped by itself
+    TheARound:1,landed=2              round 1: P moved; the boundary landed two pulses
+      TheAWent:RP_P
+    TheARound:2                       round 2: Q moved; nothing landed
+      TheAWent:RP_Q
+```
+- `TheA_run(at, wake, ready, most)` holds a **ready set** — the As something poked; the caller says who, an elvis from
+   outside in effect.  It never scans for work.  Each round every ready A moves, then `TheA_boundary(names, ready)` adds every A
+    a pulse landed on to the next round.  Nothing ready: quiet.  `most` only caps a runaway (`cut`).
+- **Unwatched work costs nothing:** R, a tank with a clock and nothing on it, is never visited — none of its handlers run,
+   nothing of it is read.  Housing's todo already does part of this by hand: repeated `think`s collapse (`sum:latest`), and
+    `organise` is a Seem over the House; but every `think` still visits everything.
+- **A clock is a compartment — `AthePondClock`.**  `w:Athe_Clock` (in the toy file) has one synapse, `poke`, and one axon,
+   `clock`; each poke is one tick: it counts `Ticks,count` and sends on `clock`.  A tank's clock synapse names it
+    (`from:Clock_A`), so which clock a tank keeps time by is a wire, not an ambient.  Nobody outside pokes the tanks any more —
+     only the clock — and a clock nobody pokes never ticks, so its tanks are never visited.
+```
+TheARun,rounds=2,quiet
+  TheARound:1,landed=6        the clock moved: three pokes, three ticks to each of K_P, K_Q
+    TheAWent:Clock_A
+  TheARound:2
+    TheAWent:K_P              each tank eats its three ticks in one move (sum:count = three turns)
+    TheAWent:K_Q
+```
+- **Pondland — a page whose top is `TheA_run`** (`/Pondland`, `src/lib/A/Pondland.svelte`; a sibling of Otro).  A bare
+   `new House({name:'Pondland'})` — no `main()`, so no ambient think, no Lies, no Lang, no cluster — mounts the two `.go`s it
+    needs as components (`Theory.go`, `AtheFishTesting.go`; their `onMount` is `H.eatfunc`).  It stands two clocks and three
+     tanks (P streams its old fish into Q; R keeps `Clock_B`'s time).  The page's `setInterval` is the only thing from outside:
+      it pokes `Clock` and calls `TheA_run(log, null, ['Clock'])`.  Every run is two rounds (Clock; P · Q), three when a fish
+       swims; R and `Clock_B` stay at zero visits forever.  For Theory to stand code without Lies/Lang it got two fallbacks:
+        `TheA_meta(path)` (the Ghostmeta name rule, used when `Lang_ghostmeta_name` isn't loaded) and `TheA_loaded(path)`
+         (the digest from the House's own `Ghostmeta_*` method when `Lies_ghost_get` isn't).
+- **Where it goes next:** req machinery waking by pulse instead of by sweep; a push landing between eras on the page; the
+   page's tick itself as a pulse rather than a timer (it is the one elvis from outside left).
+
+### 1.14 Still to design
 
 *From the todo's sketch, not yet built:* `%TheATurf` (a leased
- region), the spheres beyond Held and Regard (a Was that outlives a reload, §1.12), the scheduler proper (unwatched work costs nothing), a synapse whose pulses go
+ region), the spheres beyond Held and Regard (a Was that outlives a reload, §1.12), the scheduler beyond the toy (§1.13 has it by hand, a clock, and a page), a synapse whose pulses go
   somewhere other than a tank woken by the same batch (across Houses; across a network), the
   manifest check (Electrode joined with Atlas).  From A\*\* (§1.11): what an A may READ or WRITE by where it stands (turfs),
    `from:` resolved by nearness rather than a unique name, a Book's own routine running through its A, and whether the A\*\*
@@ -346,6 +399,7 @@ No Atheory adjustments yet.
 
 | date | where | what | why |
 |---|---|---|---|
+| 2026-10-21 | `src/routes/Pondland/+page.svelte` + `src/lib/A/Pondland.svelte` (new) | a route whose page is a bare House driven by `TheA_run` (§1.13) — imports `gen/A/Theory.go` and `gen/A/AtheFishTesting.go` directly as components (`@ts-ignore`d: a .go has no type declarations); exposes `window.__pond()` for headless probes | the owner's "a replacement of Otro.svelte or something — minimal changes to Housing.svelte until we've got a lot of experience": nothing in Housing changed.  The first page to mount ghosts without GhostList |
 | 2026-10-21 | `src/lib/Selection.svelte.ts`, `SelectionItself.process`'s `pairs_fn` (the `a && b` branch) | `a.c.T.sc.bD` → `a.c.T?.sc.bD`, and `z?.c.T.sc.bD` → `z?.c.T?.sc.bD` (the point two walks back) | a D sphere thawed from text (`TheA_thaw`, Book `AthePondReload`) has no Travel on `.c`, so the first walk after a reload threw in `pairs_fn` (and, with only the first `?`, the second walk did) and the Seem never walked again — Selection assumed every old D was walked in this session.  Read by every Selection (Seem, Repli, LE, Voro, Story's snap); the old behaviour for a walked D is unchanged.  To undo: drop the two `?` |
 | 2026-10-20 | `src/lib/O/Story.svelte`: the editor's pause-verify forgive (`run.sc.check_snap`) and the post-run forgive sweep (`run.sc.sweeping`) | each now sets `caveat` only when `entropy_forgive_muted` says the step needed more than `tol:same` | the two other places a step gets forgiven still caveated a digest-only move; `snap_step` already didn't.  Not yet exercised live (every Athe Book passes on the inline path) |
 | 2026-10-20 | EntropyArrest `tol:same` (`EntropyArrest.md` §11): `Text.svelte` (`spay_same_pairs`, `spay_graft`'s `same` arg, `spay_within`), `Hovercraft.svelte` (`entropy_forgive`, `entropy_same_of`, `entropy_same_note`, `entropy_forgive_muted`), `Story.svelte` (`story_drive` makes `w.c.dige_same`; `snap_step`'s inline check notes exact steps and mutes; the GhostList read rule's `dige:` spayer `any` → `same`) | a `dige:` may change only as a consistent substitution over the run; a step forgiven by that alone passes with no caveat | every code edit moved the toy's digest in every Athe snap, costing a hand re-baseline of every Athe Book; and `tol:any` let a real digest move pass as noise.  Touches EVERY Book (the spayer reaches every `dige:` line) |

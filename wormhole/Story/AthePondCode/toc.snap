@@ -8,9 +8,7 @@ story:AthePondCode
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.029
-      sample=0.028,at=1792533794
-      sample=0.016,at=1792543066
+    TimeTotal:beliefs,avg=0.028
       sample=0.043,at=1792543146
       sample=0.015,at=1792543210
       sample=0.016,at=1792544700
@@ -19,9 +17,9 @@ story:AthePondCode
       sample=0.037,at=1792549078
       sample=0.03,at=1792549106
       sample=0.06,at=1792550512
+      sample=0.015,at=1792566749
+      sample=0.016,at=1792567744
     TimeTotal:step,avg=0.006
-      sample=0.006,at=1792533794
-      sample=0.003,at=1792543066
       sample=0.009,at=1792543146
       sample=0.003,at=1792543210
       sample=0.003,at=1792544700
@@ -30,6 +28,8 @@ story:AthePondCode
       sample=0.007,at=1792549078
       sample=0.006,at=1792549106
       sample=0.012,at=1792550512
+      sample=0.003,at=1792566749
+      sample=0.003,at=1792567744
   step,dige:157069eb2831c36e
   step=2,desc:stand the toy as an A with the code it runs — and take its first turn,dige:e18f3de0a2700f20
     Assertion:an-a-arrives-with,sentence:an A arrives with the digest of the code loaded for it — read off the tree

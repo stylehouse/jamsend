@@ -1,0 +1,28 @@
+story:AthePondClock
+  Styles
+  Plan
+  Opt
+    For
+  EntropyArrest
+    Entcase:Self_round
+      lematch,self,round
+        means,drop
+  TimeSpool
+    TimeTotal:beliefs,avg=0.029
+      sample=0.041,at=1792566713
+      sample=0.023,at=1792566730
+      sample=0.027,at=1792566735
+      sample=0.026,at=1792567732
+    TimeTotal:step,avg=0.007
+      sample=0.01,at=1792566713
+      sample=0.006,at=1792566730
+      sample=0.007,at=1792566735
+      sample=0.006,at=1792567732
+  step,dige:0e6c4ededbb6b494
+  step=2,desc:stand two clocks and three tanks — K_P and K_Q hear Clock_A — K_R hears Clock_B — poke Clock_A once and run,dige:030e96504aa337fc
+    Assertion:a-clock-is-a,sentence:a clock is a compartment like any other — poked it ticks and the tanks joined to it move a round later
+  step=3,desc:poke Clock_A three times — run until quiet,dige:a88b0cdbc826db0f
+    Assertion:three-pokes-are-three,sentence:three pokes are three ticks — each tank takes its three turns in one move
+    Assertion:a-clock-nobody-pokes,sentence:a clock nobody pokes never ticks — the tank joined to it is never visited
+  step=4,desc:poke Clock_B once — run until quiet,dige:efa7bf933fdd6a11
+    Assertion:poke-the-other-clock,sentence:poke the other clock and only its tank moves — K_P and K_Q stay where they were

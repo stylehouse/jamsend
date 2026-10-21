@@ -199,5 +199,16 @@ Athe_Tank_name(w):
     namer.oai({ EggsNamed: 1 }, { count: n })
     let tag = w.o({ NamesAs: 1 })[0]?.sc.NamesAs
     return (tag ? tag + ' ' : '') + NAMES[(n - 1) % NAMES.length] + ' ' + n
+
+// a clock: a compartment whose only move is to tick (Theory.g TheA_run).  Each poke waiting on its synapse is one tick — it
+//  counts it (Ticks,count) and sends it on its axon (%TheAAxon:clock), heard by every clock synapse joined from it.  Nothing
+//   about time is ambient: a clock nobody pokes never ticks, and nothing joined to it ever moves
+Athe_Clock(A, w):
+    return
+
+Athe_Clock_woken(w, synapse, pulse):
+    let n = (w.o({ Ticks: 1 })[0]?.sc.count || 0) + 1
+    w.oai({ Ticks: 1 }, { count: n })
+    this.TheA_send(w, 'clock', { tick: n })
 //#endregion
 // (ends on a comment — a .g must not end on a method-final brace)

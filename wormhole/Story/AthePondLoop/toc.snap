@@ -9,9 +9,6 @@ story:AthePondLoop
         means,drop
   TimeSpool
     TimeTotal:beliefs,avg=0.041
-      sample=0.032,at=1792534296
-      sample=0.032,at=1792542976
-      sample=0.024,at=1792542983
       sample=0.06,at=1792542989
       sample=0.028,at=1792543131
       sample=0.088,at=1792543193
@@ -19,10 +16,10 @@ story:AthePondLoop
       sample=0.058,at=1792546022
       sample=0.026,at=1792549185
       sample=0.031,at=1792550840
+      sample=0.04,at=1792563899
+      sample=0.026,at=1792566766
+      sample=0.023,at=1792567764
     TimeTotal:step,avg=0.01
-      sample=0.008,at=1792534296
-      sample=0.008,at=1792542976
-      sample=0.006,at=1792542983
       sample=0.015,at=1792542989
       sample=0.007,at=1792543131
       sample=0.022,at=1792543193
@@ -30,6 +27,9 @@ story:AthePondLoop
       sample=0.015,at=1792546022
       sample=0.007,at=1792549185
       sample=0.008,at=1792550840
+      sample=0.01,at=1792563899
+      sample=0.007,at=1792566766
+      sample=0.006,at=1792567764
   step,dige:2343a48d4f4a8651
   step=2,desc:stand two looped pairs with P nine turns ahead of Q — and wake each in its own order,dige:f0b1090e53c60104
   step=3,desc:12 clock pulses each — each pair woken in its own order,dige:52b6cc9702205272

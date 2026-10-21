@@ -8,9 +8,7 @@ story:AthePondSunpitPassOrder
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.038
-      sample=0.029,at=1792492530
-      sample=0.032,at=1792533484
+    TimeTotal:beliefs,avg=0.036
       sample=0.047,at=1792533934
       sample=0.052,at=1792543076
       sample=0.038,at=1792543150
@@ -19,9 +17,9 @@ story:AthePondSunpitPassOrder
       sample=0.032,at=1792545799
       sample=0.051,at=1792549116
       sample=0.048,at=1792550528
-    TimeTotal:step,avg=0.008
-      sample=0.006,at=1792492530
-      sample=0.006,at=1792533484
+      sample=0.023,at=1792566860
+      sample=0.017,at=1792567899
+    TimeTotal:step,avg=0.007
       sample=0.009,at=1792533934
       sample=0.01,at=1792543076
       sample=0.008,at=1792543150
@@ -30,6 +28,8 @@ story:AthePondSunpitPassOrder
       sample=0.006,at=1792545799
       sample=0.01,at=1792549116
       sample=0.01,at=1792550528
+      sample=0.005,at=1792566860
+      sample=0.003,at=1792567899
   step,dige:4343721050957733
   step=2,desc:stand three tanks with the same code — two of them declaring another order — and take turn one,dige:1f5327c85eb1c280
     Assertion:a-tank-declares-the,sentence:a tank declares the order its turn takes — eggs then fish then the heron unless told otherwise

@@ -8,9 +8,7 @@ story:AthePondNest
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.059
-      sample=0.027,at=1792543113
-      sample=0.035,at=1792543174
+    TimeTotal:beliefs,avg=0.058
       sample=0.143,at=1792543324
       sample=0.073,at=1792543465
       sample=0.052,at=1792544226
@@ -19,9 +17,9 @@ story:AthePondNest
       sample=0.067,at=1792546069
       sample=0.062,at=1792549224
       sample=0.049,at=1792550880
+      sample=0.022,at=1792566801
+      sample=0.037,at=1792567820
     TimeTotal:step,avg=0.01
-      sample=0.004,at=1792543113
-      sample=0.006,at=1792543174
       sample=0.024,at=1792543324
       sample=0.012,at=1792543465
       sample=0.009,at=1792544226
@@ -30,6 +28,8 @@ story:AthePondNest
       sample=0.011,at=1792546069
       sample=0.01,at=1792549224
       sample=0.008,at=1792550880
+      sample=0.004,at=1792566801
+      sample=0.006,at=1792567820
   step,dige:51f8eda66156a011
   step=2,desc:stand a warm pond and a cold pond — each an A with the toy’s code — and one tank in each with no code of its own — turn one,dige:1efd136ec2845a0a
   step=3,desc:turn both tanks to turn 13 — each asks its pond for the weather,dige:f39cbe6a7ab90405

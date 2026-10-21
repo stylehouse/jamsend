@@ -45,6 +45,32 @@ A capture doc, not yet a plan — the owner has reached for this three times in 
    (two versions in one heap, the push waits for the seam) and `AthePondNest` (ponds serve weather; a push to a pond
     reaches only its tanks).
 
+**From the top — if Atheory were all there was (2026-10-21, after the spheres).**  Every piece has a toy: code on As and
+ versions (Code, Versions, Nest); compartments moved by pulses at a boundary (SynapseSum/Order, Loop); lexical services (Nest);
+  state as rows + Seem views + Regard on points + a Was (Seem, Moves, Reload); one merge with policies (Merge, MergeHatch,
+   StampMerge).  What it would take, biggest first: **(1) the scheduler proper** — the top loop is "deliver pulses, move the
+    woken, boundary", no ambient think(), unwatched work costs nothing (a Housing change; the one that makes it all there is —
+     do it as a toy first: a mini-House running only pulses, a Book proving an idle tank is never visited); **(2)** every call
+      through its A (`do_fn_for`'s `w_inst`); **(3)** IO as compartments (audio, WebRTC, disk, relay — and what a replay mocks);
+       **(4)** merge on the wire (fractures, signed, the Repli successor); **(5)** one real organ ported, byte-identical Books;
+        **(6)** turfs, and the manifest check.
+**The scheduler, by hand — `TheA_run`, Book `AthePondRounds` (BUILT and green 2026-10-21; S14 and S15 bit as predicted; design §1.13).**  Owner: not a Housing change — a ghost driving a
+ House with no ambient think, until there's a lot of experience in this field ("can that just be a replacement of Otro or
+  something?" — a sibling page one day, since Otro carries the cluster duties).  It is elvises wanting to go places, grouped:
+   pass ⊂ move ⊂ batch ⊂ round ⊂ era (code versions).  A READY set (who something poked) feeds round 1; the boundary adds
+    whoever a pulse lands on; nothing is ever scanned; with nothing ready it goes quiet.  Housing's own todo already collapses
+     repeated `think`s — `sum:latest` by hand — and `organise` is already a Seem over the House.
+ *Predicted before running:* **S14, the ambient way** (every A moves every round): R shows in the rounds, rounds run to the
+  cap and never go quiet — three step-3 oaths fall; step 4 (nothing poked) still takes no rounds.  **S15, the boundary readies
+   nobody**: one round, Q never moves, the fish wait on its synapse — the round and quiet oaths fall; R is still unvisited.
+**Then the clock and the page (BUILT 2026-10-21, design §1.13).**  A clock is a compartment (`w:Athe_Clock`, poke in,
+ `clock` axon out; Book `AthePondClock`, all 21 AthePond Books green after it).  **`/Pondland`** is the first page whose top
+  is `TheA_run`: a bare House (no `main()`), only Theory.go + the toy mounted, the page's timer pokes one clock, a run is
+   two or three rounds, R never visited.  Nothing in Housing changed.  Open there: the timer is the last elvis from outside;
+    a push arriving between eras on that page (CodePush with no Story to mediate); req machinery woken by pulse.
+*Food for thought (owner, 2026-10-21):* maybe the spheres are **Was\*\*** and **Trace\*\*** rather than K and D — the D sphere is
+ what the Seem's trace leaves (`TheAHeld` → `TheATrace`?).  Not renamed.
+
 **Next moves, in order:**
 1. *Done 2026-10-21:* all 13 AthePond Books green after A\*\* + the rename; S5 (`TheA_near` from the top) and S6 (`TheA_as`
     flat) bit as predicted.  Nest's heredity oath is a known gap under S6 (design §1.10).

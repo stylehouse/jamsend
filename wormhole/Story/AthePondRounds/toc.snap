@@ -1,0 +1,34 @@
+story:AthePondRounds
+  Styles
+  Plan
+  Opt
+    For
+  EntropyArrest
+    Entcase:Self_round
+      lematch,self,round
+        means,drop
+  TimeSpool
+    TimeTotal:beliefs,avg=0.038
+      sample=0.038,at=1792563670
+      sample=0.034,at=1792563693
+      sample=0.039,at=1792563848
+      sample=0.062,at=1792564036
+      sample=0.063,at=1792564130
+      sample=0.011,at=1792566816
+      sample=0.016,at=1792567839
+    TimeTotal:step,avg=0.01
+      sample=0.009,at=1792563670
+      sample=0.009,at=1792563693
+      sample=0.01,at=1792563848
+      sample=0.016,at=1792564036
+      sample=0.016,at=1792564130
+      sample=0.003,at=1792566816
+      sample=0.004,at=1792567839
+  step,dige:acc822a82c0f14d0
+  step=2,desc:stand P nine turns ahead streaming into Q — and R with a clock and nothing on it,dige:9994865185e9847b
+  step=3,desc:thirteen pulses on P’s clock — run until quiet,dige:7cfc92dce34f82fc
+    Assertion:only-what-has-a,sentence:only what has a pulse waiting moves — R with a clock and nothing on it is never visited
+    Assertion:a-pulse-sent-in,sentence:a pulse sent in one round readies its receiver for the next — P moves then Q and the two old fish land
+    Assertion:with-nothing-waiting-the,sentence:with nothing waiting the run goes quiet by itself — two rounds of the fifty it was allowed
+  step=4,desc:run again with nothing poked,dige:dc220adbc7a35b4b
+    Assertion:a-run-with-nothing,sentence:a run with nothing poked takes no rounds at all
