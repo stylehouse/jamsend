@@ -8,7 +8,7 @@ story:AthePondMerge
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.06
+    TimeTotal:beliefs,avg=0.053
       sample=0.127,at=1792549781
       sample=0.044,at=1792549983
       sample=0.104,at=1792549996
@@ -16,7 +16,9 @@ story:AthePondMerge
       sample=0.041,at=1792550904
       sample=0.027,at=1792566774
       sample=0.037,at=1792567774
-    TimeTotal:step,avg=0.012
+      sample=0.025,at=1792570978
+      sample=0.033,at=1792575914
+    TimeTotal:step,avg=0.011
       sample=0.025,at=1792549781
       sample=0.009,at=1792549983
       sample=0.021,at=1792549996
@@ -24,12 +26,14 @@ story:AthePondMerge
       sample=0.008,at=1792550904
       sample=0.005,at=1792566774
       sample=0.007,at=1792567774
+      sample=0.005,at=1792570978
+      sample=0.007,at=1792575914
   step,dige:57811e66bfee272b
-  step=2,desc:stand M — turn it to 10 — mark it fork — and fork N from the mark,dige:db9cb1b26f37b326
-  step=3,desc:both turn to 13 — then hands — perch 2 is caught from N — carp 3 is said born 11 in M and 12 in N,dige:a4af8e0f671bc9c9
-  step=4,desc:merge N into M,dige:89b7860c57d03cf8
+  step=2,desc:stand M — turn it to 10 — mark it fork — and fork N from the mark,dige:f799380238c97c6b
+  step=3,desc:both turn to 13 — then hands — perch 2 is caught from N — carp 3 is said born 11 in M and 12 in N,dige:2c55ea3da2641836
+  step=4,desc:merge N into M,dige:4e72f76da41ce2ba
     Assertion:what-only-n-changed,sentence:what only N changed comes across — the perch caught from N is gone from M
     Assertion:what-both-changed-differently,sentence:what both changed differently is refused with both sides said — M keeps its own carp
     Assertion:what-both-did-alike,sentence:what both did alike is kept once — the eggs both hatched and laid are not doubled
-  step=5,desc:merge N into M again,dige:845f918409a664d5
+  step=5,desc:merge N into M again,dige:48689762b573c636
     Assertion:merging-again-changes-nothing,sentence:merging again changes nothing — only the refusal is said again

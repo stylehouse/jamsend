@@ -22,11 +22,11 @@ Snap:H
           TheAKind:Fish
           TheAKind:Heron
           TheASphere:eye,tense:Regard
-          TheAHeld:Turns,of,count
-          TheAHeld:EggsNamed,of,count=2
-          TheAHeld:Egg,of:minnow 1,born
+          TheATrace:Turns,of,count
+          TheATrace:EggsNamed,of,count=2
+          TheATrace:Egg,of:minnow 1,born
             TheARegard:eye,seen
-          TheAHeld:Egg,of:perch 2,born
+          TheATrace:Egg,of:perch 2,born
             TheARegard:eye,seen
           TheAWalk:1
             TheANeu:Turns,of

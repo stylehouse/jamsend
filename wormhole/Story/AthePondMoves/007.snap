@@ -66,56 +66,56 @@ Snap:H
           TheAKind:Fish
           TheAOver:As
           TheALimbo,keep=2
-            TheAHeld:Fish,of:P roach 5,born=16,from:A:S_P,gone_at=5
+            TheATrace:Fish,of:P roach 5,born=16,from:A:S_P,gone_at=5
               TheARegard:eye,seen=2
-            TheAHeld:Fish,of:P bream 6,born=16,from:A:S_P,gone_at=5
+            TheATrace:Fish,of:P bream 6,born=16,from:A:S_P,gone_at=5
               TheARegard:eye,seen=2
-            TheAHeld:Fish,of:P minnow 1,born=-4,came:S_P,from:A:S_Q,gone_at=5
+            TheATrace:Fish,of:P minnow 1,born=-4,came:S_P,from:A:S_Q,gone_at=5
               TheARegard:eye,seen
-            TheAHeld:Fish,of:P perch 2,born=-4,came:S_P,from:A:S_Q,gone_at=5
+            TheATrace:Fish,of:P perch 2,born=-4,came:S_P,from:A:S_Q,gone_at=5
               TheARegard:eye,seen
-            TheAHeld:Fish,of:P tench 7,born=19,from:A:S_P,gone_at=6
+            TheATrace:Fish,of:P tench 7,born=19,from:A:S_P,gone_at=6
               TheARegard:eye,seen=2
-            TheAHeld:Fish,of:P dace 8,born=19,from:A:S_P,gone_at=6
+            TheATrace:Fish,of:P dace 8,born=19,from:A:S_P,gone_at=6
               TheARegard:eye,seen=2
           TheASphere:eye,tense:Regard
-          TheAHeld:A,of:S_P
-            TheAHeld:Fish,of:P chub 9,born=22
+          TheATrace:A,of:S_P
+            TheATrace:Fish,of:P chub 9,born=22
               TheARegard:eye,seen=2
-            TheAHeld:Fish,of:P rudd 10,born=22
+            TheATrace:Fish,of:P rudd 10,born=22
               TheARegard:eye,seen=2
-            TheAHeld:Fish,of:P minnow 11,born=22
+            TheATrace:Fish,of:P minnow 11,born=22
               TheARegard:eye,seen=2
-            TheAHeld:Fish,of:P perch 12,born=22
+            TheATrace:Fish,of:P perch 12,born=22
               TheARegard:eye,seen=2
-            TheAHeld:Fish,of:P carp 13,born=25
+            TheATrace:Fish,of:P carp 13,born=25
               TheARegard:eye,seen=3
-            TheAHeld:Fish,of:P trout 14,born=25
+            TheATrace:Fish,of:P trout 14,born=25
               TheARegard:eye,seen=3
-            TheAHeld:Fish,of:P roach 15,born=25
+            TheATrace:Fish,of:P roach 15,born=25
               TheARegard:eye,seen=3
-            TheAHeld:Fish,of:P bream 16,born=25
+            TheATrace:Fish,of:P bream 16,born=25
               TheARegard:eye,seen=3
-            TheAHeld:Egg,of:P tench 17,born=25
+            TheATrace:Egg,of:P tench 17,born=25
               TheARegard:eye,seen=6
-            TheAHeld:Egg,of:P dace 18,born=25
+            TheATrace:Egg,of:P dace 18,born=25
               TheARegard:eye,seen=6
-          TheAHeld:A,of:S_Q
-            TheAHeld:Fish,of:Q minnow 1,born=4
+          TheATrace:A,of:S_Q
+            TheATrace:Fish,of:Q minnow 1,born=4
               TheARegard:eye,seen
-            TheAHeld:Fish,of:Q perch 2,born=4
+            TheATrace:Fish,of:Q perch 2,born=4
               TheARegard:eye,seen
-            TheAHeld:Fish,of:Q carp 3,born=13
+            TheATrace:Fish,of:Q carp 3,born=13
               TheARegard:eye,seen=2
-            TheAHeld:Fish,of:Q trout 4,born=13
+            TheATrace:Fish,of:Q trout 4,born=13
               TheARegard:eye,seen=2
-            TheAHeld:Fish,of:Q roach 5,born=16
+            TheATrace:Fish,of:Q roach 5,born=16
               TheARegard:eye,seen=3
-            TheAHeld:Fish,of:Q bream 6,born=16
+            TheATrace:Fish,of:Q bream 6,born=16
               TheARegard:eye,seen=3
-            TheAHeld:Egg,of:Q tench 7,born=16
+            TheATrace:Egg,of:Q tench 7,born=16
               TheARegard:eye,seen=6
-            TheAHeld:Egg,of:Q dace 8,born=16
+            TheATrace:Egg,of:Q dace 8,born=16
               TheARegard:eye,seen=6
           TheAWalk:6
             TheABecame:Fish,of:P carp 13,was:Egg

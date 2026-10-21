@@ -1,0 +1,33 @@
+story:AthePondEra
+  Styles
+  Plan
+  Opt
+    For
+  EntropyArrest
+    Entcase:Self_round
+      lematch,self,round
+        means,drop
+  TimeSpool
+    TimeTotal:beliefs,avg=0.016
+      sample=0.024,at=1792570101
+      sample=0.013,at=1792570117
+      sample=0.011,at=1792570123
+      sample=0.019,at=1792570649
+      sample=0.019,at=1792570778
+      sample=0.017,at=1792570939
+      sample=0.012,at=1792576014
+    TimeTotal:step,avg=0.004
+      sample=0.006,at=1792570101
+      sample=0.003,at=1792570117
+      sample=0.003,at=1792570123
+      sample=0.005,at=1792570649
+      sample=0.005,at=1792570778
+      sample=0.004,at=1792570939
+      sample=0.003,at=1792576014
+  step,dige:78f5f2e5bc30ddac
+  step=2,desc:stand Clock_A and two tanks that hear it — K_P and K_Q — poke once and run,dige:35af167883ed62f8
+  step=3,desc:push the toy to K_P mid-step — it waits — then poke and run,dige:6066b339f4fb355a
+    Assertion:code-pushed-in-the,sentence:code pushed in the middle of a step waits on the A as a row — nothing takes it until a run starts
+    Assertion:a-run-takes-waiting,sentence:a run takes waiting code before round one — that A moves in round one with nothing asked and again with the tick
+  step=4,desc:poke Clock_A once more — run until quiet,dige:a9bbd956e2995e87
+    Assertion:an-era-lasts-until,sentence:an era lasts until code arrives — the next run takes nothing and moves only what the clock wakes

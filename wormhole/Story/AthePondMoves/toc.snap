@@ -8,7 +8,7 @@ story:AthePondMoves
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.138
+    TimeTotal:beliefs,avg=0.117
       sample=0.187,at=1792549794
       sample=0.104,at=1792550009
       sample=0.084,at=1792550021
@@ -16,7 +16,9 @@ story:AthePondMoves
       sample=0.229,at=1792563922
       sample=0.054,at=1792566792
       sample=0.048,at=1792567810
-    TimeTotal:step,avg=0.017
+      sample=0.037,at=1792571002
+      sample=0.051,at=1792575938
+    TimeTotal:step,avg=0.015
       sample=0.023,at=1792549794
       sample=0.013,at=1792550009
       sample=0.011,at=1792550021
@@ -24,14 +26,16 @@ story:AthePondMoves
       sample=0.029,at=1792563922
       sample=0.007,at=1792566792
       sample=0.006,at=1792567810
+      sample=0.005,at=1792571002
+      sample=0.006,at=1792575938
   step,dige:cec35210d274612b
-  step=2,desc:stand a pond with P nine turns ahead streaming into Q inside it — a Seem over the tanks — one batch — walk and look,dige:63549434d617c18d
-  step=3,desc:11 clock pulses each — one batch — walk and look,dige:3697ffd1c530d236
-  step=4,desc:one clock pulse each — one batch — walk and look,dige:3e7baa2f7ae6b1f9
+  step=2,desc:stand a pond with P nine turns ahead streaming into Q inside it — a Seem over the tanks — one batch — walk and look,dige:926b64bf752e759d
+  step=3,desc:11 clock pulses each — one batch — walk and look,dige:57ca98e007b8929b
+  step=4,desc:one clock pulse each — one batch — walk and look,dige:1e471fa348bd5e97
     Assertion:a-fish-swimming-between,sentence:a fish swimming between tanks is in neither — the Seem keeps it in limbo with what the eye thought of it
-  step=5,desc:one clock pulse each — one batch — walk and look,dige:154533b803ef39b2
+  step=5,desc:one clock pulse each — one batch — walk and look,dige:999ea3032efc2c3d
     Assertion:a-fish-that-swims,sentence:a fish that swims from P to Q is one point that moved — the eye’s regard went with it
-  step=6,desc:one clock pulse each — one batch — walk and look,dige:4de48a769d713209
-  step=7,desc:one clock pulse each — one batch — walk and look,dige:46311e1fc5aea28a
-  step=8,desc:one clock pulse each — one batch — walk and look,dige:1868dd2e29cc6874
+  step=6,desc:one clock pulse each — one batch — walk and look,dige:c3574d80da7267b6
+  step=7,desc:one clock pulse each — one batch — walk and look,dige:b5d98ebd14925ca7
+  step=8,desc:one clock pulse each — one batch — walk and look,dige:c3ec2749f6cc1a16
     Assertion:what-never-comes-back,sentence:what never comes back drops out of limbo two walks on — gone for good

@@ -8,9 +8,7 @@ story:AthePondSunpitFrontier
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.026
-      sample=0.044,at=1792533947
-      sample=0.019,at=1792543086
+    TimeTotal:beliefs,avg=0.023
       sample=0.025,at=1792543154
       sample=0.017,at=1792543218
       sample=0.019,at=1792545100
@@ -19,9 +17,9 @@ story:AthePondSunpitFrontier
       sample=0.039,at=1792550538
       sample=0.021,at=1792566851
       sample=0.014,at=1792567889
-    TimeTotal:step,avg=0.007
-      sample=0.011,at=1792533947
-      sample=0.005,at=1792543086
+      sample=0.017,at=1792571201
+      sample=0.018,at=1792576068
+    TimeTotal:step,avg=0.006
       sample=0.006,at=1792543154
       sample=0.004,at=1792543218
       sample=0.005,at=1792545100
@@ -30,6 +28,8 @@ story:AthePondSunpitFrontier
       sample=0.01,at=1792550538
       sample=0.005,at=1792566851
       sample=0.003,at=1792567889
+      sample=0.004,at=1792571201
+      sample=0.004,at=1792576068
   step,dige:97dd881c368116a3
   step=2,desc:stand three heron-first tanks that differ only in when a pass takes its rows — and take turn one,dige:0d8984e6f77a5322
   step=3,desc:turn every tank up to the turn this step names,dige:d505d5b26483a95c

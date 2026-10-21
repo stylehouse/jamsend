@@ -24,13 +24,13 @@ Snap:H
           TheAMerge:fork
             TheATook:gone,kind:Fish,of:perch 2
             {"TheARefused":"both changed","kind":"Fish","of":"carp 3","ours":"Fish,born=11","theirs":"Fish,born=12"}
-          TheAHeld:Turns,of,count=13
-          TheAHeld:EggsNamed,of,count=6
-          TheAHeld:Fish,of:minnow 1,born=4
-          TheAHeld:Fish,of:trout 4,born=13
-          TheAHeld:Egg,of:roach 5,born=13
-          TheAHeld:Egg,of:bream 6,born=13
-          TheAHeld:Fish,of:carp 3,born=11
+          TheATrace:Turns,of,count=13
+          TheATrace:EggsNamed,of,count=6
+          TheATrace:Fish,of:minnow 1,born=4
+          TheATrace:Fish,of:trout 4,born=13
+          TheATrace:Egg,of:roach 5,born=13
+          TheATrace:Egg,of:bream 6,born=13
+          TheATrace:Fish,of:carp 3,born=11
           TheAWalk:2
             TheABecame:Fish,of:trout 4,was:Egg
             TheABecame:Fish,of:carp 3,was:Egg
@@ -53,12 +53,12 @@ Snap:H
           TheAKind:Egg
           TheAKind:Fish
           TheAKind:Heron
-          TheAHeld:Turns,of,count=10
-          TheAHeld:EggsNamed,of,count=4
-          TheAHeld:Fish,of:minnow 1,born=4
-          TheAHeld:Fish,of:perch 2,born=4
-          TheAHeld:Egg,of:carp 3,born=10
-          TheAHeld:Egg,of:trout 4,born=10
+          TheATrace:Turns,of,count=10
+          TheATrace:EggsNamed,of,count=4
+          TheATrace:Fish,of:minnow 1,born=4
+          TheATrace:Fish,of:perch 2,born=4
+          TheATrace:Egg,of:carp 3,born=10
+          TheATrace:Egg,of:trout 4,born=10
           TheAWalk:1
             TheANeu:Turns,of
             TheANeu:EggsNamed,of

@@ -66,23 +66,24 @@ A capture doc, not yet a plan — the owner has reached for this three times in 
 **Then the clock and the page (BUILT 2026-10-21, design §1.13).**  A clock is a compartment (`w:Athe_Clock`, poke in,
  `clock` axon out; Book `AthePondClock`, all 21 AthePond Books green after it).  **`/Pondland`** is the first page whose top
   is `TheA_run`: a bare House (no `main()`), only Theory.go + the toy mounted, the page's timer pokes one clock, a run is
-   two or three rounds, R never visited.  Nothing in Housing changed.  Open there: the timer is the last elvis from outside;
-    a push arriving between eras on that page (CodePush with no Story to mediate); req machinery woken by pulse.
+   two or three rounds, R never visited.  Nothing in Housing changed.  Then **the era seam** (`AthePondEra`): a House declaring `%TheAEras` holds pushes back,
+    and `TheA_run` takes waiting code before round one (`%TheAArrived`), moving those As once with nothing asked.  Open: the
+     timer as an IO compartment (item 3); req machinery woken by pulse (touches Hovercraft — break down before building).
 *Food for thought (owner, 2026-10-21):* maybe the spheres are **Was\*\*** and **Trace\*\*** rather than K and D — the D sphere is
- what the Seem's trace leaves (`TheAHeld` → `TheATrace`?).  Not renamed.
+ what the Seem's trace leaves.  **RENAMED 2026-10-21 (owner): `TheAHeld` → `TheATrace`** — "Held" read as a req HOLD (a root keeping inner realities existing and waited upon), which the D point is not; that word stays free for the req side of the scheduler.  K → Was\*\* not renamed.
 
 **Next moves, in order:**
 1. *Done 2026-10-21:* all 13 AthePond Books green after A\*\* + the rename; S5 (`TheA_near` from the top) and S6 (`TheA_as`
     flat) bit as predicted.  Nest's heredity oath is a known gap under S6 (design §1.10).
 2. **Resisting CodePush during a run, the rest:** a Book's own routine through its A (`do_fn_for`'s unused `w_inst` seam —
     a Housing edit, so a ledger row), and the routines calling the toy through `TheA_as` rather than flat.
-3. *Started 2026-10-21 (§0.5, design §1.12):* a Seem over a compartment — Held points, Regard on them, rollback to a mark,
+3. *Started 2026-10-21 (§0.5, design §1.12):* a Seem over a compartment — Trace points, Regard on them, rollback to a mark,
     a fork + three-way merge against the mark, atoms that move (limbo), and what outlives a reload (`AthePondSeem`,
      `AthePondMerge`, `AthePondMergeHatch`, `AthePondStampMerge`, `AthePondMoves`, `AthePondReload`; S7–S10, S12, S13
       sabotaged).  Later the same day: marks moved into the compartment's Was (K, owner); merge pairs through `resolve()`; a
        merge policy as particles (stamps and riders).  §0.5 "Next, in order" and "Confusions found looking back" are current.
         Still open: persisting parts of a Seem (the owner's "topic to come"), a Was read as a point's past.
-    **Spheres** — the owner's next theme (§0.1 "Spheres"): Said / Held / Was / Regard, OtherSphere, holsters, snap filtering,
+    **Spheres** — the owner's next theme (§0.1 "Spheres"): Said / Trace / Was / Regard, OtherSphere, holsters, snap filtering,
     and how Seem stitches them; rollback with it.  `%TheAWas` is a Was by hand.
 4. A Book that shuffles move order at random every run; `from:` by nearness; what an A may read by where it stands.
 5. Owner-gated: "unwatched work costs nothing" (Housing); the manifest check (Atlas × Electrode).
@@ -143,12 +144,12 @@ The A\*\* shape below (`TheA_<Name>_<Variant>_<dige>` prototypes) is how code wo
 
 ### Spheres — what hangs off a particle
 
-Seem holds them (not yet renamed Merge).  **Candidate names: Said / Held / Was / Regard** (owner: yes, as working names).
+Seem holds them (not yet renamed Merge).  **Candidate names: Said / Trace / Was / Regard** (owner: yes, as working names).
 
 | | is | written by | tense | lives |
 |---|---|---|---|---|
 | **n**, Said | the particle's `sc`, what it says | its owner | present | as matter |
-| **D**, Held | the resolved alignment: what the machine believes n's shape is (`resolve()`) | the Se | present | per walk; the seam everything else attaches to |
+| **D**, Trace | the resolved alignment: what the machine believes n's shape is (`resolve()`) | the Se | present | per walk; the seam everything else attaches to |
 | **K**, Was | this point's past, as its own keeper remembers it: last pass, last send, last accept | n's owner | past | chosen: Repli's last-sent must survive reload |
 | **O**, Regard | this point's present, as **another** organ sees it: Vyto's placement, a want's parked-ness | another organ | present | that organ's life |
 
@@ -239,7 +240,7 @@ Atlas knows what the code says it calls; Electrode records what ran.  A Book ove
 
 | question | ruling |
 |---|---|
-| sphere names | Said / Held / Was / Regard as working names |
+| sphere names | Said / Trace / Was / Regard as working names |
 | the holster's name | one per use, named for what it holds |
 | code digest scope | a digest over the chain's file digests (above) |
 | isolation | one heap; note it as improvable |
@@ -573,7 +574,7 @@ w:Pond
 ```
 
 Entries name their point by the **D identity** (the Se's first-sight id), not by the particle ref, so they follow the
- point through re-mints.  When the Held point drops, its entries drop with it: teardown is the alignment's job.
+ point through re-mints.  When the Trace point drops, its entries drop with it: teardown is the alignment's job.
 
 ### The first Atheory tests
 
@@ -675,11 +676,11 @@ Every change Atheory makes to Stuff or Housing (and beside them) is collected in
 ### What Seem already is (read, not guessed)
 
 - **A Seem is a `Selection` kept on a particle** (`LangHold.svelte` `i_Seem`/`o_Seem`): each walk runs `Se.process` over
-   a source `n**` and rebuilds a mirror tree, the **D sphere** (Held), under a top D.  Its walk hooks ride `Seem.sc.opt`
+   a source `n**` and rebuilds a mirror tree, the **D sphere** (Trace), under a top D.  Its walk hooks ride `Seem.sc.opt`
     and the Selection rides `Seem.sc.Se`, so a `%Seem` is snap-hostile; Voro and Repli both say so in comments.
 - **Pairing is observed, not declared.**  Each D level is a `replace()`, and `resolve()` pairs every new D with the old
    D it IS by how unambiguous their shared key:values are (`Stuff.svelte.ts` `resolve`).  The owner chose this for Repli
-    (2026-08-05: "identity OBSERVED, not declared").  So **what the Held trace copies off a row decides what counts as the
+    (2026-08-05: "identity OBSERVED, not declared").  So **what the Trace copies off a row decides what counts as the
      same thing**: copy a name and an egg that hatches is the same point; copy only the mainkey and it isn't.
 - **Spheres already hang off D, and already follow it.**  A paired D takes the old D's children (`resume_X`), but the
    next `replace()` only rebuilds children matching `trace_sc`.  Everything else under a D point (LE's `%Understandable`
@@ -697,20 +698,20 @@ w:Athe_Tank
   TheASeem:rows,walks=4                      ← a Seem over this compartment; its Selection is on .c
     TheAKind:Turns  TheAKind:Egg …           ← what it holds (one row per kind, never a packed string)
     TheASphere:eye,tense=Regard              ← a declared sphere: nothing writes into an undeclared one
-    TheAHeld:Egg,of=chub 9,born=19           ← Held: one point per row, re-paired every walk
+    TheATrace:Egg,of=chub 9,born=19           ← Trace: one point per row, re-paired every walk
       TheARegard:eye,seen=4                  ← an epiphyte: the eye's opinion of this point
     TheAWalk:4                               ← what the last walk saw happen
       TheABecame:Fish,of=minnow 1,was=Egg    ← one point, another kind (the Turn would say one went and one came)
       TheAGone:Fish,of=carp 3
-    TheAMark:20,dontSnap=1                   ← the Held tree kept at turn 20 — the line snaps, the copy doesn't
+    TheAMark:20,dontSnap=1                   ← the Trace tree kept at turn 20 — the line snaps, the copy doesn't
 ```
 
-- **Held** (`TheA_seem_walk`): the Seem walks the kinds it holds, depth-first.  A Held point is the row's own sc under
-   `TheAHeld:<mainkey>,of:<its value>`, so a name pairs a point across walks whatever else changes.  Async (`Se.process`
+- **Trace** (`TheA_seem_walk`): the Seem walks the kinds it holds, depth-first.  A Trace point is the row's own sc under
+   `TheATrace:<mainkey>,of:<its value>`, so a name pairs a point across walks whatever else changes.  Async (`Se.process`
     is), so a routine awaits it between turns; a move never walks.
 - **Regard** (`TheA_sphere`, `TheA_regard`): another organ's opinion, written on the point.  The toy's "other organ" is
    the Book's **eye**, which marks each point it first sees with the walk it saw it on.
-- **Rollback** (`TheA_seem_mark`, `TheA_seem_rollback`): a mark keeps a copy of the Held tree.  Rolling back drops every
+- **Rollback** (`TheA_seem_mark`, `TheA_seem_rollback`): a mark keeps a copy of the Trace tree.  Rolling back drops every
    row of the Seem's kinds and mints them again from the mark, in order.  The particles are new; the next walk pairs them
     to the same points, so **Regard survives a rollback by the alignment alone** — and a point that died after the mark
      comes back as a new one, which the eye sees afresh.  The compartment says how much of it to re-synthesise (its
@@ -747,7 +748,7 @@ Rollback is a merge with a past self where the past wins everything.  A real mer
 - `TheA_seem_fork(w, name, label, into)` mints a mark into another compartment and stands the same Seem there, carrying
    the mark as its base.  The two are now siblings: a crew's two bodies, a friend's copy.
 - `TheA_seem_merge(ours, theirs, name, label)` takes theirs as a **candidate**, never the truth: it walks both, pairs the
-   three Held trees, and accords each point by the table.  Refusals snap with their reason (the merge organ's rule 4).
+   three Trace trees, and accords each point by the table.  Refusals snap with their reason (the merge organ's rule 4).
 - Pairing by `of` across compartments is declared identity used directly, a shortcut.  The organ proper would hand the
    candidate tree to `resolve()` as the case study says ("don't build another").  Fine for the toy, since the two agree here.
 - **The Book:** stand M and turn it to 10, mark it "fork", and fork N from it.  Both turn to 13, the same machine on the
@@ -763,7 +764,7 @@ Rollback is a merge with a past self where the past wins everything.  A real mer
 `resolve()` pairs a point only among its siblings.  So a row that leaves one place and turns up in another — a fish down a
  stream from P to Q — is a goner under P and, a walk or two later, a newcomer under Q.  Two things make it one point:
 - **A Seem over a pond** (`%TheAOver` on the Seem): it lives on the pond's world and walks the As standing in that pond's A,
-   then their rows — `TheAHeld:A,of:S_P` › `TheAHeld:Fish,of:P minnow 1`.  The A\*\* tree, read by a Seem: what a pond can
+   then their rows — `TheATrace:A,of:S_P` › `TheATrace:Fish,of:P minnow 1`.  The A\*\* tree, read by a Seem: what a pond can
     see of its tanks.
 - **Limbo** (`%TheALimbo,keep:<n>`, `TheA_seem_limbo`): every gone point is kept, whole with its epiphytes, for n walks, with
    `from:` (the place it left).  A newcomer with the same key within that time is the point **moved**: it gets its
@@ -784,7 +785,7 @@ Rollback is a merge with a past self where the past wins everything.  A real mer
 A reload keeps what is particles and loses `.c`.  `TheA_persist(A)` says an A as text and `TheA_thaw(H, snap)` stands it
  again; in between, a Seem's Selection and every D's Travel are gone.  So the test of "is this sphere real state" is
   simple: **does it come back?**
-- **Held and Regard come back**, because they're particles.  The first walk after the reload pairs the thawed points with a
+- **Trace and Regard come back**, because they're particles.  The first walk after the reload pairs the thawed points with a
    fresh Selection and finds nothing new.  An egg that hatches after it is still the same point, with the regard from
     before the reload.
 - **A mark declared not to persist (`dontSnap`) comes back as its line alone, `folded:1`.**  Rolling back to it is refused,
@@ -809,23 +810,23 @@ A reload keeps what is particles and loses `.c`.  `TheA_persist(A)` says an A as
 4. A Was read as the point's past (a per-point last-sent).  Persisting parts of a Seem is the owner's "topic to come" — ask
     before settling a default.
 5. *Done 2026-10-21:* Pond Plates draws the spheres — plates 12–17, "What hangs off a fish" (https://claude.ai/artifact/Uoma1XYQnvVGtBfSNQLkbm):
-    the Held sheet as tracing paper over each tank, a ring under every egg and fish, regard as a dot, marks as cards behind,
+    the Trace sheet as tracing paper over each tank, a ring under every egg and fish, regard as a dot, marks as cards behind,
      limbo between the tanks, merge decisions as chips.  Extractor in the session scratchpad only (`extract_spheres.mjs`).
 
 Owner shrugged at: limbo keep in walks vs turns (walks, the Seem's clock); HohoRetake's wall-clock red (unattributed).
-`TheAHeld` keeps its name.
+`TheAHeld` kept its name then; renamed `TheATrace` later the same day (see §0.0).
 
 ### Confusions found looking back (2026-10-21) — read before building on §0.5
 
-- **D was doing K's job** (owner caught it): the mark copied Held.  Fixed: the mark is row copies in the compartment's
+- **D was doing K's job** (owner caught it): the mark copied the Trace.  Fixed: the mark is row copies in the compartment's
    `%TheAWas`.  *Over-corrected, then put back (owner: "data without declared names is meant to be as okay as possible"):*
-    Held was slimmed to mainkey+value, which leaves `resolve()` nothing to pair a nameless row on.  D carries n's sc again —
+    the Trace was slimmed to mainkey+value, which leaves `resolve()` nothing to pair a nameless row on.  D carries n's sc again —
      what the machine believes n's shape is, which derivations will add to — and only the mark lives in K.
 - **A persisted D\*\* with Regard\*\* on it** (owner noticed): the Seem lives inside the tank as particles, so persisting the
-   tank persists the Held tree and every regard.  No other Seem in the app persists D.  Tension with the case study's rule
+   tank persists the Trace tree and every regard.  No other Seem in the app persists D.  Tension with the case study's rule
     3 (a sphere's lifetime is its own): an epiphyte dies with its D, so a Regard that outlives a non-persisted D would need
      re-hanging by key after a thaw — what limbo already does for a moved fish.  Part of "persisting parts of a Seem".  The diagram in "The slice" above shows the FIRST shape.
-- **Merge compared Held copies**, so it silently depended on fat Ds.  Now it compares rows (K's base, ours, theirs).
+- **Merge compared Trace copies**, so it silently depended on fat Ds.  Now it compares rows (K's base, ours, theirs).
 - **`TheA_turn_commit` re-stamped `keep: was.sc.keep`** on every Turn, which writes an `undef` into sc once a Was exists without
    a keep (a mark makes one).  Now it writes only `made`.
 - **Two Ks, both fine:** the compartment's Was (Turns + marks) and the Seem's limbo (points it remembers losing).  Different
@@ -839,22 +840,22 @@ Owner shrugged at: limbo keep in walks vs turns (walks, the Seem's clock); HohoR
 - **Owner, 2026-10-21: D%\* is write-only** — the Seem's trace writes a D's sc once, and nobody edits it.  **D/\* comes and
    goes**: each walk replaces the children (the trace key's rows) down to where it stops waking nodes; epiphytes are the D/\*
     the replace leaves alone, since they don't wear the trace key.  One day the trace may **derive** identity: pull out string identifiers that aren't on n yet (a normalised title, a content
-    digest, the folder a track came from), so `resolve()` pairs on them.  The seam is `TheA_held_sc`; a Seem might declare a
+    digest, the folder a track came from), so `resolve()` pairs on them.  The seam is `TheA_trace_sc`; a Seem might declare a
      derivation per kind (`%TheAKind:<kind>,by:<derivation>`).  Unbuilt.
 - **Merge paired by a key that included the kind** (`Egg:carp 3`), while the Seem's identity is the name alone.  AthePondMerge
    passed by luck (both sides hatched alike, so the egg was "gone on both" and the fish "new on both").  One side hatching
     against a change on the other would have left an egg AND a fish of one name.  Fixed by handing the candidate to
-     `resolve()` (`TheA_pair`: each row stands in as its Held sc), proven by `AthePondMergeHatch`; S13 (the old key pairing)
+     `resolve()` (`TheA_pair`: each row stands in as its Trace sc), proven by `AthePondMergeHatch`; S13 (the old key pairing)
       is its sabotage.  *S13 predicted before running:* MergeHatch loses both oaths (trout comes across as an egg gone and a
        fish new; carp leaves an egg AND a fish); AthePondMerge stays green — by the luck above.
 
-- **Ruled 2026-10-21 (owner): Regard stays on the point** — the `%TheAHeld` (the D), not the row and not the `%TheASeem`;
+- **Ruled 2026-10-21 (owner): Regard stays on the point** — the `%TheATrace` (the D), not the row and not the `%TheASeem`;
    `%TheASphere` stays the per-organ declaration.  The question as it was asked:
-- **Ruled 2026-10-21 (owner): a kept copy is K, not D.**  The mark copied the Held tree, and Held copied all of n, so D was
+- **Ruled 2026-10-21 (owner): a kept copy is K, not D.**  The mark copied the Trace tree, and the Trace copied all of n, so D was
    doing K's job.  D should carry only what re-identifies a row; a copy of the past is the Was sphere and exists only where
     something asks for it (opt-in, like `%TheAWas,keep`).  **Rollback is not error recovery**: code shouldn't throw, and
      when it does, restarting the run is reasonable.  Rollback is for merges and time travel, and is simply unavailable
-      without a K.  *Next slice (proposed, not started — moves the Seem/Merge/Reload fixtures):* slim the Held trace to
+      without a K.  *Next slice (proposed, not started — moves the Seem/Merge/Reload fixtures):* slim the Trace to
        identity keys; make the mark a kept copy of the ROWS inside the compartment's `%TheAWas` (one Was per compartment,
         Turns and marks under the same readers and keep); rollback and merge read it.
 - *Asked:* **OtherSphere vs on the point.**  §0.1 ruled K and O live in `%OtherSphere:'<label>'/*`, one per organ, and

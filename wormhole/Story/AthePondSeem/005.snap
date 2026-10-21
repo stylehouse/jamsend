@@ -20,31 +20,31 @@ Snap:H
           TheAKind:Fish
           TheAKind:Heron
           TheASphere:eye,tense:Regard
-          TheAHeld:Turns,of,count=20
-          TheAHeld:EggsNamed,of,count=12
-          TheAHeld:Fish,of:minnow 1,born=4
+          TheATrace:Turns,of,count=20
+          TheATrace:EggsNamed,of,count=12
+          TheATrace:Fish,of:minnow 1,born=4
             TheARegard:eye,seen=5
-          TheAHeld:Fish,of:perch 2,born=4
+          TheATrace:Fish,of:perch 2,born=4
             TheARegard:eye,seen=5
-          TheAHeld:Fish,of:carp 3,born=13
+          TheATrace:Fish,of:carp 3,born=13
             TheARegard:eye,seen=5
-          TheAHeld:Fish,of:trout 4,born=13
+          TheATrace:Fish,of:trout 4,born=13
             TheARegard:eye,seen=5
-          TheAHeld:Fish,of:roach 5,born=16
+          TheATrace:Fish,of:roach 5,born=16
             TheARegard:eye,seen=5
-          TheAHeld:Fish,of:bream 6,born=16
+          TheATrace:Fish,of:bream 6,born=16
             TheARegard:eye,seen=5
-          TheAHeld:Fish,of:tench 7,born=19
+          TheATrace:Fish,of:tench 7,born=19
             TheARegard:eye,seen=3
-          TheAHeld:Fish,of:dace 8,born=19
+          TheATrace:Fish,of:dace 8,born=19
             TheARegard:eye,seen=3
-          TheAHeld:Egg,of:chub 9,born=19
+          TheATrace:Egg,of:chub 9,born=19
             TheARegard:eye,seen=3
-          TheAHeld:Egg,of:rudd 10,born=19
+          TheATrace:Egg,of:rudd 10,born=19
             TheARegard:eye,seen=3
-          TheAHeld:Egg,of:minnow 11,born=19
+          TheATrace:Egg,of:minnow 11,born=19
             TheARegard:eye,seen=3
-          TheAHeld:Egg,of:perch 12,born=19
+          TheATrace:Egg,of:perch 12,born=19
             TheARegard:eye,seen=3
           TheAWalk:5
             TheABecame:Egg,of:chub 9,was:Fish

@@ -40,7 +40,7 @@
 | **speaking as an A** | the House, but a method name resolves first on the A's own versions | `TheA_as(A)` |
 | **served** | given the nearest matching thing, walking out through the As one stands in — never sideways, never from the top | `TheA_near(A, sc)` |
 | **Seem** | a controller over a compartment: it walks the rows of the kinds it holds and keeps a point for each | `%TheASeem:<name>` with `%TheAKind` rows; `TheA_seem_walk` |
-| **point** (Held) | the Seem's reading of one row, paired walk to walk by what holds still (its name), so it survives a change of kind | `%TheAHeld:<kind>,of:<name>` |
+| **point** (Trace) | the Seem's reading of one row, paired walk to walk by what holds still (its name), so it survives a change of kind | `%TheATrace:<kind>,of:<name>` |
 | **Regard** | another organ's opinion of a point, kept ON the point, so it lives and dies with it | `%TheARegard:<sphere>` under a point; `%TheASphere:<name>,tense:Regard` declares it |
 | **mark**, **rollback** | a kept copy of the points; rolling back mints the rows again from it, and the points re-pair | `%TheAMark:<label>,dontSnap`; `TheA_seem_rollback` |
 
@@ -225,6 +225,14 @@ Each oath fell to the sabotage aimed at it, and only to that: the unrelated oath
     never visited, and the step-4 oath.
  Restored by checksum and recompiled; the runner needs a reload before its next Book.
 
+**The era seam, sabotaged once each (S16, S17, `AthePondEra`) — predicted 2026-10-21 before running; BOTH BIT AS PREDICTED** (each lost exactly `a-run-takes-waiting`, 2 of 3 sworn; under S17 snap 4 showed `TheACodeTaken` with no `TheAArrived` — Story’s seam took it).  Restored by checksum and recompiled:
+- **S16 — the run takes the code but doesn’t ready its A.**  Step 3’s rounds are `Clock_A` then `K_P K_Q`, with
+   `TheAArrived:K_P` and the push taken — so only "a run takes waiting code before round one — that A moves in round one…" falls.
+    Held: the mid-step oath (sworn before the run) and step 4’s.
+- **S17 — the run doesn’t take at all.**  K_P’s push still waits after step 3’s run, no `TheAArrived` — the same step-3 oath
+   falls.  Story’s seam at the start of step 4 then takes it (an elvis), so step 4 still shows `TheACodeTaken,count=1`, nothing
+    arrived in its run — its oath HOLDS.  That is the tell that Story and the era seam are two seams for one thing.
+
 ### 1.11 A\*\* — As in As, each running its own code — `AthePondVersions`, `AthePondNest`
 
 **Owner, 2026-10-21:** A\*\* is a recursive pile of A (`A/A/A/A`), and where an A stands in it has meaning — what code it
@@ -268,16 +276,16 @@ w:Athe_Tank
   TheASeem:rows,walks=5               a Seem over the tank; its Selection rides .c
     TheAKind:Egg …                    what it holds
     TheASphere:eye,tense:Regard       a declared sphere
-    TheAHeld:Egg,of:chub 9,born=19    D, Held: a point — what the machine believes the row is
+    TheATrace:Egg,of:chub 9,born=19    D, Trace: a point — what the machine believes the row is
       TheARegard:eye,seen=3           O, Regard: the eye's opinion, ON the point
     TheAWalk:5                        what the last walk saw: TheABecame / TheANeu / TheAGoner
 ```
-- **Held** (`TheA_seem_walk`) is Selection's D sphere over the compartment's rows.  `resolve()` pairs each walk's points
-   with the last walk's by observed identity.  The Held trace copies the row's sc (its mainkey's value as `of:`, then the
+- **Trace** (`TheA_seem_walk`) is Selection's D sphere over the compartment's rows.  `resolve()` pairs each walk's points
+   with the last walk's by observed identity.  The Trace copies the row's sc (its mainkey's value as `of:`, then the
     rest), and `resolve()` pairs on whatever is least ambiguous — a name holds a point together while its kind and birth
      change (an egg that hatches is the same point, now a fish), and a nameless row holds by what else it carries.  D%\* is
       written once and never edited; D/\* is replaced each walk except its epiphytes.  **Owner, 2026-10-21: a kept copy is K,
-       not D** — the first build marked by copying Held; marks now live in the Was.  (A slimmed, identity-only Held was tried
+       not D** — the first build marked by copying the Trace; marks now live in the Was.  (A slimmed, identity-only Trace was tried
         and put back: nameless data must pair as well as it can.)
 - **Regard** (`TheA_sphere`, `TheA_regard`): another organ's opinion, an epiphyte on the point.  A paired point takes its
    epiphytes along (`resume_X`); a gone point takes them with it.  **Nobody tidies.**  Nothing is written into an
@@ -299,7 +307,7 @@ w:Athe_Tank
      n walks; a newcomer with the same key is that point **moved** (`%TheAMoved,from,to`) and gets its epiphytes back.  An
       atom in flight is in neither tank, and limbo says so.  A heuristic, said as one: "same key, soon enough".
 - **What outlives a reload — `AthePondReload`.**  `TheA_persist(A)` says an A as text (folding every `dontSnap` subtree to its
-   line plus `folded:1`, since `enWaft` ignores the flag) and `TheA_thaw` stands it again: every `.c` is gone.  Held points
+   line plus `folded:1`, since `enWaft` ignores the flag) and `TheA_thaw` stands it again: every `.c` is gone.  Trace points
     and their Regard come back; the first walk with a fresh Selection finds nothing new, and a hatch after it is still the
      same point.  A mark that doesn't persist comes back folded, and rolling back to it is refused (`%TheARefused:rollback,why`).
       This Book found that **Selection itself wasn't reload-safe** (its back-chain read `.c.T` off old Ds; §2, beside the
@@ -309,7 +317,7 @@ w:Athe_Tank
    mark, now their base.  `TheA_seem_merge(ours, theirs)` takes theirs as a **candidate** and decides each row (by key) against
     the base rows: only theirs changed → taken (`%TheATook:changed|new|gone`); only ours → kept; both alike → kept once; both
      differently → **refused**, ours kept, and `%TheARefused,ours,theirs` stays in the snap.  Merging again changes nothing.
-      **The candidate is handed to `resolve()`** (`TheA_pair`): each row stands in as its Held sc, so rows pair across
+      **The candidate is handed to `resolve()`** (`TheA_pair`): each row stands in as its Trace sc, so rows pair across
        compartments by observed identity — the name holds still, the kind doesn't count.  So an egg hatched on one side is
         one change, and a hatch against a change is refused, never an egg plus a fish of one name (`AthePondMergeHatch`).
 
@@ -354,13 +362,31 @@ TheARun,rounds=2,quiet
        swims; R and `Clock_B` stay at zero visits forever.  For Theory to stand code without Lies/Lang it got two fallbacks:
         `TheA_meta(path)` (the Ghostmeta name rule, used when `Lang_ghostmeta_name` isn't loaded) and `TheA_loaded(path)`
          (the digest from the House's own `Ghostmeta_*` method when `Lies_ghost_get` isn't).
-- **Where it goes next:** req machinery waking by pulse instead of by sweep; a push landing between eras on the page; the
-   page's tick itself as a pulse rather than a timer (it is the one elvis from outside left).
+- **Code lands between eras — `AthePondEra`.**  On the page a push could never land: `TheA_code_push` posted an elvis, and a
+   House with no `main()` never ticks, so `%TheACodePush` sat on the As for ever.  Now a House may declare **`%TheAEras`**
+    (the page stands it): pushes to its As wait, as they do in a Story run (`TheA_code_waits`, was `TheA_in_run`).  **`TheA_run`
+     is the era seam:** before round one every A with code waiting takes it (`TheA_code_take` — what the elvis did, without its
+      think), is named `%TheAArrived:<A>` on the run, and moves in round one — a move with nothing asked IS the blank think.
+```
+TheARun,rounds=2,quiet
+  TheAArrived:K_P                     the toy was pushed to K_P mid-step; this run took it first
+  TheARound:1,landed=2
+    TheAWent:Clock_A
+    TheAWent:K_P                      moved with nothing asked: its first move under the new code
+  TheARound:2
+    TheAWent:K_P                      …and again with the tick
+    TheAWent:K_Q
+```
+   So a run is all one era, and an era ends only where code arrives.  On `/Pondland`, a hot reload of the toy lands at the
+    next poke: every A holding it moves once (R and `Clock_B` included — arrival is a wake, the only one they ever get).
+- **Where it goes next:** (a) the page’s timer is the last elvis from outside — it belongs to IO-as-compartments (From the
+   top, item 3): real time as a compartment whose pulses come from the host, the same shape as audio or a socket; (b) req
+   machinery woken by pulse instead of by sweep — the first step that touches Hovercraft (todo §0.0).
 
 ### 1.14 Still to design
 
 *From the todo's sketch, not yet built:* `%TheATurf` (a leased
- region), the spheres beyond Held and Regard (a Was that outlives a reload, §1.12), the scheduler beyond the toy (§1.13 has it by hand, a clock, and a page), a synapse whose pulses go
+ region), the spheres beyond Trace and Regard (a Was that outlives a reload, §1.12), the scheduler beyond the toy (§1.13 has it by hand, a clock, and a page), a synapse whose pulses go
   somewhere other than a tank woken by the same batch (across Houses; across a network), the
   manifest check (Electrode joined with Atlas).  From A\*\* (§1.11): what an A may READ or WRITE by where it stands (turfs),
    `from:` resolved by nearness rather than a unique name, a Book's own routine running through its A, and whether the A\*\*

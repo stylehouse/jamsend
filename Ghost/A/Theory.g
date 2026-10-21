@@ -111,7 +111,9 @@ TheA_clobbers_stand(code, paths):
 //  Housing.ghostsHaunt calls TheA_code_push with the Ghostmeta_* name of every compiled file it takes in.  An A whose
 //   %TheALayer names that file gets the row; an A that doesn't hold it hears nothing.  An A in a Story run keeps the row
 //    until Story lets it through at the start of its next step (TheA_code_pushes_let) — Story mediates how code comes
-//     through a Book.  Anywhere else it goes through at once.  Going through is an elvis to the A's w: TheA_code_arrive.
+//     through a Book.  An A in a House that runs in eras (%TheAEras on the House: a page driven by TheA_run) keeps it until
+//      the next run starts, which takes it before round one (an era is everything run under one set of code).  Anywhere
+//       else it goes through at once.  Going through is an elvis to the A's w: TheA_code_arrive.
 
 // TheA_code_push — a compiled file arrived; mark it on every A that holds it, and let it through where nothing holds it back
 TheA_code_push(meta):
@@ -124,14 +126,15 @@ TheA_code_push(meta):
                     if (this.TheA_meta(layer.sc.TheALayer) === meta) A.oai({ TheACodePush: layer.sc.TheALayer })
                 }
             }
-            if (!this.TheA_in_run(h)) this.TheA_code_push_deliver(h, A)
+            if (!this.TheA_code_waits(h)) this.TheA_code_push_deliver(h, A)
         }
     }
 
-// TheA_in_run — is this House a Story run, or inside one?  Pushes to its As wait for Story
-TheA_in_run(h):
+// TheA_code_waits — does something hold pushes back in this House?  A Story run (or a House inside one) lets them through at
+//  each step; a House that runs in eras (%TheAEras, stood by whoever drives it with TheA_run) at the start of each run
+TheA_code_waits(h):
     for (let r = h; r; r = r.up) {
-        if (r.sc?.Run) return true
+        if (r.sc?.Run || r.o?.({ TheAEras: 1 }).length) return true
     }
     return false
 
@@ -158,8 +161,13 @@ TheA_code_push_deliver(h, A):
 // e_TheA_code_arrive — the push arriving at the A: stand its code again from the files it names (a changed file gives a new
 //  digest; the same file gives the same rows), count it taken, clear what was waiting, and think once with nothing asked
 e_TheA_code_arrive(A, w, e):
+    if (this.TheA_code_take(A)) this.i_elvisto(w, 'think')
+
+// TheA_code_take — what arriving does, without the think: returns whether there was anything to take.  TheA_run calls it at
+//  its era seam and moves the A in round one instead (a move with nothing asked is the think)
+TheA_code_take(A):
     let pushes = A.o({ TheACodePush: 1 })
-    if (!pushes.length) return
+    if (!pushes.length) return false
     // a push that names a dige (and maybe a variant) stands that version; a plain one stands whatever is loaded now
     let pinned = {}
     let variant = null
@@ -185,7 +193,7 @@ e_TheA_code_arrive(A, w, e):
     let taken = (A.o({ TheACodeTaken: 1 })[0]?.sc.count || 0) + 1
     A.oai({ TheACodeTaken: 1 }, { count: taken })
     for (const push of pushes) A.drop(push)
-    this.i_elvisto(w, 'think')
+    return true
 // A** — As stand inside As, and each runs its own code (spec/Atheory_design.md §1.11).
 //
 //      A:Pond_Warm                                 ← an A holding code and a world of its own
@@ -309,7 +317,7 @@ TheA_version_of(path, dige):
 //  Story like any push
 TheA_code_push_to(h, A, path, dige, variant):
     A.oai({ TheACodePush: path }, variant ? { dige, variant } : { dige })
-    if (!this.TheA_in_run(h)) this.TheA_code_push_deliver(h, A)
+    if (!this.TheA_code_waits(h)) this.TheA_code_push_deliver(h, A)
 // Moves and the boundary — how compartments run without their order mattering (spec/Atheory_design.md §0 has the words).
 //
 //      A:P
@@ -404,11 +412,19 @@ TheA_boundary(names, ready):
 //     itself; `most` only caps a runaway.  So a compartment nobody pulsed is never visited: none of its handlers run and none
 //      of it is read.  Each run is the new %TheARun on `at`, its rounds as %TheARound:<n>,landed with a %TheAWent:<A> per mover.
 //  Runs in a House with no ambient think, so nothing else wakes the compartments (a Book's Run House, today).  With no `wake`,
-//   each world is woken by its own <w>_woken (w:Athe_Clock → Athe_Clock_woken) — a name, called by name, never looked up
+//   each world is woken by its own <w>_woken (w:Athe_Clock → Athe_Clock_woken) — a name, called by name, never looked up.
+//  THE ERA SEAM: before round one, every A with code waiting (%TheACodePush) takes it — %TheAArrived:<A> on the run — and
+//   moves in round one, with nothing asked if nothing else readied it.  So the code an A runs changes only between runs,
+//    and a run is all one era
 TheA_run(at, wake, ready, most):
     let todo = new Set(ready || [])
     for (const old of at.o({ TheARun: 1 })) at.drop(old)
     let run = at.i({ TheARun: 1 })
+    for (const A of this.TheA_all(this)) {
+        if (!A.o({ TheACodePush: 1 }).length || !this.TheA_code_take(A)) continue
+        run.i({ TheAArrived: A.sc.A })
+        todo.add(A.sc.A)
+    }
     let n = 0
     while (todo.size && n < (most || 50)) {
         n++
@@ -484,11 +500,11 @@ TheA_read(w, name):
     this.TheA_was_trim(was)
     return read
 //#region Seem — spheres over a compartment (Atheory_todo §0.5)
-//  A Seem keeps a Held point (a D) for each row of the kinds it holds, re-paired every walk by Selection's resolve() —
-//   identity OBSERVED, by what the Held trace copies off the row (its mainkey's value as of:, and the rest), so a name holds an
+//  A Seem keeps a Trace point (a D) for each row of the kinds it holds, re-paired every walk by Selection's resolve() —
+//   identity OBSERVED, by what the Trace copies off the row (its mainkey's value as of:, and the rest), so a name holds an
 //    egg that hatches together as the same point, now a fish.  Anything hung on a point (a %TheARegard) is an epiphyte: it rides
 //     along while the point is paired and goes when the point goes, so nobody tidies.
-//  The past is not Held's: a copy of the rows kept at a moment is a mark in the compartment's Was (K — kept only because
+//  The past is not the Trace's: a copy of the rows kept at a moment is a mark in the compartment's Was (K — kept only because
 //   something asked).  Rolling back mints the rows again from it, and the next walk pairs the new particles to the same
 //    points.  Without a mark there is no rollback, and that's fine: code shouldn't throw, and when it does, restart the run.
 //
@@ -499,7 +515,7 @@ TheA_read(w, name):
 //        TheASeem:rows,walks=4
 //          TheAKind:Egg …                     what it holds, one row per kind
 //          TheASphere:eye,tense=Regard        a declared sphere; nothing is written into an undeclared one
-//          TheAHeld:Egg,of=chub 9,born=19     a point
+//          TheATrace:Egg,of=chub 9,born=19     a point
 //            TheARegard:eye,seen=4            another organ's opinion of it
 //          TheAWalk:4                         what the last walk saw happen: TheABecame, TheANeu, TheAGoner
 
@@ -512,14 +528,14 @@ TheA_seem(w, name, kinds):
 TheA_seem_kinds(seem):
     return seem.o({ TheAKind: 1 }).map(kind => kind.sc.TheAKind)
 
-// a row's sc as a Held point's: TheAHeld:<its mainkey>,of:<that key's value>, then everything else it says — what the machine
+// a row's sc as a Trace point's: TheATrace:<its mainkey>,of:<that key's value>, then everything else it says — what the machine
 //  believes the row's shape is.  resolve() pairs on whichever key:values are least ambiguous, so a named row holds together by
 //   its name and a nameless one by whatever else it carries (owner: data without declared names is meant to be as okay as
 //    possible).  D%* is written here once and never edited; one day this is where identity is DERIVED (a normalised title,
-//     a digest) as well as copied.  A copy of the past is not Held's job: that's a mark, in the Was
-TheA_held_sc(sc):
+//     a digest) as well as copied.  A copy of the past is not the Trace's job: that's a mark, in the Was
+TheA_trace_sc(sc):
     let k = Object.keys(sc)[0]
-    let held = { TheAHeld: k, of: sc[k] }
+    let held = { TheATrace: k, of: sc[k] }
     for (const key of Object.keys(sc)) {
         if (key !== k) held[key] = sc[key]
     }
@@ -530,7 +546,7 @@ TheA_seem_rows(w, seem):
     let kinds = this.TheA_seem_kinds(seem)
     return w.o().filter(row => kinds.includes(Object.keys(row.sc)[0]))
 
-// TheA_seem_walk — one walk: the Held points follow the rows, paired to last walk's by resolve(); what happened is the new
+// TheA_seem_walk — one walk: the Trace points follow the rows, paired to last walk's by resolve(); what happened is the new
 //  %TheAWalk.  Async (Selection is), so a routine awaits it between turns — a move never walks
 async TheA_seem_walk(w, name):
     let seem = w.o({ TheASeem: name })[0]
@@ -556,16 +572,16 @@ async TheA_seem_walk(w, name):
         n: over ? this.TheA_A(w) : w,
         process_D: seem,
         match_sc: {},
-        trace_sc: { TheAHeld: 1 },
+        trace_sc: { TheATrace: 1 },
         each_fn: async (D, n, T) => {
             let depth = T.c.path.length - 1
             if (depth === 0) T.sc.more = over ? n.o({ A: 1 }) : rows_of(n)
             if (over && depth === 1) T.sc.more = rows_of(n.o({ w: 1 })[0])
         },
-        trace_fn: async (uD, n, T) => uD.i(this.TheA_held_sc(n.sc)),
+        trace_fn: async (uD, n, T) => uD.i(this.TheA_trace_sc(n.sc)),
         traced_fn: async (D, bD, n, T) => {
             D.c.C = n
-            if (T.c.path.length - 1 === row_depth && bD && bD.sc.TheAHeld !== D.sc.TheAHeld) became.push([D, bD])
+            if (T.c.path.length - 1 === row_depth && bD && bD.sc.TheATrace !== D.sc.TheATrace) became.push([D, bD])
         },
         resolved_fn: async (T, N, gone, neu) => {
             for (const D of gone) all_gone.push([D, T.sc.D])
@@ -579,10 +595,10 @@ async TheA_seem_walk(w, name):
     w.oai({ TheASeem: name }, { walks })
     for (const old of seem.o({ TheAWalk: 1 })) seem.drop(old)
     let walk = seem.i({ TheAWalk: String(walks) })
-    for (const [D, bD] of became) walk.i({ TheABecame: D.sc.TheAHeld, of: D.sc.of, was: bD.sc.TheAHeld })
+    for (const [D, bD] of became) walk.i({ TheABecame: D.sc.TheATrace, of: D.sc.of, was: bD.sc.TheATrace })
     let where = (up) => (over && up && up !== seem ? { in: this.TheA_point_key(up) } : {})
-    for (const [D, up] of neus) walk.i({ TheANeu: D.sc.TheAHeld, of: D.sc.of, ...where(up) })
-    for (const [D, up] of goners) walk.i({ TheAGoner: D.sc.TheAHeld, of: D.sc.of, ...where(up) })
+    for (const [D, up] of neus) walk.i({ TheANeu: D.sc.TheATrace, of: D.sc.of, ...where(up) })
+    for (const [D, up] of goners) walk.i({ TheAGoner: D.sc.TheATrace, of: D.sc.of, ...where(up) })
     let limbo = seem.o({ TheALimbo: 1 })[0]
     if (limbo) this.TheA_seem_limbo(seem, limbo, walk, walks, all_gone, all_neu)
     return walk
@@ -595,19 +611,19 @@ TheA_seem_limbo(seem, limbo, walk, walks, gone, neu):
     let kinds = this.TheA_seem_kinds(seem)
     let where = (up) => (up && up !== seem ? this.TheA_point_key(up) : 'here')
     for (const [D, up] of gone) {
-        if (kinds.includes(D.sc.TheAHeld)) this.TheA_copy_all(limbo, D, { from: where(up), gone_at: walks })
+        if (kinds.includes(D.sc.TheATrace)) this.TheA_copy_all(limbo, D, { from: where(up), gone_at: walks })
     }
     for (const [D, up] of neu) {
         let key = this.TheA_point_key(D)
-        let was = limbo.o({ TheAHeld: 1 }).find(point => this.TheA_point_key(point) === key)
+        let was = limbo.o({ TheATrace: 1 }).find(point => this.TheA_point_key(point) === key)
         if (!was) continue
         for (const epi of was.o()) {
-            if (!epi.sc.TheAHeld) this.TheA_copy_all(D, epi, {})
+            if (!epi.sc.TheATrace) this.TheA_copy_all(D, epi, {})
         }
-        walk.i({ TheAMoved: D.sc.TheAHeld, of: D.sc.of, from: was.sc.from, to: where(up) })
+        walk.i({ TheAMoved: D.sc.TheATrace, of: D.sc.of, from: was.sc.from, to: where(up) })
         limbo.drop(was)
     }
-    for (const point of limbo.o({ TheAHeld: 1 })) {
+    for (const point of limbo.o({ TheATrace: 1 })) {
         if (walks - point.sc.gone_at >= (limbo.sc.keep || 1)) limbo.drop(point)
     }
 
@@ -617,9 +633,9 @@ TheA_copy_all(into, C, extra):
     for (const kid of C.o()) this.TheA_copy_all(kept, kid, {})
     return kept
 
-// the Held point of a row, by its mainkey's value
+// the Trace point of a row, by its mainkey's value
 TheA_seem_point(seem, of):
-    return seem.o({ TheAHeld: 1 }).find(point => point.sc.of === of)
+    return seem.o({ TheATrace: 1 }).find(point => point.sc.of === of)
 
 // TheA_sphere — declare a sphere on a Seem: its name and tense (Regard: another organ's opinion of each point)
 TheA_sphere(seem, name, tense):
@@ -638,7 +654,7 @@ TheA_regard_of(seem, point, name):
 
 // every regard of one sphere, wherever it is kept
 TheA_regards(seem, name):
-    return seem.o({ TheAHeld: 1 }).flatMap(point => point.o({ TheARegard: name }))
+    return seem.o({ TheATrace: 1 }).flatMap(point => point.o({ TheARegard: name }))
 
 // TheA_was — a compartment's Was: its past, there only because something asked for it (a keep of Turns for readers; a mark)
 TheA_was(w):
@@ -685,17 +701,17 @@ TheA_row_say(row):
 
 // a point's key: what limbo matches a newcomer on — its kind and name, or its kind alone for a one-of-a-kind row
 TheA_point_key(point):
-    return point.sc.of === 1 ? point.sc.TheAHeld : point.sc.TheAHeld + ':' + point.sc.of
+    return point.sc.of === 1 ? point.sc.TheATrace : point.sc.TheATrace + ':' + point.sc.of
 
 // TheA_pair — pair two sets of rows by OBSERVED identity, the way a Seem pairs one walk with the last: each row stands in as
-//  its Held sc, and resolve() pairs the news with the olds.  So an egg on one side and a fish of the same name on the other
+//  its Trace sc, and resolve() pairs the news with the olds.  So an egg on one side and a fish of the same name on the other
 //   are one thing (the name holds still; the kind doesn't count).  Returns [old row, new row] pairs, either side maybe absent
 async TheA_pair(olds, news):
     let C = new TheC({ c: {}, sc: { TheAPairing: 1 } })
-    for (const row of olds) C.i(this.TheA_held_sc(row.sc)).c.C = row
+    for (const row of olds) C.i(this.TheA_trace_sc(row.sc)).c.C = row
     let pairs = []
     await C.replace({}, async () => {
-        for (const row of news) C.i(this.TheA_held_sc(row.sc)).c.C = row
+        for (const row of news) C.i(this.TheA_trace_sc(row.sc)).c.C = row
     }, { pairs_fn: async (a, b) => { pairs.push([a?.c.C, b?.c.C]) } })
     return pairs
 

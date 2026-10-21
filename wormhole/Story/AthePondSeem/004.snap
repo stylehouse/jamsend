@@ -22,33 +22,33 @@ Snap:H
           TheAKind:Fish
           TheAKind:Heron
           TheASphere:eye,tense:Regard
-          TheAHeld:Turns,of,count=24
-          TheAHeld:EggsNamed,of,count=16
-          TheAHeld:Fish,of:tench 7,born=19
+          TheATrace:Turns,of,count=24
+          TheATrace:EggsNamed,of,count=16
+          TheATrace:Fish,of:tench 7,born=19
             TheARegard:eye,seen=3
-          TheAHeld:Fish,of:dace 8,born=19
+          TheATrace:Fish,of:dace 8,born=19
             TheARegard:eye,seen=3
-          TheAHeld:Fish,of:chub 9,born=22
+          TheATrace:Fish,of:chub 9,born=22
             TheARegard:eye,seen=3
-          TheAHeld:Fish,of:rudd 10,born=22
+          TheATrace:Fish,of:rudd 10,born=22
             TheARegard:eye,seen=3
-          TheAHeld:Fish,of:minnow 11,born=22
+          TheATrace:Fish,of:minnow 11,born=22
             TheARegard:eye,seen=3
-          TheAHeld:Fish,of:perch 12,born=22
+          TheATrace:Fish,of:perch 12,born=22
             TheARegard:eye,seen=3
-          TheAHeld:Egg,of:carp 13,born=22
+          TheATrace:Egg,of:carp 13,born=22
             TheARegard:eye,seen=4
-          TheAHeld:Egg,of:trout 14,born=22
+          TheATrace:Egg,of:trout 14,born=22
             TheARegard:eye,seen=4
-          TheAHeld:Egg,of:roach 15,born=22
+          TheATrace:Egg,of:roach 15,born=22
             TheARegard:eye,seen=4
-          TheAHeld:Egg,of:bream 16,born=22
+          TheATrace:Egg,of:bream 16,born=22
             TheARegard:eye,seen=4
-          TheAHeld:Heron,of:grey
-            TheAHeld:Ate,of:carp 3
-            TheAHeld:Ate,of:trout 4
-            TheAHeld:Ate,of:roach 5
-            TheAHeld:Ate,of:bream 6
+          TheATrace:Heron,of:grey
+            TheATrace:Ate,of:carp 3
+            TheATrace:Ate,of:trout 4
+            TheATrace:Ate,of:roach 5
+            TheATrace:Ate,of:bream 6
           TheAWalk:4
             TheABecame:Fish,of:chub 9,was:Egg
             TheABecame:Fish,of:rudd 10,was:Egg

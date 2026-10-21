@@ -20,11 +20,11 @@ Snap:H
           TheAKind:Fish
           TheAKind:Heron
           TheASphere:eye,tense:Regard
-          TheAHeld:Turns,of,count=4
-          TheAHeld:EggsNamed,of,count=2
-          TheAHeld:Fish,of:minnow 1,born=4
+          TheATrace:Turns,of,count=4
+          TheATrace:EggsNamed,of,count=2
+          TheATrace:Fish,of:minnow 1,born=4
             TheARegard:eye,seen
-          TheAHeld:Fish,of:perch 2,born=4
+          TheATrace:Fish,of:perch 2,born=4
             TheARegard:eye,seen
           TheAWalk:2
             TheABecame:Fish,of:minnow 1,was:Egg

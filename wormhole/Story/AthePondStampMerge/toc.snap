@@ -8,25 +8,29 @@ story:AthePondStampMerge
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.05
+    TimeTotal:beliefs,avg=0.041
       sample=0.069,at=1792550465
       sample=0.079,at=1792550479
       sample=0.036,at=1792550489
       sample=0.043,at=1792566835
       sample=0.023,at=1792567861
-    TimeTotal:step,avg=0.01
+      sample=0.018,at=1792571180
+      sample=0.022,at=1792575972
+    TimeTotal:step,avg=0.008
       sample=0.014,at=1792550465
       sample=0.016,at=1792550479
       sample=0.007,at=1792550489
       sample=0.009,at=1792566835
       sample=0.005,at=1792567861
+      sample=0.004,at=1792571180
+      sample=0.004,at=1792575972
   step,dige:5602afeeadbdab62
-  step=2,desc:stand M at 13 — declare how Fish merge — mark it fork — fork N,dige:7c74d12d304411a7
-  step=3,desc:hands feed — carp 3 at 14 in M and 15 in N — trout 4 at 16 in M and 12 in N — perch 2 given food in N with no stamp,dige:92fb8ed2a2afc5b5
-  step=4,desc:merge N into M,dige:d90de77abc206acf
+  step=2,desc:stand M at 13 — declare how Fish merge — mark it fork — fork N,dige:25e216a771d1ed73
+  step=3,desc:hands feed — carp 3 at 14 in M and 15 in N — trout 4 at 16 in M and 12 in N — perch 2 given food in N with no stamp,dige:8e5aa2b979ed764e
+  step=4,desc:merge N into M,dige:70babe250ee618fc
     Assertion:the-newer-feeding-wins,sentence:the newer feeding wins — carp 3 takes N’s fly with N’s stamp
     Assertion:an-older-stamp-carries,sentence:an older stamp carries nothing across — trout 4 keeps M’s worm
     Assertion:a-rider-never-travels,sentence:a rider never travels on its own — perch 2’s snail with no stamp stays in N
     Assertion:where-a-policy-speaks,sentence:where a policy speaks nothing is refused — both sides fed carp 3 and the stamp decided
-  step=5,desc:merge M into N,dige:ee216e6080627053
+  step=5,desc:merge M into N,dige:225e0323be1e6c88
     Assertion:merged-the-other-way,sentence:merged the other way N comes out as M did — stamps don’t care which side merges

@@ -32,14 +32,14 @@ Snap:H
             TheATook:by policy,kind:Fish,of:carp 3
               TheAKey:fed_at
               TheAKey:food
-          TheAHeld:Turns,of,count=13
-          TheAHeld:EggsNamed,of,count=6
-          TheAHeld:Fish,of:minnow 1,born=4
-          TheAHeld:Fish,of:perch 2,born=4
-          TheAHeld:Egg,of:roach 5,born=13
-          TheAHeld:Egg,of:bream 6,born=13
-          TheAHeld:Fish,of:trout 4,born=13,fed_at=16,food:worm
-          TheAHeld:Fish,of:carp 3,born=13,fed_at=15,food:fly
+          TheATrace:Turns,of,count=13
+          TheATrace:EggsNamed,of,count=6
+          TheATrace:Fish,of:minnow 1,born=4
+          TheATrace:Fish,of:perch 2,born=4
+          TheATrace:Egg,of:roach 5,born=13
+          TheATrace:Egg,of:bream 6,born=13
+          TheATrace:Fish,of:trout 4,born=13,fed_at=16,food:worm
+          TheATrace:Fish,of:carp 3,born=13,fed_at=15,food:fly
           TheAWalk:2
         TheAWas
           TheAMark:fork,dontSnap
@@ -62,14 +62,14 @@ Snap:H
             TheATook:by policy,kind:Fish,of:trout 4
               TheAKey:fed_at
               TheAKey:food
-          TheAHeld:Turns,of,count=13
-          TheAHeld:EggsNamed,of,count=6
-          TheAHeld:Fish,of:minnow 1,born=4
-          TheAHeld:Egg,of:roach 5,born=13
-          TheAHeld:Egg,of:bream 6,born=13
-          TheAHeld:Fish,of:carp 3,born=13,fed_at=15,food:fly
-          TheAHeld:Fish,of:perch 2,born=4,food:snail
-          TheAHeld:Fish,of:trout 4,born=13,fed_at=16,food:worm
+          TheATrace:Turns,of,count=13
+          TheATrace:EggsNamed,of,count=6
+          TheATrace:Fish,of:minnow 1,born=4
+          TheATrace:Egg,of:roach 5,born=13
+          TheATrace:Egg,of:bream 6,born=13
+          TheATrace:Fish,of:carp 3,born=13,fed_at=15,food:fly
+          TheATrace:Fish,of:perch 2,born=4,food:snail
+          TheATrace:Fish,of:trout 4,born=13,fed_at=16,food:worm
           TheAWalk:2
         TheAWas
           TheAMark:fork,dontSnap

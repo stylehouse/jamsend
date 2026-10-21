@@ -51,6 +51,8 @@
     function world(name: string) { return H?.o({ A: name })[0]?.o({ w: 1 })[0] }
 
     function stand() {
+        // this House runs in eras: code that hot-reloads waits on the As that hold it until the next run takes it (Theory.g TheA_run)
+        H.i({ TheAEras: 1 })
         H.i({ A: 'Pondland' }).i({ w: 'Pondland' })
         for (const name of CLOCKS) {
             const clock = H.TheA_stand(H, name, [TOY], null, 'Athe_Clock').i({ w: 'Athe_Clock' })
@@ -75,6 +77,8 @@
 
     function run(ready_names: string[]) {
         const r = H.TheA_run(log_w(), null, ready_names)
+        const came = r.o({ TheAArrived: 1 }).map((x: any) => x.sc.TheAArrived)
+        if (came.length) { era_at = pokes; era_who = came }
         for (const round of r.o({ TheARound: 1 })) {
             for (const went of round.o({ TheAWent: 1 })) visits[went.sc.TheAWent] = (visits[went.sc.TheAWent] || 0) + 1
         }
@@ -110,8 +114,17 @@
         }
         const heron = w.o({ Heron: 1 })[0]
         const waiting = w.o({ TheASynapse: 1 }).reduce((s: number, syn: any) => s + syn.o({ TheAPulse: 1 }).length, 0)
-        return { name, turns, rows, heron: !!heron, ate: heron ? heron.o({ Ate: 1 }).length : 0, waiting }
+        const A = H.o({ A: name })[0]
+        const code = String(A?.o({ TheACode: 1 })[0]?.sc.dige || '').slice(0, 6)
+        const took = A?.o({ TheACodeTaken: 1 })[0]?.sc.count || 0
+        return { name, turns, rows, heron: !!heron, ate: heron ? heron.o({ Ate: 1 }).length : 0, waiting, code, took }
     }
+    function arrived(_beat: number) {
+        return log_w()?.o({ TheARun: 1 })[0]?.o({ TheAArrived: 1 }).map((x: any) => x.sc.TheAArrived) || []
+    }
+    // the last run that took code: a new era began there
+    let era_at = $state(0)
+    let era_who: string[] = $state([])
     function last_run(_beat: number) {
         const r = log_w()?.o({ TheARun: 1 })[0]
         if (!r) return []
@@ -133,7 +146,7 @@
     <header>
         <div class="eyebrow">Atheory · a page whose top is the scheduler</div>
         <h1>Pondland</h1>
-        <p class="lede">No ambient tick. The page pokes the clock; the clock ticks into P and Q; P sends its old fish down the stream to Q. R hears Clock_B, which nobody pokes, so neither is ever visited.</p>
+        <p class="lede">No ambient tick. The page pokes the clock; the clock ticks into P and Q; P sends its old fish down the stream to Q. R hears Clock_B, which nobody pokes, so neither is visited — except once, with nothing asked, when new code arrives.</p>
     </header>
 
     <div class="controls">
@@ -170,6 +183,7 @@
                             <b>{name}</b>
                             <span>turn {t.turns} · {t.rows.filter(r => r.kind === 'Fish').length} fish · {t.rows.filter(r => r.kind === 'Egg').length} eggs{t.heron ? ` · heron (ate ${t.ate})` : ''}</span>
                             <span class="visits">visited {visits[name] || 0}×{t.waiting ? ` · ${t.waiting} waiting` : ''}</span>
+                            <span>code {t.code || '—'}{t.took ? ` · took ${t.took} push${t.took > 1 ? 'es' : ''}` : ''}</span>
                         </figcaption>
                     </figure>
                 {/if}
@@ -178,11 +192,12 @@
         <section class="rounds" aria-label="the last run">
             <h2>The last run</h2>
             <ol>
+                {#if arrived(beat).length}<li><span class="n">era seam</span> code arrived: {arrived(beat).join(' · ')}</li>{/if}
                 {#each last_run(beat) as r (r.n)}
                     <li><span class="n">round {r.n}</span> {r.went.join(' · ')}{r.landed ? ` — ${r.landed} landed` : ''}</li>
                 {/each}
             </ol>
-            <p class="note">Each run starts from the clock alone and stops by itself when nothing is waiting. Nothing is scanned for work: the boundary readies whoever a pulse lands on.</p>
+            <p class="note">{era_who.length ? `Code last arrived at poke ${era_at} (${era_who.join(', ')}). ` : 'No code has arrived since the page opened — edit the toy and it lands at the next run. '}Each run starts from the clock alone and stops by itself when nothing is waiting. Nothing is scanned for work: the boundary readies whoever a pulse lands on.</p>
         </section>
     {/if}
 </div>

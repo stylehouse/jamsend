@@ -28,14 +28,14 @@ Snap:H
           TheAPolicy:Fish
             TheAStamp:fed_at
             TheARides:food,on:fed_at
-          TheAHeld:Turns,of,count=13
-          TheAHeld:EggsNamed,of,count=6
-          TheAHeld:Fish,of:minnow 1,born=4
-          TheAHeld:Fish,of:perch 2,born=4
-          TheAHeld:Fish,of:carp 3,born=13
-          TheAHeld:Fish,of:trout 4,born=13
-          TheAHeld:Egg,of:roach 5,born=13
-          TheAHeld:Egg,of:bream 6,born=13
+          TheATrace:Turns,of,count=13
+          TheATrace:EggsNamed,of,count=6
+          TheATrace:Fish,of:minnow 1,born=4
+          TheATrace:Fish,of:perch 2,born=4
+          TheATrace:Fish,of:carp 3,born=13
+          TheATrace:Fish,of:trout 4,born=13
+          TheATrace:Egg,of:roach 5,born=13
+          TheATrace:Egg,of:bream 6,born=13
           TheAWalk:1
             TheANeu:Turns,of
             TheANeu:EggsNamed,of
@@ -60,14 +60,14 @@ Snap:H
           TheAPolicy:Fish
             TheAStamp:fed_at
             TheARides:food,on:fed_at
-          TheAHeld:Turns,of,count=13
-          TheAHeld:EggsNamed,of,count=6
-          TheAHeld:Fish,of:minnow 1,born=4
-          TheAHeld:Fish,of:perch 2,born=4
-          TheAHeld:Fish,of:carp 3,born=13
-          TheAHeld:Fish,of:trout 4,born=13
-          TheAHeld:Egg,of:roach 5,born=13
-          TheAHeld:Egg,of:bream 6,born=13
+          TheATrace:Turns,of,count=13
+          TheATrace:EggsNamed,of,count=6
+          TheATrace:Fish,of:minnow 1,born=4
+          TheATrace:Fish,of:perch 2,born=4
+          TheATrace:Fish,of:carp 3,born=13
+          TheATrace:Fish,of:trout 4,born=13
+          TheATrace:Egg,of:roach 5,born=13
+          TheATrace:Egg,of:bream 6,born=13
           TheAWalk:1
             TheANeu:Turns,of
             TheANeu:EggsNamed,of

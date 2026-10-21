@@ -13,19 +13,19 @@ Snap:H
           TheAOver:As
           TheALimbo,keep=2
           TheASphere:eye,tense:Regard
-          TheAHeld:A,of:S_P
-            TheAHeld:Fish,of:P minnow 1,born=4
+          TheATrace:A,of:S_P
+            TheATrace:Fish,of:P minnow 1,born=4
               TheARegard:eye,seen
-            TheAHeld:Fish,of:P perch 2,born=4
+            TheATrace:Fish,of:P perch 2,born=4
               TheARegard:eye,seen
-            TheAHeld:Egg,of:P carp 3,born=10
+            TheATrace:Egg,of:P carp 3,born=10
               TheARegard:eye,seen
-            TheAHeld:Egg,of:P trout 4,born=10
+            TheATrace:Egg,of:P trout 4,born=10
               TheARegard:eye,seen
-          TheAHeld:A,of:S_Q
-            TheAHeld:Egg,of:Q minnow 1,born
+          TheATrace:A,of:S_Q
+            TheATrace:Egg,of:Q minnow 1,born
               TheARegard:eye,seen
-            TheAHeld:Egg,of:Q perch 2,born
+            TheATrace:Egg,of:Q perch 2,born
               TheARegard:eye,seen
           TheAWalk:1
             TheANeu:Fish,of:P minnow 1,in:A:S_P

@@ -57,39 +57,39 @@ Snap:H
           TheAOver:As
           TheALimbo,keep=2
           TheASphere:eye,tense:Regard
-          TheAHeld:A,of:S_P
-            TheAHeld:Fish,of:P minnow 1,born=4
+          TheATrace:A,of:S_P
+            TheATrace:Fish,of:P minnow 1,born=4
               TheARegard:eye,seen
-            TheAHeld:Fish,of:P perch 2,born=4
+            TheATrace:Fish,of:P perch 2,born=4
               TheARegard:eye,seen
-            TheAHeld:Fish,of:P carp 3,born=13
+            TheATrace:Fish,of:P carp 3,born=13
               TheARegard:eye,seen
-            TheAHeld:Fish,of:P trout 4,born=13
+            TheATrace:Fish,of:P trout 4,born=13
               TheARegard:eye,seen
-            TheAHeld:Fish,of:P roach 5,born=16
+            TheATrace:Fish,of:P roach 5,born=16
               TheARegard:eye,seen=2
-            TheAHeld:Fish,of:P bream 6,born=16
+            TheATrace:Fish,of:P bream 6,born=16
               TheARegard:eye,seen=2
-            TheAHeld:Fish,of:P tench 7,born=19
+            TheATrace:Fish,of:P tench 7,born=19
               TheARegard:eye,seen=2
-            TheAHeld:Fish,of:P dace 8,born=19
+            TheATrace:Fish,of:P dace 8,born=19
               TheARegard:eye,seen=2
-            TheAHeld:Egg,of:P chub 9,born=19
+            TheATrace:Egg,of:P chub 9,born=19
               TheARegard:eye,seen=2
-            TheAHeld:Egg,of:P rudd 10,born=19
+            TheATrace:Egg,of:P rudd 10,born=19
               TheARegard:eye,seen=2
-            TheAHeld:Egg,of:P minnow 11,born=19
+            TheATrace:Egg,of:P minnow 11,born=19
               TheARegard:eye,seen=2
-            TheAHeld:Egg,of:P perch 12,born=19
+            TheATrace:Egg,of:P perch 12,born=19
               TheARegard:eye,seen=2
-          TheAHeld:A,of:S_Q
-            TheAHeld:Fish,of:Q minnow 1,born=4
+          TheATrace:A,of:S_Q
+            TheATrace:Fish,of:Q minnow 1,born=4
               TheARegard:eye,seen
-            TheAHeld:Fish,of:Q perch 2,born=4
+            TheATrace:Fish,of:Q perch 2,born=4
               TheARegard:eye,seen
-            TheAHeld:Egg,of:Q carp 3,born=10
+            TheATrace:Egg,of:Q carp 3,born=10
               TheARegard:eye,seen=2
-            TheAHeld:Egg,of:Q trout 4,born=10
+            TheATrace:Egg,of:Q trout 4,born=10
               TheARegard:eye,seen=2
           TheAWalk:2
             TheABecame:Fish,of:P carp 3,was:Egg
