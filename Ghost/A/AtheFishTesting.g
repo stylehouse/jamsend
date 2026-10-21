@@ -44,12 +44,12 @@ Athe_Tank_turn(w):
         let kind = pass.sc.TheAPass
         this.Athe_Tank_pass(w, kind, turn, at_start[kind] || w.o({ [kind]: 1 }), pit.sc.gone === 'skip')
     }
-    // the fish changed this turn: the tank tells itself, on every one of its wires that listens for it (only a turn sends
+    // the fish changed this turn: the tank tells itself, on every one of its synapses that listens for it (only a turn sends
     //  these — a wake never does, or a heron eating would wake itself).  Sent, so it lands at the boundary, not this move
     let fish_after = w.o({ Fish: 1 }).length
     if (fish_after !== fish_before) {
-        for (const wire of w.o({ TheAWire: 1 })) {
-            if (wire.sc.on === 'Fish') this.TheA_send(w, wire.sc.TheAWire, { turn, fish: fish_after })
+        for (const synapse of w.o({ TheASynapse: 1 })) {
+            if (synapse.sc.on === 'Fish') this.TheA_send(w, synapse.sc.TheASynapse, { turn, fish: fish_after })
         }
     }
 
@@ -92,13 +92,13 @@ Athe_Tank_egg(w, egg, turn):
         w.i({ Fish: name, born: turn })
     }
 
-// a fish lays eggs once grown, and swims away when old — for good, or, from a tank with a stream outlet (%TheAOutlet:stream),
-//  down the stream: sent with its name and its age, heard by any tank wired from this one (Theory's boundary finds them)
+// a fish lays eggs once grown, and swims away when old — for good, or, from a tank with a stream axon (%TheAAxon:stream),
+//  down the stream: sent with its name and its age, heard by any tank joined from this one (Theory's boundary finds them)
 Athe_Tank_fish(w, fish, turn):
     let age = turn - fish.sc.born
     if (age >= OLD_AT) {
         w.drop(fish)
-        if (w.o({ TheAOutlet: 'stream' }).length) this.TheA_send(w, 'stream', { swims: fish.sc.Fish, age })
+        if (w.o({ TheAAxon: 'stream' }).length) this.TheA_send(w, 'stream', { swims: fish.sc.Fish, age })
     } else if (age >= GROWN_AT && age % LAY_EVERY === 0 && this.Athe_Tank_count(w) < CROWDED) {
         w.i({ Egg: this.Athe_Tank_name(w), born: turn })
     }
@@ -127,53 +127,53 @@ Athe_Tank_heron(w):
         meals = heron.o({ Ate: 1 })
     }
 
-// wires — the tank's inlets (Theory.g, "Moves and the boundary").  A %TheAWire on the tank is a standing pathway: what it
+// synapses — the tank's inlets (Theory.g, "Moves and the boundary").  A %TheASynapse on the tank is a standing pathway: what it
 //  wakes, and how the pulses waiting on it sum.  sum:count runs the wake once per pulse (three clock pulses are three turns);
 //   sum:latest runs it once for however many piled up (three "the fish changed" mean one reconsideration).
-//  The tank only moves when woken; without wires it moves only when turned by hand, as before
+//  The tank only moves when woken; without synapses it moves only when turned by hand, as before
 
-// one batch of one tank: its move, then the boundary (what it sent lands — on its own wires too, for the next wake)
+// one batch of one tank: its move, then the boundary (what it sent lands — on its own synapses too, for the next wake)
 Athe_Tank_wake(w):
-    this.TheA_move(w, (w, wire, pulse) => this.Athe_Tank_woken(w, wire, pulse))
+    this.TheA_move(w, (w, synapse, pulse) => this.Athe_Tank_woken(w, synapse, pulse))
     this.TheA_boundary([this.TheA_A(w)?.sc.A])
 
 // a batch of tanks (A names): each one's move, in the order given — which can't matter — then the boundary
 Athe_Tanks_wake(names):
     for (const name of names) {
         let t = this.Athe_Tank_of(name)
-        if (t) this.TheA_move(t, (w, wire, pulse) => this.Athe_Tank_woken(w, wire, pulse))
+        if (t) this.TheA_move(t, (w, synapse, pulse) => this.Athe_Tank_woken(w, synapse, pulse))
     }
     this.TheA_boundary(names)
 
 // one tank's move alone, the boundary left for later (Theory's TheA_boundary(names)) — so Story can pause between the moves
-//  of a batch (AthePondWireOrder)
+//  of a batch (AthePondSynapseOrder)
 Athe_Tank_move(name):
     let t = this.Athe_Tank_of(name)
-    if (t) this.TheA_move(t, (w, wire, pulse) => this.Athe_Tank_woken(w, wire, pulse))
+    if (t) this.TheA_move(t, (w, synapse, pulse) => this.Athe_Tank_woken(w, synapse, pulse))
 
 // the tank world of an A, by its name
 Athe_Tank_of(name):
     return this.o({ A: name })[0]?.o({ w: 'Athe_Tank' })[0]
 
-// what a wire wakes, named here and called by name — the wiring is data, the code that runs is not
-Athe_Tank_woken(w, wire, pulse):
-    let wake = wire.sc.wake
+// what a synapse wakes, named here and called by name — the wiring is data, the code that runs is not
+Athe_Tank_woken(w, synapse, pulse):
+    let wake = synapse.sc.wake
     if (wake === 'turn') {
         this.Athe_Tank_turn(w)
     } else if (wake === 'heron') {
         this.Athe_Tank_heron(w)
     } else if (wake === 'arrive') {
-        this.Athe_Tank_arrive(w, wire, pulse)
+        this.Athe_Tank_arrive(w, synapse, pulse)
     } else {
-        w.oai({ log: 'a wire wakes something this tank has no handler for: ' + wake })
+        w.oai({ log: 'a synapse wakes something this tank has no handler for: ' + wake })
     }
 
 // a fish arriving down a stream.  Time is each tank's own, so what crosses is the fish's AGE, never its born — it's
 //  born again on this tank's clock, as old as it was when it left (a tank whose clock is behind gets a fish born before
 //   its first turn).  came: says which tank it swam from
-Athe_Tank_arrive(w, wire, pulse):
+Athe_Tank_arrive(w, synapse, pulse):
     let turn = w.o({ Turns: 1 })[0]?.sc.count || 0
-    w.i({ Fish: pulse.sc.swims, born: turn - pulse.sc.age, came: wire.sc.from })
+    w.i({ Fish: pulse.sc.swims, born: turn - pulse.sc.age, came: synapse.sc.from })
 
 Athe_Tank_count(w):
     return w.o({ Egg: 1 }).length + w.o({ Fish: 1 }).length

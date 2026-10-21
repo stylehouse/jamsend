@@ -23,18 +23,23 @@
 | **pass** | one handler over all rows of one kind, before the next pass | `%TheAPass:<Kind>` under `%TheASunpit` |
 | **frontier** | which rows a pass sees: as they stood when the pass began (default) or when the turn began (`frontier:turn`) | the `%TheASunpit` line's culture |
 | **pond turn** | the toy's own clock tick: eggs hatch, fish lay, the heron eats | `Turns,count`; each row's `born` |
-| **wire** | a standing inlet on a compartment: what it wakes, how its pulses sum, who it hears (`from:`) | `%TheAWire:<name>,wake,sum[,from]` |
-| **outlet** | what a compartment sends on; it never looks for who hears | `%TheAOutlet:<wire name>` |
+| **synapse** | a standing inlet on a compartment: what it wakes, how its pulses sum, who it hears (`from:`) | `%TheASynapse:<name>,wake,sum[,from]` |
+| **axon** | what a compartment sends on; it never looks for who hears | `%TheAAxon:<synapse name>` |
 | **pulse** | one message: "something happened", maybe carrying a thing (a fish's name and age) | `%TheAPulse` |
-| **inbox** | the pulses waiting on a compartment's wires when its move begins; nothing new arrives during a batch | the wires' `%TheAPulse` rows |
+| **inbox** | the pulses waiting on a compartment's synapses when its move begins; nothing new arrives during a batch | the synapses' `%TheAPulse` rows |
 | **outbox** | what a compartment sent during this batch, not yet heard by anyone | `%TheAOutbox` (present only while in flight) |
 | **move** | one compartment's go: reads only its own rows and inbox, writes only its own rows, sends only into its outbox | `TheA_move(w, wake)` |
-| **boundary** | the end of a batch: every outbox is delivered to the wires that hear it, in a fixed order | `TheA_boundary(names)` |
+| **boundary** | the end of a batch: every outbox is delivered to the synapses that hear it, in a fixed order | `TheA_boundary(names)` |
 | **batch** | some moves, in any order, then the boundary.  No move sees another move of its batch, so order can't show | `Athe_Tanks_wake(names)` |
-| **Turn** | the record of one wire's part in a move: pulses eaten, code it ran under, rows new and gone, pulses sent.  Not a counter | `%TheATurn` with `%TheANeu`, `%TheAGoner`, `%TheASent` |
+| **Turn** | the record of one synapse's part in a move: pulses eaten, code it ran under, rows new and gone, pulses sent.  Not a counter | `%TheATurn` with `%TheANeu`, `%TheAGoner`, `%TheASent` |
 | **history** | a compartment's kept Turns (the Was-sphere, by its working name) | `%TheAWas,keep,made` |
 | **reader** | someone reading the history; a Turn stays until every reader has read it | `%TheAReader:<name>,at:<Turn>`, `TheA_read` |
 | **code push** | new code arriving at the As that hold it, let through by Story between steps | `%TheACodePush`, `%TheACodeTaken` |
+
+**Why synapse and axon (2026-10-21, renamed from wire and outlet).**  "The wire" already means the network — the relay,
+ the socket, Waft:Ghost/Everything's first What.  A synapse is held by the RECEIVER and says what it wakes and whom it hears;
+  an axon is what the sender sends down, blind to who hears.  The receiver declares, the sender doesn't address — which is
+   also what separates a pulse from an elvis (sender-addressed); see Atheory_todo §0.0.
 
 **One principle at two scales: nobody sees a write from the same round.**  Inside a compartment, the frontier gives each
  pass a snapshot of the rows.  Between compartments, the boundary gives each move a snapshot of the pulses.
@@ -82,17 +87,17 @@ A turn's order is declared on the world: `%TheASunpit:turn` holding `%TheAPass:<
  these, before the next".  Keys on the `%TheASunpit` line are its culture: `frontier:turn` (take every pass's rows once, at
   the turn's start) and `gone:skip` (pass over what has left since).  Order is data; which code runs for a kind is not.
 
-### 1.5 Wires, moves and the boundary — `AthePondWireSum`, `AthePondWireOrder`
+### 1.5 Synapses, moves and the boundary — `AthePondSynapseSum`, `AthePondSynapseOrder`
 
-`%TheAWire` is a standing inlet on a compartment: what it wakes, and how its waiting `%TheAPulse` rows sum (`sum:count`,
+`%TheASynapse` is a standing inlet on a compartment: what it wakes, and how its waiting `%TheAPulse` rows sum (`sum:count`,
  once per pulse; `sum:latest`, once for the lot).  `%TheAWoke` keeps how often it woke and how many pulses it ate.
 
-**The boundary (2026-10-21, replacing a wire-ordered scheduler).**  A batch is moves and then the boundary (`Theory.g`,
+**The boundary (2026-10-21, replacing a synapse-ordered scheduler).**  A batch is moves and then the boundary (`Theory.g`,
  "Moves and the boundary").  A move reads only its own rows and its inbox, writes only its own rows, and sends only into its
-  own `%TheAOutbox`.  `TheA_boundary` delivers every outbox to the wires that hear it, senders by name, so nothing about
+  own `%TheAOutbox`.  `TheA_boundary` delivers every outbox to the synapses that hear it, senders by name, so nothing about
    the order things happened in can show.  A compartment even tells itself this way: the turn that changes the fish sends on
-    the tank's own fish wire, and the heron wakes at the NEXT move (`AthePondWireSum`).
-**So the order of moves can't matter, and neither can stopping between them** (`AthePondWireOrder`): a batch taken one
+    the tank's own fish synapse, and the heron wakes at the NEXT move (`AthePondSynapseSum`).
+**So the order of moves can't matter, and neither can stopping between them** (`AthePondSynapseOrder`): a batch taken one
  move per Story step, with P's two old fish sitting in P's outbox while Q moves, comes out the same as one taken whole, and
   pairs woken in opposite orders come out the same.  Every move is one coherent step to watch: `(rows, sealed inbox) →
    (rows, outbox)`.  The cost is one batch per hop.
@@ -105,8 +110,8 @@ Two compartments with nothing between them come out the same whichever is woken 
    keeps it as the sabotage.  **Anything compartments share travels as pulses** — or isn't shared (`%NamesAs:<tag>` makes
     each tank's names its own).
 
-*Superseded 2026-10-21:* the first fix declared the sharing as `%TheAWire:names,from:<P>` and had `Athe_Tanks_wake` order
- the batch along wires; loops then needed `lag:1` and a `%TheALoop` warning.  The boundary made all three unnecessary.
+*Superseded 2026-10-21:* the first fix declared the sharing as `%TheASynapse:names,from:<P>` and had `Athe_Tanks_wake` order
+ the batch along synapses; loops then needed `lag:1` and a `%TheALoop` warning.  The boundary made all three unnecessary.
 
 ### 1.7 Code digests are pseudo-muted — `tol:same` (`EntropyArrest.md` §11)
 
@@ -117,23 +122,23 @@ Every edit to a toy moves its digest in every snap that shows it.  The `dige:` s
 
 ### 1.8 A pulse that carries something — `AthePondStream`, `AthePondLoop`
 
-P holds `%TheAOutlet:stream`, Q holds `%TheAWire:stream,from:<P>,wake:arrive`.  A fish too old for P (`OLD_AT`) is sent
- with its name and its age; it lands on Q's wire at the boundary and arrives at Q's next move.
+P holds `%TheAAxon:stream`, Q holds `%TheASynapse:stream,from:<P>,wake:arrive`.  A fish too old for P (`OLD_AT`) is sent
+ with its name and its age; it lands on Q's synapse at the boundary and arrives at Q's next move.
 **What crosses is the age, never the birth turn.**  Each tank's time is its own (`Turns,count`); P is stood nine turns
  ahead of Q, so P's two old fish arrive born before Q's first turn (`came:<P>`), and leave Q on its next turn while Q's own
   oldest are ten.  The rule: **a pulse between compartments carries quantities in the receiver's terms or in no one's** (an
    age, a count), never a reading of the sender's clock.
 
 **A loop needs nothing special.**  With streams both ways, a loop is simply two batches round; pairs woken P-first and
- Q-first come out the same, and P's first two fish go round for good, always in a tank or on the wire between.
+ Q-first come out the same, and P's first two fish go round for good, always in a tank or on the synapse between.
 
 ### 1.9 The Turn, by hand — `AthePondTurns`
 
 Step 4 of the scheduler sketch ("commit one `%TheATurn`"), in `Theory.g` (`TheA_turn_commit`, called by `TheA_move`).  A compartment holding `%TheAWas,keep:<n>` (the
- Was-sphere, by its working name) commits one Turn each time a wire wakes it:
+ Was-sphere, by its working name) commits one Turn each time a synapse wakes it:
 
     TheAWas,keep=3,made=5
-      TheATurn:3,wire:clock,pulses=9,code_dige:…
+      TheATurn:3,synapse:clock,pulses=9,code_dige:…
         TheANeu:Fish,of:carp 3        ← a row that wasn't there before the wake
         TheANeu:Egg,of:roach 5
         TheAGoner:Egg,of:…            ← a row that's gone
@@ -162,9 +167,9 @@ Homethink §3: each test can be sabotaged once to prove it bites.  Three sabotag
 
 Each oath fell to the sabotage aimed at it, and only to that: the unrelated oaths in each Book kept swearing.
 
-**The boundary, sabotaged once (S4, 2026-10-21).**  `TheA_send` delivered straight to the hearing wires instead of the
- outbox.  These stopped swearing: WireOrder "what a tank sent waits in its outbox" and "opposite orders come out the same";
-  Loop "a loop needs no order"; WireSum "the fish pulse waits for the next move".  Still sworn, rightly: WireOrder "a batch
+**The boundary, sabotaged once (S4, 2026-10-21).**  `TheA_send` delivered straight to the hearing synapses instead of the
+ outbox.  These stopped swearing: SynapseOrder "what a tank sent waits in its outbox" and "opposite orders come out the same";
+  Loop "a loop needs no order"; SynapseSum "the fish pulse waits for the next move".  Still sworn, rightly: SynapseOrder "a batch
    taken one move at a time comes out the same" (with no outbox the stepped pair and the whole pair both deliver at once)
     and all of Stream (its batch is asked Q first, so even instant delivery reaches Q a batch later; Stream proves the age,
      not the boundary).  Restored by checksum and re-run green.
@@ -172,7 +177,7 @@ Each oath fell to the sabotage aimed at it, and only to that: the unrelated oath
 ### 1.11 Still to design
 
 *From the todo's sketch, not yet built:* `%TheATurf` (a leased
- region), the spheres (`%OtherSphere`), the scheduler proper (unwatched work costs nothing), a wire whose pulses go
+ region), the spheres (`%OtherSphere`), the scheduler proper (unwatched work costs nothing), a synapse whose pulses go
   somewhere other than a tank woken by the same batch (across Houses; across a network), the
   manifest check (Electrode joined with Atlas), and the A** shape that makes an A really run its own code.
 

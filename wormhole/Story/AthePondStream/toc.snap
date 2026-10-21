@@ -25,7 +25,7 @@ story:AthePondStream
   step=3,desc:11 clock pulses each — one batch,dige:e75c380bab4f3bdc
     Assertion:a-stream-carries-nothing,sentence:a stream carries nothing while the fish upstream are young — the tank downstream holds only its own
   step=4,desc:one clock pulse each — one batch,dige:1c591be9a370b366
-    Assertion:a-fish-too-old,sentence:a fish too old for one tank is sent down the stream — gone from the first and waiting on the wire into the next
+    Assertion:a-fish-too-old,sentence:a fish too old for one tank is sent down the stream — gone from the first and waiting on the synapse into the next
   step=5,desc:one clock pulse each — one batch,dige:629a7f2345705fb1
     Assertion:a-fish-keeps-its,sentence:a fish keeps its age crossing to a tank on another clock — born on that clock before its first turn
   step=6,desc:one clock pulse each — one batch,dige:f3af3101f3115975

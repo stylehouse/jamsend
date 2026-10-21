@@ -24,5 +24,5 @@ story:AthePondLoop
   step=2,desc:stand two looped pairs with P nine turns ahead of Q — and wake each in its own order,dige:e704fc1ff078282c
   step=3,desc:12 clock pulses each — each pair woken in its own order,dige:249f63da33194b79
   step=4,desc:8 clock pulses each — each pair woken in its own order,dige:06e519ec21c412ef
-    Assertion:a-loop-of-wires,sentence:a loop of wires needs no order — asked either way the two pairs come out the same
-    Assertion:the-first-two-fish,sentence:the first two fish go round the loop and are never lost — always in a tank or on the wire between — still old
+    Assertion:a-loop-of-synapses,sentence:a loop of synapses needs no order — asked either way the two pairs come out the same
+    Assertion:the-first-two-fish,sentence:the first two fish go round the loop and are never lost — always in a tank or on the synapse between — still old

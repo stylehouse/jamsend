@@ -1,4 +1,4 @@
-story:AthePondWireSum
+story:AthePondSynapseSum
   Styles
   Plan
   Opt
@@ -21,12 +21,12 @@ story:AthePondWireSum
       sample=0.004,at=1792533694
       sample=0.014,at=1792534128
   step,dige:3b88ba6df9702ffe
-  step=2,desc:stand two wired tanks that differ only in how their fish wire sums — and wake one clock pulse,dige:e1431c0d7b5966dd
+  step=2,desc:stand two joined tanks that differ only in how their fish synapse sums — and wake one clock pulse,dige:e1431c0d7b5966dd
   step=3,desc:3 clock pulses wait on each tank,dige:da71068635f62021
-    Assertion:clock-pulses-wait-on,sentence:clock pulses wait on the wire until the tank is woken — they turn nothing by themselves
+    Assertion:clock-pulses-wait-on,sentence:clock pulses wait on the synapse until the tank is woken — they turn nothing by themselves
   step=4,desc:wake both tanks,dige:3a606f45d553c8a8
-    Assertion:three-clock-pulses-woken,sentence:three clock pulses woken together make three turns — a wire summed by count runs once per pulse
-    Assertion:a-turn-that-changes,sentence:a turn that changes the fish sends a pulse — it lands on the fish wire at the boundary and waits for the next move
+    Assertion:three-clock-pulses-woken,sentence:three clock pulses woken together make three turns — a synapse summed by count runs once per pulse
+    Assertion:a-turn-that-changes,sentence:a turn that changes the fish sends a pulse — it lands on the fish synapse at the boundary and waits for the next move
   step=5,desc:18 more clock pulses — and wake both tanks,dige:d883d6dc181907a9
   step=6,desc:wake both tanks,dige:88b5e953dd9b47bd
-    Assertion:pulses-piled-up-on,sentence:pulses piled up on the fish wire wake a heron summed to the latest once — and one summed by count once per pulse
+    Assertion:pulses-piled-up-on,sentence:pulses piled up on the fish synapse wake a heron summed to the latest once — and one summed by count once per pulse

@@ -10,7 +10,7 @@ import { sha256_hex } from "$lib/Common"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_Theory(): string { return '6ca9548a7e9a2502~g1' },
+    Ghostmeta_Ghost_A_Theory(): string { return '4799d17750728fd0~g1' },
 
 // Theory.g — Atheory's first organ: an A says which code it runs (spec/Atheory_todo.md §0.1 and §0.2).
 //
@@ -175,43 +175,43 @@ e_TheA_code_arrive(A, w, e) {
 //
 //      A:P
 //        w:Athe_Tank                              ← a compartment
-//          %TheAOutlet:stream                     ← what it sends (it never looks for who hears)
-//          %TheAWire:clock,wake:turn,sum:count    ← an inlet; its waiting %TheAPulse rows are the compartment's inbox
+//          %TheAAxon:stream                     ← what it sends (it never looks for who hears)
+//          %TheASynapse:clock,wake:turn,sum:count    ← an inlet; its waiting %TheAPulse rows are the compartment's inbox
 //          %TheAOutbox                            ← what it sent this batch, not delivered yet (present only while in flight)
-//            %TheAPulse,wire:stream,swims:…
+//            %TheAPulse,synapse:stream,swims:…
 //      A:Q
 //        w:Athe_Tank
-//          %TheAWire:stream,from:P,wake:arrive    ← hears P's stream
+//          %TheASynapse:stream,from:P,wake:arrive    ← hears P's stream
 //
 //  A MOVE is one compartment's go: it reads only its own rows and its inbox, writes only its own rows, and anything it sends
-//   goes to its own outbox.  THE BOUNDARY then delivers every outbox to the wires that hear it.  A BATCH is moves (any number,
+//   goes to its own outbox.  THE BOUNDARY then delivers every outbox to the synapses that hear it.  A BATCH is moves (any number,
 //    in any order, with Story free to pause between them) followed by the boundary.  No move can see another move of the same
-//     batch, so the order of moves can't change what comes out, and a loop of wires is just two batches round.
+//     batch, so the order of moves can't change what comes out, and a loop of synapses is just two batches round.
 //  Code calls code by name: whoever runs a move passes the compartment's own wake handler (no lookup here).
 
-// TheA_move — one compartment's move: each wire with pulses waiting, in the order declared, summed as it says (count: one run
+// TheA_move — one compartment's move: each synapse with pulses waiting, in the order declared, summed as it says (count: one run
 //  per pulse; latest: one run with the newest), each run handed its pulse.  A compartment holding %TheAWas commits one Turn per
-//   wire woken
+//   synapse woken
 TheA_move(w, wake) {
     let was = w.o({ TheAWas: 1 })[0]
-    for (const wire of w.o({ TheAWire: 1 })) {
-        let pulses = wire.o({ TheAPulse: 1 })
+    for (const synapse of w.o({ TheASynapse: 1 })) {
+        let pulses = synapse.o({ TheAPulse: 1 })
         if (!pulses.length) continue
         let before = was ? w.o() : null
         let sent_before = was ? this.TheA_outbox(w) : null
-        let runs = wire.sc.sum === 'latest' ? [pulses[pulses.length - 1]] : pulses
-        for (const pulse of pulses) wire.drop(pulse)
-        for (const pulse of runs) wake(w, wire, pulse)
-        let woke = wire.o({ TheAWoke: 1 })[0]
-        wire.oai({ TheAWoke: 1 }, { count: (woke?.sc.count || 0) + runs.length, pulses: (woke?.sc.pulses || 0) + pulses.length })
-        if (was) this.TheA_turn_commit(w, was, wire, pulses.length, before, sent_before)
+        let runs = synapse.sc.sum === 'latest' ? [pulses[pulses.length - 1]] : pulses
+        for (const pulse of pulses) synapse.drop(pulse)
+        for (const pulse of runs) wake(w, synapse, pulse)
+        let woke = synapse.o({ TheAWoke: 1 })[0]
+        synapse.oai({ TheAWoke: 1 }, { count: (woke?.sc.count || 0) + runs.length, pulses: (woke?.sc.pulses || 0) + pulses.length })
+        if (was) this.TheA_turn_commit(w, was, synapse, pulses.length, before, sent_before)
     }
 
 },
-// TheA_send — a compartment sends on one of its wires: into its own outbox, carrying whatever it says (a fish's name and age).
+// TheA_send — a compartment sends on one of its synapses: into its own outbox, carrying whatever it says (a fish's name and age).
 //  Nobody hears it until the boundary
-TheA_send(w, wire, sc) {
-    w.oai({ TheAOutbox: 1 }).i({ TheAPulse: 1, wire, ...sc })
+TheA_send(w, synapse, sc) {
+    w.oai({ TheAOutbox: 1 }).i({ TheAPulse: 1, synapse, ...sc })
 
 },
 // what waits in a compartment's outbox
@@ -220,8 +220,8 @@ TheA_outbox(w) {
 
 },
 // TheA_boundary — deliver the outboxes of a batch's compartments (names: their As; none = every A in this House), in one fixed order (senders by name, each outbox oldest first) so the
-//  order things happened in can't show.  A pulse goes to every wire of its name that is FROM its sender, or, for a wire with
-//   no from:, to the sender's own wire (a compartment telling itself, as the fish wire does).  An outbox is dropped once
+//  order things happened in can't show.  A pulse goes to every synapse of its name that is FROM its sender, or, for a synapse with
+//   no from:, to the sender's own synapse (a compartment telling itself, as the fish synapse does).  An outbox is dropped once
 //    emptied.  Returns how many pulses landed
 TheA_boundary(names) {
     let senders = []
@@ -236,13 +236,13 @@ TheA_boundary(names) {
     for (const { A, w } of senders) {
         let box = w.o({ TheAOutbox: 1 })[0]
         for (const pulse of box.o({ TheAPulse: 1 })) {
-            let { TheAPulse, wire: name, ...rest } = pulse.sc
+            let { TheAPulse, synapse: name, ...rest } = pulse.sc
             for (const B of this.o({ A: 1 })) {
                 for (const v of B.o({ w: 1 })) {
-                    for (const wire of v.o({ TheAWire: name })) {
-                        let hears = wire.sc.from ? wire.sc.from === A.sc.A : v === w
+                    for (const synapse of v.o({ TheASynapse: name })) {
+                        let hears = synapse.sc.from ? synapse.sc.from === A.sc.A : v === w
                         if (!hears) continue
-                        wire.i({ TheAPulse: 1, ...rest })
+                        synapse.i({ TheAPulse: 1, ...rest })
                         landed++
                     }
                 }
@@ -269,16 +269,16 @@ TheA_rows(w, rows) {
     })
 
 },
-// TheA_turn_commit — one %TheATurn: which wire woke the compartment, how many pulses it ate, the code it ran under (its A's
+// TheA_turn_commit — one %TheATurn: which synapse woke the compartment, how many pulses it ate, the code it ran under (its A's
 //  %TheACode digest), and what changed ACROSS the move — %TheANeu (a row that wasn't there before), %TheAGoner (one that's
 //   gone), %TheASent (a pulse it sent).  A Turn is not a counter: three clock pulses are three pond turns and one Turn
-TheA_turn_commit(w, was, wire, pulses, before_all, sent_before) {
+TheA_turn_commit(w, was, synapse, pulses, before_all, sent_before) {
     let before = this.TheA_rows(w, before_all)
     let after = this.TheA_rows(w, w.o())
     let made = (was.sc.made || 0) + 1
     w.oai({ TheAWas: 1 }, { keep: was.sc.keep, made })
     let code = this.TheA_A(w)?.o({ TheACode: 1 })[0]?.sc.dige
-    let turn = was.i({ TheATurn: String(made), wire: wire.sc.TheAWire, pulses, ...(code ? { code_dige: code } : {}) })
+    let turn = was.i({ TheATurn: String(made), synapse: synapse.sc.TheASynapse, pulses, ...(code ? { code_dige: code } : {}) })
     let label = (row) => Object.keys(row.sc)[0]
     for (const row of after) {
         if (!before.includes(row)) turn.i({ TheANeu: label(row), of: row.sc[label(row)] })
@@ -287,7 +287,7 @@ TheA_turn_commit(w, was, wire, pulses, before_all, sent_before) {
         if (!after.includes(row)) turn.i({ TheAGoner: label(row), of: row.sc[label(row)] })
     }
     for (const pulse of this.TheA_outbox(w)) {
-        if (!sent_before.includes(pulse)) turn.i({ TheASent: pulse.sc.wire, ...(pulse.sc.swims ? { of: pulse.sc.swims } : {}) })
+        if (!sent_before.includes(pulse)) turn.i({ TheASent: pulse.sc.synapse, ...(pulse.sc.swims ? { of: pulse.sc.swims } : {}) })
     }
     this.TheA_was_trim(was)
 

@@ -1,7 +1,7 @@
 // wafts_everything.mjs — THE FLOOR's host for the program map (src/lib/L/everything.js holds the map and the emitter).
 //  The same map also runs as the `everything` verb on an editor terminal (spec/Verbs_todo.md §3.3); this script is the
 //   floor — node + fs, no tab needed — so the map can always be rebuilt even with the app down.
-//  Usage: node scripts/wafts_everything.mjs        (writes wormhole/Ghost/*/toc.snap + wormhole/Everything/toc.snap)
+//  Usage: node scripts/wafts_everything.mjs        (writes wormhole/Ghost/*/toc.snap, Everything included)
 //  The editor keeps these Wafts open and saves them back on a version bump — reload it after a run.
 //  Policy for what goes in lives in Waft:Everything itself (What:the policy).
 import fs from 'node:fs'

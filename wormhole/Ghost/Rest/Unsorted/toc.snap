@@ -1,4 +1,8 @@
-Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 207 of 388 — one What per directory — give each a home in its area and re-run
+Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 211 of 392 — one What per directory — give each a home in its area and re-run
+  What:Ghost/A,desc:3 files with no area
+    Doc:Ghost/A/AtheFishTesting.g
+    Doc:Ghost/A/AtheTesting.g
+    Doc:Ghost/A/Theory.g
   What:Ghost/L/test_corpus,desc:1 file with no area
     Doc:Ghost/L/test_corpus/Sample.g
   What:Ghost/Story,desc:1 file with no area
@@ -16,9 +20,10 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 207 o
   What:src,desc:2 files with no area
     Doc:src/app.d.ts
     Doc:src/demo.spec.ts
-  What:src/lib,desc:4 files with no area
+  What:src/lib,desc:5 files with no area
     Doc:src/lib/Common.ts
     Doc:src/lib/Selection.svelte.ts
+    Doc:src/lib/app_data_dir.ts
     Doc:src/lib/boot.ts
     Doc:src/lib/cluster_name.ts
   What:src/lib/O,desc:20 files with no area
@@ -74,6 +79,7 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 207 o
   What:src/lib/O/spec,desc:59 files with no area
     Doc:src/lib/O/spec/App_todo.md
     Doc:src/lib/O/spec/Arrival_todo.md
+    Doc:src/lib/O/spec/Atheory_design.md
     Doc:src/lib/O/spec/Atheory_todo.md
     Doc:src/lib/O/spec/Attractor_todo.md
     Doc:src/lib/O/spec/Cello_meditation_todo.md
@@ -114,7 +120,6 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 207 o
     Doc:src/lib/O/spec/Repli_idspace_todo.md
     Doc:src/lib/O/spec/Seemables_todo.md
     Doc:src/lib/O/spec/Signed_call_todo.md
-    Doc:src/lib/O/spec/Siphon_todo.md
     Doc:src/lib/O/spec/Snappy_todo.md
     Doc:src/lib/O/spec/Solo_todo.md
     Doc:src/lib/O/spec/Sounditron_todo.md

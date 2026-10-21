@@ -34,4 +34,4 @@ story:AthePondWakeOrder
   step=2,desc:stand four pairs of tanks — two pairs sharing a name counter — and wake each in its pair order,dige:78852e01d2d61cbb
   step=3,desc:8 more clock pulses — each pair woken in its order,dige:80fef668d53bae41
     Assertion:two-tanks-with-nothing,sentence:two tanks with nothing between them come out the same whichever is woken first
-    Assertion:two-tanks-sharing-a,sentence:two tanks sharing a name counter with no wire to say so leak which woke first — their eggs swap names
+    Assertion:two-tanks-sharing-a,sentence:two tanks sharing a name counter with no synapse to say so leak which woke first — their eggs swap names

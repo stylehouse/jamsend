@@ -6,7 +6,7 @@
 import Lagui from "$lib/L/Lagui.svelte"
 import Clerkdesk from "$lib/L/Clerkdesk.svelte"
 import { TESTING_RE } from "$lib/L/testing"
-import { everything_map, everything_build, COVER_ROOTS } from "$lib/L/everything.js"
+import { everything_map, everything_build, COVER_ROOTS, EVERYTHING } from "$lib/L/everything.js"
 // THE CAVE's deck — VytoSpine's own, with room for a family's members on one vertebra before the fold
 //  one scope down crests them (ribs:N, default 7 — "Method ×30" was that crest, and it is not a place)
 const LAGOON_CAVE_DECK      = 'spine,kindfold,budget:400,ribs:48'
@@ -29,7 +29,7 @@ const OATH_LINE_RE      = /^\s*Assertion:([a-z0-9-]+),/gm
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Lagoon(): string { return 'be123a3b89d9175d~g1' },
+    Ghostmeta_Ghost_L_Lagoon(): string { return '455337b7cceee87c~g1' },
 
 // Lagoon.g — the READER LAYER over the censuses.  The third ghost in Ghost/L/ (the land); spec home:
 //  src/lib/O/spec/Lagoon_todo.md.  `Lagoon` is the owner's working title (2026-09-08) and the image is
@@ -1708,7 +1708,7 @@ Lagoon_cave_watch(w, here) {
 
 },
 // THE REST — THE WHOLE PROJECT, COHERENTLY (2026-10-07, the owner: *"hopefully it can present the whole project coherently,
-//  possibly with some advice about what to favour"*).  The project already says this of itself: `wormhole/Everything/
+//  possibly with some advice about what to favour"*).  The project already says this of itself: `wormhole/Ghost/Everything/
 //   toc.snap` — the front door every session is told to read first — one What per AREA (the wire · the swarm · the music
 //    · the cave · the visual · the land · the foundation · the Books · the shelves), each with the docs to start from and
 //     its keywords, and a last What, the POLICY, whose rules are the advice.  So the empty hole stands those areas around
@@ -1730,7 +1730,7 @@ Lagoon_cave_everything(w) {
     w.c.cave_every_loading = 1
     let nav = typeof this.Atlas_nav === 'function' ? this.Atlas_nav() : null
     if (!nav || typeof nav.read_file !== 'function') return null
-    Promise.resolve(nav.read_file('wormhole/Everything', 'toc.snap')).then(text => {
+    Promise.resolve(nav.read_file('wormhole/' + EVERYTHING, 'toc.snap')).then(text => {
         w.c.cave_every = this.Lagoon_cave_parse_everything(String(text ?? ''))
         let st = w.c.cave || []
         if (st.length === 1 && !st[0].q) {

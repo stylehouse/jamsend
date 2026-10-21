@@ -20,6 +20,16 @@
 3. **One compiler per ticket** (`Editron.md` §8.2 B): today a `ghost_compile` reaches every editor tab.
 4. **The cave's rough edges** (`Glassbeast_todo.md`, the "THE CAVE" log entries): a pressed answer item still lands
     with `leave:1` and resets the query; middle-click paste is unverified.
+5. **Seats and the map (owner, 2026-10-21).**
+    - **Waft:Everything → `wormhole/Ghost/Everything` — DONE 2026-10-21.**  The map of the whole program now sits among
+       the area Wafts it maps (`EVERYTHING` in `src/lib/L/everything.js`; the cave reads it by that constant).  Owner leaning: one vague big map leading everywhere, close-range knowledge as per-.g
+          overlays — the area Wafts may go.
+    - **The Keep is one person's seat, not a store.**  It holds their open Wafts (`WaftTimes`), cursor, per-Waft
+       layout and Aside ledger — one `Waft:Keep` per repo, so two people stomp each other, and `Lies_keep_boot` is
+        editor-only because it also writes, so a hacker room reopens nothing (Hackarium shows one Waft: `?W=`).
+         Berth it — and the Asides — under the person's **prepub**: `wormhole/<prepub>/…`.  Then it is multi-user
+          safe, a hacker reads its own person's seat, and it wants a firmer name than Keep.  Open: what a hacker room
+           with no relay knows its prepub as.
 
 ## 1. The features — FIND, STRING, GROUP
 

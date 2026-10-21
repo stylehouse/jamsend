@@ -200,7 +200,7 @@ Show the arc, not just the diff.
 
 ## Read Waft:Everything first
 
-`wormhole/Everything/toc.snap` is the front door: one `What` per area of the program, each pointing
+`wormhole/Ghost/Everything/toc.snap` is the front door: one `What` per area of the program, each pointing
  (`FromWhat:Waft:…`) at that area's Waft — `Ghost/Net/Easy`, `Ghost/Swarm/Easy`, `Ghost/Music/Ality`,
   `Ghost/Music/Cave`, `Ghost/Vis/Visua`, `Ghost/Land/Wordland`, `Ghost/Hoho/Easy` — plus `Credence` (every
    Book). An area Waft lists its ghosts' MAIN functions as `Point,method:X,desc:<keywords>`. The keeping

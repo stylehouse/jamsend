@@ -15,6 +15,8 @@ export const COVER_EXT   = /\.(g|svelte|ts|md)$/
 // the same archive rule Atlas's census keeps (ATLAS_SKIP: gen · history · shelved …) — the two hosts must count the same tree
 export const COVER_SKIP  = /(^|\/)(node_modules|gen|history|shelved|ulative)(\/|$)/
 export const UNSORTED    = 'Ghost/Rest/Unsorted'
+// the front door's own key — it lives beside the area Wafts it maps, as ./Ghost/ holds the .g (owner, 2026-10-21)
+export const EVERYTHING  = 'Ghost/Everything'
 
 // the authored map — every area Waft, then Everything (the front door; the policy is its last What)
 export function everything_map() {
@@ -229,7 +231,7 @@ export function everything_map() {
 
     // ── Waft:Everything — the front door.  Each area What carries FromWhat:Waft:<key> (the locator
     //  Lies_resolve_locator reads) and the area's own front-door docs so there is something to click today.
-    W.push(['Everything', 'READ THIS FIRST — one Waft per area of the program lists its main functions with keywords — this Waft locates them all — the policy is the last What', [], [
+    W.push([EVERYTHING, 'READ THIS FIRST — one Waft per area of the program lists its main functions with keywords — this Waft locates them all — the policy is the last What', [], [
      ['What:the wire', 'Ghost/Net/Easy — Peeroleum Tribunal Reliable Tyrant Presence Repli — the relay — the cluster channel', 'FromWhat:Waft:Ghost/Net/Easy',
       'Doc:Ghost/N/Peeroleum.g', 'Doc:src/lib/server/relay.ts', 'Doc:src/lib/O/spec/Peeroleum_spec.md'],
      ['What:the swarm', 'Ghost/Swarm/Easy — soul crew invite door reach ferry bodies gossip stash theft', 'FromWhat:Waft:Ghost/Swarm/Easy',
@@ -278,7 +280,7 @@ export async function everything_build(W, host) {
     for (const f of rest) { const d = f.slice(0, f.lastIndexOf('/')); if (!byDir.has(d)) byDir.set(d, []); byDir.get(d).push(f) }
     W.push([UNSORTED, `every source file no area Waft cites yet — ${rest.length} of ${files.length} — one What per directory — give each a home in its area and re-run`, [],
         [...byDir].map(([d, fs_]) => [`What:${d}`, `${fs_.length} file${fs_.length === 1 ? '' : 's'} with no area`, ...fs_.map(f => 'Doc:' + f)])])
-    const every = W.find(w => w[0] === 'Everything')
+    const every = W.find(w => w[0] === EVERYTHING)
     const at = every[3].findIndex(w => w[0] === 'What:the policy')
     every[3].splice(at, 0, ['What:the unsorted', `${UNSORTED} — ${rest.length} of ${files.length} source files no area claims yet — by directory — the debt of this map`, `FromWhat:Waft:${UNSORTED}`])
     const pol = every[3].find(w => w[0] === 'What:the policy')

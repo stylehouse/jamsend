@@ -1003,9 +1003,10 @@
                      back-pop locator, and what Waft:Everything uses to point at each area Waft) gets
                      a ≋ that takes you THERE: open the Waft if cold, then foreground it. Same road the
                      WaftMap's search hit takes (DocWaftMap jumpWaft). Only a Waft: locator is hot —
-                     any other FromWhat shape stays a note. -->
+                     any other FromWhat shape stays a note. The key itself may hold
+                     slashes (Ghost/Net/Easy), so strip only a trailing /What:<name>. -->
                 {#if is_what && typeof C.sc?.FromWhat === 'string' && (C.sc.FromWhat as string).startsWith('Waft:') && !editing.has(C)}
-                    {@const fw_key = (C.sc.FromWhat as string).slice(5).split('/')[0]}
+                    {@const fw_key = (C.sc.FromWhat as string).slice(5).replace(/\/[A-Z]\w*:.*$/, '')}
                     <button class="ls-fromwhat" onclick={() => jump_fromwhat(fw_key)} title="go to Waft:{fw_key}">≋</button>
                 {/if}
             </div>

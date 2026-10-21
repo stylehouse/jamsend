@@ -21,7 +21,9 @@ A capture doc, not yet a plan — the owner has reached for this three times in 
 **Ruled 2026-10-21 (owner):**
 - **Synapse + Axon** replace wire + outlet ("might as well have science"): `%TheAWire` → `%TheASynapse` (held by the
    receiver, says `wake`, `sum`, `from`), `%TheAOutlet` → `%TheAAxon`.  Reason: "the wire" already means the network
-    (Waft:Everything's first What; about 50 files say "over the wire").  **Not done yet — first move below.**
+    (Waft:Everything's first What; about 50 files say "over the wire").  **Done in code and docs 2026-10-21** — Books
+     `AthePondWireSum`/`WireOrder` became `AthePondSynapseSum`/`SynapseOrder`.  The prose further down this todo (the loop
+      queue, history) still says wire; read it as synapse.
 - **One event particle, in the background.**  Elvis and pulse are one idea seen from two ends (sender-addressed vs
    receiver-declared).  The theme: a single transcendent event particle with subtypes, an elvis that shows on the tree.
     Review the pulse interface toward that; don't rip elvis out meanwhile.
@@ -31,9 +33,9 @@ A capture doc, not yet a plan — the owner has reached for this three times in 
    breaks a run in flight.
 
 **Next moves, in order:**
-1. The Synapse/Axon rename across `Theory.g`, the toy, `AtheTesting.g`, `Atheory_design.md`; then re-record the Books whose
-    snaps show the names (WireSum, WireOrder, Stream, Loop, Turns, TurnReaders, SunpitPassOrder, SunpitFrontier, WakeOrder —
-     the ones that stand wired tanks).  Particle names change, so `tol:same` won't cover it.
+1. **Re-record after the Synapse/Axon rename** (code done, Books not yet): SynapseSum, SynapseOrder, Stream, Loop, Turns,
+    TurnReaders, WakeOrder — their snaps carry `%TheASynapse`/`%TheAAxon`, `synapse:` on pulses and Turns, and renamed
+     oath sentences.  Particle names changed, so `tol:same` won't cover it.  Subagent, pinned runner, after the hacking.
 2. **Resisting CodePush during a run.**  Story already holds pushes for As in a run until the step seam.  What still breaks
     a run is code NOT loaded through `%TheACode` (the routines, the runner's own ghosts) hot-swapping mid-step.  Once
      everything a Book runs comes in through `%TheACode`, compiling during a run becomes safe — the push just waits.
@@ -41,7 +43,8 @@ A capture doc, not yet a plan — the owner has reached for this three times in 
 4. CodePush with a visible effect — needs the A** shape (two versions in one heap) so a Book can push the second.
 5. Owner-gated: candidate 2 "unwatched work costs nothing" (touches Housing); the manifest check (Atlas × Electrode, as
     ruled above).
-- *Aside, being looked into:* in BigWordland's Lies tree only Waft:Ghost/Net/Easy of Waft:Everything's area Wafts loads.
+- *Aside, answered:* a hacker room opens only `?W=` (Net/Easy) — Keep reopen is editor-only; the cave reads the map off
+   disk instead.  Waft:Everything now lives at `wormhole/Ghost/Everything` (Waft:Ghost/Everything).  Wordland_todo §0.5.
 
 ## 0. What this is about
 
@@ -286,11 +289,11 @@ Work top to bottom.  Each item ends with its Book green (3 check runs, caveat 0,
      `means,drop` omits a whole LINE; dropping one KEY (`dige`) needs the `key`/`these_sc` path half-built in
       `Hovercraft.svelte` (`means_of`, `lematch_to_rule`).
 
-5. **Wires and their sums** (`AthePondWireSum`): `%TheAWire`/`%TheAPulse` by hand on the toy, `sum:count` vs `sum:latest` — **BUILT 2026-10-20**, see "Wires by hand".  Next candidates there.
+5. **Wires and their sums** (`AthePondSynapseSum`): `%TheAWire`/`%TheAPulse` by hand on the toy, `sum:count` vs `sum:latest` — **BUILT 2026-10-20**, see "Wires by hand".  Next candidates there.
 
 6. **Order doesn't leak** (`AthePondWakeOrder`, candidate test 3): four pairs of tanks woken in opposite orders; a pair
     sharing a name counter (`%NamesFrom`) with no wire leaks its order — **BUILT 2026-10-20**, `Atheory_design.md` §1.6.
-7. **A wire between two compartments** (`AthePondWireOrder`): the shared counter declared as `%TheAWire:names,from:<A>`;
+7. **A wire between two compartments** (`AthePondSynapseOrder`): the shared counter declared as `%TheAWire:names,from:<A>`;
     `Athe_Tanks_wake` orders a batch along wires — **BUILT 2026-10-20**, `Atheory_design.md` §1.6.
 8. ~~Item 4, the digest churn~~ — **DONE 2026-10-20 as EntropyArrest `tol:same`** (`EntropyArrest.md` §11, owner's design):
     a toy edit no longer re-baselines anything.  Next candidates: pulses that travel along a wire between tanks (the fish
@@ -408,7 +411,7 @@ w:Athe_Tank
 - **Cost seen:** every edit to the toy changes its layer digest, which sits in every Athe snap, so each toy edit re-accepts
    every Athe Book (loop item 4, deferred by the owner; the bill so far is two re-accepts per edit).
 
-### Wires by hand (loop item 5; BUILT 2026-10-20, Book `AthePondWireSum`)
+### Wires by hand (loop item 5; BUILT 2026-10-20, Book `AthePondSynapseSum`)
 
 ```
 w:Athe_Tank_Counted
@@ -536,7 +539,7 @@ Entries name their point by the **D identity** (the Se's first-sight id), not by
   while unsure, and get shorter names once they've earned them.
 
 **Book names (owner, 2026-10-20):** `Athe`, then the toy, then what it proves: `AthePondCode`, later `AthePondCodePush`,
- `AthePondWireSum`…  Ugly is fine if it informs.  The toy (`Athe_Tank`) lives in `AtheFishTesting.g` and is shared by the series;
+ `AthePondSynapseSum`…  Ugly is fine if it informs.  The toy (`Athe_Tank`) lives in `AtheFishTesting.g` and is shared by the series;
   its name has an underscore so it can't be taken for a Book.
 
 The music app rests; these come first.  **Built: `AthePondCode`** (§0.2 above): the toy stands as an A and turns by hand,
@@ -547,7 +550,7 @@ The music app rests; these come first.  **Built: `AthePondCode`** (§0.2 above):
 3. **Order doesn't leak**: two toys with no wire between them, the same pulses in either order, identical snaps.  **Built:
     `AthePondWakeOrder`.**
 4. **Counts are kept**: three step pulses make three turns (`sum:count`); three "fish changed" pulses make one heron
-    reconsideration (`sum:latest`).  **Built: `AthePondWireSum`.**
+    reconsideration (`sum:latest`).  **Built: `AthePondSynapseSum`.**
 5. **The manifest is checked**: Electrode during the run, joined with Atlas: every method called is on a declared layer,
     and every declared layer was called.
 
