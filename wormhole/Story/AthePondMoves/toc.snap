@@ -8,14 +8,16 @@ story:AthePondMoves
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.125
+    TimeTotal:beliefs,avg=0.159
       sample=0.187,at=1792549794
       sample=0.104,at=1792550009
       sample=0.084,at=1792550021
-    TimeTotal:step,avg=0.016
+      sample=0.262,at=1792550936
+    TimeTotal:step,avg=0.02
       sample=0.023,at=1792549794
       sample=0.013,at=1792550009
       sample=0.011,at=1792550021
+      sample=0.033,at=1792550936
   step,dige:cec35210d274612b
   step=2,desc:stand a pond with P nine turns ahead streaming into Q inside it — a Seem over the tanks — one batch — walk and look,dige:63549434d617c18d
   step=3,desc:11 clock pulses each — one batch — walk and look,dige:3697ffd1c530d236

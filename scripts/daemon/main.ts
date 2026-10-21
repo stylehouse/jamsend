@@ -978,10 +978,26 @@ const census_state = () => {
     return { nodes, mem: mem_state(), by_nodes: top(by, r => r.n), by_bytes: top(by, r => r.bytes), c_bytes: top(ckeys, r => r.bytes), c_entries: top(ckeys, r => r.entries) }
 }
 
+// relay_state — is the station's relay socket really carrying?  The host watchdog reads this (2026-10-21: /status kept
+//  answering while the relay had cut the daemon and dropped every want to it — a healthy-looking daemon nobody could reach).
+//   open = the socket says OPEN; down_s = how long it has been down (Socket_real's down_since); quiet_s is not knowable
+//    from here, but the silence watch inside Socket_real re-dials a dead-but-OPEN socket within ~45s.
+const relay_state = () => {
+    try {
+        const A = (H.top_House?.() as any)?.o?.({ A: 'Clustation' })?.[0]
+        const sw = A?.o?.({ w: 'Swarm' })?.[0]
+        const port = sw?.o?.({ transport: 1, type: 'websocket' })?.[0]?.c?.port
+        if (!port || !port.real) return { standing: false }
+        const open = !!port.is_open?.()
+        return { standing: true, open, down_s: port.down_since ? +((Date.now() - port.down_since) / 1000).toFixed(1) : 0 }
+    } catch { return { standing: false } }
+}
+
 const stats = () => {
     const hs = allHouses(H)
     return {
         up_s: +((Date.now() - t0) / 1000).toFixed(1),
+        relay: relay_state(),
         ticks, drains,
         houses: hs.map(h => ({
             name: h.name, started: !!h.started, todo: h.todo?.length ?? 0,

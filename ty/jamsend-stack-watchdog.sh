@@ -95,7 +95,19 @@ if [ "$prod_ok" = ok ]; then
     verdict caddy "$caddy_ok" "public=$c_page" "$CADDY_CONTAINER" "$FAILS_CADDY"
 fi
 
-# ── the daemon: its own status endpoint answers only when its event loop is free ─────────────
-d_code="$(http_code "$DAEMON_URL/status" 15)"
-daemon_ok=fail; [ "$d_code" = 200 ] && daemon_ok=ok
-verdict daemon "$daemon_ok" "status=$d_code" "$DAEMON_CONTAINER" "$FAILS_DAEMON"
+# ── the daemon: its own status endpoint answers only when its event loop is free — and a free loop is not enough
+#  (2026-10-21: /status answered while the relay had cut the daemon, so this probe saw health nobody could reach).
+#   /status carries "relay":{"standing","open","down_s"}: standing + not open for over a minute is a failure too.
+#    (Socket_real's own silence watch re-dials a dead socket within ~45s; this is the backstop when that can't.)
+d_body="$(curl -sk -m 15 "$DAEMON_URL/status" 2>/dev/null || true)"
+daemon_ok=fail; d_detail="status=no answer"
+if [ -n "$d_body" ]; then
+    d_relay="$(printf '%s' "$d_body" | grep -o '"relay":{[^}]*}' | head -1)"
+    d_detail="status=200 ${d_relay:-relay=?}"
+    daemon_ok=ok
+    if printf '%s' "$d_relay" | grep -q '"standing":true' && printf '%s' "$d_relay" | grep -q '"open":false'; then
+        d_down="$(printf '%s' "$d_relay" | grep -o '"down_s":[0-9.]*' | cut -d: -f2 | cut -d. -f1)"
+        [ "${d_down:-0}" -gt 60 ] && daemon_ok=fail
+    fi
+fi
+verdict daemon "$daemon_ok" "$d_detail" "$DAEMON_CONTAINER" "$FAILS_DAEMON"

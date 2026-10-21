@@ -52,7 +52,10 @@ A capture doc, not yet a plan — the owner has reached for this three times in 
     a Housing edit, so a ledger row), and the routines calling the toy through `TheA_as` rather than flat.
 3. *Started 2026-10-21 (§0.5, design §1.12):* a Seem over a compartment — Held points, Regard on them, rollback to a mark,
     a fork + three-way merge against the mark, atoms that move (limbo), and what outlives a reload (`AthePondSeem`,
-     `AthePondMerge`, `AthePondMoves`, `AthePondReload`; S7–S10, S12 sabotaged).  Still open there: a Was read as the point's past, the merge handing its candidate to `resolve()`, and the known-answer case (the heard mirror).
+     `AthePondMerge`, `AthePondMergeHatch`, `AthePondStampMerge`, `AthePondMoves`, `AthePondReload`; S7–S10, S12, S13
+      sabotaged).  Later the same day: marks moved into the compartment's Was (K, owner); merge pairs through `resolve()`; a
+       merge policy as particles (stamps and riders).  §0.5 "Next, in order" and "Confusions found looking back" are current.
+        Still open: persisting parts of a Seem (the owner's "topic to come"), a Was read as a point's past.
     **Spheres** — the owner's next theme (§0.1 "Spheres"): Said / Held / Was / Regard, OtherSphere, holsters, snap filtering,
     and how Seem stitches them; rollback with it.  `%TheAWas` is a Was by hand.
 4. A Book that shuffles move order at random every run; `from:` by nearness; what an A may read by where it stands.
@@ -774,12 +777,14 @@ A reload keeps what is particles and loses `.c`.  `TheA_persist(A)` says an A as
 
 1. *Done 2026-10-21:* the K restructure — re-recorded green; S8 bit again on the new shape.
 2. *Done 2026-10-21:* merge hands its candidate to `resolve()` (`TheA_pair`), Book `AthePondMergeHatch`.
-3. **The heard mirror as a cartoon on the toy** (owner: "reproducing a use case cartoonishly as a Book is a good idea"; never
+3. *Done 2026-10-21 — `AthePondStampMerge`, `%TheAPolicy`/`%TheAStamp`/`%TheARides`:* **The heard mirror as a cartoon on the toy** (owner: "reproducing a use case cartoonishly as a Book is a good idea"; never
     sail into `Heard.g`): two sibling tanks whose rows carry a stamp, a policy "per key, newest stamp wins", and one key that
      travels only with an advance — the policy said in a few lines.
 4. A Was read as the point's past (a per-point last-sent).  Persisting parts of a Seem is the owner's "topic to come" — ask
     before settling a default.
-5. Art school: Pond Plates draws the spheres.
+5. *Done 2026-10-21:* Pond Plates draws the spheres — plates 12–17, "What hangs off a fish" (https://claude.ai/artifact/Uoma1XYQnvVGtBfSNQLkbm):
+    the Held sheet as tracing paper over each tank, a ring under every egg and fish, regard as a dot, marks as cards behind,
+     limbo between the tanks, merge decisions as chips.  Extractor in the session scratchpad only (`extract_spheres.mjs`).
 
 Owner shrugged at: limbo keep in walks vs turns (walks, the Seem's clock); HohoRetake's wall-clock red (unattributed).
 `TheAHeld` keeps its name.

@@ -279,6 +279,11 @@ w:Athe_Tank
     mark comes back new (seen afresh).  Turned on from the mark, the tank comes out as it did the first time.
 - **Two identities, both kept.**  A Turn (`%TheATurn`) speaks particle identity (an egg went, a fish came); a Seem's walk
    speaks observed identity (one point became a fish).
+- **A merge policy, as particles — `AthePondStampMerge`** (the heard mirror as a cartoon).  `%TheAPolicy:<kind>` on the Seem
+   holds `%TheAStamp:<key>` (newest wins, per key, no base needed) and `%TheARides:<key>,on:<stamp>` (travels only when its
+    stamp advanced).  A kind with a policy is decided by it alone (`TheA_merge_policy`), so where a policy speaks nothing is
+     refused, and merging either way comes out the same; a rider with no stamp stays home.  A fork carries its policies.
+      What `Heard_mirror_merge` does in ~25 hand lines is three particles here.
 - **Atoms that move — `AthePondMoves`.**  `resolve()` pairs only siblings, so a fish down a stream is a goner under P and a
    newcomer under Q.  A Seem with `%TheAOver` lives on a pond's world and walks the As standing in it, then their rows (the
     A\*\* tree read by a Seem).  With `%TheALimbo,keep:<n>` (the Seem's own K: points it remembers losing) every gone point is kept whole, with its epiphytes and `from:`, for

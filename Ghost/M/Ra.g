@@ -2179,19 +2179,35 @@ async Ra_stock_one(w, lib, nav, src_base, path):
 //   whose card claims THIS source path under a DIFFERENT enid is a superseded render (the source's
 //    bytes moved on and its enid moved with them) — peek its card line and drop it.  Foreign pubs
 //     are never touched.
+// THE 71-SECOND BLOCK (2026-10-21, the daemon's 🐕 watchdog: `read_range ← Ra_stock_peek ← Ra_stock_gc`, then 71s inside
+//  processTicksAndRejections).  This runs after EVERY build and peeked EVERY same-pub file's card — on the daemon a
+//   synchronous read each, so `await` resolved at once and a burst of ~40 encodes × hundreds of files ran as one unbroken
+//    microtask chain: no timer, no socket, no pong — the relay cut the daemon.  Two cures: a card is IMMUTABLE for its file
+//     name (the name carries the mint ts + enid), so it is read ONCE and kept (`nav.c.stock_cards`, nav-side so it lives
+//      as long as the disk view it describes); and the walk yields to the macrotask queue every 20 reads, so even a cold
+//       cache cannot hold the loop.
 async Ra_stock_gc(nav, pub, enid, base, path):
     let all = await this.Ra_stock_ls(nav, pub)
     let newest = 0
     for (const p of all) {
         if (p.enid === enid && p.ts > newest) newest = p.ts
     }
+    if (!nav.c) { nav.c = {} }
+    let cards = nav.c.stock_cards || (nav.c.stock_cards = new Map())
+    let reads = 0
     for (const p of all) {
         if (p.enid === enid) {
-            if (p.ts < newest) await this.Ra_stock_drop(nav, p.name)
+            if (p.ts < newest) { await this.Ra_stock_drop(nav, p.name); cards.delete(p.name) }
             continue
         }
-        let card = await this.Ra_stock_peek(nav, p.name)
-        if (card && card.path === path && (card.base || '') === (base || '')) await this.Ra_stock_drop(nav, p.name)
+        let card = cards.get(p.name)
+        if (card === undefined) {
+            card = await this.Ra_stock_peek(nav, p.name)
+            cards.set(p.name, card)
+            reads = reads + 1
+            if (reads % 20 === 0) { await new Promise((r) => setTimeout(r, 0)) }
+        }
+        if (card && card.path === path && (card.base || '') === (base || '')) { await this.Ra_stock_drop(nav, p.name); cards.delete(p.name) }
     }
 
 // Ra_stock_cascade — the era-forget cascade (Musica_forget's radiostock arm): an enid left a magazine

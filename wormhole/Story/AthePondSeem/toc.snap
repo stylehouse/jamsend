@@ -8,16 +8,18 @@ story:AthePondSeem
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.152
+    TimeTotal:beliefs,avg=0.139
       sample=0.136,at=1792549770
       sample=0.23,at=1792549831
       sample=0.177,at=1792549844
       sample=0.067,at=1792550239
-    TimeTotal:step,avg=0.026
+      sample=0.084,at=1792550893
+    TimeTotal:step,avg=0.023
       sample=0.023,at=1792549770
       sample=0.038,at=1792549831
       sample=0.03,at=1792549844
       sample=0.011,at=1792550239
+      sample=0.014,at=1792550893
   step,dige:d563c4c89cce1319
   step=2,desc:stand a tank with a Seem over its rows and the eye’s sphere declared — turn one — walk and look,dige:6dd34b97897f6f3b
   step=3,desc:turn to turn 4 — the eggs hatch,dige:ba782bce09e76bc9

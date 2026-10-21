@@ -133,6 +133,8 @@ Socket_real(w):
     let last_who = null   // the last presence answer's signature — who_ok is noted on CHANGE only
     let ws = null
     let intentional = false   // port.close() was called — stay down, do not re-dial
+    let last_rx = Date.now()  // when ANY frame last arrived — the liveness clock (see the silence watch at the bottom)
+    let alive_probe_at = 0    // when we sent the liveness probe still unanswered, else 0
     let tries = 0             // reconnect attempt counter (drives the backoff)
     let stable_timer = null   // set on open; fires tries=0 ONLY if the socket survives STABLE_MS, so a
     //                           flapping open→die never resets the backoff (cleared by onclose)
@@ -289,6 +291,8 @@ Socket_real(w):
     //     the app half hasn't deposited Lies_deliver_soon yet (the boot window before LiesLies mounts).
     let deliver_soon = (frame) => H.Lies_deliver_soon ? H.Lies_deliver_soon(w, frame) : H.post_do(async () => { await port.recv(frame) }, { see: 'tribunal_deliver_frame' })
     let on_message = (ev) => {
+        last_rx = Date.now()
+        alive_probe_at = 0
         // A binary message is a buffer-carrying frame ([header JSON]\n[raw buffer]); decode it and batch it
         //  (a booked frame — Peeroleum_deliver books + inbox.do() under the mutex, which the batcher provides).
         if (ev.data instanceof ArrayBuffer) {
@@ -356,6 +360,7 @@ Socket_real(w):
                 return
             }
             if (frame.control === 'hello_error') { note(`🪪☠ relay refused hello: ${frame.reason}`, true); return }
+            if ((frame.control === 'who_ok' || frame.control === 'who_error') && frame.corr === 'alive') return   // our own liveness probe (below) — not a presence answer
             if (frame.control === 'who_ok' || frame.control === 'who_error') {
                 let sig = frame.control + ':' + ((frame.online || []).join(',')) + ':' + (frame.reason || '')
                 if (sig !== last_who) {
@@ -396,6 +401,8 @@ Socket_real(w):
             clearTimeout(stable_timer)
             stable_timer = setTimeout(() => { tries = 0 }, STABLE_MS)
             port.down_since = 0
+            last_rx = Date.now()
+            alive_probe_at = 0
             note(`🛰 ws OPEN ${url} — flushing ${pending.length} buffered`)
             let q = pending.splice(0); for (const f of q) wire(f)
             for (const cb of open_hooks) { try { cb() } catch (e) {} }   // re-run consumer open work (relay `become`) on every (re)connect
@@ -420,6 +427,35 @@ Socket_real(w):
         ws.onmessage = on_message
     }
     connect()
+    // THE SILENCE WATCH (2026-10-21, prod: the daemon's event loop blocked 17s, the relay terminated its socket for a missed
+    //  pong, and the daemon NEVER RE-DIALLED — the close never reached it (it dials through Caddy, which kept the client
+    //   leg open), so it sat "OPEN" on a dead socket while every repli_want to it was dropped.  The relay's ping/pong only
+    //    protects the RELAY's view; a browser WebSocket cannot send pings, so this side had no liveness at all.)
+    //  Quiet for 30s ⇒ ask the relay a `who` it always answers (who_ok, or who_error when unbound — any reply proves the
+    //   path).  No frame within 15s of that ⇒ the socket is dead: drop it WITHOUT waiting on a close handshake that a
+    //    half-open socket never completes, and dial again.  A busy socket never probes (traffic resets the clock).
+    let silence = setInterval(() => {
+        if (intentional) { clearInterval(silence); return }
+        if (!ws || ws.readyState !== WebSocket.OPEN) return
+        let now = Date.now()
+        if (!alive_probe_at && now - last_rx > 30000) {
+            alive_probe_at = now
+            try { ws.send(JSON.stringify({ control: 'who', addrs: [], corr: 'alive' })) } catch (e) {}
+            return
+        }
+        if (alive_probe_at && now - alive_probe_at > 15000) {
+            note(`🛰 ws SILENT ${Math.round((now - last_rx) / 1000)}s — the relay did not answer a liveness probe; dropping the dead socket and re-dialling`, true)
+            alive_probe_at = 0
+            let dead = ws
+            dead.onopen = dead.onclose = dead.onerror = dead.onmessage = null
+            try { dead.close() } catch (e) {}
+            clearTimeout(stable_timer)
+            if (bulkQ.length) { bulkQ.length = 0; note_bulk_depth() }   // stale pages, exactly as onclose drops them
+            if (!port.down_since) port.down_since = now
+            connect()
+        }
+    }, 5000)
+    if (silence && silence.unref) silence.unref()
     w.o({ transport: 1, type: 'websocket' })[0].c.port = port
 
 // Tribunal_activate_websocket — point the live %active_transport at the websocket carrier WITHOUT

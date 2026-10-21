@@ -11,7 +11,7 @@ import { APP_DATA_DIR } from "$lib/app_data_dir"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '50ff3d064cfe48ea~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return 'bc0e16cd7ce42bc8~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -5005,22 +5005,82 @@ Berth_parts_max() {
 },
 // Berth_fold — apply one part's children onto the base tree.  Identity comes off the PART's root, so a
 //  berth can change its mind about identity between parts and each part still folds by its own rule.
-Berth_fold(base, part) {
+// INDEXED, NOT SCANNED (2026-10-21, the daemon's 🐕 loop watchdog: `LOOP BLOCKED 11s … o_query ← Berth_fold ← Berth_open`,
+//  long enough for the relay to cut the daemon for a missed pong).  Each part row used to `base.o(q)` — a walk of the whole
+//   base per row, so a 5k-row census with ~1k rows riding in parts was millions of matches on the event loop.
+//  Now: ONE index per ident across the whole open (`cache`, built by Berth_open, shared by every part), bucketed by mainkey +
+//   ident VALUES only — the mainkey's own value is matched inside the bucket, because it is so often the numeric 1 that o()
+//    reads as a presence WILDCARD (`{Folder:1,…}`).  First cut keyed on it and re-indexed on every such row — still quadratic,
+//     the watchdog caught it again in `index ← Berth_fold`.  Only a wildcard IDENT value (rare) takes the exact old o(q) path.
+//   Rows dropped here are flagged `.c.berth_dropped` so a bucket skips them; new rows join every cached index.
+Berth_fold(base, part, cache) {
     let ident = part.sc.ident ? String(part.sc.ident).split('+') : []
+    if (!cache) { cache = {} }
+    let bucket_key = (sc, mk, id) => {
+        let bits = [mk]
+        for (const k of id) {
+            if (sc[k] == null) { return null }
+            bits.push(String(sc[k]))
+        }
+        return bits.join('\u0001')
+    }
+    let file = (ix, row) => {
+        let rsc = row.sc
+        let bk = bucket_key(rsc, Object.keys(rsc)[0], ix.id)
+        if (bk == null) { return }
+        let at = ix.m.get(bk)
+        if (!at) { at = []; ix.m.set(bk, at) }
+        at.push(row)
+    }
+    let ix = null
+    if (ident.length) {
+        let name = ident.join('+')
+        ix = cache[name]
+        if (!ix) {
+            ix = { id: ident, m: new Map() }
+            for (const b of base.o({})) { file(ix, b) }
+            cache[name] = ix
+        }
+    }
     for (const row of part.o({})) {
-        if (ident.length) {
-            let mk = Object.keys(row.sc)[0]
-            let q = {}
-            q[mk] = row.sc[mk]
-            let ok = 1
-            for (const k of ident) {
-                if (row.sc[k] == null) { ok = 0; break }
-                q[k] = row.sc[k]
+        if (ix) {
+            let rsc = row.sc
+            let mk = Object.keys(rsc)[0]
+            if (ident.some(k => rsc[k] === 1)) {
+                let q = {}
+                q[mk] = rsc[mk]
+                let ok = 1
+                for (const k of ident) {
+                    if (rsc[k] == null) { ok = 0; break }
+                    q[k] = rsc[k]
+                }
+                if (ok) {
+                    for (const old of base.o(q)) {
+                        base.drop(old)
+                        old.c.berth_dropped = 1
+                    }
+                }
+            } else {
+                let bk = bucket_key(rsc, mk, ident)
+                if (bk != null) {
+                    let mv = rsc[mk]
+                    let keep = []
+                    for (const old of (ix.m.get(bk) || [])) {
+                        if (old.c.berth_dropped) { continue }
+                        if (mv === 1 || String(old.sc[mk]) === String(mv)) {
+                            base.drop(old)
+                            old.c.berth_dropped = 1
+                        } else {
+                            keep.push(old)
+                        }
+                    }
+                    ix.m.set(bk, keep)
+                }
             }
-            if (ok) { for (const old of base.o(q)) base.drop(old) }
         }
         base.i(row)
         row.c.up = base
+        for (const name of Object.keys(cache)) { file(cache[name], row) }
     }
 
 },
@@ -5047,6 +5107,7 @@ async Berth_open(nav, root, prepub, name) {
     //  parts are written in order and only ever removed all-at-once by a compaction, so a hole means the
     //   tail is gone, and reading past it would resurrect state the compaction already folded in.
     let n = 1
+    let fold_cache = {}   // Berth_fold's per-ident indexes, built once for the whole open
     while (n <= this.Berth_parts_max()) {
         let ptxt = null
         try { ptxt = await nav.read_file(dir, this.Berth_part_name(n)) } catch (er) { ptxt = null }
@@ -5054,7 +5115,7 @@ async Berth_open(nav, root, prepub, name) {
         let pdec = this.deWaft(ptxt, path)
         if (pdec.Waft) {
             waft.c.berth_part_rows = waft.c.berth_part_rows + pdec.Waft.o({}).length
-            this.Berth_fold(waft, pdec.Waft)
+            this.Berth_fold(waft, pdec.Waft, fold_cache)
         }
         waft.c.berth_parts = n
         n = n + 1

@@ -8,16 +8,18 @@ story:AthePondMergeHatch
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.057
+    TimeTotal:beliefs,avg=0.06
       sample=0.106,at=1792549816
       sample=0.029,at=1792550050
       sample=0.04,at=1792550227
       sample=0.051,at=1792550330
-    TimeTotal:step,avg=0.014
+      sample=0.074,at=1792550920
+    TimeTotal:step,avg=0.015
       sample=0.026,at=1792549816
       sample=0.007,at=1792550050
       sample=0.01,at=1792550227
       sample=0.013,at=1792550330
+      sample=0.018,at=1792550920
   step,dige:fbb5270c2c352c13
   step=2,desc:stand M — turn it to 10 — mark it fork — and fork N from the mark,dige:d6943e6b55898007
   step=3,desc:N turns to 13 — its eggs hatch — a hand says M’s carp 3 egg was laid at 9,dige:914b274a5ef4ab31

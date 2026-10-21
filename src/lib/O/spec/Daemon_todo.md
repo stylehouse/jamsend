@@ -27,6 +27,12 @@ A node daemon that boots the whole jamsend machine headless and stays up: a stab
    (wants 101), Caddy's public page (only judged while prod is up), and the daemon's `/status`. Restarts by container name
     after 3/3/5 failed minutes, with a 15-minute cooldown. Dumps `docker stats` and the last 80 log lines before restarting.
 - The relay no longer warns about dropped `swarm_hi`/`pulse`: those are friend-online probes, and "not here" is their answer.
+**Same day, round two — the watchdog named it:** `🐕 LOOP BLOCKED 11s — o_query ← Berth_fold ← Berth_open`. Berth_fold walked the
+ whole base per part row (quadratic on a big census); now it indexes the base once per part (Heist.g). And the deeper bug: the
+  relay cut the daemon, the daemon unblocked, and it NEVER RE-DIALLED. It dials through Caddy, the close never reached it, and a
+   browser WebSocket can't ping, so it sat OPEN on a dead socket. **Socket_real's silence watch** (Tribunal.g) now probes the relay
+    with a `who` after 30s of quiet and re-dials if nothing answers in 15s. `/status` carries `relay:{standing,open,down_s}`,
+     and the host watchdog fails the daemon when it's standing but down for over a minute.
 
 ### 0.000 2026-10-15 — WEIGHT: a daemon that can lurk on someone's computer forever → part of Atheory
 
