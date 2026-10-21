@@ -22,7 +22,6 @@ Snap:H
           TheAKind:Fish
           TheAKind:Heron
           TheASphere:eye,tense:Regard
-          TheAMark:20,dontSnap
           TheAHeld:Turns,of,count=24
           TheAHeld:EggsNamed,of,count=16
           TheAHeld:Fish,of:tench 7,born=19
@@ -68,6 +67,8 @@ Snap:H
             TheAGoner:Fish,of:bream 6
         Fish:tench 7,born=19
         Fish:dace 8,born=19
+        TheAWas
+          TheAMark:20,dontSnap
         Fish:chub 9,born=22
         Fish:rudd 10,born=22
         Fish:minnow 11,born=22

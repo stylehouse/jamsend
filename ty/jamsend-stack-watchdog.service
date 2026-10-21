@@ -1,0 +1,21 @@
+[Unit]
+Description=jamsend stack watchdog (prod vite + relay, Caddy, the jamserve daemon) — restarts what stops answering
+Wants=docker.service network-online.target
+After=docker.service network-online.target jamsend-prod.service
+
+# WHY (2026-10-21): the daemon blocked its event loop for 8.5 minutes, the relay cut it for a missed pong, and a
+#  listener's preview starved — nothing on the host noticed.  A LOOP, not a oneshot or a timer, in the
+#   jamsend-mount-verify.service manner: one probe round a minute, forever.  The round itself (jamsend-stack-watchdog.sh)
+#    owns the policy — consecutive-failure counts, the 15-minute cooldown, the evidence dump before `docker restart`.
+#     Its log: journalctl -u jamsend-stack-watchdog -f   (and /var/tmp/jamsend-watchdog/watchdog.log, which keeps the dumps)
+
+[Service]
+User=1000
+Type=simple
+WorkingDirectory=/home/s/src/prod-jamsend/ty
+ExecStart=/bin/bash -c 'while :; do ./jamsend-stack-watchdog.sh; sleep 60; done'
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

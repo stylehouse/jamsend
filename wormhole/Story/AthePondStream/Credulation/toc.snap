@@ -1,5 +1,5 @@
 Credulation,of_Book:AthePondStream
-  run=0,at=1792546013.58,ok,ok_pct,mode:check
+  run=0,at=1792550831.728,ok,ok_pct,mode:check
     uses:Ghost_N_Peeroleum,dige:ee39d52bb1441684~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:3c432d1f272229a8~g1
@@ -30,6 +30,6 @@ Credulation,of_Book:AthePondStream
     uses:Ghost_Story_VoroTesting,dige:ba7f8d826ff81866~g1
     uses:Ghost_Story_Sounditron,dige:0de272b54e59b42d~g1
     uses:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
-    uses:Ghost_A_Theory,dige:3ce374d58d8a65b1~g1
+    uses:Ghost_A_Theory,dige:d94a108cc00e40a3~g1
     uses:Ghost_A_AtheFishTesting,dige:f70099b7c1320793~g1
-    uses:Ghost_A_AtheTesting,dige:f380f23f594caa9b~g1
+    uses:Ghost_A_AtheTesting,dige:237524b2d3f4fac7~g1

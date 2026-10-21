@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheTesting(): string { return 'f380f23f594caa9b~g1' },
+    Ghostmeta_Ghost_A_AtheTesting(): string { return '237524b2d3f4fac7~g1' },
 
 // AtheTesting.g — Atheory's proof (Ghost/A/Theory.g; spec/Atheory_todo.md §0.2 "The first Atheory tests").
 //
@@ -1667,7 +1667,7 @@ AthePondReload_witness(w) {
     let n = this.c.run?.c.step_n ?? 0
     let walk = seem.o({ TheAWalk: 1 })[0]
     let before = w.o({ Saw: 'before' })[0]
-    let mark = seem.o({ TheAMark: '10' })[0]
+    let mark = this.TheA_mark_of(this.Athe_Tank_of('R_P'), 10)
     if (n === 3 && before && w.o({ Saw: 'thawed' })[0]?.sc.fresh === 1 && this.AthePondReload_regards() === before.sc.regards && walk && !walk.o({ TheANeu: 1 }).length && !walk.o({ TheAGoner: 1 }).length) {
         this.story_swear(w, 'a tank stood again from its own text has every point and the eye’s regard — the first walk after finds nothing new — only .c was lost')
     }
@@ -1681,6 +1681,182 @@ AthePondReload_witness(w) {
     let rb = w.o({ Saw: 'rollback' })[0]
     if (n === 5 && rb && rb.sc.done === 0 && rb.sc.turns === 13 && seem.o({ TheARefused: 'rollback' })[0]?.sc.why) {
         this.story_swear(w, 'rolling back to a mark that was not kept is refused with its reason — the tank is untouched')
+    }
+},
+//#endregion
+//#region the test routine — Book AthePondMergeHatch
+// a merge across a change of kind (Theory.g TheA_pair; Atheory_todo §0.5).  Step 2 stands M at turn 10 (carp 3 and trout 4
+//  are eggs), marks it "fork" and forks N.  Step 3: N turns to 13 (both eggs hatch, two more are laid); a hand says M's carp 3
+//   egg was laid at 9.  Step 4 merges N into M: trout 4 hatched on one side only, so it comes across as the same thing, now a
+//    fish; carp 3 hatched on one side and was changed on the other, so it is refused — and never both an egg and a fish
+AthePondMergeHatch(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.AthePondMergeHatch_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async AthePondMergeHatch_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.AthePondMergeHatch_stand(w)
+        if (n === 3) this.AthePondMergeHatch_diverge(w)
+        if (n === 4) await this.AthePondMergeHatch_merge(w)
+    }
+    this.AthePondMergeHatch_witness(w)
+
+},
+async AthePondMergeHatch_stand(w) {
+    w.i({desc: 'stand M — turn it to 10 — mark it fork — and fork N from the mark'})
+    if (typeof this.TheA_pair !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
+        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
+        return
+    }
+    this.AthePond_tank_stand({ name: 'MH_P' })
+    this.AthePond_turn_as('MH_P', 10)
+    let M = this.Athe_Tank_of('MH_P')
+    this.TheA_seem(M, 'rows', ['Turns', 'EggsNamed', 'Egg', 'Fish', 'Heron'])
+    await this.TheA_seem_walk(M, 'rows')
+    this.TheA_seem_mark(M, 'rows', 'fork')
+    let old = this.o({ A: 'NH_P' })[0]
+    if (old) this.drop(old)
+    let N = this.TheA_stand(this, 'NH_P', ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
+    await this.TheA_seem_fork(M, 'rows', 'fork', N)
+
+},
+AthePondMergeHatch_diverge(w) {
+    w.i({desc: 'N turns to 13 — its eggs hatch — a hand says M’s carp 3 egg was laid at 9'})
+    this.AthePond_turn_as('NH_P', 13)
+    let M = this.Athe_Tank_of('MH_P')
+    let carp = M.o({ Egg: 'carp 3' })[0]
+    if (carp) {
+        M.drop(carp)
+        M.i({ Egg: 'carp 3', born: 9 })
+    }
+
+},
+async AthePondMergeHatch_merge(w) {
+    w.i({desc: 'merge N into M'})
+    await this.TheA_seem_merge(this.Athe_Tank_of('MH_P'), this.Athe_Tank_of('NH_P'), 'rows', 'fork')
+
+},
+AthePondMergeHatch_witness(w) {
+    let M = this.Athe_Tank_of('MH_P')
+    let merge = M?.o({ TheASeem: 'rows' })[0]?.o({ TheAMerge: 1 })[0]
+    if (!merge || (this.c.run?.c.step_n ?? 0) !== 4) return
+    let took = (of) => merge.o({ TheATook: 1 }).filter(t => t.sc.of === of)
+    let refused = merge.o({ TheARefused: 1 }).filter(r => r.sc.of === 'carp 3')
+    if (M.o({ Fish: 'trout 4' }).length === 1 && !M.o({ Egg: 'trout 4' }).length && took('trout 4').length === 1 && took('trout 4')[0].sc.TheATook === 'changed') {
+        this.story_swear(w, 'an egg that hatched on one side comes across as the same thing, now a fish — one change, never an egg gone and a fish new')
+    }
+    if (M.o({ Egg: 'carp 3' })[0]?.sc.born === 9 && !M.o({ Fish: 'carp 3' }).length && refused.length === 1 && refused[0].sc.ours === 'Egg,born=9' && refused[0].sc.theirs === 'Fish,born=13') {
+        this.story_swear(w, 'a hatch on one side against a change on the other is refused — M keeps its egg, and no fish of that name appears beside it')
+    }
+},
+//#endregion
+//#region the test routine — Book AthePondStampMerge
+// the heard mirror, as a cartoon on the toy (Theory.g TheA_merge_policy; Atheory_todo §0.5).  Fish carry a stamp (fed_at, on
+//  the tanks' shared clock — they forked from one) and a rider (food) that travels only with its stamp.  Step 2 stands M at 13,
+//   declares the Fish policy, marks it "fork" and forks N (the policy goes with the fork).  Step 3: hands feed both sides —
+//    carp 3 newer in N, trout 4 newer in M, and perch 2 given food in N with no stamp at all.  Step 4 merges N into M; step 5
+//     merges M into N
+AthePondStampMerge(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.AthePondStampMerge_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async AthePondStampMerge_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 5
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.AthePondStampMerge_stand(w)
+        if (n === 3) this.AthePondStampMerge_feed(w)
+        if (n === 4) await this.AthePondStampMerge_merge(w, 'SM_P', 'SN_P', 'merge N into M')
+        if (n === 5) await this.AthePondStampMerge_merge(w, 'SN_P', 'SM_P', 'merge M into N')
+    }
+    this.AthePondStampMerge_witness(w)
+
+},
+async AthePondStampMerge_stand(w) {
+    w.i({desc: 'stand M at 13 — declare how Fish merge — mark it fork — fork N'})
+    if (typeof this.TheA_merge_policy !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
+        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
+        return
+    }
+    this.AthePond_tank_stand({ name: 'SM_P' })
+    this.AthePond_turn_as('SM_P', 13)
+    let M = this.Athe_Tank_of('SM_P')
+    let seem = this.TheA_seem(M, 'rows', ['Turns', 'EggsNamed', 'Egg', 'Fish', 'Heron'])
+    let policy = seem.oai({ TheAPolicy: 'Fish' })
+    policy.oai({ TheAStamp: 'fed_at' })
+    policy.oai({ TheARides: 'food', on: 'fed_at' })
+    await this.TheA_seem_walk(M, 'rows')
+    this.TheA_seem_mark(M, 'rows', 'fork')
+    let old = this.o({ A: 'SN_P' })[0]
+    if (old) this.drop(old)
+    let N = this.TheA_stand(this, 'SN_P', ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
+    await this.TheA_seem_fork(M, 'rows', 'fork', N)
+
+},
+// a hand on one fish: the row said again with these keys
+AthePondStampMerge_hand(name, fish, sc) {
+    let tank = this.Athe_Tank_of(name)
+    let row = tank?.o({ Fish: fish })[0]
+    if (!row) return
+    tank.drop(row)
+    tank.i({ ...row.sc, ...sc })
+
+},
+AthePondStampMerge_feed(w) {
+    w.i({desc: 'hands feed — carp 3 at 14 in M and 15 in N — trout 4 at 16 in M and 12 in N — perch 2 given food in N with no stamp'})
+    this.AthePondStampMerge_hand('SM_P', 'carp 3', { fed_at: 14, food: 'worm' })
+    this.AthePondStampMerge_hand('SN_P', 'carp 3', { fed_at: 15, food: 'fly' })
+    this.AthePondStampMerge_hand('SM_P', 'trout 4', { fed_at: 16, food: 'worm' })
+    this.AthePondStampMerge_hand('SN_P', 'trout 4', { fed_at: 12, food: 'fly' })
+    this.AthePondStampMerge_hand('SN_P', 'perch 2', { food: 'snail' })
+
+},
+async AthePondStampMerge_merge(w, ours, theirs, desc) {
+    w.i({ desc })
+    await this.TheA_seem_merge(this.Athe_Tank_of(ours), this.Athe_Tank_of(theirs), 'rows', 'fork')
+    w.oai({ Saw: desc }, { carp: this.AthePondStampMerge_say(ours, 'carp 3'), trout: this.AthePondStampMerge_say(ours, 'trout 4') })
+
+},
+AthePondStampMerge_say(name, fish) {
+    let row = this.Athe_Tank_of(name)?.o({ Fish: fish })[0]
+    return row ? this.TheA_row_say(row) : 'gone'
+
+},
+AthePondStampMerge_witness(w) {
+    let n = this.c.run?.c.step_n ?? 0
+    let M = this.Athe_Tank_of('SM_P')
+    let fish = (f) => M?.o({ Fish: f })[0]?.sc || {}
+    let merge = M?.o({ TheASeem: 'rows' })[0]?.o({ TheAMerge: 1 })[0]
+    if (n === 4 && merge) {
+        if (fish('carp 3').fed_at === 15 && fish('carp 3').food === 'fly') {
+            this.story_swear(w, 'the newer feeding wins — carp 3 takes N’s fly with N’s stamp')
+        }
+        if (fish('trout 4').fed_at === 16 && fish('trout 4').food === 'worm') {
+            this.story_swear(w, 'an older stamp carries nothing across — trout 4 keeps M’s worm')
+        }
+        if (fish('perch 2').food == null && this.Athe_Tank_of('SN_P')?.o({ Fish: 'perch 2' })[0]?.sc.food === 'snail') {
+            this.story_swear(w, 'a rider never travels on its own — perch 2’s snail with no stamp stays in N')
+        }
+        if (!merge.o({ TheARefused: 1 }).length && merge.o({ TheATook: 'by policy' }).length === 1) {
+            this.story_swear(w, 'where a policy speaks nothing is refused — both sides fed carp 3 and the stamp decided')
+        }
+    }
+    let a = w.o({ Saw: 'merge N into M' })[0]
+    let b = w.o({ Saw: 'merge M into N' })[0]
+    if (n === 5 && a && b && a.sc.carp === b.sc.carp && a.sc.trout === b.sc.trout && a.sc.carp.includes('fed_at=15')) {
+        this.story_swear(w, 'merged the other way N comes out as M did — stamps don’t care which side merges')
     }
 },
 //#endregion

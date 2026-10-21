@@ -648,7 +648,7 @@ The hard problem (`ty/README.md`): Chrome app-servers hold **File System Access 
  don't need a human-granted handle (the swarm sim peers carry their own fixtures, not an OPFS mount),
   so the handle-survival problem mostly **dissolves** — a crashed container just gets a fresh one. The
    inner→host channel stays a plain message (`RESTART:<name>`) on `ty/`'s Unix socket
-    (`chrome_launcher.sock`, `ty/launcher.py`) — the **host-exec socket** (3.7), extended with more
+    (`chrome_launcher.sock`, `ty/history/launcher.py`) — the **host-exec socket** (3.7), extended with more
      allowlisted commands as needed. A runner that needs the *real* repository (not just sim fixtures)
       replaces the handle with the **network Wormhole backend** (3.8), not nothing.
 
@@ -675,8 +675,8 @@ The human wants a **quorum** ("restart when most of ~7 tabs have crashed"), not 
 When the app needs to act on the **host** — restart a crashed Chrome profile, bounce the docker service
  or the ssh reverse proxy — it can't do that from a browser tab. The mechanism already exists in `ty/`:
   a tiny **host daemon** on a **Unix socket** (`/tmp/jamsend-supervisor/chrome_launcher.sock`,
-   `ty/launcher.py`, kept up by `ty/jamsend-launcher.service`) that accepts a plain text command
-    (`RESTART:<profile>`) and runs **one of a fixed set of actions** — nothing else. `ty/virtreset.py`
+   `ty/history/launcher.py`, kept up by `ty/history/jamsend-launcher.service` — retired 2026-10-21) that accepts a plain text command
+    (`RESTART:<profile>`) and runs **one of a fixed set of actions** — nothing else. `ty/history/virtreset.py`
      is the sibling that does `virsh snapshot-revert`. The allowlist *is* the whole privileged surface:
       the caller picks a **name**, never sends a command.
 

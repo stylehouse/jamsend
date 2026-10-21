@@ -149,6 +149,50 @@ const say = (m: string) => {
     } catch { /* logging must never be why the daemon dies */ }
 }
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
+
+// THE LOOP WATCHDOG (2026-10-21, prod: the daemon froze ~85s after boot — no heartbeat, /status accepted but never
+//  answered, the relay cut it for a missed pong, and it never knew, because a blocked event loop runs NOTHING: not the
+//   pong, not onclose, not the reconnect).  A worker thread can't be blocked by the main loop, and an inspector session
+//    from a worker (connectToMainThread) can PAUSE the main isolate mid-JS and read its stack — so a freeze names its
+//     own culprit in the log instead of going silent.  No answer to the pause ⇒ stuck in native/sync I/O, not JS.
+{
+    const { Worker } = await import('node:worker_threads')
+    const beat = new Int32Array(new SharedArrayBuffer(4))
+    Atomics.store(beat, 0, Math.floor(Date.now() / 1000))
+    setInterval(() => Atomics.store(beat, 0, Math.floor(Date.now() / 1000)), 1000).unref()
+    const code = `
+const { workerData } = require('node:worker_threads')
+const inspector = require('node:inspector')
+const fs = require('node:fs')
+const { beat, LOG, t0 } = workerData
+const log = (m) => { const line = '[daemon ' + ((Date.now() - t0) / 1000).toFixed(1) + 's] ' + m + '\\n'; try { process.stderr.write(line) } catch (e) {} try { fs.appendFileSync(LOG, line) } catch (e) {} }
+const s = new inspector.Session()
+s.connectToMainThread()
+let reported = 0, asking = 0
+setInterval(() => {
+    const stuck = Math.floor(Date.now() / 1000) - Atomics.load(beat, 0)
+    if (stuck < 10) { if (reported) { log('🐕 loop free again (was blocked ' + reported + 's+)'); reported = 0 } return }
+    if (asking || (reported && stuck - reported < 60)) return
+    reported = stuck
+    asking = 1
+    let answered = 0
+    const timer = setTimeout(() => { if (!answered) { asking = 0; log('🐕 LOOP BLOCKED ' + stuck + 's — the pause got no answer in 5s: stuck in native or sync I/O, not JS') } }, 5000)
+    s.once('Debugger.paused', (m) => {
+        answered = 1
+        clearTimeout(timer)
+        const frames = m.params.callFrames.slice(0, 14).map((f) => (f.functionName || '(anon)') + '  ' + String(f.url).split('/').slice(-2).join('/') + ':' + (f.location.lineNumber + 1))
+        log('🐕 LOOP BLOCKED ' + stuck + 's — the main thread is in:\\n    ' + frames.join('\\n    '))
+        s.post('Debugger.resume', () => s.post('Debugger.disable', () => { asking = 0 }))
+    })
+    s.post('Debugger.enable', () => s.post('Debugger.pause'))
+}, 2000)
+`
+    try {
+        const wd = new Worker(code, { eval: true, workerData: { beat, LOG, t0 } })
+        wd.unref()
+        wd.on('error', (e) => say(`🐕⚠ loop watchdog died: ${e?.message}`))
+    } catch (e: any) { say(`🐕⚠ loop watchdog could not start: ${e?.message}`) }
+}
 // no per-replace() stack capture here (Stuff.svelte.ts OPTIMISE_FOR_DX) — a headless box pays source-map rewriting for it
 ;(globalThis as any).__JAMSEND_NO_DX = process.env.JAMSEND_DX !== '1'
 

@@ -9,6 +9,25 @@ A node daemon that boots the whole jamsend machine headless and stays up: a stab
 
 ## 0. What to get on with next
 
+### 0.0000 2026-10-21 — THE 8½-MINUTE BLOCK: the daemon froze, the relay cut it, the browser starved
+
+**Seen on prod:** the browser's preview starved well short of 30s and skipped. The relay terminated the daemon's socket
+ for a missed pong, then dropped 520+ of the browser's `repli_want`s. The daemon had no idea, because its event loop was
+  blocked from 85s to 602s after boot: no ♥ heartbeat, `/status` accepted but never answered, so no pong, no `onclose`,
+   no reconnect. When it came back it reported `ffmpeg failed=26 exit -1`. That's a SYMPTOM: each job's timeout is a
+    `setTimeout`, so they all fired late at once and SIGKILLed their jobs. **The cause of the block is still unknown.**
+**Landed:**
+- **🐕 the loop watchdog** (`scripts/daemon/main.ts`): a worker thread watches a shared heartbeat. After 10s blocked it
+   pauses the main isolate over an inspector session and logs `🐕 LOOP BLOCKED Ns — the main thread is in:` plus the JS
+    stack. No answer to the pause means it's stuck in native or sync I/O. **The next freeze names its culprit: read that
+     first.**
+- **ffmpeg job lines + a cap** (`scripts/daemon/ffmpeg.ts`): `🎬▶ #n kind file (k queued)` and `🎬■ … exit|killed by its
+   timeout|killed by SIG… after Ns`. At most `FFMPEG_JOBS` (default 4) run at once; a job's timeout starts when it spawns.
+- **The host watchdog** (`ty/jamsend-stack-watchdog.sh` + `.service`, installed by `ty/install-jamsend-stack-watchdog.sh`; a round a minute on the HOST): probes prod's page and relay upgrade
+   (wants 101), Caddy's public page (only judged while prod is up), and the daemon's `/status`. Restarts by container name
+    after 3/3/5 failed minutes, with a 15-minute cooldown. Dumps `docker stats` and the last 80 log lines before restarting.
+- The relay no longer warns about dropped `swarm_hi`/`pulse`: those are friend-online probes, and "not here" is their answer.
+
 ### 0.000 2026-10-15 — WEIGHT: a daemon that can lurk on someone's computer forever → part of Atheory
 
 > 👤 **For people.** The owner: *"725 MB ram is tons isn't it? I was hoping this might lurk in the background of someone's

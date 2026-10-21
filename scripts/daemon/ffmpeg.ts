@@ -47,22 +47,67 @@ export function failed<T extends object>(r: T | { why: string }): r is { why: st
     return !!r && typeof (r as any).why === 'string'
 }
 
+// job_say — one line when an ffmpeg job BEGINS and one when it ENDS (owner 2026-10-21: "daemon log should say when each
+//  … ffmpeg job begins").  The end line carries the wall time and HOW it ended — a timeout kill reads differently to a
+//   signal from outside (the OOM killer) — because "ffmpeg exit -1" alone could not tell those apart, and on 2026-10-21
+//    it hid that 26 jobs were killed by their own timers firing late, after an 8-minute event-loop block.
+let job_n = 0
+// THE JOB CAP (owner 2026-10-21: "we should limit to 4 ffmpeg jobs").  Every caller awaits its own ffmpeg, but nothing
+//  bounded how many ran at once, so a dig + stoke + measure burst spawned dozens in parallel — each with a pipe the
+//   event loop has to drain.  A FIFO of at most FFMPEG_JOBS (default 4); a job's timeout starts when it SPAWNS, never
+//    while it waits in the queue, so a backlog can no longer read as a pile of timeouts.
+const JOBS_MAX = Math.max(1, +(process.env.FFMPEG_JOBS || 4))
+let jobs_live = 0
+const jobs_wait: Array<() => void> = []
+const job_slot = (): Promise<void> => {
+    if (jobs_live < JOBS_MAX) { jobs_live++; return Promise.resolve() }
+    return new Promise(r => jobs_wait.push(r))   // the slot is handed over in job_free, jobs_live unchanged
+}
+const job_free = () => {
+    const next = jobs_wait.shift()
+    if (next) next()
+    else jobs_live--
+}
+const job_what = (bin: string, args: string[]) => {
+    const i = args.indexOf('-i')
+    const file = i >= 0 ? String(args[i + 1] || '').split('/').slice(-1)[0] : ''
+    const a = args.join(' ')
+    const kind = bin === FFPROBE ? 'probe' : a.includes('loudnorm') && a.includes('-f null') ? 'measure'
+        : a.includes('-f null') ? 'scan' : a.includes('-version') ? 'version' : 'encode'
+    return kind + (file ? ' ' + file.slice(0, 60) : '')
+}
+const job_begin = (bin: string, args: string[]) => {
+    const n = ++job_n, what = job_what(bin, args), t = Date.now()
+    if (!what.startsWith('version')) console.log(`🎬▶ ffmpeg #${n} ${what}${jobs_wait.length ? ` (${jobs_wait.length} queued)` : ''}`)
+    return (code: number | null, signal: string | null, timed_out: boolean) => {
+        if (what.startsWith('version')) return
+        const how = timed_out ? `KILLED by its timeout` : signal ? `killed by ${signal}` : `exit ${code}`
+        console.log(`🎬■ ffmpeg #${n} ${what} — ${how} after ${((Date.now() - t) / 1000).toFixed(1)}s`)
+    }
+}
+
 // run — spawn ffmpeg and collect both streams.  ffmpeg writes its measurements to STDERR (it keeps
 //  stdout for the output stream), so stderr is data here, not just noise.  `capture_stdout:false`
 //   for measurement runs, where stdout is `-f null -` and we want it discarded rather than buffered.
-export function run(args: string[], opts: { timeout_ms?: number; capture_stdout?: boolean; bin?: string } = {}): Promise<Ran> {
+export async function run(args: string[], opts: { timeout_ms?: number; capture_stdout?: boolean; bin?: string } = {}): Promise<Ran> {
+    await job_slot()
+    try { return await run_now(args, opts) } finally { job_free() }
+}
+function run_now(args: string[], opts: { timeout_ms?: number; capture_stdout?: boolean; bin?: string }): Promise<Ran> {
     const { timeout_ms = 120_000, capture_stdout = false, bin = FFMPEG } = opts
     return new Promise((resolve, reject) => {
         const p = spawn(bin, args, { stdio: ['ignore', capture_stdout ? 'pipe' : 'ignore', 'pipe'] })
+        const end = job_begin(bin, args)
+        let timed_out = false
         let stdout = '', stderr = ''
         // stderr is BOUNDED: ffmpeg is chatty per-frame with some filters, and an unbounded string on
         //  a long track is a real memory cost for output we only tail-parse.  Keep the last ~256KB.
         const cap = (s: string, add: string) => (s.length > 262_144 ? s.slice(-131_072) : s) + add
         p.stdout?.on('data', d => { stdout = cap(stdout, String(d)) })
         p.stderr.on('data', d => { stderr = cap(stderr, String(d)) })
-        const timer = setTimeout(() => { try { p.kill('SIGKILL') } catch {} }, timeout_ms)
+        const timer = setTimeout(() => { timed_out = true; try { p.kill('SIGKILL') } catch {} }, timeout_ms)
         p.on('error', e => { clearTimeout(timer); reject(e) })
-        p.on('close', code => { clearTimeout(timer); resolve({ code: code ?? -1, stdout, stderr }) })
+        p.on('close', (code, signal) => { clearTimeout(timer); end(code, signal, timed_out); resolve({ code: code ?? -1, stdout, stderr }) })
     })
 }
 
@@ -216,18 +261,25 @@ const tail = (s: string, n = 200) => String(s || '').trim().split('\n').slice(-2
 //  flagged, because the difference is not a flag: collecting bytes as a string corrupts them
 //   (String(buf) decodes UTF-8, and every invalid sequence becomes U+FFFD — silently, and only for
 //    some inputs).  A single `capture_stdout` boolean invites exactly that mistake.
-export function run_binary(args: string[], opts: { timeout_ms?: number } = {}):
+export async function run_binary(args: string[], opts: { timeout_ms?: number } = {}):
+        Promise<{ code: number; out: Uint8Array; stderr: string }> {
+    await job_slot()
+    try { return await run_binary_now(args, opts) } finally { job_free() }
+}
+function run_binary_now(args: string[], opts: { timeout_ms?: number }):
         Promise<{ code: number; out: Uint8Array; stderr: string }> {
     const { timeout_ms = 600_000 } = opts     // a whole-track transcode, not a measurement
     return new Promise((resolve, reject) => {
         const p = spawn(FFMPEG, args, { stdio: ['ignore', 'pipe', 'pipe'] })
+        const end = job_begin(FFMPEG, args)
+        let timed_out = false
         const chunks: Buffer[] = []
         let stderr = ''
         p.stdout.on('data', (d: Buffer) => { chunks.push(d) })
         p.stderr.on('data', d => { stderr = (stderr.length > 262_144 ? stderr.slice(-131_072) : stderr) + String(d) })
-        const timer = setTimeout(() => { try { p.kill('SIGKILL') } catch {} }, timeout_ms)
+        const timer = setTimeout(() => { timed_out = true; try { p.kill('SIGKILL') } catch {} }, timeout_ms)
         p.on('error', e => { clearTimeout(timer); reject(e) })
-        p.on('close', code => { clearTimeout(timer); resolve({ code: code ?? -1, out: new Uint8Array(Buffer.concat(chunks)), stderr }) })
+        p.on('close', (code, signal) => { clearTimeout(timer); end(code, signal, timed_out); resolve({ code: code ?? -1, out: new Uint8Array(Buffer.concat(chunks)), stderr }) })
     })
 }
 

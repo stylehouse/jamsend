@@ -1,0 +1,26 @@
+story:AthePondMergeHatch
+  Styles
+  Plan
+  Opt
+    For
+  EntropyArrest
+    Entcase:Self_round
+      lematch,self,round
+        means,drop
+  TimeSpool
+    TimeTotal:beliefs,avg=0.057
+      sample=0.106,at=1792549816
+      sample=0.029,at=1792550050
+      sample=0.04,at=1792550227
+      sample=0.051,at=1792550330
+    TimeTotal:step,avg=0.014
+      sample=0.026,at=1792549816
+      sample=0.007,at=1792550050
+      sample=0.01,at=1792550227
+      sample=0.013,at=1792550330
+  step,dige:fbb5270c2c352c13
+  step=2,desc:stand M — turn it to 10 — mark it fork — and fork N from the mark,dige:d6943e6b55898007
+  step=3,desc:N turns to 13 — its eggs hatch — a hand says M’s carp 3 egg was laid at 9,dige:914b274a5ef4ab31
+  step=4,desc:merge N into M,dige:d4c47d236d8566e3
+    {"Assertion":"an-egg-that-hatched","sentence":"an egg that hatched on one side comes across as the same thing, now a fish — one change, never an egg gone and a fish new"}
+    {"Assertion":"a-hatch-on-one","sentence":"a hatch on one side against a change on the other is refused — M keeps its egg, and no fish of that name appears beside it"}

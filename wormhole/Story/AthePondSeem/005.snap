@@ -20,7 +20,6 @@ Snap:H
           TheAKind:Fish
           TheAKind:Heron
           TheASphere:eye,tense:Regard
-          TheAMark:20,dontSnap
           TheAHeld:Turns,of,count=20
           TheAHeld:EggsNamed,of,count=12
           TheAHeld:Fish,of:minnow 1,born=4
@@ -63,6 +62,8 @@ Snap:H
             TheAGoner:Egg,of:roach 15
             TheAGoner:Egg,of:bream 16
             TheAGoner:Heron,of:grey
+        TheAWas
+          TheAMark:20,dontSnap
         Turns,count=20
         EggsNamed,count=12
         Fish:minnow 1,born=4

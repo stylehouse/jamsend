@@ -25,7 +25,6 @@ Snap:H
           TheAKind:Fish
           TheAKind:Heron
           TheASphere:eye,tense:Regard
-          TheAMark:10,dontSnap,folded
           TheAHeld:Turns,of,count=13
           TheAHeld:EggsNamed,of,count=6
           TheAHeld:Fish,of:minnow 1,born=4
@@ -46,6 +45,8 @@ Snap:H
             TheANeu:Egg,of:roach 5
             TheANeu:Egg,of:bream 6
           TheARefused:rollback,mark:10,why:the mark was not kept across the reload
+        TheAWas
+          TheAMark:10,dontSnap,folded
         Fish:carp 3,born=13
         Fish:trout 4,born=13
         Egg:roach 5,born=13

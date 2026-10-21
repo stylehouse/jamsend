@@ -210,6 +210,10 @@ Each oath fell to the sabotage aimed at it, and only to that: the unrelated oath
 - **S12 — a move that forgets the epiphytes** (`AthePondMoves`).  Lost: only "a fish that swims from P to Q is one point that
    moved — the eye's regard went with it" (the travellers arrived unregarded; the eye saw them afresh at walk 4).  Limbo's two
     oaths held.
+- **S8 again, on the K shape** (marks in the Was): the same two oaths fell, the same two held.
+- **S13 — merge pairs by key (kind and name) instead of through `resolve()`** (`AthePondMergeHatch`).  Lost both oaths: trout 4
+   came across as an egg gone and a fish new, and carp 3 was refused as an egg AND minted as a fish — one name, two rows.
+    `AthePondMerge` stayed green, as predicted: there both sides hatched alike, so key pairing got it right by luck.
  Restored by checksum before the next code went in.
 
 ### 1.11 A\*\* — As in As, each running its own code — `AthePondVersions`, `AthePondNest`
@@ -249,28 +253,35 @@ A:Pond_Warm                                   %TheACode:Athe_Pond, one layer (th
 
 ```
 w:Athe_Tank
-  TheASeem:rows,walks=5                 a Seem over the tank; its Selection rides .c
-    TheAKind:Egg …                      what it holds
-    TheASphere:eye,tense:Regard         a declared sphere
-    TheAMark:20,dontSnap                the Held tree kept at turn 20 (line snaps, copy doesn't)
-    TheAHeld:Egg,of:chub 9,born=19      Held: a point, re-paired each walk
-      TheARegard:eye,seen=3             Regard: the eye's opinion, ON the point
-    TheAWalk:5                          what the last walk saw: TheABecame / TheANeu / TheAGoner
+  Egg:chub 9,born=19                  Said: the row
+  TheAWas                             K, Was: the compartment's past, there only because something asked
+    TheAMark:20,dontSnap              a holster of row copies kept at turn 20 (line snaps, copies don't)
+  TheASeem:rows,walks=5               a Seem over the tank; its Selection rides .c
+    TheAKind:Egg …                    what it holds
+    TheASphere:eye,tense:Regard       a declared sphere
+    TheAHeld:Egg,of:chub 9,born=19    D, Held: a point — what the machine believes the row is
+      TheARegard:eye,seen=3           O, Regard: the eye's opinion, ON the point
+    TheAWalk:5                        what the last walk saw: TheABecame / TheANeu / TheAGoner
 ```
 - **Held** (`TheA_seem_walk`) is Selection's D sphere over the compartment's rows.  `resolve()` pairs each walk's points
-   with the last walk's by observed identity — the Held trace copies the row's mainkey value as `of:`, so a name holds a
-    point together while its kind and birth change (an egg that hatches is the same point, now a fish).
+   with the last walk's by observed identity.  The Held trace copies the row's sc (its mainkey's value as `of:`, then the
+    rest), and `resolve()` pairs on whatever is least ambiguous — a name holds a point together while its kind and birth
+     change (an egg that hatches is the same point, now a fish), and a nameless row holds by what else it carries.  D%\* is
+      written once and never edited; D/\* is replaced each walk except its epiphytes.  **Owner, 2026-10-21: a kept copy is K,
+       not D** — the first build marked by copying Held; marks now live in the Was.  (A slimmed, identity-only Held was tried
+        and put back: nameless data must pair as well as it can.)
 - **Regard** (`TheA_sphere`, `TheA_regard`): another organ's opinion, an epiphyte on the point.  A paired point takes its
    epiphytes along (`resume_X`); a gone point takes them with it.  **Nobody tidies.**  Nothing is written into an
     undeclared sphere.
-- **Rollback** (`TheA_seem_mark`, `TheA_seem_rollback`): a mark copies the Held tree; rolling back mints the Seem's kinds
-   again from it.  New particles, the same points — Regard survives by the alignment alone, and a point that died after the
+- **Rollback** (`TheA_seem_mark`, `TheA_seem_rollback`): a mark copies the rows into the compartment's `%TheAWas` (the same
+   Was that keeps its Turns); rolling back mints the Seem's kinds again from it.  No mark, no rollback — and that's fine:
+    rollback is for merges and time travel, not error recovery (code shouldn't throw; when it does, restart the run).  New particles, the same points — Regard survives by the alignment alone, and a point that died after the
     mark comes back new (seen afresh).  Turned on from the mark, the tank comes out as it did the first time.
 - **Two identities, both kept.**  A Turn (`%TheATurn`) speaks particle identity (an egg went, a fish came); a Seem's walk
    speaks observed identity (one point became a fish).
 - **Atoms that move — `AthePondMoves`.**  `resolve()` pairs only siblings, so a fish down a stream is a goner under P and a
    newcomer under Q.  A Seem with `%TheAOver` lives on a pond's world and walks the As standing in it, then their rows (the
-    A\*\* tree read by a Seem).  With `%TheALimbo,keep:<n>` every gone point is kept whole, with its epiphytes and `from:`, for
+    A\*\* tree read by a Seem).  With `%TheALimbo,keep:<n>` (the Seem's own K: points it remembers losing) every gone point is kept whole, with its epiphytes and `from:`, for
      n walks; a newcomer with the same key is that point **moved** (`%TheAMoved,from,to`) and gets its epiphytes back.  An
       atom in flight is in neither tank, and limbo says so.  A heuristic, said as one: "same key, soon enough".
 - **What outlives a reload — `AthePondReload`.**  `TheA_persist(A)` says an A as text (folding every `dontSnap` subtree to its
@@ -281,11 +292,12 @@ w:Athe_Tank
        foundation).
 - **Snap policy is `dontSnap`**, already honoured by `snap_H`: the line prints, the subtree folds.
 - **Merge with a base — `AthePondMerge`.**  `TheA_seem_fork` mints a mark into a sibling compartment; both Seems hold the
-   mark, now their base.  `TheA_seem_merge(ours, theirs)` takes theirs as a **candidate** and decides each point against the
-    base: only theirs changed → taken (`%TheATook:changed|new|gone`); only ours → kept; both alike → kept once; both
+   mark, now their base.  `TheA_seem_merge(ours, theirs)` takes theirs as a **candidate** and decides each row (by key) against
+    the base rows: only theirs changed → taken (`%TheATook:changed|new|gone`); only ours → kept; both alike → kept once; both
      differently → **refused**, ours kept, and `%TheARefused,ours,theirs` stays in the snap.  Merging again changes nothing.
-      Points pair across compartments by their key (the mainkey value, or the kind for a one-of-a-kind row) — declared
-       identity used directly, where the organ proper would hand the candidate to `resolve()`.
+      **The candidate is handed to `resolve()`** (`TheA_pair`): each row stands in as its Held sc, so rows pair across
+       compartments by observed identity — the name holds still, the kind doesn't count.  So an egg hatched on one side is
+        one change, and a hatch against a change is refused, never an egg plus a fish of one name (`AthePondMergeHatch`).
 
 ### 1.13 Still to design
 

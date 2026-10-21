@@ -1,6 +1,6 @@
 #!/bin/bash
 # tunnel to an x11vnc serving the REAL desktop (display :0) on the remote host, then open a viewer.
-# Sibling of xvfb-viewer.sh (which targets the headless Xvfb :10 on 5910). Use THIS one to grant
+# Sibling of history/xvfb-viewer.sh (which targets the headless Xvfb :10 on 5910). Use THIS one to grant
 #  FSA: the native "open share" file picker actually behaves on a real desktop, which has the dbus
 #   session + xdg-desktop-portal backend + window focus that the bare Xvfb :10 lacks (there the
 #    picker just flickers and throws AbortError).

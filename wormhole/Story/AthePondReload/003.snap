@@ -26,7 +26,6 @@ Snap:H
           TheAKind:Fish
           TheAKind:Heron
           TheASphere:eye,tense:Regard
-          TheAMark:10,dontSnap,folded
           TheAHeld:Turns,of,count=10
           TheAHeld:EggsNamed,of,count=4
           TheAHeld:Fish,of:minnow 1,born=4
@@ -38,3 +37,5 @@ Snap:H
           TheAHeld:Egg,of:trout 4,born=10
             TheARegard:eye,seen
           TheAWalk:2
+        TheAWas
+          TheAMark:10,dontSnap,folded

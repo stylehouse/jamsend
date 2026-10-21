@@ -424,7 +424,13 @@ export function attachRelay(
 	const DROPCOUNT_MAX = 4096
 	const dropCounts = new Map<string, number>()
 	function noteDeliver(to: string) { if (dropCounts.has(to)) dropCounts.delete(to) }
+	// PROBES ARE EXPECTED TO DROP (owner 2026-10-21: "this … is for friend-online probing right? we should ignore them").
+	//  A body says `swarm_hi` / `pulse` to every friend it remembers to learn who is up — 21 asked, 1 online — so a drop
+	//   there is the answer "not here", not a wedged channel.  Kept out of dropCounts too, so a real frame to that addr
+	//    later still warns as the first.
+	const PROBE_KINDS = /^(swarm_hi|pulse)\b/
 	function warnDrop(where: string, to: string, kind: string, why: string) {
+		if (PROBE_KINDS.test(kind)) return
 		const n = (dropCounts.get(to) ?? 0) + 1
 		if (dropCounts.size >= DROPCOUNT_MAX && !dropCounts.has(to)) {
 			relayLog(`⚠ drop-counter table hit ${DROPCOUNT_MAX} distinct addrs — clearing it; escalation restarts from the first warning`)

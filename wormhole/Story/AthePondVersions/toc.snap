@@ -8,9 +8,7 @@ story:AthePondVersions
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.035
-      sample=0.037,at=1792542850
-      sample=0.039,at=1792542857
+    TimeTotal:beliefs,avg=0.037
       sample=0.031,at=1792542864
       sample=0.044,at=1792543108
       sample=0.038,at=1792543169
@@ -19,9 +17,9 @@ story:AthePondVersions
       sample=0.033,at=1792544236
       sample=0.028,at=1792545210
       sample=0.027,at=1792546051
-    TimeTotal:step,avg=0.007
-      sample=0.007,at=1792542850
-      sample=0.008,at=1792542857
+      sample=0.04,at=1792549214
+      sample=0.048,at=1792550869
+    TimeTotal:step,avg=0.008
       sample=0.006,at=1792542864
       sample=0.009,at=1792543108
       sample=0.008,at=1792543169
@@ -30,6 +28,8 @@ story:AthePondVersions
       sample=0.007,at=1792544236
       sample=0.006,at=1792545210
       sample=0.005,at=1792546051
+      sample=0.008,at=1792549214
+      sample=0.01,at=1792550869
   step,dige:470bf26d6695b619
   step=2,desc:stand two tanks on the one loaded version of the toy — and take turn one,dige:d669b78b6fe34924
   step=3,desc:keep a second version of the toy whose eggs hatch twins — push it to V_Q alone — and turn both to turn 4 in the same step,dige:852c2054d3f70752
