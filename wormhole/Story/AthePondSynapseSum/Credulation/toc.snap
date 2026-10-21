@@ -1,5 +1,5 @@
-Credulation,of_Book:AthePondWireSum
-  run=0,at=1792534128.692,ok,ok_pct,mode:check
+Credulation,of_Book:AthePondSynapseSum
+  run=0,at=1792543477.404,ok,ok_pct,mode:check
     uses:Ghost_N_Peeroleum,dige:ee39d52bb1441684~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:3c432d1f272229a8~g1
@@ -30,6 +30,6 @@ Credulation,of_Book:AthePondWireSum
     uses:Ghost_Story_VoroTesting,dige:ba7f8d826ff81866~g1
     uses:Ghost_Story_Sounditron,dige:0de272b54e59b42d~g1
     uses:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
-    uses:Ghost_A_Theory,dige:6ca9548a7e9a2502~g1
-    uses:Ghost_A_AtheFishTesting,dige:8e0bf9159e807c30~g1
-    uses:Ghost_A_AtheTesting,dige:7bfc60b9e6625ecd~g1
+    uses:Ghost_A_Theory,dige:8287effc2e045fa5~g1
+    uses:Ghost_A_AtheFishTesting,dige:f70099b7c1320793~g1
+    uses:Ghost_A_AtheTesting,dige:ed06bd4357d44d79~g1

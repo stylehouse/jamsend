@@ -4,12 +4,12 @@ Snap:H
       w:AthePondStream
         req:wrangle,eternal,ok
     A:Athe_Tank_P
-      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
       w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
+        TheASynapse:clock,wake:turn,sum:count
           TheAWoke,count=21,pulses=21
-        TheAOutlet:stream
+        TheAAxon:stream
         NamesAs:P
         Turns,count=21
         TheASunpit:turn
@@ -30,12 +30,12 @@ Snap:H
         Egg:P minnow 11,born=19
         Egg:P perch 12,born=19
     A:Athe_Tank_Q
-      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
       w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
+        TheASynapse:clock,wake:turn,sum:count
           TheAWoke,count=12,pulses=12
-        TheAWire:stream,from:Athe_Tank_P,wake:arrive,sum:count
+        TheASynapse:stream,from:Athe_Tank_P,wake:arrive,sum:count
         NamesAs:Q
         Turns,count=12
         TheASunpit:turn

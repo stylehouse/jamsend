@@ -4,14 +4,14 @@ Snap:H
       w:AthePondLoop
         req:wrangle,eternal,ok
     A:Athe_Tank_P7
-      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
       w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
+        TheASynapse:clock,wake:turn,sum:count
           TheAWoke,count=22,pulses=22
-        TheAOutlet:stream
+        TheAAxon:stream
         NamesAs:P
-        TheAWire:stream,from:Athe_Tank_Q7,wake:arrive,sum:count
+        TheASynapse:stream,from:Athe_Tank_Q7,wake:arrive,sum:count
         Turns,count=22
         TheASunpit:turn
           TheAPass:Egg
@@ -34,16 +34,16 @@ Snap:H
         Egg:P bream 16,born=22
         Heron:grey
     A:Athe_Tank_Q7
-      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
       w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
+        TheASynapse:clock,wake:turn,sum:count
           TheAWoke,count=13,pulses=13
-        TheAWire:stream,from:Athe_Tank_P7,wake:arrive,sum:count
+        TheASynapse:stream,from:Athe_Tank_P7,wake:arrive,sum:count
           TheAPulse,swims:P minnow 1,age=18
           TheAPulse,swims:P perch 2,age=18
         NamesAs:Q
-        TheAOutlet:stream
+        TheAAxon:stream
         Turns,count=13
         TheASunpit:turn
           TheAPass:Egg
@@ -57,14 +57,14 @@ Snap:H
         Egg:Q roach 5,born=13
         Egg:Q bream 6,born=13
     A:Athe_Tank_P8
-      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
       w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
+        TheASynapse:clock,wake:turn,sum:count
           TheAWoke,count=22,pulses=22
-        TheAOutlet:stream
+        TheAAxon:stream
         NamesAs:P
-        TheAWire:stream,from:Athe_Tank_Q8,wake:arrive,sum:count
+        TheASynapse:stream,from:Athe_Tank_Q8,wake:arrive,sum:count
         Turns,count=22
         TheASunpit:turn
           TheAPass:Egg
@@ -87,16 +87,16 @@ Snap:H
         Egg:P bream 16,born=22
         Heron:grey
     A:Athe_Tank_Q8
-      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
       w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
+        TheASynapse:clock,wake:turn,sum:count
           TheAWoke,count=13,pulses=13
-        TheAWire:stream,from:Athe_Tank_P8,wake:arrive,sum:count
+        TheASynapse:stream,from:Athe_Tank_P8,wake:arrive,sum:count
           TheAPulse,swims:P minnow 1,age=18
           TheAPulse,swims:P perch 2,age=18
         NamesAs:Q
-        TheAOutlet:stream
+        TheAAxon:stream
         Turns,count=13
         TheASunpit:turn
           TheAPass:Egg

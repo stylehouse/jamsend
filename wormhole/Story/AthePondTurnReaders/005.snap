@@ -8,21 +8,21 @@ Snap:H
         ReadBy:eye,turns:3
         ReadBy:slow,turns:1 2 3
     A:Athe_Tank_Read
-      TheACode:Athe_Tank,variant:plain,dige:78ec7f46d3d86596
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:18dbd5138fe3d46b~g1
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
       self,round=3	{"mung":["age"]}
       w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
+        TheASynapse:clock,wake:turn,sum:count
           TheAWoke,count=13,pulses=13
         TheAWas,keep=2,made=3
           TheAReader:eye,at:3
           TheAReader:slow,at:3
-          TheATurn:2,wire:clock,pulses=3,code_dige:78ec7f46d3d86596
+          TheATurn:2,synapse:clock,pulses=3,code_dige:eb8ceb579a6fe2db
             TheANeu:Fish,of:minnow 1
             TheANeu:Fish,of:perch 2
             TheAGoner:Egg,of:minnow 1
             TheAGoner:Egg,of:perch 2
-          TheATurn:3,wire:clock,pulses=9,code_dige:78ec7f46d3d86596
+          TheATurn:3,synapse:clock,pulses=9,code_dige:eb8ceb579a6fe2db
             TheANeu:Fish,of:carp 3
             TheANeu:Fish,of:trout 4
             TheANeu:Egg,of:roach 5

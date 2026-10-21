@@ -1,32 +1,32 @@
 Snap:H
-  H:AthePondWireSum,Run
-    A:AthePondWireSum
-      w:AthePondWireSum
+  H:AthePondSynapseSum,Run
+    A:AthePondSynapseSum
+      w:AthePondSynapseSum
         req:wrangle,eternal,ok
     A:Athe_Tank_Latest
-      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
       w:Athe_Tank
         TheASunpit:turn
           TheAPass:Egg
           TheAPass:Fish
-        TheAWire:clock,wake:turn,sum:count
+        TheASynapse:clock,wake:turn,sum:count
           TheAWoke,count,pulses
-        TheAWire:fish,on:Fish,wake:heron,sum:latest
+        TheASynapse:fish,on:Fish,wake:heron,sum:latest
         Turns,count
         EggsNamed,count=2
         Egg:minnow 1,born
         Egg:perch 2,born
     A:Athe_Tank_Counted
-      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
       w:Athe_Tank
         TheASunpit:turn
           TheAPass:Egg
           TheAPass:Fish
-        TheAWire:clock,wake:turn,sum:count
+        TheASynapse:clock,wake:turn,sum:count
           TheAWoke,count,pulses
-        TheAWire:fish,on:Fish,wake:heron,sum:count
+        TheASynapse:fish,on:Fish,wake:heron,sum:count
         Turns,count
         EggsNamed,count=2
         Egg:minnow 1,born

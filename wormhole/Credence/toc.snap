@@ -202,6 +202,8 @@ Waft:Credence
     Funkcion:Storying,of_Book:AthePondLoop,born:2026-10-20,synapse:streams both ways between P and Q — two pairs woken in opposite orders,doc:Atheory_design §1.8,desc:with the boundary a loop of synapses needs no order — the pairs come out the same and the first two fish go round for good
     Funkcion:Storying,of_Book:AthePondTurns,born:2026-10-21,synapse:one tank with a clock synapse and a TheAWas history keeping three Turns,doc:Atheory_design §1.9,desc:a Turn by hand — one per synapse woken — names its pulses and code and what changed across it (an egg laid and hatched inside one wake shows only as a fish)
     Funkcion:Storying,of_Book:AthePondTurnReaders,born:2026-10-21,synapse:one tank keeping two Turns with two readers on its history,doc:Atheory_design §1.9,desc:Turns drop when no reader is behind them — the slowest reader holds the history and its catching up lets all but the kept Turns drop
+    Funkcion:Storying,of_Book:AthePondVersions,born:2026-10-21,synapse:two tanks on the toy — a second version of it kept beside the loaded one and pushed to one tank,doc:Atheory_design §1.11,desc:an A runs the version its layer holds — a push waits for the step seam — then one method name runs two versions in one heap and the House never sees the second
+    Funkcion:Storying,of_Book:AthePondNest,born:2026-10-21,synapse:two ponds as As each with a weather and one tank standing in each with no code of its own,doc:Atheory_design §1.11,desc:a tank is served its own pond’s weather and runs its pond’s code — a version pushed to one pond reaches only the tank inside it
   What:Misc,inline
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:GhoghoDrone

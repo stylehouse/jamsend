@@ -35,6 +35,10 @@
 | **history** | a compartment's kept Turns (the Was-sphere, by its working name) | `%TheAWas,keep,made` |
 | **reader** | someone reading the history; a Turn stays until every reader has read it | `%TheAReader:<name>,at:<Turn>`, `TheA_read` |
 | **code push** | new code arriving at the As that hold it, let through by Story between steps | `%TheACodePush`, `%TheACodeTaken` |
+| **A\*\*** | As standing in As.  Where an A stands says which code it runs (its ancestors' layers, then its own) and what it is served (the nearest) | `A:Pond` › `A:P`, `TheA_all`, `TheA_up` |
+| **version** | one arrival of a compiled file, kept by its dige; an A runs the version its layer names | `House.ghost_versions`, `%TheALayer,dige` |
+| **speaking as an A** | the House, but a method name resolves first on the A's own versions | `TheA_as(A)` |
+| **served** | given the nearest matching thing, walking out through the As one stands in — never sideways, never from the top | `TheA_near(A, sc)` |
 
 **Why synapse and axon (2026-10-21, renamed from wire and outlet).**  "The wire" already means the network — the relay,
  the socket, Waft:Ghost/Everything's first What.  A synapse is held by the RECEIVER and says what it wakes and whom it hears;
@@ -78,7 +82,7 @@ Code compiles centrally and is pushed to the As that hold it.  `ghostsHaunt` ann
  and the digest, which every `%TheATurn` now carries as `code_dige`.  The Book pushes the SAME file, so behaviour can't
   change.  Two ways to a visible effect: (a) a live hot-swap, where someone edits the toy mid-run, Story lets it through at
    the next step, and the Turns after it show a new `code_dige` and the new behaviour.  That proves it once, but it can't be
-    a Book with fixtures.  (b) the A** shape (§1.11), so two versions of the code can live in one heap and a Book can push
+    a Book with fixtures.  (b) the A** shape (§1.11, built 2026-10-21 — `AthePondVersions`), so two versions of the code can live in one heap and a Book can push
      the second one.  (b) is the real one.
 
 ### 1.4 The Sunpit, by hand — `AthePondSunpitPassOrder`, `AthePondSunpitFrontier`
@@ -174,12 +178,56 @@ Each oath fell to the sabotage aimed at it, and only to that: the unrelated oath
     and all of Stream (its batch is asked Q first, so even instant delivery reaches Q a batch later; Stream proves the age,
      not the boundary).  Restored by checksum and re-run green.
 
-### 1.11 Still to design
+**A\*\*, sabotaged once each (S5, S6, 2026-10-21).**  Each predicted before it ran; each came out as predicted.
+- **S5 — `TheA_near` from the top** (the first `%Weather` in the House, as a `top_House()` lookup finds a Supervisor).
+   Nest lost only "a tank is served the weather of the pond it stands in": the cold tank found the warm pond's weather
+    and laid (roach 5, bream 6 at turn 13).  Versions and SynapseSum stayed green: no other Book has weather.
+- **S6 — `TheA_as` answers with the flat House** (every A runs whatever was merged last).  Versions lost "after the seam
+   V_Q runs the version it was pushed" and "the twins version lives only on V_Q" (no twin fish anywhere); Nest lost "a
+    version pushed to a pond reaches the tank standing in it".  Still sworn, rightly: the push waiting and V_Q's code row
+     (both bookkeeping, true whatever code runs), and Nest's "a tank with no code of its own runs its pond's" — **a gap**:
+      the pond runs the loaded version, which is also what the flat House runs, so that oath can't tell them apart.  Its
+       step-6 oath (the pushed pond's twins reach its tank) is what really proves heredity.
+ Both restored by checksum and recompiled; the runner needs a reload before its next Book.
+
+### 1.11 A\*\* — As in As, each running its own code — `AthePondVersions`, `AthePondNest`
+
+**Owner, 2026-10-21:** A\*\* is a recursive pile of A (`A/A/A/A`), and where an A stands in it has meaning — what code it
+ runs, what it can reach — a landscape data flows through, which may fit a relational database.  The first meanings built:
+
+```
+A:Pond_Warm                                   %TheACode:Athe_Pond, one layer (the toy)
+  w:Athe_Pond  %Weather:warm                  what the pond serves
+  A:Warm_P                                    %TheACode:Athe_Tank, no layers: dige = digest(the pond's dige)
+    w:Athe_Tank
+```
+- **Code.**  Housing keeps every arriving version of a compiled file by its dige (§2, `ghost_versions`).  `TheA_as(A)` gives
+   the House with method names resolved first on the versions the A's chain holds, its ancestors' layers then its own.  A
+    move's wake named as a string runs that way (`TheA_move(w, 'Athe_Tank_woken')`).  So **a newer version merged flat
+     doesn't reach an A until its push is let through**, and two versions of one file run side by side (`AthePondVersions`:
+      V_Q hatches twins, V_P and the House don't).  A push can name the version (`TheA_code_push_to`, `dige`, `variant`).
+- **Heredity.**  An A standing in an A starts its chain digest from its pond's.  A pond taking a push stands its tanks' code
+   again, so a version pushed to a pond reaches exactly the tanks in it (`AthePondNest`).  An A in an A isn't ticked by any
+    House, so it takes a push directly at the seam instead of by elvis.
+- **Services.**  `TheA_near(A, sc)` walks the A's own world, then each enclosing A's, outward.  A tank asks for `%Weather`;
+   the cold pond's fish don't lay.  This is the cure the MusuRadioAim leak asked for (a Book's run finding the runner's
+    Supervisor via `top_House()`), in miniature.
+- **Still calls by name.**  Nothing looks methods up in a table; `TheA_as` only decides what `this` is.  Class methods of
+   the House stay bound to the House (Svelte `$state` fields are private slots a Proxy can't reach).
+
+**What it resists, and what it doesn't yet.**  Code an A runs through `TheA_as` waits for Story's seam.  Code called flat
+ still hot-swaps mid-step: a Book's routine (`A:<Book>` dispatched by `do_fn_for`, which already has an unused `w_inst`
+  seam), and routines that call the toy directly (`this.Athe_Tank_turn`).  Compiling during a run is safe once those go
+   through their A too.
+
+### 1.12 Still to design
 
 *From the todo's sketch, not yet built:* `%TheATurf` (a leased
  region), the spheres (`%OtherSphere`), the scheduler proper (unwatched work costs nothing), a synapse whose pulses go
   somewhere other than a tank woken by the same batch (across Houses; across a network), the
-  manifest check (Electrode joined with Atlas), and the A** shape that makes an A really run its own code.
+  manifest check (Electrode joined with Atlas).  From A\*\* (§1.11): what an A may READ or WRITE by where it stands (turfs),
+   `from:` resolved by nearness rather than a unique name, a Book's own routine running through its A, and whether the A\*\*
+    tree maps onto relations (the owner's hunch).
 
 ## 2. The foundation ledger — every change Atheory makes to Stuff or Housing
 
@@ -205,6 +253,7 @@ No Atheory adjustments yet.
 
 | date | where | what | why | read by | to undo |
 |---|---|---|---|---|---|
+| 2026-10-21 | `House.ghost_versions`, and four lines in `ghostsHaunt`'s `if (meta) {…}` block | every arriving hash is also kept by its dige: `ghost_versions[meta][dige] = hash`, the newest 8 per file, on the top House | A\*\*: an A runs the version its `%TheALayer` names, so a newer version merged flat doesn't reach it until its push is let through — two versions of one file in one heap | `Ghost/A/Theory.g` (`TheA_as`, `TheA_version_keep`); Books `AthePondVersions`, `AthePondNest` | delete the field and the four lines; `TheA_as` then finds no versions and answers with the flat House |
 | 2026-10-20 | the CodePush line at the end of `ghostsHaunt` (`if (meta) (this as any).TheA_code_push?.(meta)`) | after the merge, every compiled file that arrives is announced to Theory by its `Ghostmeta_*` name | CodePush: code compiles centrally and is pushed to the As that hold it; `ghostsHaunt` is the one place every compiled `.g` arrives | `Ghost/A/Theory.g` (`TheA_code_push`); Book `AthePondCodePush` | delete the line |
 | 2026-10-20 | `House.ghost_origin`, `House.ghost_files`, the `if (meta) {…}` block in `ghostsHaunt` | `ghostsHaunt` finds the one `Ghostmeta_*` key in each eaten hash and records, on the **top** House: `ghost_files[meta]` = the methods this load carried (replaced whole each load, so a deleted method leaves), and `ghost_origin[method] = meta` (the file that last defined it).  A hash with no `Ghostmeta_*` (a hand-written `.svelte` ghost) records nothing.  (The first version kept a `ghost_clobbers` log that only grew; replaced the same day.) | `H.ghosts` is flat, so nothing could say which code an actor runs or where a method came from.  Each compiled `.g` arrives as exactly one hash with exactly one `Ghostmeta_*`, which is also its digest: the one cheap place to learn it. | `Ghost/A/Theory.g` (`TheA_clobbers_stand`); Book `AthePondCode` | delete the two fields and the `if (meta) {…}` block; nothing else depends on them yet |
 | 2026-10-18 | `Wormhole_compose_app_tree` (AppTreeNav root), `Wormhole_mount_creds`, the serve wall (the `.jamsend` segment refusal), the import | the literal `'.jamsend'` became `APP_DATA_DIR` from `src/lib/app_data_dir.ts` | one spelling of the app's private corner; the serve wall and NodeWormholeNav's 0600 must agree on it (§ "The app's own storage") | — (same value) | inline the literal again; the value never changed |

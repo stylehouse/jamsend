@@ -7,15 +7,15 @@ Snap:H
         req:wrangle,eternal,ok
         ReadBy:eye,turns:1
     A:Athe_Tank_Read
-      TheACode:Athe_Tank,variant:plain,dige:78ec7f46d3d86596
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:18dbd5138fe3d46b~g1
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
       w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
+        TheASynapse:clock,wake:turn,sum:count
           TheAWoke,count,pulses
         TheAWas,keep=2,made
           TheAReader:eye,at:1
           TheAReader:slow
-          TheATurn:1,wire:clock,pulses,code_dige:78ec7f46d3d86596
+          TheATurn:1,synapse:clock,pulses,code_dige:eb8ceb579a6fe2db
             TheANeu:Egg,of:minnow 1
             TheANeu:Egg,of:perch 2
         Turns,count

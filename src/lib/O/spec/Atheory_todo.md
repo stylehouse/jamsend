@@ -15,7 +15,7 @@ A capture doc, not yet a plan — the owner has reached for this three times in 
 **Where it stands.**  `Ghost/A/Theory.g` runs compartments: an A holds its code (`%TheACode`), code is pushed and let
  through by Story (CodePush), and a batch is **moves then the boundary** (`TheA_move`, `TheA_send` into `%TheAOutbox`,
   `TheA_boundary`), each move committing a `%TheATurn` to a history that readers trim.  The toy (`AtheFishTesting.g`) is
-   only handlers.  11 `AthePond*` Books are green, and every oath was sabotaged once and bit.  The words are
+   only handlers.  11 `AthePond*` Books were green before the rename, and every oath was sabotaged once and bit.  The words are
     `Atheory_design.md` §0, and what's built is §1.
 
 **Ruled 2026-10-21 (owner):**
@@ -32,17 +32,28 @@ A capture doc, not yet a plan — the owner has reached for this three times in 
 - **Book proofing goes to subagents after a hacking stretch**, not during it: a compile hot-swaps the runner's ghosts and
    breaks a run in flight.
 
+**Ruled 2026-10-21, later (owner):** A\*\* means a recursive pile of A (`A/A/A/A`) whose tree shape means something —
+ what code an A runs, what data it can reach; a landscape that may fit a relational database.  **Versions of DATA wait for
+  Seem**: inventing time on the spheres and how they stitch together comes first, and Seem is probably the only data
+   controller that can roll back (merges; maybe a heuristic layer so atoms can move in the structure).  So finish the CODE
+    end of versioning first.  Order: A\*\* (+ lexical service lookup), then the Book testing, then — while the owner is out —
+     spheres and whatever else, for as long as it goes.
+
+**A\*\* first slice — BUILT and green 2026-10-21; S5/S6 bit as predicted (design §1.10)** (`Atheory_design.md` §1.11): Housing keeps every compiled version
+ (`ghost_versions`); `TheA_as(A)` speaks as an A's own versions; As stand in As (`TheA_all`, `TheA_up`, `TheA_chain`);
+  `TheA_near` serves the nearest; the toy lays only out of the cold (`%Weather` on a pond).  Books `AthePondVersions`
+   (two versions in one heap, the push waits for the seam) and `AthePondNest` (ponds serve weather; a push to a pond
+    reaches only its tanks).
+
 **Next moves, in order:**
-1. **Re-record after the Synapse/Axon rename** (code done, Books not yet): SynapseSum, SynapseOrder, Stream, Loop, Turns,
-    TurnReaders, WakeOrder — their snaps carry `%TheASynapse`/`%TheAAxon`, `synapse:` on pulses and Turns, and renamed
-     oath sentences.  Particle names changed, so `tol:same` won't cover it.  Subagent, pinned runner, after the hacking.
-2. **Resisting CodePush during a run.**  Story already holds pushes for As in a run until the step seam.  What still breaks
-    a run is code NOT loaded through `%TheACode` (the routines, the runner's own ghosts) hot-swapping mid-step.  Once
-     everything a Book runs comes in through `%TheACode`, compiling during a run becomes safe — the push just waits.
-3. A Book that shuffles move order at random every run (the boundary says order can't matter; prove it continuously).
-4. CodePush with a visible effect — needs the A** shape (two versions in one heap) so a Book can push the second.
-5. Owner-gated: candidate 2 "unwatched work costs nothing" (touches Housing); the manifest check (Atlas × Electrode, as
-    ruled above).
+1. *Done 2026-10-21:* all 13 AthePond Books green after A\*\* + the rename; S5 (`TheA_near` from the top) and S6 (`TheA_as`
+    flat) bit as predicted.  Nest's heredity oath is a known gap under S6 (design §1.10).
+2. **Resisting CodePush during a run, the rest:** a Book's own routine through its A (`do_fn_for`'s unused `w_inst` seam —
+    a Housing edit, so a ledger row), and the routines calling the toy through `TheA_as` rather than flat.
+3. **Spheres** — the owner's next theme (§0.1 "Spheres"): Said / Held / Was / Regard, OtherSphere, holsters, snap filtering,
+    and how Seem stitches them; rollback with it.  `%TheAWas` is a Was by hand.
+4. A Book that shuffles move order at random every run; `from:` by nearness; what an A may read by where it stands.
+5. Owner-gated: "unwatched work costs nothing" (Housing); the manifest check (Atlas × Electrode).
 - *Aside, answered:* a hacker room opens only `?W=` (Net/Easy) — Keep reopen is editor-only; the cave reads the map off
    disk instead.  Waft:Everything now lives at `wormhole/Ghost/Everything` (Waft:Ghost/Everything).  Wordland_todo §0.5.
 

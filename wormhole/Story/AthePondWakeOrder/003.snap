@@ -4,10 +4,10 @@ Snap:H
       w:AthePondWakeOrder
         req:wrangle,eternal,ok
     A:Athe_Tank_P1
-      TheACode:Athe_Tank,variant:plain,dige:ca1cd7119b282e45
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:53558d4199bb17c2~g1
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
       w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
+        TheASynapse:clock,wake:turn,sum:count
           TheAWoke,count=9,pulses=9
         Turns,count=9
         TheASunpit:turn
@@ -18,10 +18,10 @@ Snap:H
         Fish:minnow 1,born=4
         Fish:perch 2,born=4
     A:Athe_Tank_Q1
-      TheACode:Athe_Tank,variant:plain,dige:ca1cd7119b282e45
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:53558d4199bb17c2~g1
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
       w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
+        TheASynapse:clock,wake:turn,sum:count
           TheAWoke,count=9,pulses=9
         Turns,count=9
         TheASunpit:turn
@@ -32,10 +32,10 @@ Snap:H
         Fish:minnow 1,born=4
         Fish:perch 2,born=4
     A:Athe_Tank_Q2
-      TheACode:Athe_Tank,variant:plain,dige:ca1cd7119b282e45
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:53558d4199bb17c2~g1
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
       w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
+        TheASynapse:clock,wake:turn,sum:count
           TheAWoke,count=9,pulses=9
         Turns,count=9
         TheASunpit:turn
@@ -46,10 +46,10 @@ Snap:H
         Fish:minnow 1,born=4
         Fish:perch 2,born=4
     A:Athe_Tank_P2
-      TheACode:Athe_Tank,variant:plain,dige:ca1cd7119b282e45
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:53558d4199bb17c2~g1
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
       w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
+        TheASynapse:clock,wake:turn,sum:count
           TheAWoke,count=9,pulses=9
         Turns,count=9
         TheASunpit:turn
@@ -60,10 +60,10 @@ Snap:H
         Fish:minnow 1,born=4
         Fish:perch 2,born=4
     A:Athe_Tank_P3
-      TheACode:Athe_Tank,variant:plain,dige:ca1cd7119b282e45
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:53558d4199bb17c2~g1
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
       w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
+        TheASynapse:clock,wake:turn,sum:count
           TheAWoke,count=9,pulses=9
         Turns,count=9
         TheASunpit:turn
@@ -74,10 +74,10 @@ Snap:H
         Fish:minnow 1,born=4
         Fish:perch 2,born=4
     A:Athe_Tank_Q3
-      TheACode:Athe_Tank,variant:plain,dige:ca1cd7119b282e45
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:53558d4199bb17c2~g1
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
       w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
+        TheASynapse:clock,wake:turn,sum:count
           TheAWoke,count=9,pulses=9
         NamesFrom:Athe_Tank_P3
         Turns,count=9
@@ -88,10 +88,10 @@ Snap:H
         Fish:carp 3,born=4
         Fish:trout 4,born=4
     A:Athe_Tank_Q4
-      TheACode:Athe_Tank,variant:plain,dige:ca1cd7119b282e45
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:53558d4199bb17c2~g1
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
       w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
+        TheASynapse:clock,wake:turn,sum:count
           TheAWoke,count=9,pulses=9
         NamesFrom:Athe_Tank_P4
         Turns,count=9
@@ -102,10 +102,10 @@ Snap:H
         Fish:minnow 1,born=4
         Fish:perch 2,born=4
     A:Athe_Tank_P4
-      TheACode:Athe_Tank,variant:plain,dige:ca1cd7119b282e45
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:53558d4199bb17c2~g1
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
       w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
+        TheASynapse:clock,wake:turn,sum:count
           TheAWoke,count=9,pulses=9
         EggsNamed,count=4
         Turns,count=9

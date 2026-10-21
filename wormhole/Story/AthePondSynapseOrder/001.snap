@@ -1,5 +1,5 @@
 Snap:H
-  H:AthePondWireOrder,Run
-    A:AthePondWireOrder
-      w:AthePondWireOrder
+  H:AthePondSynapseOrder,Run
+    A:AthePondSynapseOrder
+      w:AthePondSynapseOrder
         req:wrangle,eternal,ok

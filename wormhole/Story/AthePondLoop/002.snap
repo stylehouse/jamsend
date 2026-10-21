@@ -4,14 +4,14 @@ Snap:H
       w:AthePondLoop
         req:wrangle,eternal,ok
     A:Athe_Tank_P7
-      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
       w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
+        TheASynapse:clock,wake:turn,sum:count
           TheAWoke,count=10,pulses=10
-        TheAOutlet:stream
+        TheAAxon:stream
         NamesAs:P
-        TheAWire:stream,from:Athe_Tank_Q7,wake:arrive,sum:count
+        TheASynapse:stream,from:Athe_Tank_Q7,wake:arrive,sum:count
         Turns,count=10
         TheASunpit:turn
           TheAPass:Egg
@@ -23,14 +23,14 @@ Snap:H
         Egg:P carp 3,born=10
         Egg:P trout 4,born=10
     A:Athe_Tank_Q7
-      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
       w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
+        TheASynapse:clock,wake:turn,sum:count
           TheAWoke,count,pulses
-        TheAWire:stream,from:Athe_Tank_P7,wake:arrive,sum:count
+        TheASynapse:stream,from:Athe_Tank_P7,wake:arrive,sum:count
         NamesAs:Q
-        TheAOutlet:stream
+        TheAAxon:stream
         Turns,count
         TheASunpit:turn
           TheAPass:Egg
@@ -40,14 +40,14 @@ Snap:H
         Egg:Q minnow 1,born
         Egg:Q perch 2,born
     A:Athe_Tank_P8
-      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
       w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
+        TheASynapse:clock,wake:turn,sum:count
           TheAWoke,count=10,pulses=10
-        TheAOutlet:stream
+        TheAAxon:stream
         NamesAs:P
-        TheAWire:stream,from:Athe_Tank_Q8,wake:arrive,sum:count
+        TheASynapse:stream,from:Athe_Tank_Q8,wake:arrive,sum:count
         Turns,count=10
         TheASunpit:turn
           TheAPass:Egg
@@ -59,14 +59,14 @@ Snap:H
         Egg:P carp 3,born=10
         Egg:P trout 4,born=10
     A:Athe_Tank_Q8
-      TheACode:Athe_Tank,variant:plain,dige:5fc7a8971389292c
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:8e0bf9159e807c30~g1
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
       w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
+        TheASynapse:clock,wake:turn,sum:count
           TheAWoke,count,pulses
-        TheAWire:stream,from:Athe_Tank_P8,wake:arrive,sum:count
+        TheASynapse:stream,from:Athe_Tank_P8,wake:arrive,sum:count
         NamesAs:Q
-        TheAOutlet:stream
+        TheAAxon:stream
         Turns,count
         TheASunpit:turn
           TheAPass:Egg

@@ -4,16 +4,16 @@ Snap:H
       w:AthePondTurns
         req:wrangle,eternal,ok
     A:Athe_Tank_Was
-      TheACode:Athe_Tank,variant:plain,dige:1a50625d4fd90658
-        TheALayer:Ghost/A/AtheFishTesting.g,dige:7e188b9c2a616285~g1
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
       w:Athe_Tank
-        TheAWire:clock,wake:turn,sum:count
+        TheASynapse:clock,wake:turn,sum:count
           TheAWoke,count=4,pulses=4
         TheAWas,keep=3,made=2
-          TheATurn:1,wire:clock,pulses,code_dige:1a50625d4fd90658
+          TheATurn:1,synapse:clock,pulses,code_dige:eb8ceb579a6fe2db
             TheANeu:Egg,of:minnow 1
             TheANeu:Egg,of:perch 2
-          TheATurn:2,wire:clock,pulses=3,code_dige:1a50625d4fd90658
+          TheATurn:2,synapse:clock,pulses=3,code_dige:eb8ceb579a6fe2db
             TheANeu:Fish,of:minnow 1
             TheANeu:Fish,of:perch 2
             TheAGoner:Egg,of:minnow 1

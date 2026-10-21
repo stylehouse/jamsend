@@ -9,33 +9,35 @@ story:AthePondTurns
         means,drop
   TimeSpool
     TimeTotal:beliefs,avg=0.03
-      sample=0.029,at=1792494339
-      sample=0.026,at=1792494350
-      sample=0.026,at=1792494358
-      sample=0.023,at=1792494366
       sample=0.021,at=1792494534
       sample=0.024,at=1792494613
       sample=0.03,at=1792494838
       sample=0.052,at=1792533534
       sample=0.04,at=1792534306
+      sample=0.033,at=1792542999
+      sample=0.022,at=1792543006
+      sample=0.018,at=1792543014
+      sample=0.034,at=1792543135
+      sample=0.021,at=1792543198
     TimeTotal:step,avg=0.005
-      sample=0.005,at=1792494339
-      sample=0.004,at=1792494350
-      sample=0.004,at=1792494358
-      sample=0.004,at=1792494366
       sample=0.003,at=1792494534
       sample=0.004,at=1792494613
       sample=0.005,at=1792494838
       sample=0.009,at=1792533534
       sample=0.007,at=1792534306
+      sample=0.005,at=1792542999
+      sample=0.004,at=1792543006
+      sample=0.003,at=1792543014
+      sample=0.006,at=1792543135
+      sample=0.003,at=1792543198
   step,dige:e02906163baa1dda
-  step=2,desc:stand a tank that keeps its last three Turns — and wake one clock pulse,dige:c209fb1f199eebad
-  step=3,desc:3 clock pulses — woken together,dige:fd9759509bace6d5
+  step=2,desc:stand a tank that keeps its last three Turns — and wake one clock pulse,dige:d733d00b89a421f1
+  step=3,desc:3 clock pulses — woken together,dige:870b489fc058f457
     Assertion:three-clock-pulses-woken,sentence:three clock pulses woken together make one Turn — while the pond clock moves three
     Assertion:a-turn-says-what,sentence:a Turn says what changed across it — the two eggs gone and the two fish they hatched into
     Assertion:every-turn-names-the,sentence:every Turn names the code it ran under — the digest its A holds
-  step=4,desc:9 clock pulses — woken together,dige:bb037833aba91eb0
+  step=4,desc:9 clock pulses — woken together,dige:00490cbb78d53881
     Assertion:eggs-laid-and-hatched,sentence:eggs laid and hatched inside one wake show only as the fish they became — a Turn is what changed across it
-  step=5,desc:one clock pulse,dige:a1586544a2419063
-  step=6,desc:one clock pulse,dige:8e39693ac64ac2e3
+  step=5,desc:one clock pulse,dige:788f2b9f178bd6a1
+  step=6,desc:one clock pulse,dige:3c9c4df12d0f5ddb
     Assertion:a-turn-that-changes,sentence:a Turn that changes nothing is still a Turn — and only the last three are kept

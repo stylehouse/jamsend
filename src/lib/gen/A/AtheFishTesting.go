@@ -17,7 +17,7 @@ const NAMES = ['minnow', 'perch', 'carp', 'trout', 'roach', 'bream', 'tench', 'd
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheFishTesting(): string { return '2d53470001af61ed~g1' },
+    Ghostmeta_Ghost_A_AtheFishTesting(): string { return 'f70099b7c1320793~g1' },
 
 // AtheFishTesting.g — the TOY that Atheory's Books test: Athe_Tank, a small pond with its own turn clock (and its own code digest, which moves on every edit — EntropyArrest §11 mutes that).
 //
@@ -33,6 +33,17 @@ const NAMES = ['minnow', 'perch', 'carp', 'trout', 'roach', 'bream', 'tench', 'd
 // the tank world's own tick: nothing.  The Run House ticks every world it holds; this one moves only when turned.
 Athe_Tank(A, w) {
     return
+
+},
+// a pond: an A that tanks stand in (A**).  Its world holds what it serves them — %Weather:warm|cold — and it never moves
+Athe_Pond(A, w) {
+    return
+
+},
+// the weather a tank is in: the nearest %Weather walking out through the As it stands in (Theory.g TheA_near).  A tank
+//  standing in no pond has none, and lays as it always has; in a cold pond fish don't lay
+Athe_Tank_weather(w) {
+    return this.TheA_near(this.TheA_A(w), { Weather: 1 })?.sc.Weather
 
 },
 // one turn of the tank.  Time is the tank's own: Turns,count is how many turns it has taken, and every egg and fish
@@ -115,7 +126,7 @@ Athe_Tank_fish(w, fish, turn) {
     if (age >= OLD_AT) {
         w.drop(fish)
         if (w.o({ TheAAxon: 'stream' }).length) this.TheA_send(w, 'stream', { swims: fish.sc.Fish, age })
-    } else if (age >= GROWN_AT && age % LAY_EVERY === 0 && this.Athe_Tank_count(w) < CROWDED) {
+    } else if (age >= GROWN_AT && age % LAY_EVERY === 0 && this.Athe_Tank_count(w) < CROWDED && this.Athe_Tank_weather(w) !== 'cold') {
         w.i({ Egg: this.Athe_Tank_name(w), born: turn })
     }
 
@@ -152,7 +163,7 @@ Athe_Tank_heron(w) {
 
 // one batch of one tank: its move, then the boundary (what it sent lands — on its own synapses too, for the next wake)
 Athe_Tank_wake(w) {
-    this.TheA_move(w, (w, synapse, pulse) => this.Athe_Tank_woken(w, synapse, pulse))
+    this.TheA_move(w, 'Athe_Tank_woken')
     this.TheA_boundary([this.TheA_A(w)?.sc.A])
 
 },
@@ -160,7 +171,7 @@ Athe_Tank_wake(w) {
 Athe_Tanks_wake(names) {
     for (const name of names) {
         let t = this.Athe_Tank_of(name)
-        if (t) this.TheA_move(t, (w, synapse, pulse) => this.Athe_Tank_woken(w, synapse, pulse))
+        if (t) this.TheA_move(t, 'Athe_Tank_woken')
     }
     this.TheA_boundary(names)
 
@@ -169,12 +180,12 @@ Athe_Tanks_wake(names) {
 //  of a batch (AthePondSynapseOrder)
 Athe_Tank_move(name) {
     let t = this.Athe_Tank_of(name)
-    if (t) this.TheA_move(t, (w, synapse, pulse) => this.Athe_Tank_woken(w, synapse, pulse))
+    if (t) this.TheA_move(t, 'Athe_Tank_woken')
 
 },
-// the tank world of an A, by its name
+// the tank world of an A, by its name — wherever it stands (a tank may stand in a pond, A**)
 Athe_Tank_of(name) {
-    return this.o({ A: name })[0]?.o({ w: 'Athe_Tank' })[0]
+    return this.TheA_all(this).find(A => A.sc.A === name)?.o({ w: 'Athe_Tank' })[0]
 
 },
 // what a synapse wakes, named here and called by name — the wiring is data, the code that runs is not

@@ -1,5 +1,5 @@
 Snap:H
-  H:AthePondWireSum,Run
-    A:AthePondWireSum
-      w:AthePondWireSum
+  H:AthePondSynapseSum,Run
+    A:AthePondSynapseSum
+      w:AthePondSynapseSum
         req:wrangle,eternal,ok

@@ -920,4 +920,207 @@ AthePondTurnReaders_witness(w):
         this.story_swear(w, 'the slowest reader holds the history — when it catches up it reads all three and all but the last two drop')
     }
 //#endregion
+//#region A** helpers — a second version of the toy, and turning a tank as its own A
+
+// the twins version of the toy: the loaded AtheFishTesting.g with one method swapped, kept by its own dige beside the loaded
+//  one (Theory.g TheA_version_keep) and never merged flat — so only an A that is pushed it runs it.  Returns its dige
+AthePond_twins_version():
+    let path = 'Ghost/A/AtheFishTesting.g'
+    let live = this.Lies_ghost_get(path)
+    let v1 = live ? this.TheA_version_of(path, live) : null
+    if (!v1) return null
+    let dige = this.TheA_digest(live + ' twins') + '~twins'
+    let meta = this.Lang_ghostmeta_name(path)
+    let v2 = { ...v1, Athe_Tank_egg: this.AthePond_twin_egg }
+    v2[meta] = () => dige
+    return this.TheA_version_keep(path, dige, v2)
+
+// the twins version's Athe_Tank_egg: an egg old enough hatches into two fish, the second named "<name> twin".  (3 is the
+//  toy's HATCH_AT; this method lives here, in the routines, and reaches a tank only through the version it's kept in)
+AthePond_twin_egg(w, egg, turn):
+    if (turn - egg.sc.born >= 3) {
+        let name = egg.sc.Egg
+        w.drop(egg)
+        w.i({ Fish: name, born: turn })
+        w.i({ Fish: name + ' twin', born: turn })
+    }
+
+// turn a tank, speaking as its own A (Theory.g TheA_as), until it has taken `upto` turns
+AthePond_turn_as(name, upto):
+    let A = this.TheA_all(this).find(A => A.sc.A === name)
+    let tank = A?.o({ w: 'Athe_Tank' })[0]
+    if (!tank) return
+    let me = this.TheA_as(A)
+    while ((tank.o({ Turns: 1 })[0]?.sc.count || 0) < upto) me.Athe_Tank_turn(tank)
+
+// how many of a tank's fish are twins, and how many it holds
+AthePond_twins(name):
+    let tank = this.Athe_Tank_of(name)
+    let fish = tank ? tank.o({ Fish: 1 }) : []
+    return { fish: fish.length, twins: fish.filter(f => / twin$/.test(String(f.sc.Fish))).length, eggs: tank ? tank.o({ Egg: 1 }).length : 0 }
+//#endregion
+
+//#region the test routine — Book AthePondVersions
+// two versions of one file in one heap.  V_P and V_Q both run the toy.  Step 2 stands them (turn 1).  Step 3 keeps a second
+//  version of the toy (its eggs hatch twins), pushes it to V_Q alone, and turns both to turn 4 in the same step — the push
+//   waits for Story, so both hatch singles.  Step 4: Story lets it through at the seam (an elvis on V_Q's world, so it's
+//    read at the step after).  Step 5: both turn to 13 — V_Q's eggs hatch twins, V_P's don't, and the House's own
+//     Athe_Tank_egg is still the loaded one.
+AthePondVersions(A,w):
+    w oai %req:wrangle,eternal
+        await &AthePondVersions_drive,w,req
+        req%ok = 1
+
+async AthePondVersions_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 5
+    let n = run?.c.step_n
+    this.AthePondVersions_witness(w)
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.AthePondVersions_stand(w)
+        if (n === 3) this.AthePondVersions_push(w)
+        if (n === 4) this.AthePondVersions_let(w)
+        if (n === 5) this.AthePondVersions_turn(w)
+    }
+    this.AthePondVersions_witness(w)
+
+AthePondVersions_stand(w):
+    i %desc:'stand two tanks on the one loaded version of the toy — and take turn one'
+    if (typeof this.TheA_as !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
+        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
+        return
+    }
+    for (const name of ['V_P', 'V_Q']) this.AthePond_tank_stand({ name })
+
+AthePondVersions_push(w):
+    i %desc:'keep a second version of the toy whose eggs hatch twins — push it to V_Q alone — and turn both to turn 4 in the same step'
+    let dige = this.AthePond_twins_version()
+    let Q = this.o({ A: 'V_Q' })[0]
+    if (!dige || !Q) {
+        w.i({ log: 'no loaded version of the toy to make a second from' })
+        return
+    }
+    this.TheA_code_push_to(this, Q, 'Ghost/A/AtheFishTesting.g', dige, 'twins')
+    for (const name of ['V_P', 'V_Q']) this.AthePond_turn_as(name, 4)
+
+AthePondVersions_let(w):
+    i %desc:'Story lets the push through at the seam'
+
+AthePondVersions_turn(w):
+    i %desc:'both tanks turn to turn 13 — and read the two code rows'
+    for (const name of ['V_P', 'V_Q']) this.AthePond_turn_as(name, 13)
+
+AthePondVersions_witness(w):
+    let P = this.o({ A: 'V_P' })[0]
+    let Q = this.o({ A: 'V_Q' })[0]
+    if (!P || !Q) return
+    let n = this.c.run?.c.step_n ?? 0
+    let path = 'Ghost/A/AtheFishTesting.g'
+    let p = this.AthePond_twins('V_P')
+    let q = this.AthePond_twins('V_Q')
+    let waiting = Q.o({ TheACodePush: path }).length
+    let pc = P.o({ TheACode: 1 })[0]
+    let qc = Q.o({ TheACode: 1 })[0]
+    let live = this.Lies_ghost_get(path)
+    let v1 = live ? this.TheA_version_of(path, live) : null
+    if (n === 3 && waiting && q.fish === 2 && !q.twins && p.fish === 2) {
+        this.story_swear(w, 'a version pushed in the middle of a step waits — V_Q hatched singles like V_P while it waited')
+    }
+    if (n >= 5 && !waiting && q.twins > 0 && !p.twins && p.fish > 2) {
+        this.story_swear(w, 'after the seam V_Q runs the version it was pushed — its eggs hatch twins and V_P’s never do — one method name and two versions in one heap')
+    }
+    if (n >= 5 && v1 && this.Athe_Tank_egg === v1.Athe_Tank_egg && this.TheA_as(P).Athe_Tank_egg === v1.Athe_Tank_egg && this.TheA_as(Q).Athe_Tank_egg !== v1.Athe_Tank_egg) {
+        this.story_swear(w, 'the twins version lives only on V_Q — the House and V_P still run the loaded file')
+    }
+    if (n >= 5 && qc?.sc.variant === 'twins' && pc?.sc.variant === 'plain' && qc.sc.dige && pc.sc.dige && qc.sc.dige !== pc.sc.dige) {
+        this.story_swear(w, 'V_Q’s code row says which version it runs — variant twins and a digest of its own')
+    }
+//#endregion
+
+//#region the test routine — Book AthePondNest
+// As standing in As.  Two ponds, each an A holding the toy's code and a world with its %Weather; one tank stands in each,
+//  with no code of its own.  Step 2 stands them (turn 1).  Step 3 turns both to 13: a tank asks for the weather and gets its
+//   own pond's — the warm pond's fish lay, the cold pond's don't.  Step 4 reads the code rows: a tank runs its pond's code.
+//    Step 5 pushes the twins version to the warm pond alone (it waits); step 6 lets it through and turns both to 19 — the
+//     warm tank hatches twins, the cold tank's code doesn't move
+AthePondNest(A,w):
+    w oai %req:wrangle,eternal
+        await &AthePondNest_drive,w,req
+        req%ok = 1
+
+async AthePondNest_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 6
+    let n = run?.c.step_n
+    this.AthePondNest_witness(w)
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.AthePondNest_stand(w)
+        if (n === 3) this.AthePondNest_turns(w, 13, 'turn both tanks to turn 13 — each asks its pond for the weather')
+        if (n === 4) this.AthePondNest_read(w)
+        if (n === 5) this.AthePondNest_push(w)
+        if (n === 6) this.AthePondNest_turns(w, 19, 'Story lets the push through at the seam — both tanks turn to turn 19')
+    }
+    this.AthePondNest_witness(w)
+
+AthePondNest_stand(w):
+    i %desc:'stand a warm pond and a cold pond — each an A with the toy’s code — and one tank in each with no code of its own — turn one'
+    if (typeof this.TheA_as !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
+        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
+        return
+    }
+    for (const [pond, weather, tank] of [['Pond_Warm', 'warm', 'Warm_P'], ['Pond_Cold', 'cold', 'Cold_P']]) {
+        let old = this.o({ A: pond })[0]
+        if (old) this.drop(old)
+        let P = this.TheA_stand(this, pond, ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Pond')
+        P.i({ w: 'Athe_Pond' }).i({ Weather: weather })
+        let T = this.TheA_stand(P, tank, [], null, 'Athe_Tank')
+        T.i({ w: 'Athe_Tank' })
+        this.AthePond_turn_as(tank, 1)
+    }
+
+AthePondNest_turns(w, upto, desc):
+    w.i({ desc })
+    for (const name of ['Warm_P', 'Cold_P']) this.AthePond_turn_as(name, upto)
+
+AthePondNest_read(w):
+    i %desc:'read the code rows — the ponds’ and the tanks’'
+
+AthePondNest_push(w):
+    i %desc:'push the twins version to the warm pond alone — it waits for Story'
+    let dige = this.AthePond_twins_version()
+    let P = this.o({ A: 'Pond_Warm' })[0]
+    if (!dige || !P) {
+        w.i({ log: 'no loaded version of the toy to make a second from' })
+        return
+    }
+    this.TheA_code_push_to(this, P, 'Ghost/A/AtheFishTesting.g', dige, 'twins')
+
+AthePondNest_witness(w):
+    let PW = this.o({ A: 'Pond_Warm' })[0]
+    let PC = this.o({ A: 'Pond_Cold' })[0]
+    let TW = PW?.o({ A: 'Warm_P' })[0]
+    let TC = PC?.o({ A: 'Cold_P' })[0]
+    if (!TW || !TC) return
+    let n = this.c.run?.c.step_n ?? 0
+    let path = 'Ghost/A/AtheFishTesting.g'
+    let warm = this.AthePond_twins('Warm_P')
+    let cold = this.AthePond_twins('Cold_P')
+    let code = (A) => A.o({ TheACode: 1 })[0]
+    let live = this.Lies_ghost_get(path)
+    let v1 = live ? this.TheA_version_of(path, live) : null
+    if (n === 3 && warm.eggs + warm.fish > 2 && cold.fish === 2 && !cold.eggs && this.TheA_near(TW, { Weather: 1 })?.sc.Weather === 'warm' && this.TheA_near(TC, { Weather: 1 })?.sc.Weather === 'cold') {
+        this.story_swear(w, 'a tank is served the weather of the pond it stands in — the warm pond’s fish lay and the cold pond’s never do')
+    }
+    if (n === 4 && !code(TW)?.o({ TheALayer: 1 }).length && code(TW)?.sc.dige === this.TheA_digest(code(PW)?.sc.dige) && v1 && this.TheA_as(TW).Athe_Tank_egg === v1.Athe_Tank_egg) {
+        this.story_swear(w, 'a tank with no code of its own runs its pond’s — its chain digest is its pond’s one link down')
+    }
+    if (n === 5 && PW.o({ TheACodePush: path }).length && !warm.twins) {
+        this.story_swear(w, 'a version pushed to a pond waits on the pond until Story lets it through')
+    }
+    if (n >= 6 && !PW.o({ TheACodePush: path }).length && warm.twins > 0 && !cold.twins && code(TW)?.sc.dige === this.TheA_digest(code(PW)?.sc.dige) && code(TC)?.sc.dige === this.TheA_digest(code(PC)?.sc.dige) && code(TW)?.sc.dige !== code(TC)?.sc.dige) {
+        this.story_swear(w, 'a version pushed to a pond reaches the tank standing in it and no other — the warm tank hatches twins — the cold tank’s code never moves')
+    }
+//#endregion
 // (ends on a comment — a .g must not end on a method-final brace)

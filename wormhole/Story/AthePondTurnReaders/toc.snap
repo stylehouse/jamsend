@@ -4,24 +4,32 @@ story:AthePondTurnReaders
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.025
-      sample=0.024,at=1792494779
+    TimeTotal:beliefs,avg=0.021
       sample=0.023,at=1792494791
       sample=0.019,at=1792494806
       sample=0.021,at=1792494817
       sample=0.03,at=1792533544
       sample=0.032,at=1792534316
-    TimeTotal:step,avg=0.005
-      sample=0.005,at=1792494779
+      sample=0.023,at=1792543023
+      sample=0.019,at=1792543029
+      sample=0.014,at=1792543036
+      sample=0.016,at=1792543139
+      sample=0.017,at=1792543203
+    TimeTotal:step,avg=0.004
       sample=0.005,at=1792494791
       sample=0.004,at=1792494806
       sample=0.004,at=1792494817
       sample=0.006,at=1792533544
       sample=0.006,at=1792534316
+      sample=0.005,at=1792543023
+      sample=0.004,at=1792543029
+      sample=0.003,at=1792543036
+      sample=0.003,at=1792543139
+      sample=0.003,at=1792543203
   step,dige:6194012f1ce777c9
-  step=2,desc:stand a tank that keeps two Turns with two readers — eye reads every step and slow waits — and wake one pulse,dige:ad39fa8350270836
-  step=3,desc:3 clock pulses woken together — eye reads,dige:7d3dd3bc01ac2f75
-  step=4,desc:9 clock pulses woken together — eye reads,dige:b8e38d244e77451b
+  step=2,desc:stand a tank that keeps two Turns with two readers — eye reads every step and slow waits — and wake one pulse,dige:f213a8267a71b73b
+  step=3,desc:3 clock pulses woken together — eye reads,dige:6cbe8eb3d83752d8
+  step=4,desc:9 clock pulses woken together — eye reads,dige:1aef82cb129106ac
     Assertion:a-turn-a-reader,sentence:a Turn a reader has not read stays — though the history keeps only two
-  step=5,desc:slow reads at last,dige:e7aecf78fb24d612
+  step=5,desc:slow reads at last,dige:3b73ee34b8ab8658
     Assertion:the-slowest-reader-holds,sentence:the slowest reader holds the history — when it catches up it reads all three and all but the last two drop

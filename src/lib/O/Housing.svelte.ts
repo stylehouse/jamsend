@@ -567,6 +567,9 @@ export class House extends StorableHousing {
     //  re-haunt, so a method deleted from a file leaves it, and a method two files define shows up in both lists — a
     //   clobber is current state (Theory.g reads it as %TheAClobber), not a log that only grows.
     ghost_files: Record<string, string[]> = {}
+    // each file's arrived versions: Ghostmeta_* name → dige → the whole hash that dige came as (the newest 8).
+    //  Lets an A run the version its %TheALayer names while a newer one is merged flat (Theory.g TheA_as).
+    ghost_versions: Record<string, Record<string, Record<string, Function>>> = {}
 
     // ghosts must have arrived before we are truly started
     override start_checks(): (boolean | null)[] {
@@ -673,6 +676,14 @@ export class House extends StorableHousing {
             const methods = Object.keys(hash).filter(k => k !== meta)
             top.ghost_files[meta] = methods
             for (const k of methods) top.ghost_origin[k] = meta
+            // every version of the file that has arrived, by its dige — so an A can go on running the version it
+            //  holds after a newer one lands flat (Theory.g TheA_as).  The newest few per file; plain, not $state.
+            const dige = String(hash[meta]?.() ?? '')
+            const vs = top.ghost_versions[meta] ??= {}
+            delete vs[dige]
+            vs[dige] = hash
+            const keys = Object.keys(vs)
+            for (const k of keys.slice(0, Math.max(0, keys.length - 8))) delete vs[k]
         }
         // merge that into everything
         for (const h of this.all_House) {

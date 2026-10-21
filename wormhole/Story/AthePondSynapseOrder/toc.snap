@@ -8,24 +8,34 @@ story:AthePondSynapseOrder
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.06
+    TimeTotal:beliefs,avg=0.059
       sample=0.07,at=1792533233
       sample=0.079,at=1792533244
       sample=0.058,at=1792533256
       sample=0.033,at=1792533674
       sample=0.06,at=1792534274
+      sample=0.048,at=1792542928
+      sample=0.042,at=1792542935
+      sample=0.066,at=1792542943
+      sample=0.064,at=1792543123
+      sample=0.067,at=1792543184
     TimeTotal:step,avg=0.01
       sample=0.012,at=1792533233
       sample=0.013,at=1792533244
       sample=0.01,at=1792533256
       sample=0.006,at=1792533674
       sample=0.01,at=1792534274
-  step,dige:36ec3a16f4ffb23f
-  step=2,desc:stand two pairs — P streaming into Q nine turns behind — and wake each pair whole,dige:c0249c3e5d8a389d
-  step=3,desc:12 clock pulses each — pair 5 woken whole and in pair 6 only P moves,dige:587062b93c021e88
-  step=4,desc:pair 6 — Q moves while what P sent waits in its outbox,dige:73b95015f4a0eb11
+      sample=0.008,at=1792542928
+      sample=0.007,at=1792542935
+      sample=0.011,at=1792542943
+      sample=0.011,at=1792543123
+      sample=0.011,at=1792543184
+  step,dige:524147803a9f96c6
+  step=2,desc:stand two pairs — P streaming into Q nine turns behind — and wake each pair whole,dige:054afef3987e9e9c
+  step=3,desc:12 clock pulses each — pair 5 woken whole and in pair 6 only P moves,dige:bc1f96aa1daee7ec
+  step=4,desc:pair 6 — Q moves while what P sent waits in its outbox,dige:3a02b2a9320b9bd2
     Assertion:between-moves-what-a,sentence:between moves what a tank sent waits in its own outbox — nobody hears it before the boundary
-  step=5,desc:pair 6 — the boundary,dige:4949f25e03ed12e7
+  step=5,desc:pair 6 — the boundary,dige:e2daa9a9d2e99d88
     Assertion:a-batch-taken-one,sentence:a batch taken one move at a time — Story pausing between the moves — comes out the same as one taken whole
-  step=6,desc:one clock pulse each — pair 5 woken Q first and pair 6 P first,dige:5e1625d8502702e4
+  step=6,desc:one clock pulse each — pair 5 woken Q first and pair 6 P first,dige:34ff1281f7d57032
     Assertion:woken-in-opposite-orders,sentence:woken in opposite orders the two pairs still come out the same — the fish arrive in both

@@ -1,0 +1,36 @@
+story:AthePondNest
+  Styles
+  Plan
+  Opt
+    For
+  EntropyArrest
+    Entcase:Self_round
+      lematch,self,round
+        means,drop
+  TimeSpool
+    TimeTotal:beliefs,avg=0.065
+      sample=0.076,at=1792542876
+      sample=0.03,at=1792542886
+      sample=0.068,at=1792542893
+      sample=0.027,at=1792543113
+      sample=0.035,at=1792543174
+      sample=0.143,at=1792543324
+      sample=0.073,at=1792543465
+    TimeTotal:step,avg=0.011
+      sample=0.013,at=1792542876
+      sample=0.005,at=1792542886
+      sample=0.011,at=1792542893
+      sample=0.004,at=1792543113
+      sample=0.006,at=1792543174
+      sample=0.024,at=1792543324
+      sample=0.012,at=1792543465
+  step,dige:51f8eda66156a011
+  step=2,desc:stand a warm pond and a cold pond — each an A with the toy’s code — and one tank in each with no code of its own — turn one,dige:1efd136ec2845a0a
+  step=3,desc:turn both tanks to turn 13 — each asks its pond for the weather,dige:f39cbe6a7ab90405
+    Assertion:a-tank-is-served,sentence:a tank is served the weather of the pond it stands in — the warm pond’s fish lay and the cold pond’s never do
+  step=4,desc:read the code rows — the ponds’ and the tanks’,dige:f39cbe6a7ab90405
+    Assertion:a-tank-with-no,sentence:a tank with no code of its own runs its pond’s — its chain digest is its pond’s one link down
+  step=5,desc:push the twins version to the warm pond alone — it waits for Story,dige:6f1d09e2d452aa20
+    Assertion:a-version-pushed-to,sentence:a version pushed to a pond waits on the pond until Story lets it through
+  step=6,desc:Story lets the push through at the seam — both tanks turn to turn 19,dige:db79054b0c92148b
+    Assertion:a-version-pushed-to-2,sentence:a version pushed to a pond reaches the tank standing in it and no other — the warm tank hatches twins — the cold tank’s code never moves
