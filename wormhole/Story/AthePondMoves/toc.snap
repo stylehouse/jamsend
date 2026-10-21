@@ -1,0 +1,33 @@
+story:AthePondMoves
+  Styles
+  Plan
+  Opt
+    For
+  EntropyArrest
+    Entcase:Self_round
+      lematch,self,round
+        means,drop
+  TimeSpool
+    TimeTotal:beliefs,avg=0.091
+      sample=0.09,at=1792545029
+      sample=0.064,at=1792545051
+      sample=0.076,at=1792545062
+      sample=0.093,at=1792545351
+      sample=0.134,at=1792546102
+    TimeTotal:step,avg=0.012
+      sample=0.011,at=1792545029
+      sample=0.008,at=1792545051
+      sample=0.01,at=1792545062
+      sample=0.012,at=1792545351
+      sample=0.017,at=1792546102
+  step,dige:cec35210d274612b
+  step=2,desc:stand a pond with P nine turns ahead streaming into Q inside it — a Seem over the tanks — one batch — walk and look,dige:63549434d617c18d
+  step=3,desc:11 clock pulses each — one batch — walk and look,dige:3697ffd1c530d236
+  step=4,desc:one clock pulse each — one batch — walk and look,dige:3e7baa2f7ae6b1f9
+    Assertion:a-fish-swimming-between,sentence:a fish swimming between tanks is in neither — the Seem keeps it in limbo with what the eye thought of it
+  step=5,desc:one clock pulse each — one batch — walk and look,dige:154533b803ef39b2
+    Assertion:a-fish-that-swims,sentence:a fish that swims from P to Q is one point that moved — the eye’s regard went with it
+  step=6,desc:one clock pulse each — one batch — walk and look,dige:4de48a769d713209
+  step=7,desc:one clock pulse each — one batch — walk and look,dige:46311e1fc5aea28a
+  step=8,desc:one clock pulse each — one batch — walk and look,dige:1868dd2e29cc6874
+    Assertion:what-never-comes-back,sentence:what never comes back drops out of limbo two walks on — gone for good

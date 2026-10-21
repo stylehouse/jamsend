@@ -325,8 +325,9 @@ class SelectionItself extends Travel {
                             // so T%D,bD and any D.c.T
                             b.c.T.sc.bD = a
                             // before a
-                            let z = a.c.T.sc.bD
-                            if (z?.c.T.sc.bD) {
+                            // a D that came back from text (a reload) has no Travel of its last walk: its back-chain starts there
+                            let z = a.c.T?.sc.bD
+                            if (z?.c.T?.sc.bD) {
                                 // can forget x to save memory
                                 z.c.T.sc.bD = null
                             }

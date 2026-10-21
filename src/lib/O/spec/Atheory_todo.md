@@ -50,7 +50,10 @@ A capture doc, not yet a plan — the owner has reached for this three times in 
     flat) bit as predicted.  Nest's heredity oath is a known gap under S6 (design §1.10).
 2. **Resisting CodePush during a run, the rest:** a Book's own routine through its A (`do_fn_for`'s unused `w_inst` seam —
     a Housing edit, so a ledger row), and the routines calling the toy through `TheA_as` rather than flat.
-3. **Spheres** — the owner's next theme (§0.1 "Spheres"): Said / Held / Was / Regard, OtherSphere, holsters, snap filtering,
+3. *Started 2026-10-21 (§0.5, design §1.12):* a Seem over a compartment — Held points, Regard on them, rollback to a mark,
+    a fork + three-way merge against the mark, atoms that move (limbo), and what outlives a reload (`AthePondSeem`,
+     `AthePondMerge`, `AthePondMoves`, `AthePondReload`; S7–S10, S12 sabotaged).  Still open there: a Was read as the point's past, the merge handing its candidate to `resolve()`, and the known-answer case (the heard mirror).
+    **Spheres** — the owner's next theme (§0.1 "Spheres"): Said / Held / Was / Regard, OtherSphere, holsters, snap filtering,
     and how Seem stitches them; rollback with it.  `%TheAWas` is a Was by hand.
 4. A Book that shuffles move order at random every run; `from:` by nearness; what an A may read by where it stands.
 5. Owner-gated: "unwatched work costs nothing" (Housing); the manifest check (Atlas × Electrode).
@@ -633,6 +636,152 @@ Every change Atheory makes to Stuff or Housing (and beside them) is collected in
 
 **Unsure: dated narrative comments.**  Long dated comment-essays keep the why, but rot silently (the "un-buffered cyto"
  claim was false for six weeks).  The rationale is worth keeping; the changelog may belong in the docs.
+
+## 0.5 Spheres, invented on Seem (2026-10-21) — the first slice, `AthePondSeem`
+
+*The owner's theme for while they're out: "inventing time on Seem to understand the new Spheres… Seem are probably the
+ only data controllers capable of Rollback."  This is what reading the machinery turned up, and the smallest slice that
+  puts it on the toy.  Candidate throughout.*
+
+### What Seem already is (read, not guessed)
+
+- **A Seem is a `Selection` kept on a particle** (`LangHold.svelte` `i_Seem`/`o_Seem`): each walk runs `Se.process` over
+   a source `n**` and rebuilds a mirror tree, the **D sphere** (Held), under a top D.  Its walk hooks ride `Seem.sc.opt`
+    and the Selection rides `Seem.sc.Se`, so a `%Seem` is snap-hostile; Voro and Repli both say so in comments.
+- **Pairing is observed, not declared.**  Each D level is a `replace()`, and `resolve()` pairs every new D with the old
+   D it IS by how unambiguous their shared key:values are (`Stuff.svelte.ts` `resolve`).  The owner chose this for Repli
+    (2026-08-05: "identity OBSERVED, not declared").  So **what the Held trace copies off a row decides what counts as the
+     same thing**: copy a name and an egg that hatches is the same point; copy only the mainkey and it isn't.
+- **Spheres already hang off D, and already follow it.**  A paired D takes the old D's children (`resume_X`), but the
+   next `replace()` only rebuilds children matching `trace_sc`.  Everything else under a D point (LE's `%Understandable`
+    U-sphere is the one live case) is an **epiphyte**: it rides along while its point is paired and goes when the point
+     goes.  This is the case study's rule 2 ("layers attach to D; teardown is the alignment's job") — it's built, used
+      once, and never named.
+- **Snap filtering already exists.**  Any particle with `dontSnap:1` prints its own line and folds its subtree
+   (`Story.svelte` `snap_H`).  "Spheres hidden by default" is a default, not a new mechanism.
+
+### The slice (BUILT and green 2026-10-21; S7–S9 bit as predicted)
+
+```
+w:Athe_Tank
+  Turns,count=20  EggsNamed,count=10  Egg:chub 9,born=19  Fish:carp 3,born=13 …   ← Said: the rows
+  TheASeem:rows,walks=4                      ← a Seem over this compartment; its Selection is on .c
+    TheAKind:Turns  TheAKind:Egg …           ← what it holds (one row per kind, never a packed string)
+    TheASphere:eye,tense=Regard              ← a declared sphere: nothing writes into an undeclared one
+    TheAHeld:Egg,of=chub 9,born=19           ← Held: one point per row, re-paired every walk
+      TheARegard:eye,seen=4                  ← an epiphyte: the eye's opinion of this point
+    TheAWalk:4                               ← what the last walk saw happen
+      TheABecame:Fish,of=minnow 1,was=Egg    ← one point, another kind (the Turn would say one went and one came)
+      TheAGone:Fish,of=carp 3
+    TheAMark:20,dontSnap=1                   ← the Held tree kept at turn 20 — the line snaps, the copy doesn't
+```
+
+- **Held** (`TheA_seem_walk`): the Seem walks the kinds it holds, depth-first.  A Held point is the row's own sc under
+   `TheAHeld:<mainkey>,of:<its value>`, so a name pairs a point across walks whatever else changes.  Async (`Se.process`
+    is), so a routine awaits it between turns; a move never walks.
+- **Regard** (`TheA_sphere`, `TheA_regard`): another organ's opinion, written on the point.  The toy's "other organ" is
+   the Book's **eye**, which marks each point it first sees with the walk it saw it on.
+- **Rollback** (`TheA_seem_mark`, `TheA_seem_rollback`): a mark keeps a copy of the Held tree.  Rolling back drops every
+   row of the Seem's kinds and mints them again from the mark, in order.  The particles are new; the next walk pairs them
+    to the same points, so **Regard survives a rollback by the alignment alone** — and a point that died after the mark
+     comes back as a new one, which the eye sees afresh.  The compartment says how much of it to re-synthesise (its
+      kinds), not a transaction over everything — §0.1 "Rollback".
+
+### The Book's oaths, and what each sabotage should break (predicted before running)
+
+| step | turn | oath |
+|---|---|---|
+| 3 | 4 | an egg that hatches is the same point, now a fish — the eye's regard of the egg is still on it |
+| 4 | 20→24 | a fish the heron eats takes the eye's regard with it — nobody tidied |
+| 5 | back to 20 | rolled back to the mark the tank holds just what it held then — an egg that had hatched is an egg again, the same point, still regarded — the eaten fish come back as new points, seen afresh |
+| 6 | 24 again | turned on from the mark the tank comes out as it did the first time — the heron eats the same four fish |
+
+- **S7, the walk pairs strictly** (`resolve_strict`, a changed value is a new point): steps 3 and 5 lose their oaths; 4 and 6 hold.
+- **S8, rollback forgets `EggsNamed`**: 5 and 6 lose theirs (the names drift); 3 and 4 hold.
+- **S9, regard kept beside the points, keyed by name** (`TheARegard:eye,of:<name>` on the Seem — the `.c`-by-name
+   smear, in particles; the witness reads through `TheA_regard_of`, so it follows): steps 4 and 5 lose theirs (the eaten
+    fish's regards linger, and come back with their old walk when the fish do); 3 and 6 hold (a name survives hatching).
+
+### Merge with a base — `AthePondMerge` (BUILT and green 2026-10-21; S10 bit as predicted)
+
+Rollback is a merge with a past self where the past wins everything.  A real merge has three sides, and the mark is the
+ third: **the base**.  Every row is a point in all three (paired by its name), so a merge is decided point by point:
+
+| ours vs base | theirs vs base | result |
+|---|---|---|
+| same | same | keep |
+| same | changed / gone / new | take theirs |
+| changed / gone / new | same | keep ours |
+| changed | changed alike | keep (once — no double) |
+| changed | changed differently | **refuse**: keep ours, and a `%TheARefused:<kind>,of,why` row says both sides and stays in the snap |
+
+- `TheA_seem_fork(w, name, label, into)` mints a mark into another compartment and stands the same Seem there, carrying
+   the mark as its base.  The two are now siblings: a crew's two bodies, a friend's copy.
+- `TheA_seem_merge(ours, theirs, name, label)` takes theirs as a **candidate**, never the truth: it walks both, pairs the
+   three Held trees, and accords each point by the table.  Refusals snap with their reason (the merge organ's rule 4).
+- Pairing by `of` across compartments is declared identity used directly, a shortcut.  The organ proper would hand the
+   candidate tree to `resolve()` as the case study says ("don't build another").  Fine for the toy, since the two agree here.
+- **The Book:** stand M and turn it to 10, mark it "fork", and fork N from it.  Both turn to 13, the same machine on the
+   same rows, so they agree.  A hand catches perch 2 from N.  Two hands change carp 3's birth differently on each side.
+    Merge N into M: perch 2 is gone from M, carp 3 keeps M's birth with a refusal saying both, and the hatched eggs aren't
+     doubled.  Merging again changes nothing.
+- **Sabotage S10: a two-way merge** (no base, theirs wins wherever they differ).  Predicted (corrected before running —
+   the oaths are coupled): the refusal oath falls (carp 3 takes N's birth), and so do "only N's change comes across" (carp is
+    taken too) and "merging again" (no refusal is said again).  "Kept once" stands.
+
+### Atoms that move in the structure — limbo, `AthePondMoves` (the owner's "a heuristic layer so atoms can move") — BUILT and green 2026-10-21; S12 bit as predicted
+
+`resolve()` pairs a point only among its siblings.  So a row that leaves one place and turns up in another — a fish down a
+ stream from P to Q — is a goner under P and, a walk or two later, a newcomer under Q.  Two things make it one point:
+- **A Seem over a pond** (`%TheAOver` on the Seem): it lives on the pond's world and walks the As standing in that pond's A,
+   then their rows — `TheAHeld:A,of:S_P` › `TheAHeld:Fish,of:P minnow 1`.  The A\*\* tree, read by a Seem: what a pond can
+    see of its tanks.
+- **Limbo** (`%TheALimbo,keep:<n>`, `TheA_seem_limbo`): every gone point is kept, whole with its epiphytes, for n walks, with
+   `from:` (the place it left).  A newcomer with the same key within that time is the point **moved**: it gets its
+    epiphytes back and the walk says `%TheAMoved,from,to`.  What never comes back drops out — gone for good.  An atom in
+     flight (a pulse on the synapse) is in neither tank, and limbo is where the Seem says so.
+- **It's a heuristic, said as one:** "same key, soon enough" is a guess, like `resolve()`'s unambiguity threshold.  The keep
+   is how long the Seem is willing to believe a thing might come back.  Sabotages: limbo off (keep 0 drops a point the walk
+    it arrives, so all three oaths fall — coupled, not run); **S12**, a move that forgets the epiphytes — predicted: only
+     step 5's falls (the moved fish arrive unregarded and the eye sees them afresh).
+
+### What outlives a reload — `AthePondReload` (BUILT and green 2026-10-21, after two Selection fixes)
+
+A reload keeps what is particles and loses `.c`.  `TheA_persist(A)` says an A as text and `TheA_thaw(H, snap)` stands it
+ again; in between, a Seem's Selection and every D's Travel are gone.  So the test of "is this sphere real state" is
+  simple: **does it come back?**
+- **Held and Regard come back**, because they're particles.  The first walk after the reload pairs the thawed points with a
+   fresh Selection and finds nothing new.  An egg that hatches after it is still the same point, with the regard from
+    before the reload.
+- **A mark declared not to persist (`dontSnap`) comes back as its line alone, `folded:1`.**  Rolling back to it is refused,
+   with `%TheARefused:rollback,why`, and the tank is left untouched.  A sphere's snap policy *is* its lifetime.
+- **Found on the way, first:** Selection itself wasn't reload-safe.  `pairs_fn` read the old D's Travel (`a.c.T.sc.bD`), so the
+   first walk over a thawed D sphere threw and the Seem never walked again (the first recording baked the error into steps
+    3–5).  One `?` fixes it (design §2, beside the foundation).  Every Seem in the app (LE, Repli, Voro) has only ever
+     walked D spheres it made in the same session; this is the first that came back from text.
+- **Found on the way, second:** `enWaft` ignores a node's `dontSnap` (only Story's `snap_H` honours it), so Theory folds first.  Any
+   stash that persists through `enWaft` today keeps what was meant to be folded.  Worth a look when the House stash meets
+    spheres (`no-FSA persistence`: the stash is a phone's only durable home).
+- **Still not a K sphere:** the case study's Was (Repli's last-sent) has to persist AND be read as the point's past.  What
+   this proves is the floor under it: put it on a point as a particle and it survives, and leave it on `.c` and it doesn't.
+
+### What this leaves open
+
+- **For the owner — OtherSphere vs on the point.**  §0.1 ruled K and O live in `%OtherSphere:'<label>'/*`, one per organ, and
+   §0.2 sketched entries there `of:<D id>`.  The slice put Regard ON the point instead (an epiphyte), with `%TheASphere` as the
+    per-organ declaration, because teardown then comes free: S9 (regard kept beside the points, by name) leaked stale
+     opinions exactly as the `.c` smear did.  A per-organ tree keyed by point would need its own sweep, and limbo/moves would
+      need to carry it.  Keep the declaration per organ and the entries on the point, or move them out?
+- **Was, per point.**  `bD` (the point last walk) is all a walk keeps; the case study's K (Repli's last-sent, kept across
+   a reload) wants a declared Was sphere that snaps.  The compartment's own Was is `%TheAWas` (its Turns), so a point's
+    Was needs another name.
+- **The two identities.**  A Turn (`%TheATurn`) speaks particle identity (an egg went, a fish came); a Seem speaks
+   observed identity (one point became a fish).  Both are true; which a reader wants is the reader's choice.  Maybe a
+    Turn should carry the Seem's reading when there is one.
+- **Merge.**  Rollback is a merge with a past self where the past wins everything.  The organ's next case (the case study's
+   point (c)) is the heard mirror: a sibling's Mag as a candidate, paired by `resolve()`, accorded by a policy.
+- **Cost.**  A mirror node per row per walk; the D sphere re-mints every walk.  Fine for a toy; the engine choice
+   (one node per point carrying a was-map) is still open.
 
 ## The load-list inventory — DONE 2026-09-05 (the "when it starts" step below, paid)
 

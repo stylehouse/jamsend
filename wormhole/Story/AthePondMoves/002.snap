@@ -1,0 +1,70 @@
+Snap:H
+  H:AthePondMoves,Run
+    A:AthePondMoves
+      w:AthePondMoves
+        req:wrangle,eternal,ok
+    A:Pond_S
+      TheACode:Athe_Pond,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
+      w:Athe_Pond
+        TheASeem:stream,walks
+          TheAKind:Egg
+          TheAKind:Fish
+          TheAOver:As
+          TheALimbo,keep=2
+          TheASphere:eye,tense:Regard
+          TheAHeld:A,of:S_P
+            TheAHeld:Fish,of:P minnow 1,born=4
+              TheARegard:eye,seen
+            TheAHeld:Fish,of:P perch 2,born=4
+              TheARegard:eye,seen
+            TheAHeld:Egg,of:P carp 3,born=10
+              TheARegard:eye,seen
+            TheAHeld:Egg,of:P trout 4,born=10
+              TheARegard:eye,seen
+          TheAHeld:A,of:S_Q
+            TheAHeld:Egg,of:Q minnow 1,born
+              TheARegard:eye,seen
+            TheAHeld:Egg,of:Q perch 2,born
+              TheARegard:eye,seen
+          TheAWalk:1
+            TheANeu:Fish,of:P minnow 1,in:A:S_P
+            TheANeu:Fish,of:P perch 2,in:A:S_P
+            TheANeu:Egg,of:P carp 3,in:A:S_P
+            TheANeu:Egg,of:P trout 4,in:A:S_P
+            TheANeu:Egg,of:Q minnow 1,in:A:S_Q
+            TheANeu:Egg,of:Q perch 2,in:A:S_Q
+      A:S_P
+        TheACode:Athe_Tank,variant:plain,dige:bcd731eae9f21d68
+          TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
+        w:Athe_Tank
+          TheASynapse:clock,wake:turn,sum:count
+            TheAWoke,count=10,pulses=10
+          TheAAxon:stream
+          NamesAs:P
+          Turns,count=10
+          TheASunpit:turn
+            TheAPass:Egg
+            TheAPass:Fish
+            TheAPass:Heron
+          EggsNamed,count=4
+          Fish:P minnow 1,born=4
+          Fish:P perch 2,born=4
+          Egg:P carp 3,born=10
+          Egg:P trout 4,born=10
+      A:S_Q
+        TheACode:Athe_Tank,variant:plain,dige:bcd731eae9f21d68
+          TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
+        w:Athe_Tank
+          TheASynapse:clock,wake:turn,sum:count
+            TheAWoke,count,pulses
+          TheASynapse:stream,from:S_P,wake:arrive,sum:count
+          NamesAs:Q
+          Turns,count
+          TheASunpit:turn
+            TheAPass:Egg
+            TheAPass:Fish
+            TheAPass:Heron
+          EggsNamed,count=2
+          Egg:Q minnow 1,born
+          Egg:Q perch 2,born

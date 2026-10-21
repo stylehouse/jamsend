@@ -39,6 +39,10 @@
 | **version** | one arrival of a compiled file, kept by its dige; an A runs the version its layer names | `House.ghost_versions`, `%TheALayer,dige` |
 | **speaking as an A** | the House, but a method name resolves first on the A's own versions | `TheA_as(A)` |
 | **served** | given the nearest matching thing, walking out through the As one stands in — never sideways, never from the top | `TheA_near(A, sc)` |
+| **Seem** | a controller over a compartment: it walks the rows of the kinds it holds and keeps a point for each | `%TheASeem:<name>` with `%TheAKind` rows; `TheA_seem_walk` |
+| **point** (Held) | the Seem's reading of one row, paired walk to walk by what holds still (its name), so it survives a change of kind | `%TheAHeld:<kind>,of:<name>` |
+| **Regard** | another organ's opinion of a point, kept ON the point, so it lives and dies with it | `%TheARegard:<sphere>` under a point; `%TheASphere:<name>,tense:Regard` declares it |
+| **mark**, **rollback** | a kept copy of the points; rolling back mints the rows again from it, and the points re-pair | `%TheAMark:<label>,dontSnap`; `TheA_seem_rollback` |
 
 **Why synapse and axon (2026-10-21, renamed from wire and outlet).**  "The wire" already means the network — the relay,
  the socket, Waft:Ghost/Everything's first What.  A synapse is held by the RECEIVER and says what it wakes and whom it hears;
@@ -190,6 +194,24 @@ Each oath fell to the sabotage aimed at it, and only to that: the unrelated oath
        step-6 oath (the pushed pond's twins reach its tank) is what really proves heredity.
  Both restored by checksum and recompiled; the runner needs a reload before its next Book.
 
+**Spheres, sabotaged once each (S7–S9, 2026-10-21, `AthePondSeem`).**  All three predicted in `Atheory_todo` §0.5 before
+ they ran; all three came out as predicted, and the oaths not aimed at kept swearing.
+- **S7 — the walk pairs strictly** (`resolve_strict`: a changed value is a new point).  Lost: "an egg that hatches is the same
+   point" (the hatch became a goner Egg and a neu Fish) and "rolled back… the same point, still regarded".  Even `Turns`
+    became a new point every walk.
+- **S8 — rollback forgets `EggsNamed`.**  Lost: the rollback oath and "turned on from the mark… the same" — the eggs of turn
+   22 were named tench 17… instead of carp 13….
+- **S9 — regard kept beside the points, keyed by name** (the `.c`-by-name smear, in particles).  Lost: "a fish the heron
+   eats takes the eye's regard with it" (the regards of minnow 1, perch 2 and the eaten fish lingered) and the rollback oath
+    (the eaten fish came back with their old regard).
+- **S10 — a two-way merge** (`AthePondMerge`; no base, theirs taken wherever it differs).  Lost: the refusal (carp 3 came
+   across with N's birth, as a `TheATook:changed`), "only N's change comes across" (two takes, not one) and "merging again" (no
+    refusal to say again).  Still sworn: "kept once".  The three oaths are coupled; predicted so before running.
+- **S12 — a move that forgets the epiphytes** (`AthePondMoves`).  Lost: only "a fish that swims from P to Q is one point that
+   moved — the eye's regard went with it" (the travellers arrived unregarded; the eye saw them afresh at walk 4).  Limbo's two
+    oaths held.
+ Restored by checksum before the next code went in.
+
 ### 1.11 A\*\* — As in As, each running its own code — `AthePondVersions`, `AthePondNest`
 
 **Owner, 2026-10-21:** A\*\* is a recursive pile of A (`A/A/A/A`), and where an A stands in it has meaning — what code it
@@ -220,10 +242,55 @@ A:Pond_Warm                                   %TheACode:Athe_Pond, one layer (th
   seam), and routines that call the toy directly (`this.Athe_Tank_turn`).  Compiling during a run is safe once those go
    through their A too.
 
-### 1.12 Still to design
+### 1.12 Spheres on a Seem — `AthePondSeem`
+
+**Owner, 2026-10-21:** versions of data wait for inventing time on Seem and the spheres; Seem is probably the only data
+ controller that can roll back.  The first slice (`Theory.g`, "Seem"; working notes in `Atheory_todo.md` §0.5):
+
+```
+w:Athe_Tank
+  TheASeem:rows,walks=5                 a Seem over the tank; its Selection rides .c
+    TheAKind:Egg …                      what it holds
+    TheASphere:eye,tense:Regard         a declared sphere
+    TheAMark:20,dontSnap                the Held tree kept at turn 20 (line snaps, copy doesn't)
+    TheAHeld:Egg,of:chub 9,born=19      Held: a point, re-paired each walk
+      TheARegard:eye,seen=3             Regard: the eye's opinion, ON the point
+    TheAWalk:5                          what the last walk saw: TheABecame / TheANeu / TheAGoner
+```
+- **Held** (`TheA_seem_walk`) is Selection's D sphere over the compartment's rows.  `resolve()` pairs each walk's points
+   with the last walk's by observed identity — the Held trace copies the row's mainkey value as `of:`, so a name holds a
+    point together while its kind and birth change (an egg that hatches is the same point, now a fish).
+- **Regard** (`TheA_sphere`, `TheA_regard`): another organ's opinion, an epiphyte on the point.  A paired point takes its
+   epiphytes along (`resume_X`); a gone point takes them with it.  **Nobody tidies.**  Nothing is written into an
+    undeclared sphere.
+- **Rollback** (`TheA_seem_mark`, `TheA_seem_rollback`): a mark copies the Held tree; rolling back mints the Seem's kinds
+   again from it.  New particles, the same points — Regard survives by the alignment alone, and a point that died after the
+    mark comes back new (seen afresh).  Turned on from the mark, the tank comes out as it did the first time.
+- **Two identities, both kept.**  A Turn (`%TheATurn`) speaks particle identity (an egg went, a fish came); a Seem's walk
+   speaks observed identity (one point became a fish).
+- **Atoms that move — `AthePondMoves`.**  `resolve()` pairs only siblings, so a fish down a stream is a goner under P and a
+   newcomer under Q.  A Seem with `%TheAOver` lives on a pond's world and walks the As standing in it, then their rows (the
+    A\*\* tree read by a Seem).  With `%TheALimbo,keep:<n>` every gone point is kept whole, with its epiphytes and `from:`, for
+     n walks; a newcomer with the same key is that point **moved** (`%TheAMoved,from,to`) and gets its epiphytes back.  An
+      atom in flight is in neither tank, and limbo says so.  A heuristic, said as one: "same key, soon enough".
+- **What outlives a reload — `AthePondReload`.**  `TheA_persist(A)` says an A as text (folding every `dontSnap` subtree to its
+   line plus `folded:1`, since `enWaft` ignores the flag) and `TheA_thaw` stands it again: every `.c` is gone.  Held points
+    and their Regard come back; the first walk with a fresh Selection finds nothing new, and a hatch after it is still the
+     same point.  A mark that doesn't persist comes back folded, and rolling back to it is refused (`%TheARefused:rollback,why`).
+      This Book found that **Selection itself wasn't reload-safe** (its back-chain read `.c.T` off old Ds; §2, beside the
+       foundation).
+- **Snap policy is `dontSnap`**, already honoured by `snap_H`: the line prints, the subtree folds.
+- **Merge with a base — `AthePondMerge`.**  `TheA_seem_fork` mints a mark into a sibling compartment; both Seems hold the
+   mark, now their base.  `TheA_seem_merge(ours, theirs)` takes theirs as a **candidate** and decides each point against the
+    base: only theirs changed → taken (`%TheATook:changed|new|gone`); only ours → kept; both alike → kept once; both
+     differently → **refused**, ours kept, and `%TheARefused,ours,theirs` stays in the snap.  Merging again changes nothing.
+      Points pair across compartments by their key (the mainkey value, or the kind for a one-of-a-kind row) — declared
+       identity used directly, where the organ proper would hand the candidate to `resolve()`.
+
+### 1.13 Still to design
 
 *From the todo's sketch, not yet built:* `%TheATurf` (a leased
- region), the spheres (`%OtherSphere`), the scheduler proper (unwatched work costs nothing), a synapse whose pulses go
+ region), the spheres beyond Held and Regard (a Was that outlives a reload, §1.12), the scheduler proper (unwatched work costs nothing), a synapse whose pulses go
   somewhere other than a tank woken by the same batch (across Houses; across a network), the
   manifest check (Electrode joined with Atlas).  From A\*\* (§1.11): what an A may READ or WRITE by where it stands (turfs),
    `from:` resolved by nearness rather than a unique name, a Book's own routine running through its A, and whether the A\*\*
@@ -262,6 +329,7 @@ No Atheory adjustments yet.
 
 | date | where | what | why |
 |---|---|---|---|
+| 2026-10-21 | `src/lib/Selection.svelte.ts`, `SelectionItself.process`'s `pairs_fn` (the `a && b` branch) | `a.c.T.sc.bD` → `a.c.T?.sc.bD`, and `z?.c.T.sc.bD` → `z?.c.T?.sc.bD` (the point two walks back) | a D sphere thawed from text (`TheA_thaw`, Book `AthePondReload`) has no Travel on `.c`, so the first walk after a reload threw in `pairs_fn` (and, with only the first `?`, the second walk did) and the Seem never walked again — Selection assumed every old D was walked in this session.  Read by every Selection (Seem, Repli, LE, Voro, Story's snap); the old behaviour for a walked D is unchanged.  To undo: drop the two `?` |
 | 2026-10-20 | `src/lib/O/Story.svelte`: the editor's pause-verify forgive (`run.sc.check_snap`) and the post-run forgive sweep (`run.sc.sweeping`) | each now sets `caveat` only when `entropy_forgive_muted` says the step needed more than `tol:same` | the two other places a step gets forgiven still caveated a digest-only move; `snap_step` already didn't.  Not yet exercised live (every Athe Book passes on the inline path) |
 | 2026-10-20 | EntropyArrest `tol:same` (`EntropyArrest.md` §11): `Text.svelte` (`spay_same_pairs`, `spay_graft`'s `same` arg, `spay_within`), `Hovercraft.svelte` (`entropy_forgive`, `entropy_same_of`, `entropy_same_note`, `entropy_forgive_muted`), `Story.svelte` (`story_drive` makes `w.c.dige_same`; `snap_step`'s inline check notes exact steps and mutes; the GhostList read rule's `dige:` spayer `any` → `same`) | a `dige:` may change only as a consistent substitution over the run; a step forgiven by that alone passes with no caveat | every code edit moved the toy's digest in every Athe snap, costing a hand re-baseline of every Athe Book; and `tol:any` let a real digest move pass as noise.  Touches EVERY Book (the spayer reaches every `dige:` line) |
 | 2026-10-20 | `src/lib/O/Story.svelte`, the step seam right after `run.c.step_n = n` (`TheA_code_pushes_let`) | at the start of every step, the As in the run take in any code pushed to them while they waited | Story mediates how code comes through a Book (owner): a push to an A in a run waits on it as `%TheACodePush` until the next step, so a snap shows exactly when code changes |

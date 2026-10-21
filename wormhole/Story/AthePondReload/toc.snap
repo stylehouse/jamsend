@@ -1,0 +1,27 @@
+story:AthePondReload
+  Styles
+  Plan
+  Opt
+    For
+  EntropyArrest
+    Entcase:Self_round
+      lematch,self,round
+        means,drop
+  TimeSpool
+    TimeTotal:beliefs,avg=0.038
+      sample=0.045,at=1792545734
+      sample=0.036,at=1792545758
+      sample=0.032,at=1792545775
+    TimeTotal:step,avg=0.007
+      sample=0.009,at=1792545734
+      sample=0.007,at=1792545758
+      sample=0.006,at=1792545775
+  step,dige:3ca761805094b4da
+  step=2,desc:stand a tank with a Seem and the eye — turn to 10 — walk and look — mark it,dige:92bb5bfcd6192457
+  step=3,desc:reload the tank — said as text — dropped — stood again from the text — walk,dige:0a1d4c604cd8201e
+    Assertion:a-tank-stood-again,sentence:a tank stood again from its own text has every point and the eye’s regard — the first walk after finds nothing new — only .c was lost
+    Assertion:a-mark-that-does,sentence:a mark that does not persist comes back as its line alone — saying it was folded
+  step=4,desc:turn to 13 — two eggs hatch — walk and look,dige:95bc1c19abb00afc
+    Assertion:after-the-reload-an,sentence:after the reload an egg that hatches is still the same point — the eye’s regard from before the reload on it
+  step=5,desc:roll back to the mark,dige:57457ba6f406b1eb
+    Assertion:rolling-back-to-a,sentence:rolling back to a mark that was not kept is refused with its reason — the tank is untouched

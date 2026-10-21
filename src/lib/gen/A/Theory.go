@@ -4,13 +4,14 @@
     import { onMount } from "svelte"
 
 import { sha256_hex } from "$lib/Common"
+import { Selection } from "$lib/Selection.svelte"
 
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_Theory(): string { return '6257974102113912~g1' },
+    Ghostmeta_Ghost_A_Theory(): string { return '3ce374d58d8a65b1~g1' },
 
 // Theory.g — Atheory's first organ: an A says which code it runs (spec/Atheory_todo.md §0.1 and §0.2).
 //
@@ -481,6 +482,318 @@ TheA_read(w, name) {
     this.TheA_was_trim(was)
     return read
 },
+//#region Seem — spheres over a compartment (Atheory_todo §0.5)
+//  A Seem keeps a Held point for each row of the kinds it holds, re-paired every walk by Selection's resolve() — identity
+//   OBSERVED, by what the Held trace copies off the row (its mainkey's value, as of:), so an egg that hatches is the same
+//    point, now a fish.  Anything else hung on a point (a %TheARegard) is an epiphyte: it rides along while the point is
+//     paired and goes when the point goes, so nobody tidies.  A mark keeps the Held tree; rolling back mints the rows again
+//      from it, and the next walk pairs the new particles to the same points.
+//
+//      w:Athe_Tank
+//        TheASeem:rows,walks=4
+//          TheAKind:Egg …                     what it holds, one row per kind
+//          TheASphere:eye,tense=Regard        a declared sphere; nothing is written into an undeclared one
+//          TheAMark:20,dontSnap=1             the Held tree kept at a moment (the line snaps, the copy doesn't)
+//          TheAHeld:Egg,of=chub 9,born=19     a point
+//            TheARegard:eye,seen=4            another organ's opinion of it
+//          TheAWalk:4                         what the last walk saw happen: TheABecame, TheANeu, TheAGoner
+
+// TheA_seem — stand a Seem over a compartment, holding these kinds of row
+TheA_seem(w, name, kinds) {
+    let seem = w.oai({ TheASeem: name })
+    for (const kind of kinds) seem.oai({ TheAKind: kind })
+    return seem
+
+},
+TheA_seem_kinds(seem) {
+    return seem.o({ TheAKind: 1 }).map(kind => kind.sc.TheAKind)
+
+},
+// a row's sc as a Held point's (TheAHeld:<mainkey>,of:<its value>, then the rest), and back
+TheA_held_sc(sc) {
+    let k = Object.keys(sc)[0]
+    let held = { TheAHeld: k, of: sc[k] }
+    for (const key of Object.keys(sc)) {
+        if (key !== k) held[key] = sc[key]
+    }
+    return held
+
+},
+TheA_said_sc(held) {
+    let said = { [held.TheAHeld]: held.of }
+    for (const key of Object.keys(held)) {
+        if (key !== 'TheAHeld' && key !== 'of') said[key] = held[key]
+    }
+    return said
+
+},
+// TheA_seem_walk — one walk: the Held points follow the rows, paired to last walk's by resolve(); what happened is the new
+//  %TheAWalk.  Async (Selection is), so a routine awaits it between turns — a move never walks
+async TheA_seem_walk(w, name) {
+    let seem = w.o({ TheASeem: name })[0]
+    if (!seem) return null
+    let kinds = this.TheA_seem_kinds(seem)
+    let Se = seem.c.Se
+    if (!Se) {
+        Se = new Selection()
+        seem.c.Se = Se
+    }
+    // the Selection pins a top D to one walk (est_D_T); forget the last walk's, as Repli's Sent tree does
+    seem.c.T = null
+    // a Seem holding %TheAOver walks the As standing in its world's A, and their rows: a pond's view of its tanks
+    let over = seem.o({ TheAOver: 1 }).length
+    let rows_of = (v) => (v ? v.o().filter(row => kinds.includes(Object.keys(row.sc)[0])) : [])
+    let row_depth = over ? 2 : 1
+    let became = []
+    let neus = []
+    let goners = []
+    let all_gone = []
+    let all_neu = []
+    await Se.process({
+        n: over ? this.TheA_A(w) : w,
+        process_D: seem,
+        match_sc: {},
+        trace_sc: { TheAHeld: 1 },
+        each_fn: async (D, n, T) => {
+            let depth = T.c.path.length - 1
+            if (depth === 0) T.sc.more = over ? n.o({ A: 1 }) : rows_of(n)
+            if (over && depth === 1) T.sc.more = rows_of(n.o({ w: 1 })[0])
+        },
+        trace_fn: async (uD, n, T) => uD.i(this.TheA_held_sc(n.sc)),
+        traced_fn: async (D, bD, n, T) => {
+            if (T.c.path.length - 1 === row_depth && bD && bD.sc.TheAHeld !== D.sc.TheAHeld) became.push([D, bD])
+        },
+        resolved_fn: async (T, N, gone, neu) => {
+            for (const D of gone) all_gone.push([D, T.sc.D])
+            for (const D of neu) all_neu.push([D, T.sc.D])
+            if (T.c.path.length - 1 !== row_depth - 1) return
+            for (const D of gone) goners.push([D, T.sc.D])
+            for (const D of neu) neus.push([D, T.sc.D])
+        },
+    })
+    let walks = (seem.sc.walks || 0) + 1
+    w.oai({ TheASeem: name }, { walks })
+    for (const old of seem.o({ TheAWalk: 1 })) seem.drop(old)
+    let walk = seem.i({ TheAWalk: String(walks) })
+    for (const [D, bD] of became) walk.i({ TheABecame: D.sc.TheAHeld, of: D.sc.of, was: bD.sc.TheAHeld })
+    let where = (up) => (over && up && up !== seem ? { in: this.TheA_point_key(up) } : {})
+    for (const [D, up] of neus) walk.i({ TheANeu: D.sc.TheAHeld, of: D.sc.of, ...where(up) })
+    for (const [D, up] of goners) walk.i({ TheAGoner: D.sc.TheAHeld, of: D.sc.of, ...where(up) })
+    let limbo = seem.o({ TheALimbo: 1 })[0]
+    if (limbo) this.TheA_seem_limbo(seem, limbo, walk, walks, all_gone, all_neu)
+    return walk
+
+},
+// TheA_seem_limbo — atoms that move in the structure.  resolve() pairs a point only among its siblings, so a row that leaves one
+//  place and turns up in another (a fish down a stream) is a goner here and a newcomer there.  A Seem holding %TheALimbo,keep:<n>
+//   keeps each gone point, with what hung on it, for n walks; a newcomer with the same key is that point MOVED — it gets its
+//    epiphytes back and the walk says %TheAMoved,from,to.  What never comes back drops out of limbo, gone for good
+TheA_seem_limbo(seem, limbo, walk, walks, gone, neu) {
+    let kinds = this.TheA_seem_kinds(seem)
+    let where = (up) => (up && up !== seem ? this.TheA_point_key(up) : 'here')
+    for (const [D, up] of gone) {
+        if (kinds.includes(D.sc.TheAHeld)) this.TheA_copy_all(limbo, D, { from: where(up), gone_at: walks })
+    }
+    for (const [D, up] of neu) {
+        let key = this.TheA_point_key(D)
+        let was = limbo.o({ TheAHeld: 1 }).find(point => this.TheA_point_key(point) === key)
+        if (!was) continue
+        for (const epi of was.o()) {
+            if (!epi.sc.TheAHeld) this.TheA_copy_all(D, epi, {})
+        }
+        walk.i({ TheAMoved: D.sc.TheAHeld, of: D.sc.of, from: was.sc.from, to: where(up) })
+        limbo.drop(was)
+    }
+    for (const point of limbo.o({ TheAHeld: 1 })) {
+        if (walks - point.sc.gone_at >= (limbo.sc.keep || 1)) limbo.drop(point)
+    }
+
+},
+// a particle copied whole, everything under it too, with extra keys on the copy
+TheA_copy_all(into, C, extra) {
+    let kept = into.i({ ...C.sc, ...extra })
+    for (const kid of C.o()) this.TheA_copy_all(kept, kid, {})
+    return kept
+
+},
+// the Held point of a row, by its mainkey's value
+TheA_seem_point(seem, of) {
+    return seem.o({ TheAHeld: 1 }).find(point => point.sc.of === of)
+
+},
+// TheA_sphere — declare a sphere on a Seem: its name and tense (Regard: another organ's opinion of each point)
+TheA_sphere(seem, name, tense) {
+    return seem.oai({ TheASphere: name }, { tense })
+
+},
+// TheA_regard — an organ's opinion of a point, written ON the point, so it lives and dies with it
+TheA_regard(seem, point, name, sc) {
+    if (!seem.o({ TheASphere: name }).length) {
+        seem.oai({ log: 'nothing is written into an undeclared sphere: ' + name })
+        return null
+    }
+    return point.oai({ TheARegard: name }, sc)
+
+},
+TheA_regard_of(seem, point, name) {
+    return point.o({ TheARegard: name })[0]
+
+},
+// every regard of one sphere, wherever it is kept
+TheA_regards(seem, name) {
+    return seem.o({ TheAHeld: 1 }).flatMap(point => point.o({ TheARegard: name }))
+
+},
+// TheA_seem_mark — keep the Held tree as it stands (its points, never their epiphytes).  Not snapped: the line says it's kept
+TheA_seem_mark(w, name, label) {
+    let seem = w.o({ TheASeem: name })[0]
+    if (!seem) return null
+    for (const old of seem.o({ TheAMark: String(label) })) seem.drop(old)
+    let mark = seem.i({ TheAMark: String(label), dontSnap: 1 })
+    for (const point of seem.o({ TheAHeld: 1 })) this.TheA_held_copy(mark, point)
+    return mark
+
+},
+// a Held point copied, its Held kids too (never its epiphytes)
+TheA_held_copy(into, point) {
+    let kept = into.i({ ...point.sc })
+    for (const kid of point.o({ TheAHeld: 1 })) this.TheA_held_copy(kept, kid)
+    return kept
+
+},
+// a row minted from a Held point, its kids too
+TheA_held_mint(into, point) {
+    let row = into.i(this.TheA_said_sc(point.sc))
+    for (const kid of point.o({ TheAHeld: 1 })) this.TheA_held_mint(row, kid)
+    return row
+
+},
+// TheA_seem_rollback — the compartment as it was at a mark: every row of the Seem's kinds dropped, and minted again from the
+//  mark, in order.  The particles are new; the next walk pairs them to the same points, so what hangs on a point survives
+//   by the alignment alone.  The Seem's kinds are how much to re-synthesise — not a transaction over everything
+TheA_seem_rollback(w, name, label) {
+    let seem = w.o({ TheASeem: name })[0]
+    let mark = seem?.o({ TheAMark: String(label) })[0]
+    if (!mark) return false
+    // a mark that came back from text folded (it doesn't persist) holds nothing to roll back to: refused, said, the rows untouched
+    if (mark.sc.folded) {
+        seem.oai({ TheARefused: 'rollback', mark: String(label) }, { why: 'the mark was not kept across the reload' })
+        return false
+    }
+    let kinds = this.TheA_seem_kinds(seem)
+    for (const row of w.o().filter(row => kinds.includes(Object.keys(row.sc)[0]))) w.drop(row)
+    for (const point of mark.o({ TheAHeld: 1 })) this.TheA_held_mint(w, point)
+    return true
+
+},
+// a point's identity across compartments: the value of its row's mainkey — or, for a row that only says it's there
+//  (Turns, EggsNamed: one of a kind), its kind
+TheA_point_key(point) {
+    return point.sc.of === 1 ? point.sc.TheAHeld : point.sc.TheAHeld + ':' + point.sc.of
+
+},
+// a point said plainly (its kind and what it carries, not its name), its kids too — two points are the same state when these match ('' is absent)
+TheA_point_say(point) {
+    if (!point) return ''
+    let sc = [point.sc.TheAHeld, ...Object.entries(point.sc).filter(([k]) => k !== 'TheAHeld' && k !== 'of').map(([k, v]) => k + '=' + v)].join(',')
+    let kids = point.o({ TheAHeld: 1 }).map(kid => this.TheA_point_say(kid))
+    return sc + (kids.length ? '[' + kids.join(' ') + ']' : '')
+
+},
+// the points of a Held tree (a Seem, or a mark), by key
+TheA_points(tree) {
+    let by = {}
+    for (const point of tree.o({ TheAHeld: 1 })) by[this.TheA_point_key(point)] = point
+    return by
+
+},
+// the row a top point reads, in a compartment
+TheA_point_row(w, point) {
+    let k = point.sc.TheAHeld
+    return w.o().find(row => Object.keys(row.sc)[0] === k && (point.sc.of === 1 || row.sc[k] === point.sc.of))
+
+},
+// TheA_seem_fork — a sibling: the mark minted into another compartment, with the same Seem standing there.  Both Seems
+//  hold the mark, which is now their BASE — what they last agreed on
+async TheA_seem_fork(w, name, label, into) {
+    let seem = w.o({ TheASeem: name })[0]
+    let mark = seem?.o({ TheAMark: String(label) })[0]
+    if (!mark) return null
+    let theirs = this.TheA_seem(into, name, this.TheA_seem_kinds(seem))
+    for (const old of theirs.o({ TheAMark: String(label) })) theirs.drop(old)
+    let base = theirs.i({ TheAMark: String(label), dontSnap: 1 })
+    for (const point of mark.o({ TheAHeld: 1 })) this.TheA_held_copy(base, point)
+    this.TheA_seem_rollback(into, name, label)
+    await this.TheA_seem_walk(into, name)
+    return theirs
+
+},
+// TheA_seem_merge — theirs comes in as a CANDIDATE, never the truth.  Both are walked, and every point is decided against
+//  the base (the mark both hold): what only they changed is taken, what only we changed is kept, what both changed alike is
+//   kept once, and what both changed differently is REFUSED — ours stays, and a %TheARefused row says both sides and stays
+//    in the snap.  The decisions are the new %TheAMerge:<label>.  Rows taken are minted from their points (Theory's rollback
+//     does the same), so the next walk re-pairs them
+async TheA_seem_merge(ours, theirs, name, label) {
+    await this.TheA_seem_walk(ours, name)
+    await this.TheA_seem_walk(theirs, name)
+    let os = ours.o({ TheASeem: name })[0]
+    let ts = theirs.o({ TheASeem: name })[0]
+    let mark = os?.o({ TheAMark: String(label) })[0]
+    if (!mark || !ts) return null
+    let B = this.TheA_points(mark)
+    let O = this.TheA_points(os)
+    let T = this.TheA_points(ts)
+    for (const old of os.o({ TheAMerge: 1 })) os.drop(old)
+    let merge = os.i({ TheAMerge: String(label) })
+    let keys = [...Object.keys(O), ...Object.keys(T).filter(k => !O[k]), ...Object.keys(B).filter(k => !O[k] && !T[k])]
+    for (const key of keys) {
+        let b = this.TheA_point_say(B[key])
+        let o = this.TheA_point_say(O[key])
+        let t = this.TheA_point_say(T[key])
+        let any = O[key] || T[key] || B[key]
+        let said = { kind: any.sc.TheAHeld, ...(any.sc.of === 1 ? {} : { of: any.sc.of }) }
+        if (o === t) continue
+        if (o === b) {
+            let row = O[key] && this.TheA_point_row(ours, O[key])
+            if (row) ours.drop(row)
+            if (T[key]) this.TheA_held_mint(ours, T[key])
+            merge.i({ TheATook: !T[key] ? 'gone' : !O[key] ? 'new' : 'changed', ...said })
+        } else if (t !== b) {
+            merge.i({ TheARefused: 'both changed', ...said, ours: o || 'gone', theirs: t || 'gone' })
+        }
+    }
+    await this.TheA_seem_walk(ours, name)
+    return merge
+},
+//#endregion
+
+//#region Persist — what of an A outlives a reload
+//  A reload keeps what is particles and loses .c.  TheA_persist says an A as text, and TheA_thaw stands it again from that
+//   text; between them, everything on .c is gone (a Seem's Selection, every D's Travel).  A particle marked dontSnap says it
+//    doesn't persist: its line is kept, with folded:1, and what's under it is left out — as Story's snap folds it (enWaft
+//     itself ignores the flag, so Theory folds first)
+
+// TheA_persist — an A as text, its dontSnap subtrees folded
+async TheA_persist(A) {
+    let fold = (C) => {
+        let kept = new TheC({ c: {}, sc: C.sc.dontSnap ? { ...C.sc, folded: 1 } : { ...C.sc } })
+        if (!C.sc.dontSnap) {
+            for (const kid of C.o()) kept.i(fold(kid))
+        }
+        return kept
+    }
+    let out = await this.enWaft(fold(A))
+    if (out.errors?.length) return null
+    return out.snap
+
+},
+// TheA_thaw — an A stood again from its text, in H
+TheA_thaw(H, snap) {
+    let { C } = this.decode_wh_lines(snap)
+    if (C) H.i(C)
+    return C
+},
+//#endregion
 // (a .g must end on a comment or a statement, never a method-final brace)
 
 

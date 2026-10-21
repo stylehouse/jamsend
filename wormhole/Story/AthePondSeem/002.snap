@@ -1,0 +1,35 @@
+Snap:H
+  H:AthePondSeem,Run
+    A:AthePondSeem
+      w:AthePondSeem
+        req:wrangle,eternal,ok
+    A:S_P
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
+      w:Athe_Tank
+        Turns,count
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+          TheAPass:Heron
+        EggsNamed,count=2
+        Egg:minnow 1,born
+        Egg:perch 2,born
+        TheASeem:rows,walks
+          TheAKind:Turns
+          TheAKind:EggsNamed
+          TheAKind:Egg
+          TheAKind:Fish
+          TheAKind:Heron
+          TheASphere:eye,tense:Regard
+          TheAHeld:Turns,of,count
+          TheAHeld:EggsNamed,of,count=2
+          TheAHeld:Egg,of:minnow 1,born
+            TheARegard:eye,seen
+          TheAHeld:Egg,of:perch 2,born
+            TheARegard:eye,seen
+          TheAWalk:1
+            TheANeu:Turns,of
+            TheANeu:EggsNamed,of
+            TheANeu:Egg,of:minnow 1
+            TheANeu:Egg,of:perch 2

@@ -1,0 +1,108 @@
+Snap:H
+  H:AthePondMoves,Run
+    A:AthePondMoves
+      w:AthePondMoves
+        req:wrangle,eternal,ok
+    A:Pond_S
+      TheACode:Athe_Pond,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
+      A:S_P
+        TheACode:Athe_Tank,variant:plain,dige:bcd731eae9f21d68
+          TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
+        w:Athe_Tank
+          TheASynapse:clock,wake:turn,sum:count
+            TheAWoke,count=21,pulses=21
+          TheAAxon:stream
+          NamesAs:P
+          Turns,count=21
+          TheASunpit:turn
+            TheAPass:Egg
+            TheAPass:Fish
+            TheAPass:Heron
+          EggsNamed,count=12
+          Fish:P minnow 1,born=4
+          Fish:P perch 2,born=4
+          Fish:P carp 3,born=13
+          Fish:P trout 4,born=13
+          Fish:P roach 5,born=16
+          Fish:P bream 6,born=16
+          Fish:P tench 7,born=19
+          Fish:P dace 8,born=19
+          Egg:P chub 9,born=19
+          Egg:P rudd 10,born=19
+          Egg:P minnow 11,born=19
+          Egg:P perch 12,born=19
+      A:S_Q
+        TheACode:Athe_Tank,variant:plain,dige:bcd731eae9f21d68
+          TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
+        w:Athe_Tank
+          TheASynapse:clock,wake:turn,sum:count
+            TheAWoke,count=12,pulses=12
+          TheASynapse:stream,from:S_P,wake:arrive,sum:count
+          NamesAs:Q
+          Turns,count=12
+          TheASunpit:turn
+            TheAPass:Egg
+            TheAPass:Fish
+            TheAPass:Heron
+          EggsNamed,count=4
+          Fish:Q minnow 1,born=4
+          Fish:Q perch 2,born=4
+          Egg:Q carp 3,born=10
+          Egg:Q trout 4,born=10
+      w:Athe_Pond
+        TheASeem:stream,walks=2
+          TheAKind:Egg
+          TheAKind:Fish
+          TheAOver:As
+          TheALimbo,keep=2
+          TheASphere:eye,tense:Regard
+          TheAHeld:A,of:S_P
+            TheAHeld:Fish,of:P minnow 1,born=4
+              TheARegard:eye,seen
+            TheAHeld:Fish,of:P perch 2,born=4
+              TheARegard:eye,seen
+            TheAHeld:Fish,of:P carp 3,born=13
+              TheARegard:eye,seen
+            TheAHeld:Fish,of:P trout 4,born=13
+              TheARegard:eye,seen
+            TheAHeld:Fish,of:P roach 5,born=16
+              TheARegard:eye,seen=2
+            TheAHeld:Fish,of:P bream 6,born=16
+              TheARegard:eye,seen=2
+            TheAHeld:Fish,of:P tench 7,born=19
+              TheARegard:eye,seen=2
+            TheAHeld:Fish,of:P dace 8,born=19
+              TheARegard:eye,seen=2
+            TheAHeld:Egg,of:P chub 9,born=19
+              TheARegard:eye,seen=2
+            TheAHeld:Egg,of:P rudd 10,born=19
+              TheARegard:eye,seen=2
+            TheAHeld:Egg,of:P minnow 11,born=19
+              TheARegard:eye,seen=2
+            TheAHeld:Egg,of:P perch 12,born=19
+              TheARegard:eye,seen=2
+          TheAHeld:A,of:S_Q
+            TheAHeld:Fish,of:Q minnow 1,born=4
+              TheARegard:eye,seen
+            TheAHeld:Fish,of:Q perch 2,born=4
+              TheARegard:eye,seen
+            TheAHeld:Egg,of:Q carp 3,born=10
+              TheARegard:eye,seen=2
+            TheAHeld:Egg,of:Q trout 4,born=10
+              TheARegard:eye,seen=2
+          TheAWalk:2
+            TheABecame:Fish,of:P carp 3,was:Egg
+            TheABecame:Fish,of:P trout 4,was:Egg
+            TheABecame:Fish,of:Q minnow 1,was:Egg
+            TheABecame:Fish,of:Q perch 2,was:Egg
+            TheANeu:Fish,of:P roach 5,in:A:S_P
+            TheANeu:Fish,of:P bream 6,in:A:S_P
+            TheANeu:Fish,of:P tench 7,in:A:S_P
+            TheANeu:Fish,of:P dace 8,in:A:S_P
+            TheANeu:Egg,of:P chub 9,in:A:S_P
+            TheANeu:Egg,of:P rudd 10,in:A:S_P
+            TheANeu:Egg,of:P minnow 11,in:A:S_P
+            TheANeu:Egg,of:P perch 12,in:A:S_P
+            TheANeu:Egg,of:Q carp 3,in:A:S_Q
+            TheANeu:Egg,of:Q trout 4,in:A:S_Q

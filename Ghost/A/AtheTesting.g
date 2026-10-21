@@ -535,19 +535,20 @@ async AthePondSynapseOrder_drive(w, req):
     this.AthePondSynapseOrder_witness(w)
 
 // a P streaming into a Q: P nine turns ahead, both on clocks, names tagged so a fish that crosses keeps a name nobody else has
-AthePond_stream_pair(P_name, Q_name, back):
+AthePond_stream_pair(P_name, Q_name, back, holder):
+    let H = holder || this
     for (const name of [P_name, Q_name]) {
-        let old = this.o({ A: name })[0]
-        if (old) this.drop(old)
+        let old = H.o({ A: name })[0]
+        if (old) H.drop(old)
     }
-    let P = this.TheA_stand(this, P_name, ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
+    let P = this.TheA_stand(H, P_name, ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
     P.i({ TheASynapse: 'clock', wake: 'turn', sum: 'count' })
     P.i({ TheAAxon: 'stream' })
     P.i({ NamesAs: 'P' })
     if (back) P.i({ TheASynapse: 'stream', from: Q_name, wake: 'arrive', sum: 'count' })
     this.AthePond_clock(P, 9)
     this.Athe_Tank_wake(P)
-    let Q = this.TheA_stand(this, Q_name, ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
+    let Q = this.TheA_stand(H, Q_name, ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
     Q.i({ TheASynapse: 'clock', wake: 'turn', sum: 'count' })
     Q.i({ TheASynapse: 'stream', from: P_name, wake: 'arrive', sum: 'count' })
     Q.i({ NamesAs: 'Q' })
@@ -1121,6 +1122,401 @@ AthePondNest_witness(w):
     }
     if (n >= 6 && !PW.o({ TheACodePush: path }).length && warm.twins > 0 && !cold.twins && code(TW)?.sc.dige === this.TheA_digest(code(PW)?.sc.dige) && code(TC)?.sc.dige === this.TheA_digest(code(PC)?.sc.dige) && code(TW)?.sc.dige !== code(TC)?.sc.dige) {
         this.story_swear(w, 'a version pushed to a pond reaches the tank standing in it and no other — the warm tank hatches twins — the cold tank’s code never moves')
+    }
+//#endregion
+//#region the test routine — Book AthePondSeem
+// spheres over one tank (Theory.g "Seem"; Atheory_todo §0.5).  A Seem holds the tank's rows as Held points; the Book's eye
+//  is another organ, and its Regard of each point (the walk it first saw it on) hangs on the point.  Step 2 stands the tank
+//   and its Seem (turn 1).  Step 3 turns to 4: the eggs hatch, and are the same points.  Step 4 turns to 20, marks, turns on
+//    to 24: the heron eats four fish.  Step 5 rolls back to the mark.  Step 6 turns to 24 again.  Each turning step ends
+//     with a walk and the eye looking
+AthePondSeem(A,w):
+    w oai %req:wrangle,eternal
+        await &AthePondSeem_drive,w,req
+        req%ok = 1
+
+async AthePondSeem_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 6
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.AthePondSeem_stand(w)
+        if (n === 3) await this.AthePondSeem_turn(w, 4, 'turn to turn 4 — the eggs hatch')
+        if (n === 4) await this.AthePondSeem_mark(w)
+        if (n === 5) await this.AthePondSeem_rollback(w)
+        if (n === 6) await this.AthePondSeem_turn(w, 24, 'turn on from the mark to turn 24 again')
+    }
+    this.AthePondSeem_witness(w)
+
+AthePondSeem_tank():
+    return this.Athe_Tank_of('S_P')
+
+AthePondSeem_seem():
+    return this.AthePondSeem_tank()?.o({ TheASeem: 'rows' })[0]
+
+async AthePondSeem_stand(w):
+    i %desc:'stand a tank with a Seem over its rows and the eye’s sphere declared — turn one — walk and look'
+    if (typeof this.TheA_seem_walk !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
+        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
+        return
+    }
+    this.AthePond_tank_stand({ name: 'S_P' })
+    let seem = this.TheA_seem(this.AthePondSeem_tank(), 'rows', ['Turns', 'EggsNamed', 'Egg', 'Fish', 'Heron'])
+    this.TheA_sphere(seem, 'eye', 'Regard')
+    await this.AthePondSeem_look()
+
+// one walk of the Seem, then the eye: each egg or fish point it hasn't seen gets the walk it was first seen on
+async AthePondSeem_look():
+    let tank = this.AthePondSeem_tank()
+    let seem = this.AthePondSeem_seem()
+    if (!seem) return
+    await this.TheA_seem_walk(tank, 'rows')
+    for (const point of seem.o({ TheAHeld: 1 })) {
+        if (point.sc.TheAHeld !== 'Egg' && point.sc.TheAHeld !== 'Fish') continue
+        if (!this.TheA_regard_of(seem, point, 'eye')) this.TheA_regard(seem, point, 'eye', { seen: seem.sc.walks })
+    }
+
+async AthePondSeem_turn(w, upto, desc):
+    w.i({ desc })
+    this.AthePond_turn_as('S_P', upto)
+    await this.AthePondSeem_look()
+
+// to turn 20, mark, on to 24 — what the tank held at each is noted on the routine's world, to compare after
+async AthePondSeem_mark(w):
+    i %desc:'turn to 20 and mark — turn on to 24 — the heron eats four fish'
+    this.AthePond_turn_as('S_P', 20)
+    await this.AthePondSeem_look()
+    this.TheA_seem_mark(this.AthePondSeem_tank(), 'rows', 20)
+    w.oai({ Saw: 'mark' }, { rows: this.AthePondSeem_rows(), walk: this.AthePondSeem_seem().sc.walks })
+    this.AthePond_turn_as('S_P', 24)
+    await this.AthePondSeem_look()
+    w.oai({ Saw: 'late' }, { rows: this.AthePondSeem_rows() })
+
+async AthePondSeem_rollback(w):
+    i %desc:'roll the tank back to the mark — walk and look'
+    this.TheA_seem_rollback(this.AthePondSeem_tank(), 'rows', 20)
+    await this.AthePondSeem_look()
+
+// what the tank holds, said plainly: every row of the Seem's kinds, sorted, one line
+AthePondSeem_rows():
+    let tank = this.AthePondSeem_tank()
+    if (!tank) return ''
+    let say = (row) => {
+        let kids = row.o().map(kid => say(kid))
+        return Object.entries(row.sc).map(([k, v]) => k + '=' + v).join(',') + (kids.length ? '[' + kids.join(' ') + ']' : '')
+    }
+    let kinds = ['Turns', 'EggsNamed', 'Egg', 'Fish', 'Heron']
+    return tank.o().filter(row => kinds.includes(Object.keys(row.sc)[0])).map(row => say(row)).sort().join(' ; ')
+
+AthePondSeem_witness(w):
+    let seem = this.AthePondSeem_seem()
+    if (!seem) return
+    let n = this.c.run?.c.step_n ?? 0
+    let walk = seem.o({ TheAWalk: 1 })[0]
+    let points = seem.o({ TheAHeld: 1 })
+    let point = (of) => this.TheA_seem_point(seem, of)
+    let eye = (of) => (point(of) ? this.TheA_regard_of(seem, point(of), 'eye')?.sc.seen : undefined)
+    let marked = w.o({ Saw: 'mark' })[0]
+    let late = w.o({ Saw: 'late' })[0]
+    let eaten = ['carp 3', 'trout 4', 'roach 5', 'bream 6']
+    if (n === 3) {
+        let became = walk ? walk.o({ TheABecame: 'Fish' }).map(b => b.sc.was === 'Egg' && b.sc.of) : []
+        if (became.length === 2 && ['minnow 1', 'perch 2'].every(of => became.includes(of) && point(of)?.sc.TheAHeld === 'Fish' && eye(of) === 1)) {
+            this.story_swear(w, 'an egg that hatches is the same point, now a fish — the eye’s regard of the egg is still on it')
+        }
+    }
+    let regards = this.TheA_regards(seem, 'eye')
+    let watched = points.filter(p => p.sc.TheAHeld === 'Egg' || p.sc.TheAHeld === 'Fish')
+    if (n === 4 && eaten.every(of => !point(of) && walk?.o({ TheAGoner: 'Fish', of }).length) && regards.length === watched.length && watched.every(p => this.TheA_regard_of(seem, p, 'eye'))) {
+        this.story_swear(w, 'a fish the heron eats takes the eye’s regard with it — nobody tidied')
+    }
+    let mark_walk = marked?.sc.walk
+    if (n === 5 && marked && this.AthePondSeem_rows() === marked.sc.rows && point('chub 9')?.sc.TheAHeld === 'Egg' && walk?.o({ TheABecame: 'Egg', of: 'chub 9' }).length && eye('chub 9') <= mark_walk && eaten.every(of => point(of) && eye(of) > mark_walk)) {
+        this.story_swear(w, 'rolled back to the mark the tank holds just what it held then — an egg that had hatched is an egg again, the same point, still regarded — the eaten fish come back as new points, seen afresh')
+    }
+    if (n === 6 && late && this.AthePondSeem_rows() === late.sc.rows) {
+        this.story_swear(w, 'turned on from the mark the tank comes out as it did the first time — the heron eats the same four fish')
+    }
+//#endregion
+//#region the test routine — Book AthePondMerge
+// a merge with a base (Theory.g TheA_seem_fork / TheA_seem_merge; Atheory_todo §0.5).  Step 2 stands M, turns it to 10,
+//  marks it "fork" and forks N from the mark.  Step 3 turns both to 13 (the same machine on the same rows, so they agree), then
+//   hands: one catches perch 2 from N, and each side gives carp 3 a different birth.  Step 4 merges N into M.  Step 5 merges again
+AthePondMerge(A,w):
+    w oai %req:wrangle,eternal
+        await &AthePondMerge_drive,w,req
+        req%ok = 1
+
+async AthePondMerge_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 5
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.AthePondMerge_stand(w)
+        if (n === 3) this.AthePondMerge_diverge(w)
+        if (n === 4) await this.AthePondMerge_merge(w, 'merge N into M')
+        if (n === 5) await this.AthePondMerge_merge(w, 'merge N into M again')
+    }
+    this.AthePondMerge_witness(w)
+
+async AthePondMerge_stand(w):
+    i %desc:'stand M — turn it to 10 — mark it fork — and fork N from the mark'
+    if (typeof this.TheA_seem_merge !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
+        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
+        return
+    }
+    this.AthePond_tank_stand({ name: 'M_P' })
+    this.AthePond_turn_as('M_P', 10)
+    let M = this.Athe_Tank_of('M_P')
+    this.TheA_seem(M, 'rows', ['Turns', 'EggsNamed', 'Egg', 'Fish', 'Heron'])
+    await this.TheA_seem_walk(M, 'rows')
+    this.TheA_seem_mark(M, 'rows', 'fork')
+    let old = this.o({ A: 'N_P' })[0]
+    if (old) this.drop(old)
+    let N = this.TheA_stand(this, 'N_P', ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
+    await this.TheA_seem_fork(M, 'rows', 'fork', N)
+
+AthePondMerge_diverge(w):
+    i %desc:'both turn to 13 — then hands — perch 2 is caught from N — carp 3 is said born 11 in M and 12 in N'
+    for (const name of ['M_P', 'N_P']) this.AthePond_turn_as(name, 13)
+    let M = this.Athe_Tank_of('M_P')
+    let N = this.Athe_Tank_of('N_P')
+    let perch = N.o({ Fish: 'perch 2' })[0]
+    if (perch) N.drop(perch)
+    for (const [tank, born] of [[M, 11], [N, 12]]) {
+        let carp = tank.o({ Fish: 'carp 3' })[0]
+        if (carp) {
+            tank.drop(carp)
+            tank.i({ Fish: 'carp 3', born })
+        }
+    }
+
+async AthePondMerge_merge(w, desc):
+    w.i({ desc })
+    await this.TheA_seem_merge(this.Athe_Tank_of('M_P'), this.Athe_Tank_of('N_P'), 'rows', 'fork')
+    w.oai({ Saw: desc }, { rows: this.AthePondMerge_rows('M_P') })
+
+// what a tank holds, said plainly, sorted, one line
+AthePondMerge_rows(name):
+    let tank = this.Athe_Tank_of(name)
+    if (!tank) return ''
+    let kinds = ['Turns', 'EggsNamed', 'Egg', 'Fish', 'Heron']
+    return tank.o().filter(row => kinds.includes(Object.keys(row.sc)[0])).map(row => Object.entries(row.sc).map(([k, v]) => k + '=' + v).join(',')).sort().join(' ; ')
+
+AthePondMerge_witness(w):
+    let M = this.Athe_Tank_of('M_P')
+    let merge = M?.o({ TheASeem: 'rows' })[0]?.o({ TheAMerge: 1 })[0]
+    if (!merge) return
+    let n = this.c.run?.c.step_n ?? 0
+    let took = merge.o({ TheATook: 1 })
+    let refused = merge.o({ TheARefused: 1 })
+    let carp = M.o({ Fish: 'carp 3' })
+    if (n === 4 && !M.o({ Fish: 'perch 2' }).length && took.length === 1 && took[0].sc.TheATook === 'gone' && took[0].sc.of === 'perch 2') {
+        this.story_swear(w, 'what only N changed comes across — the perch caught from N is gone from M')
+    }
+    if (n === 4 && carp.length === 1 && carp[0].sc.born === 11 && refused.length === 1 && refused[0].sc.of === 'carp 3' && refused[0].sc.ours === 'Fish,born=11' && refused[0].sc.theirs === 'Fish,born=12') {
+        this.story_swear(w, 'what both changed differently is refused with both sides said — M keeps its own carp')
+    }
+    if (n === 4 && M.o({ Fish: 'trout 4' }).length === 1 && M.o({ Egg: 'roach 5' }).length === 1 && M.o({ Egg: 'bream 6' }).length === 1 && M.o({ Turns: 1 }).length === 1) {
+        this.story_swear(w, 'what both did alike is kept once — the eggs both hatched and laid are not doubled')
+    }
+    let first = w.o({ Saw: 'merge N into M' })[0]?.sc.rows
+    let again = w.o({ Saw: 'merge N into M again' })[0]?.sc.rows
+    if (n === 5 && first && first === again && !took.length && refused.length === 1) {
+        this.story_swear(w, 'merging again changes nothing — only the refusal is said again')
+    }
+//#endregion
+//#region the test routine — Book AthePondMoves
+// atoms that move in the structure (Theory.g TheA_seem_limbo; Atheory_todo §0.5).  A pond stands with two tanks in it, P nine
+//  turns ahead and streaming into Q (AthePondStream's pair); a Seem on the pond's world walks the tanks in it (%TheAOver), keeps
+//   what goes in limbo for two walks, and the eye regards every egg and fish.  Step 3 takes eleven batches (P's first two
+//    fish grow old).  Step 4: they swim — in neither tank.  Step 5: they arrive in Q — moved, the eye's regard with them.
+//     Step 6: they leave Q for good.  Steps 7 and 8: one batch each — two walks on, limbo lets them go.  The oaths follow P's
+//      first two fish; the heron's meals pass through limbo too
+AthePondMoves(A,w):
+    w oai %req:wrangle,eternal
+        await &AthePondMoves_drive,w,req
+        req%ok = 1
+
+async AthePondMoves_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 8
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.AthePondMoves_stand(w)
+        if (n === 3) await this.AthePondMoves_wake(w, 11)
+        if (n >= 4) await this.AthePondMoves_wake(w, 1)
+    }
+    this.AthePondMoves_witness(w)
+
+AthePondMoves_pond():
+    return this.o({ A: 'Pond_S' })[0]?.o({ w: 'Athe_Pond' })[0]
+
+AthePondMoves_seem():
+    return this.AthePondMoves_pond()?.o({ TheASeem: 'stream' })[0]
+
+async AthePondMoves_stand(w):
+    i %desc:'stand a pond with P nine turns ahead streaming into Q inside it — a Seem over the tanks — one batch — walk and look'
+    if (typeof this.TheA_seem_limbo !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
+        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
+        return
+    }
+    let old = this.o({ A: 'Pond_S' })[0]
+    if (old) this.drop(old)
+    let pond = this.TheA_stand(this, 'Pond_S', ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Pond')
+    let pw = pond.i({ w: 'Athe_Pond' })
+    this.AthePond_stream_pair('S_P', 'S_Q', false, pond)
+    let seem = this.TheA_seem(pw, 'stream', ['Egg', 'Fish'])
+    seem.oai({ TheAOver: 'As' })
+    seem.oai({ TheALimbo: 1 }, { keep: 2 })
+    this.TheA_sphere(seem, 'eye', 'Regard')
+    await this.AthePondMoves_wake(w, 1)
+
+// n clock pulses on each tank, one batch, then a walk and the eye: every egg and fish point it hasn't seen gets the walk it was first seen on
+async AthePondMoves_wake(w, n):
+    if (n > 1) {
+        i %desc:`${n} clock pulses each — one batch — walk and look`
+    } else if (this.c.run?.c.step_n > 2) {
+        i %desc:'one clock pulse each — one batch — walk and look'
+    }
+    this.AthePond_clocks(['S_Q', 'S_P'], n)
+    this.Athe_Tanks_wake(['S_Q', 'S_P'])
+    let seem = this.AthePondMoves_seem()
+    if (!seem) return
+    await this.TheA_seem_walk(this.AthePondMoves_pond(), 'stream')
+    for (const tank of seem.o({ TheAHeld: 'A' })) {
+        for (const point of tank.o({ TheAHeld: 1 })) {
+            if (!this.TheA_regard_of(seem, point, 'eye')) this.TheA_regard(seem, point, 'eye', { seen: seem.sc.walks })
+        }
+    }
+    if (this.c.run?.c.step_n === 7) w.oai({ Saw: 'limbo' }, { held: this.AthePondMoves_limbo().filter(p => ['P minnow 1', 'P perch 2'].includes(p.sc.of)).length })
+
+AthePondMoves_limbo():
+    return this.AthePondMoves_seem()?.o({ TheALimbo: 1 })[0]?.o({ TheAHeld: 1 }) || []
+
+AthePondMoves_witness(w):
+    let seem = this.AthePondMoves_seem()
+    if (!seem) return
+    let n = this.c.run?.c.step_n ?? 0
+    let first = ['P minnow 1', 'P perch 2']
+    let tank = (name) => seem.o({ TheAHeld: 'A', of: name })[0]
+    let in_tank = (name, of) => tank(name)?.o({ TheAHeld: 1 }).find(p => p.sc.of === of)
+    let limbo = this.AthePondMoves_limbo()
+    let walk = seem.o({ TheAWalk: 1 })[0]
+    let seen = (p) => p?.o({ TheARegard: 'eye' })[0]?.sc.seen
+    if (n === 4 && first.every(of => !in_tank('S_P', of) && !in_tank('S_Q', of) && limbo.some(p => p.sc.of === of && p.sc.from === 'A:S_P' && seen(p) === 1))) {
+        this.story_swear(w, 'a fish swimming between tanks is in neither — the Seem keeps it in limbo with what the eye thought of it')
+    }
+    let moved = walk ? walk.o({ TheAMoved: 'Fish' }) : []
+    if (n === 5 && first.every(of => !limbo.some(p => p.sc.of === of) && seen(in_tank('S_Q', of)) === 1 && moved.some(m => m.sc.of === of && m.sc.from === 'A:S_P' && m.sc.to === 'A:S_Q'))) {
+        this.story_swear(w, 'a fish that swims from P to Q is one point that moved — the eye’s regard went with it')
+    }
+    if (n === 8 && !limbo.some(p => first.includes(p.sc.of)) && w.o({ Saw: 'limbo' })[0]?.sc.held === 2 && first.every(of => !in_tank('S_P', of) && !in_tank('S_Q', of))) {
+        this.story_swear(w, 'what never comes back drops out of limbo two walks on — gone for good')
+    }
+//#endregion
+//#region the test routine — Book AthePondReload
+// what outlives a reload (Theory.g TheA_persist / TheA_thaw; Atheory_todo §0.5).  Step 2 stands a tank with a Seem and the eye,
+//  turns it to 10, and marks it.  Step 3 reloads it: the A is said as text, dropped, and stood again from the text — every .c
+//   is gone.  Step 4 turns to 13 (two eggs hatch).  Step 5 tries to roll back to the mark, which didn't persist
+AthePondReload(A,w):
+    w oai %req:wrangle,eternal
+        await &AthePondReload_drive,w,req
+        req%ok = 1
+
+async AthePondReload_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 5
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.AthePondReload_stand(w)
+        if (n === 3) await this.AthePondReload_reload(w)
+        if (n === 4) await this.AthePondReload_turn(w)
+        if (n === 5) this.AthePondReload_rollback(w)
+    }
+    this.AthePondReload_witness(w)
+
+AthePondReload_seem():
+    return this.Athe_Tank_of('R_P')?.o({ TheASeem: 'rows' })[0]
+
+// a walk, then the eye on every egg and fish it hasn't seen
+async AthePondReload_look():
+    let seem = this.AthePondReload_seem()
+    if (!seem) return
+    await this.TheA_seem_walk(this.Athe_Tank_of('R_P'), 'rows')
+    for (const point of seem.o({ TheAHeld: 1 })) {
+        if (point.sc.TheAHeld !== 'Egg' && point.sc.TheAHeld !== 'Fish') continue
+        if (!this.TheA_regard_of(seem, point, 'eye')) this.TheA_regard(seem, point, 'eye', { seen: seem.sc.walks })
+    }
+
+// the eye's regards, said plainly: name=seen for every point, sorted
+AthePondReload_regards():
+    let seem = this.AthePondReload_seem()
+    if (!seem) return ''
+    return seem.o({ TheAHeld: 1 }).map(p => p.sc.of + '=' + (this.TheA_regard_of(seem, p, 'eye')?.sc.seen ?? '-')).sort().join(' ; ')
+
+async AthePondReload_stand(w):
+    i %desc:'stand a tank with a Seem and the eye — turn to 10 — walk and look — mark it'
+    if (typeof this.TheA_thaw !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
+        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
+        return
+    }
+    this.AthePond_tank_stand({ name: 'R_P' })
+    this.AthePond_turn_as('R_P', 10)
+    let seem = this.TheA_seem(this.Athe_Tank_of('R_P'), 'rows', ['Turns', 'EggsNamed', 'Egg', 'Fish', 'Heron'])
+    this.TheA_sphere(seem, 'eye', 'Regard')
+    await this.AthePondReload_look()
+    this.TheA_seem_mark(this.Athe_Tank_of('R_P'), 'rows', 10)
+
+async AthePondReload_reload(w):
+    i %desc:'reload the tank — said as text — dropped — stood again from the text — walk'
+    let A = this.o({ A: 'R_P' })[0]
+    if (!A) return
+    w.oai({ Saw: 'before' }, { regards: this.AthePondReload_regards(), points: this.AthePondReload_seem().o({ TheAHeld: 1 }).length })
+    let snap = await this.TheA_persist(A)
+    if (!snap) {
+        w.i({ log: 'the tank would not say itself as text' })
+        return
+    }
+    this.drop(A)
+    this.TheA_thaw(this, snap)
+    w.oai({ Saw: 'thawed' }, { fresh: this.AthePondReload_seem()?.c.Se ? 0 : 1 })
+    await this.AthePondReload_look()
+
+async AthePondReload_turn(w):
+    i %desc:'turn to 13 — two eggs hatch — walk and look'
+    this.AthePond_turn_as('R_P', 13)
+    await this.AthePondReload_look()
+
+AthePondReload_rollback(w):
+    i %desc:'roll back to the mark'
+    let tank = this.Athe_Tank_of('R_P')
+    w.oai({ Saw: 'rollback' }, { done: this.TheA_seem_rollback(tank, 'rows', 10) ? 1 : 0, turns: tank?.o({ Turns: 1 })[0]?.sc.count })
+
+AthePondReload_witness(w):
+    let seem = this.AthePondReload_seem()
+    if (!seem) return
+    let n = this.c.run?.c.step_n ?? 0
+    let walk = seem.o({ TheAWalk: 1 })[0]
+    let before = w.o({ Saw: 'before' })[0]
+    let mark = seem.o({ TheAMark: '10' })[0]
+    if (n === 3 && before && w.o({ Saw: 'thawed' })[0]?.sc.fresh === 1 && this.AthePondReload_regards() === before.sc.regards && walk && !walk.o({ TheANeu: 1 }).length && !walk.o({ TheAGoner: 1 }).length) {
+        this.story_swear(w, 'a tank stood again from its own text has every point and the eye’s regard — the first walk after finds nothing new — only .c was lost')
+    }
+    if (n === 3 && mark?.sc.folded && !mark.o().length) {
+        this.story_swear(w, 'a mark that does not persist comes back as its line alone — saying it was folded')
+    }
+    let became = walk ? walk.o({ TheABecame: 'Fish' }).map(b => b.sc.of) : []
+    if (n === 4 && ['carp 3', 'trout 4'].every(of => became.includes(of) && this.TheA_regard_of(seem, this.TheA_seem_point(seem, of), 'eye')?.sc.seen === 1)) {
+        this.story_swear(w, 'after the reload an egg that hatches is still the same point — the eye’s regard from before the reload on it')
+    }
+    let rb = w.o({ Saw: 'rollback' })[0]
+    if (n === 5 && rb && rb.sc.done === 0 && rb.sc.turns === 13 && seem.o({ TheARefused: 'rollback' })[0]?.sc.why) {
+        this.story_swear(w, 'rolling back to a mark that was not kept is refused with its reason — the tank is untouched')
     }
 //#endregion
 // (ends on a comment — a .g must not end on a method-final brace)

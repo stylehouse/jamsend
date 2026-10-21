@@ -1,0 +1,69 @@
+Snap:H
+  H:AthePondMerge,Run
+    A:AthePondMerge
+      w:AthePondMerge
+        req:wrangle,eternal,ok
+        {"Saw":"merge N into M","rows":"Egg=bream 6,born=13 ; Egg=roach 5,born=13 ; EggsNamed=1,count=6 ; Fish=carp 3,born=11 ; Fish=minnow 1,born=4 ; Fish=trout 4,born=13 ; Turns=1,count=13"}
+        {"Saw":"merge N into M again","rows":"Egg=bream 6,born=13 ; Egg=roach 5,born=13 ; EggsNamed=1,count=6 ; Fish=carp 3,born=11 ; Fish=minnow 1,born=4 ; Fish=trout 4,born=13 ; Turns=1,count=13"}
+    A:M_P
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
+      w:Athe_Tank
+        Turns,count=13
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+          TheAPass:Heron
+        EggsNamed,count=6
+        Fish:minnow 1,born=4
+        TheASeem:rows,walks=5
+          TheAKind:Turns
+          TheAKind:EggsNamed
+          TheAKind:Egg
+          TheAKind:Fish
+          TheAKind:Heron
+          TheAMark:fork,dontSnap
+          TheAMerge:fork
+            {"TheARefused":"both changed","kind":"Fish","of":"carp 3","ours":"Fish,born=11","theirs":"Fish,born=12"}
+          TheAHeld:Turns,of,count=13
+          TheAHeld:EggsNamed,of,count=6
+          TheAHeld:Fish,of:minnow 1,born=4
+          TheAHeld:Fish,of:trout 4,born=13
+          TheAHeld:Egg,of:roach 5,born=13
+          TheAHeld:Egg,of:bream 6,born=13
+          TheAHeld:Fish,of:carp 3,born=11
+          TheAWalk:5
+        Fish:trout 4,born=13
+        Egg:roach 5,born=13
+        Egg:bream 6,born=13
+        Fish:carp 3,born=11
+    A:N_P
+      TheACode:Athe_Tank,variant:plain,dige:eb8ceb579a6fe2db
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:f70099b7c1320793~g1
+      w:Athe_Tank
+        TheASeem:rows,walks=3
+          TheAKind:Turns
+          TheAKind:EggsNamed
+          TheAKind:Egg
+          TheAKind:Fish
+          TheAKind:Heron
+          TheAMark:fork,dontSnap
+          TheAHeld:Turns,of,count=13
+          TheAHeld:EggsNamed,of,count=6
+          TheAHeld:Fish,of:minnow 1,born=4
+          TheAHeld:Fish,of:trout 4,born=13
+          TheAHeld:Egg,of:roach 5,born=13
+          TheAHeld:Egg,of:bream 6,born=13
+          TheAHeld:Fish,of:carp 3,born=12
+          TheAWalk:3
+        Turns,count=13
+        EggsNamed,count=6
+        Fish:minnow 1,born=4
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+          TheAPass:Heron
+        Fish:trout 4,born=13
+        Egg:roach 5,born=13
+        Egg:bream 6,born=13
+        Fish:carp 3,born=12
