@@ -11,7 +11,7 @@ import { Selection } from "$lib/Selection.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_Theory(): string { return '5a467c7a918d1877~g1' },
+    Ghostmeta_Ghost_A_Theory(): string { return 'b0837deb9bc673ca~g1' },
 
 // Theory.g — Atheory's first organ: an A says which code it runs (spec/Atheory_todo.md §0.1 and §0.2).
 //
@@ -675,16 +675,30 @@ TheA_seem_kinds(seem) {
     return seem.o({ TheAKind: 1 }).map(kind => kind.sc.TheAKind)
 
 },
+// what a Seem's points keep of their rows: a Seem holding says keeps the keys it holds as %TheASay (maybe none: only the row's
+//  name); without, everything.  A sprinkle sucked out of a pile keeps only what it was sucked out for, so a change to anything
+//   else is no change to it (a view's equivalence, Stuffica.g)
+TheA_seem_says(seem) {
+    return seem.sc.says ? seem.o({ TheASay: 1 }).map(say => say.sc.TheASay) : null
+
+},
+// where a Seem's rows live: its compartment, or what its .c.from holds — rows held ELSEWHERE (a screen's view of Story's steps,
+//  kept in the screen's own compartment).  Runtime, as a ref is: whoever stood the Seem points it, and points it again when the
+//   pile is replaced.  Pointed at nothing, it reads its own compartment, where there are no rows of its kinds
+TheA_seem_source(w, seem) {
+    return seem.c.from || w
+
+},
 // a row's sc as a Trace point's: TheATrace:<its mainkey>,of:<that key's value>, then everything else it says — what the machine
 //  believes the row's shape is.  resolve() pairs on whichever key:values are least ambiguous, so a named row holds together by
 //   its name and a nameless one by whatever else it carries (owner: data without declared names is meant to be as okay as
 //    possible).  D%* is written here once and never edited; one day this is where identity is DERIVED (a normalised title,
 //     a digest) as well as copied.  A copy of the past is not the Trace's job: that's a mark, in the Was
-TheA_trace_sc(sc) {
+TheA_trace_sc(sc, says) {
     let k = Object.keys(sc)[0]
     let held = { TheATrace: k, of: sc[k] }
     for (const key of Object.keys(sc)) {
-        if (key !== k) held[key] = sc[key]
+        if (key !== k && (!says || says.includes(key))) held[key] = sc[key]
     }
     return held
 
@@ -692,7 +706,7 @@ TheA_trace_sc(sc) {
 // the rows a Seem holds, in its compartment
 TheA_seem_rows(w, seem) {
     let kinds = this.TheA_seem_kinds(seem)
-    return w.o().filter(row => kinds.includes(Object.keys(row.sc)[0]))
+    return this.TheA_seem_source(w, seem).o().filter(row => kinds.includes(Object.keys(row.sc)[0]))
 
 },
 // TheA_seem_walk — one walk: the Trace points follow the rows, paired to last walk's by resolve(); what happened is the new
@@ -701,6 +715,7 @@ async TheA_seem_walk(w, name) {
     let seem = w.o({ TheASeem: name })[0]
     if (!seem) return null
     let kinds = this.TheA_seem_kinds(seem)
+    let says = this.TheA_seem_says(seem)
     let Se = seem.c.Se
     if (!Se) {
         Se = new Selection()
@@ -718,7 +733,7 @@ async TheA_seem_walk(w, name) {
     let all_gone = []
     let all_neu = []
     await Se.process({
-        n: over ? this.TheA_A(w) : w,
+        n: over ? this.TheA_A(w) : this.TheA_seem_source(w, seem),
         process_D: seem,
         match_sc: {},
         trace_sc: { TheATrace: 1 },
@@ -727,7 +742,7 @@ async TheA_seem_walk(w, name) {
             if (depth === 0) T.sc.more = over ? n.o({ A: 1 }) : rows_of(n)
             if (over && depth === 1) T.sc.more = rows_of(n.o({ w: 1 })[0])
         },
-        trace_fn: async (uD, n, T) => uD.i(this.TheA_trace_sc(n.sc)),
+        trace_fn: async (uD, n, T) => uD.i(this.TheA_trace_sc(n.sc, says)),
         traced_fn: async (D, bD, n, T) => {
             D.c.C = n
             if (seem.sc.dip) this.TheA_dip(seem, D, T)

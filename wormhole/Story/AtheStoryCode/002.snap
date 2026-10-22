@@ -1,0 +1,16 @@
+Snap:H
+  H:AtheStoryCode,Run
+    A:AtheStoryCode
+      self,round=2	{"mung":["age"]}
+      w:AtheStoryCode
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Came:story_drive,from:Ghostmeta_Ghost_O_Story
+        Came:story_save,from:Ghostmeta_Ghost_O_Story
+        Came:snap_H,from:Ghostmeta_Ghost_O_Story
+        Came:Story_plan,from:Ghostmeta_Ghost_O_Story
+        Came:decode_toc_snap,from:Ghostmeta_Ghost_O_Story
+        Came:story_matching,from:Ghostmeta_Ghost_O_Story
+    A:Story_code
+      TheACode:Story,variant:plain,dige:4dbb409138fcd3a9
+        TheALayer:Ghost/O/Story.g,dige:26bbf071b1b88708~g1

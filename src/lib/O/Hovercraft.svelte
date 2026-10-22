@@ -818,10 +818,17 @@
     //        re-record (the snap on disk stays honest).  Any line that won't reconstruct, or
     //         a structural line-count drift, leaves a real surprise.  False when there are no
     //          spayers or either text is missing.
+    // Story's default matching rules, whichever shape Story came in: a data property (Story.svelte) or a method returning it
+    //  (Ghost/O/Story.g — a .g has no data properties; spec/Aprac_todo.md §0 item 1, the port onto TheACode)
+    story_matching_rules(): any[] {
+        const m = (this as any).story_matching
+        return (typeof m === 'function' ? m.call(this) : m) ?? []
+    },
+
     entropy_forgive(w: TheC, got: string, expected: string, step_n: number): boolean {
         if (!got || !expected) return false
         const spayers = this.collect_spayers([
-            ...(this.story_matching ?? []),
+            ...this.story_matching_rules(),
             ...this.entropy_rules((w?.c.The) as TheC | undefined),
         ])
         if (!spayers.length) return false
@@ -837,7 +844,7 @@
     //    without extending it (the forgive just did).
     entropy_forgive_muted(w: TheC, got: string, expected: string, step_n: number): boolean {
         const sames = this.collect_spayers([
-            ...(this.story_matching ?? []),
+            ...this.story_matching_rules(),
             ...this.entropy_rules((w?.c.The) as TheC | undefined),
         ]).filter((sp: any) => sp.tol === 'same')
         if (!sames.length) return false
@@ -862,7 +869,7 @@
         const same = this.entropy_same_of(w)
         if (!same || !snap) return true
         const spayers = this.collect_spayers([
-            ...(this.story_matching ?? []),
+            ...this.story_matching_rules(),
             ...this.entropy_rules((w?.c.The) as TheC | undefined),
         ]).filter((sp: any) => sp.tol === 'same')
         if (!spayers.length) return true
@@ -888,7 +895,7 @@
             console.log(`  cap ${cap.sc.Entcase}: outer lematch mainkey=${lm ? Object.keys(lm.sc)[0] : 'NONE'} sc=`, lm?.sc)
             console.log('    → rule', JSON.parse(JSON.stringify(this.entropy_rule_of(cap) ?? null)))
         }
-        const spayers = this.collect_spayers([...(this.story_matching ?? []), ...this.entropy_rules(The)])
+        const spayers = this.collect_spayers([...this.story_matching_rules(), ...this.entropy_rules(The)])
         console.log(`🛑 collected ${spayers.length} spayer(s):`, spayers)
         if (got != null && expected != null) {
             const gl = got.split('\n'), el = expected.split('\n')

@@ -123,7 +123,7 @@
     let spayers = $derived.by((): any[] => {
         const The = story_w?.c.The as TheC | undefined
         void The?.version
-        return H.collect_spayers([...(H.story_matching ?? []), ...H.entropy_rules(The)])
+        return H.collect_spayers([...H.story_matching_rules(), ...H.entropy_rules(The)])
     })
 
     // row_spay_class — '' | 'graft' | 'blown' for a changed diff row (got=right, exp=left).

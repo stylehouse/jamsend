@@ -1174,7 +1174,18 @@ export const LANG_COMPILE = {
                 ? (doc.line(peekN).text.match(/^(\s*)/) ?? ['', ''])[1].length : -1
             // Only reached at top level (the nested-call branch handled bodies), so the
             //  question is decl vs bare call: a %method,def has an indented body, a call doesn't.
-            const isDecl = nextIndent > decl_indent
+            //  The indentation peek is necessary (a pythonic decl needn't carry a trailing ":" —
+            //   reqTiles(A,w) in HohoTiles.g has neither colon nor brace) but it is NOT sufficient:
+            //    it silently answers "call" whenever there's nothing to peek AT — nextIndent
+            //     defaults to -1, always ≤ decl_indent — which is exactly "a decl with no following
+            //      line to peek past", the bug a .g "must not end on a method-final brace" dodged by
+            //       always leaving a trailing comment for the peek to land on.  Two unambiguous decl
+            //        markers rescue that case without weakening the peek: a trailing pythonic ":"
+            //         (optionally after a typed return and/or a line comment), and `hasBrace` — a
+            //          user-braced decl header, never a bare call (a top-level call that happens to
+            //           carry a callback's "{" is not a shape this DSL's top level writes; grepped).
+            const hasColon = /:\s*(?:\/\/.*)?$/.test(line.text)
+            const isDecl = hasBrace || hasColon || nextIndent > decl_indent
 
             if (isDecl) {
                 // async:1 records whether the decl was written `async name(…)` (grammar leaves
@@ -1464,14 +1475,58 @@ export const LANG_COMPILE = {
     //    and string-aware: the arg list runs to a top-level (depth-0, outside strings) &&|||,
     //     a closing bracket that isn't ours, or end — so it handles object-literal args
     //      (&m,A,{x:1, y:2}) and && continuations.  &method with no comma → this.method().
-    //   "&&" is never an &-call opener.
+    //   "&&" is never an &-call opener — consumed as ONE atomic unit below, so its second
+    //    "&" is never re-examined as a lone opener (the bug: a TIGHT "a&&b" — no space, as
+    //     TS's own printer emits — used to read as "a&" + "&b" sugar, since the per-char scan
+    //      forgot the first "&" by the time it reached the second).  The sugar also never
+    //       fires inside a '…'/"…" string or backtick TEMPLATE TEXT (only inside a `${…}`
+    //        substitution, which is real code) — a literal "&word" in prose must stay prose.
     Lang_amp_calls_in_text(text: string): string {
         let out = ''
         let i = 0
         const isWord  = (c: string) => !!c && /\w/.test(c)
         const isStart = (c: string) => !!c && /[A-Za-z_]/.test(c)
+        // Mode stack — 'squote'|'dquote': inside a quoted string, copied verbatim, no sugar.
+        //  'tmpl': inside backtick TEXT (outside any ${}), copied verbatim, no sugar, but a
+        //   "${" opens an 'expr' frame.  'expr': inside a `${…}` substitution — real code, so
+        //    the sugar is live again; its own braceDepth tracks nested {…} so an inner object
+        //     literal's "}" doesn't mistake itself for the substitution's close.
+        type Frame = { kind: 'squote' | 'dquote' | 'tmpl' | 'expr', braceDepth: number }
+        const stack: Frame[] = []
+        const top = () => stack[stack.length - 1]
+        const sugarOk = () => { const t = top(); return !t || t.kind === 'expr' }
         while (i < text.length) {
-            if (text[i] === '&' && text[i + 1] !== '&' && isStart(text[i + 1])) {
+            const t = top()
+            // ── opaque modes: copy verbatim, watch only for the escape + the mode's own close ──
+            if (t && (t.kind === 'squote' || t.kind === 'dquote')) {
+                const q = t.kind === 'squote' ? "'" : '"'
+                if (text[i] === '\\') { out += text.slice(i, i + 2); i += 2; continue }
+                if (text[i] === q) stack.pop()
+                out += text[i++]; continue
+            }
+            if (t && t.kind === 'tmpl') {
+                if (text[i] === '\\') { out += text.slice(i, i + 2); i += 2; continue }
+                if (text[i] === '`') { stack.pop(); out += text[i++]; continue }
+                if (text[i] === '$' && text[i + 1] === '{') { stack.push({ kind: 'expr', braceDepth: 0 }); out += '${'; i += 2; continue }
+                out += text[i++]; continue
+            }
+            // ── 'code' (no frame) or 'expr': entering a new string/template pushes a frame ──
+            if (text[i] === "'")  { stack.push({ kind: 'squote', braceDepth: 0 }); out += text[i++]; continue }
+            if (text[i] === '"')  { stack.push({ kind: 'dquote', braceDepth: 0 }); out += text[i++]; continue }
+            if (text[i] === '`')  { stack.push({ kind: 'tmpl',   braceDepth: 0 }); out += text[i++]; continue }
+            if (t && t.kind === 'expr') {
+                if (text[i] === '{') { t.braceDepth++; out += text[i++]; continue }
+                if (text[i] === '}') {
+                    if (t.braceDepth > 0) { t.braceDepth--; out += text[i++]; continue }
+                    stack.pop(); out += text[i++]; continue
+                }
+            }
+            if (sugarOk() && text[i] === '&' && text[i + 1] === '&') {
+                // atomic "&&" — never an opener, and its second "&" must never be re-examined
+                //  as one either (that re-examination, one char later, was the whole bug).
+                out += '&&'; i += 2; continue
+            }
+            if (sugarOk() && text[i] === '&' && isStart(text[i + 1])) {
                 // a tight identifier before "&" is the receiver: pier&do → pier.do();
                 //  absent|loose (space, "(", line start) → this.  Spaced "x & y" never enters
                 //   (isStart fails on the space), so bitwise "&" is untouched (mirrors "%" for sc).

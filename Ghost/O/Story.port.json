@@ -1,0 +1,23 @@
+{
+ "from": "src/lib/O/Story.svelte",
+ "refused": [],
+ "rewritten": {
+  "Story_demand_audio": "made async by the .g compiler (1 nested awaits) — allowed: callers ignore its return; a sync throw becomes a rejection; 1 braceless if/else on two lines braced",
+  "decode_toc_snap": "ReturnType<typeof this.…> → any",
+  "set_disk_ok": "1 braceless if/else on two lines braced",
+  "story_matching": "data property → a method returning it (callers: this.story_matching?.() ?? this.story_matching)",
+  "story_process_node": "1 read(s) of a data property ported as a method → a call",
+  "snap_H": "2 braceless if/else on two lines braced",
+  "Story_plan": "nested async () => await x → () => x (stays sync)",
+  "Story_errlog_drain": "a braced return type → any",
+  "story_drive": "made async by the .g compiler (17 nested awaits) — allowed: callers ignore its return; a sync throw becomes a rejection; 2 braceless if/else on two lines braced"
+ },
+ "notes": [
+  "dropped: let { M } = $props()"
+ ],
+ "module": {
+  "module: import { objectify, TheC } from \"$lib/Stuff.svelte": "TheC dropped: the .go header imports them already",
+  "module: import { onMount, tick } from \"svelte\";": "onMount dropped: the .go header imports them already",
+  "module: let spect = `": "a multi-line template string at module level: IMPORT() takes 4 spaces off each of its lines"
+ }
+}

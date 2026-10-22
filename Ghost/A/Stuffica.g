@@ -28,14 +28,25 @@ IMPORT()
     import { untrack } from "svelte"
 
 // Stuffica_view — stand a view called name over a compartment, showing these kinds of row; ui (optional) is the handle a commit
-//  bumps.  Returns the %TheAView
-Stuffica_view(w, name, kinds, ui):
-    this.TheA_seem(w, name, kinds)
+//  bumps.  opts (optional): says — the keys its points keep (Theory.g %TheASay; the rest of a row never reaches the screen, so a
+//   change to it commits nothing); from — the rows are held elsewhere (Theory.g TheA_seem_source).  Returns the %TheAView
+Stuffica_view(w, name, kinds, ui, opts):
+    let seem = this.TheA_seem(w, name, kinds)
     // a view's points are named (Theory.g TheA_dip): what a UI keys its {#each} by
     w.oai({ TheASeem: name }, { dip: 1 })
+    if (opts?.says) {
+        w.oai({ TheASeem: name }, { says: 1 })
+        for (const key of opts.says) seem.oai({ TheASay: key })
+    }
+    if (opts?.from) seem.c.from = opts.from
     let view = w.oai({ TheAView: name })
     if (ui) view.c.ui = ui
     return view
+
+// point a view at the pile it reads (a new run's steps, a replaced list) — or at nothing
+Stuffica_from(w, name, from):
+    let seem = w.o({ TheASeem: name })[0]
+    if (seem) seem.c.from = from || null
 
 // the points a view shows, in order — what the UI draws.  Reading them reads the handle's counter (as ob() reads vers) and
 //  NOTHING ELSE: the tree is read untracked, so a template that calls this re-runs on the view's commits only.  Tracked, o()
@@ -71,15 +82,34 @@ async Stuffica_commit(run):
         if (!moved.has(A.sc.A)) continue
         for (const w of A.o({ w: 1 })) {
             for (const view of w.o({ TheAView: 1 })) {
-                let name = view.sc.TheAView
-                await this.TheA_seem_walk(w, name)
-                let dige = this.TheA_digest(this.Stuffica_said(w, name))
-                if (dige === view.sc.dige) continue
-                changed.push({ w, view, dige })
+                let change = await this.Stuffica_walked(w, view)
+                if (change) changed.push(change)
             }
         }
     }
-    // every changed view at once: Svelte batches what is written in one go into one flush
+    return this.Stuffica_flush(changed)
+
+// Stuffica_refresh — the same for a compartment no run moves (a screen's own, whose views read piles held elsewhere): walk its
+//  views (these names, or all), commit the changed ones together.  Whoever knows the piles settled calls it — Story after a flush
+async Stuffica_refresh(w, names):
+    let changed = []
+    for (const view of w.o({ TheAView: 1 })) {
+        if (names && !names.includes(view.sc.TheAView)) continue
+        let change = await this.Stuffica_walked(w, view)
+        if (change) changed.push(change)
+    }
+    return this.Stuffica_flush(changed)
+
+// walk one view; what changed, if its sheet did
+async Stuffica_walked(w, view):
+    let name = view.sc.TheAView
+    await this.TheA_seem_walk(w, name)
+    let dige = this.TheA_digest(this.Stuffica_said(w, name))
+    if (dige === view.sc.dige) return null
+    return { w, view, dige }
+
+// every changed view at once: Svelte batches what is written in one go into one flush.  Returns the views committed
+Stuffica_flush(changed):
     for (const { w, view, dige } of changed) {
         w.oai({ TheAView: view.sc.TheAView }, { commits: (view.sc.commits || 0) + 1, dige })
         view.c.ui?.commit?.()

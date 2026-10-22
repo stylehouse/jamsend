@@ -8,8 +8,7 @@ story:AthePondRounds
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.016
-      sample=0.011,at=1792566816
+    TimeTotal:beliefs,avg=0.017
       sample=0.016,at=1792567839
       sample=0.011,at=1792570414
       sample=0.021,at=1792571033
@@ -19,8 +18,8 @@ story:AthePondRounds
       sample=0.018,at=1792578794
       sample=0.015,at=1792633976
       sample=0.022,at=1792636217
+      sample=0.017,at=1792650544
     TimeTotal:step,avg=0.004
-      sample=0.003,at=1792566816
       sample=0.004,at=1792567839
       sample=0.003,at=1792570414
       sample=0.005,at=1792571033
@@ -30,6 +29,7 @@ story:AthePondRounds
       sample=0.004,at=1792578794
       sample=0.004,at=1792633976
       sample=0.005,at=1792636217
+      sample=0.004,at=1792650544
   step,dige:acc822a82c0f14d0
   step=2,desc:stand P nine turns ahead streaming into Q — and R with a clock and nothing on it,dige:9994865185e9847b
   step=3,desc:thirteen pulses on P’s clock — run until quiet,dige:7cfc92dce34f82fc

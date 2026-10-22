@@ -8,12 +8,14 @@ story:AthePondAsk
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.017
+    TimeTotal:beliefs,avg=0.018
       sample=0.013,at=1792633857
       sample=0.022,at=1792635998
+      sample=0.02,at=1792650303
     TimeTotal:step,avg=0.004
       sample=0.003,at=1792633857
       sample=0.005,at=1792635998
+      sample=0.005,at=1792650303
   step,dige:5c65fc80a8a8f1cf
   step=2,desc:stand Clock_A — a Feeder that serves two ticks after an order — K_P who asks it — K_P gets hungry and runs,dige:4e60066ead253a46
     Assertion:an-ask-holds-a,sentence:an ask holds a wait on the asker — the run goes quiet but is not settled while an answer is owed

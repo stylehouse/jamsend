@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheTesting(): string { return '3539be2dc94439a5~g1' },
+    Ghostmeta_Ghost_A_AtheTesting(): string { return '6226e64c55928d9e~g1' },
 
 // AtheTesting.g — Atheory's proof (Ghost/A/Theory.g; spec/Atheory_todo.md §0.2 "The first Atheory tests").
 //
@@ -2385,6 +2385,146 @@ AthePondView_witness(w) {
     let tape = tank('K_P')?.o({ TheAIO: 'hand' })[0]?.o({ TheAHeard: 1 }) || []
     if (n === 5 && even && tape.length === 1 && tape[0].sc.food === 'flakes' && shows('K_P', 'Fed') === 1 && commits('K_P') === 3 && walks('K_P') === 4 && commits('K_Q') === 2 && walks('K_Q') === 3 && !walks('K_R')) {
         this.story_swear(w, 'what the hand does is IO — the click is on the tank’s tape and only that tank’s view is walked and commits')
+    }
+},
+//#endregion
+//#region the test routine — Book AthePondGlass
+// a view of rows held elsewhere, keeping only what it says (Theory.g TheA_seem_source + %TheASay; Stuffica_view's opts).  A screen
+//  keeps its views in its own compartment — here w:Athe_Glass, in the Book's world, which no run moves — reading a tank's rows.
+//   Two views of K_P's food: the menu says only what was fed, the tally says how much.  Step 2 feeds flakes; step 3 flakes again
+//    (only the count changes); step 4 worms; step 5 points the menu at nothing.  Storica (Storui on Stuffica) stands on this
+AthePondGlass(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.AthePondGlass_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async AthePondGlass_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 5
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.AthePondGlass_stand(w)
+        if (n === 3) await this.AthePondGlass_feed(w, 'flakes', 'feed flakes again — only the count changes')
+        if (n === 4) await this.AthePondGlass_feed(w, 'worms', 'feed worms — a new food')
+        if (n === 5) await this.AthePondGlass_blind(w)
+    }
+    this.AthePondGlass_witness(w)
+
+},
+async AthePondGlass_stand(w) {
+    w.i({ desc: 'stand K_P with a hand — a glass in the Book’s world with two views of K_P’s food — feed flakes' })
+    if (typeof this.Stuffica_refresh !== 'function' || typeof this.TheA_io !== 'function') {
+        w.i({ log: 'Theory.g, AtheFishTesting.g or Stuffica.g is not loaded — ghost_load them beside AtheTesting.g' })
+        return
+    }
+    let old = this.o({ A: 'K_P' })[0]
+    if (old) this.drop(old)
+    let t = this.TheA_stand(this, 'K_P', ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
+    t.i({ TheAIO: 'hand' })
+    t.i({ TheASynapse: 'hand', wake: 'eat', sum: 'count' })
+    let glass = w.oai({ w: 'Athe_Glass' })
+    this.Stuffica_view(glass, 'menu', ['Fed'], { bumps: 0, commit() { this.bumps++ } }, { from: t, says: [] })
+    this.Stuffica_view(glass, 'tally', ['Fed'], { bumps: 0, commit() { this.bumps++ } }, { from: t, says: ['count'] })
+    await this.AthePondGlass_feed(w, 'flakes')
+
+},
+async AthePondGlass_feed(w, food, desc) {
+    if (desc) w.i({ desc })
+    this.TheA_io('K_P', 'hand', { food })
+    this.TheA_run(w, null, ['K_P'])
+    await this.Stuffica_refresh(w.o({ w: 'Athe_Glass' })[0])
+
+},
+async AthePondGlass_blind(w) {
+    w.i({ desc: 'point the menu at nothing' })
+    let glass = w.o({ w: 'Athe_Glass' })[0]
+    this.Stuffica_from(glass, 'menu', null)
+    await this.Stuffica_refresh(glass, ['menu'])
+
+},
+AthePondGlass_witness(w) {
+    let n = this.c.run?.c.step_n ?? 0
+    let glass = w.o({ w: 'Athe_Glass' })[0]
+    if (!glass) return
+    let view = (name) => glass.o({ TheAView: name })[0]
+    let commits = (name) => view(name)?.sc.commits || 0
+    let bumps = (name) => view(name)?.c.ui?.bumps || 0
+    let walks = (name) => glass.o({ TheASeem: name })[0]?.sc.walks || 0
+    let points = (name) => this.Stuffica_points(glass, name)
+    let foods = (name) => points(name).map(p => p.sc.of).sort().join(' ')
+    let even = ['menu', 'tally'].every(name => commits(name) === bumps(name))
+    if (n === 2 && even && foods('menu') === 'flakes' && !glass.o({ Fed: 1 }).length && commits('menu') === 1 && commits('tally') === 1) {
+        this.story_swear(w, 'a view reads rows held elsewhere — the glass shows K_P’s food and holds none of it')
+    }
+    let menu_keys = points('menu')[0] ? Object.keys(points('menu')[0].sc).join(',') : ''
+    if (n === 2 && menu_keys === 'TheATrace,of' && points('tally')[0]?.sc.count === 1) {
+        this.story_swear(w, 'a point keeps only what its view says — the menu’s flakes carry no count, the tally’s do')
+    }
+    if (n === 3 && even && walks('menu') === 2 && commits('menu') === 1 && commits('tally') === 2 && points('tally')[0]?.sc.count === 2) {
+        this.story_swear(w, 'a change to a key the view doesn’t say commits nothing — the tally commits and the menu does not')
+    }
+    if (n === 4 && even && foods('menu') === 'flakes worms' && commits('menu') === 2 && commits('tally') === 3) {
+        this.story_swear(w, 'a new row reaches every view of it — both commit once')
+    }
+    if (n === 5 && even && !points('menu').length && commits('menu') === 3 && walks('tally') === 3 && commits('tally') === 3) {
+        this.story_swear(w, 'pointed at nothing, a view lets every point go — one commit — and its neighbour is not walked')
+    }
+},
+//#endregion
+//#region the test routine — Book AtheStoryCode
+// Story on TheACode (spec/Aprac_todo.md §0 item 1).  Story.svelte was ported to Ghost/O/Story.g by scripts/ghost_svelte_to_g.mjs
+//  and proved member by member; a runner that has ghost_loaded it runs Story from the .g — every method of it laid over the
+//   .svelte's by ghostsHaunt, which says where each came from (House.ghost_origin).  This Book stands an A that holds Story's
+//    code, as Theory stands the toy's, and swears both: the A holds the loaded .g, and the House runs it.  It loads nothing itself
+//     — green only on a runner that loaded Ghost/O/Story.g first
+AtheStoryCode(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.AtheStoryCode_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async AtheStoryCode_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 2
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.AtheStoryCode_stand(w)
+    }
+    this.AtheStoryCode_witness(w)
+
+},
+AtheStoryCode_stand(w) {
+    w.i({ desc: 'stand an A holding Story’s code — Ghost/O/Story.g — and ask the House where Story’s methods came from' })
+    if (typeof this.TheA_stand !== 'function') {
+        w.i({ log: 'Theory.g is not loaded — ghost_load it beside AtheTesting.g' })
+        return
+    }
+    let old = this.o({ A: 'Story_code' })[0]
+    if (old) this.drop(old)
+    this.TheA_stand(this, 'Story_code', ['Ghost/O/Story.g'], null, 'Story')
+    // where a handful of Story's methods came from — the run's own drive, its save, its snap, its plan, its toc codec
+    let top = this.top_House()
+    for (const name of ['story_drive', 'story_save', 'snap_H', 'Story_plan', 'decode_toc_snap', 'story_matching']) {
+        w.i({ Came: name, from: top.ghost_origin?.[name] || 'nowhere — a hand-written ghost' })
+    }
+
+},
+AtheStoryCode_witness(w) {
+    let n = this.c.run?.c.step_n ?? 0
+    if (n !== 2) return
+    let A = this.o({ A: 'Story_code' })[0]
+    let layer = A?.o({ TheACode: 1 })[0]?.o({ TheALayer: 'Ghost/O/Story.g' })[0]
+    let came = w.o({ Came: 1 })
+    if (layer?.sc.dige && A.o({ TheACode: 1 })[0]?.sc.dige) {
+        this.story_swear(w, 'an A holds Story’s code — its layer is Ghost/O/Story.g with the digest of the version loaded')
+    }
+    if (came.length === 6 && came.every(c => c.sc.from === 'Ghostmeta_Ghost_O_Story') && typeof this.story_matching === 'function') {
+        this.story_swear(w, 'this House runs Story from its .g — every method asked about came from Ghost/O/Story.g')
     }
 },
 //#endregion

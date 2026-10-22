@@ -59,6 +59,47 @@
 *(The earlier list — key by Dip, the read as the subscription, a real reactivity test — is done, above.  Its game, nested
  ponds as nested views, is set aside for the Book explorer: real evidence instead of a toy.)*
 
+**Story on TheACode — PROVEN on a live runner 2026-10-22 (not yet the spine).**  `scripts/ghost_svelte_to_g.mjs` ports a `.svelte` ghost to a `.g` and proves it twice:
+ (1) original vs compiled `.go`, member by member, types stripped — every difference must be DECLARED in `<name>.port.json`;
+  (2) the `.g`'s own text vs the `.go` — the compiler carried every member faithfully (bar its own `const H = this` and the
+   async it gives any method holding an await).  Story.svelte → `Ghost/O/Story.g`: 67 members, 72 of 80 printed identical,
+    8 declared (6 braceless two-line if/else braced; a data property `story_matching` → a method, read through Hovercraft's new
+     `story_matching_rules()`; `Story_plan`'s nested `async () => await x` → `() => x` so it stays sync — its caller uses the
+      return; `story_drive`/`Story_demand_audio` allowed async — callers ignore the return, but a sync throw becomes a rejection;
+       `story_save`'s `a && b` inside a template `${…}` rewritten — **the .g compiler applies its `&method` sugar inside template
+        substitutions** (`a && s.x` came out `a & this.s().x`); a module-level template string loses 4 spaces a line).  What the
+         .g compiler can't carry, learned by probing: braces in a header or return type, getters, data properties, a body line at
+          column 0, `ReturnType<typeof this.x>`, a two-line braceless if/else.  The swap is per tab: `runner_ask ghost_load
+           Ghost/O/Story.g` lays the `.go`'s methods over the `.svelte`'s (ghostsHaunt; `ghost_origin` says which).  Book
+            `AtheStoryCode` proves a runner runs Story from the .g (swapped: both oaths; unswapped: both absent, `from:nowhere — a
+             hand-written ghost`).  On the swapped runner every Book matched its unswapped baseline: LeafFarm 30/30, LeafJuggle 19/19,
+              HohoTtlilt, all 25 AthePond, HohoRetake's known flake and Diffmatication's pre-existing red unchanged; no ⛔, no wedge.
+               Two misses before that, both now gates in the converter: the .go header already imports `TheC` and `onMount`, so
+                Story's own imports redeclared them and Vite refused the module (esbuild's parse doesn't check bindings — `--prove`
+                 now does); and Story's own `...this.story_matching` needed to become a call once the property was a method.
+                  **Next: the spine** — `Ghost.svelte` mounts `<Story {M}/>` from `Story.svelte`; switching it to `gen/O/Story.go`
+                   (`<Story H={M}/>`) moves every tab (runners, music pages, the editor's own copy is pinned_stable).  Then
+                    Story.svelte retires to history and edits go to the .g.
+
+**Owner, 2026-10-22 (before a compaction) — the direction from here:**
+- **Story.g becomes THE Story.**  Atheory-only aspects get added to `Ghost/O/Story.g` rather than the legacy `Story.svelte`; then
+   the spine mounts the .go and Story.svelte retires to history.
+- **UI next** — Storui rebuilt on Stuffica (item 2 above).
+- **Hackarium direction: integrate the editor and Story.g a bit somehow** — the editor seat editing Story's own .g, pushing it,
+   and the runner taking it at an era seam (CodePush, as the toy does).
+- **Two .g compiler fixes — DONE 2026-10-22** (`src/lib/O/lang/compile.ts`): `&&` is one token, never the `&method` sugar, and
+   the sugar never fires in string or template text; the "must not end on a method-final brace" dodge didn't reproduce (the
+    comments stay).  55 .g recompiled byte-identical; pinned_stable unaffected; the converter's `&&` rewrite is gone.
+
+**Storica — Storui on Stuffica, first slice (2026-10-22).**  `src/lib/O/Storica.svelte`, mounted by Story.g's Story_plan
+ beside Storui (so only on a tab that ghost_loaded Story.g, until the spine swap).  The strip is two views in the strip's own
+  compartment, reading Story's piles from outside (Theory: a Seem's `c.from` + `%TheASay`; Book `AthePondGlass`): `plan` over
+   The's %step (dige, desc), `live` over This's %Step (ok, caveat, accepted, dige).  Refreshed after each settled flush
+    (`Stuffica_refresh`), drawn only on a commit, pips keyed by Dip; `window.__storica_ledger()` counts draws.  **Not yet seen
+     with eyes** — no console errors on the runner, but runner_ask has no eval, so nobody has looked at the tab.  Next: the open
+      step's snap as a nested view (a snap decoded to a C tree, a view per level), notes and oaths as their own views, then the
+       diff panel; a click becomes IO once Story is an A.
+
 **Open questions.**
 - A view whose handle isn't hung (no UI open) — keep walking it, or stand views only while open (Stuffing's register /
    deregister)?  Probably: a view stands while open; closing drops it, and its Seem with it.

@@ -1,0 +1,38 @@
+Snap:H
+  H:AthePondGlass,Run
+    A:AthePondGlass
+      self,round=3	{"mung":["age"]}
+      w:AthePondGlass
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        w:Athe_Glass
+          TheASeem:menu,dip,says,walks=2
+            TheAKind:Fed
+            Dip:seem,value:menu,i
+            TheATrace:Fed,of:flakes
+              Dip:seem,value:menu_1
+            TheAWalk:2
+          TheAView:menu,commits,dige:99a2a86d385e4020
+          TheASeem:tally,dip,says,walks=2
+            TheAKind:Fed
+            TheASay:count
+            Dip:seem,value:tally,i
+            TheATrace:Fed,of:flakes,count=2
+              Dip:seem,value:tally_1
+            TheAWalk:2
+          TheAView:tally,commits=2,dige:a179ca8a637446ce
+        TheARun,rounds,quiet
+          TheARound:1
+            TheAWent:K_P
+    A:K_P
+      TheACode:Athe_Tank,variant:plain,dige:78b844d64bc4c39b
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:1e4725315d9a38a7~g1
+      self,round	{"mung":["age"]}
+      w:Athe_Tank
+        TheAIO:hand,heard=2,takes=2
+          TheAHeard:1,take,food:flakes
+          TheAHeard:2,take=2,food:flakes
+        TheASynapse:hand,wake:eat,sum:count
+          TheAWoke,count=2,pulses=2
+        Fed:flakes,count=2
+        self,round	{"mung":["age"]}

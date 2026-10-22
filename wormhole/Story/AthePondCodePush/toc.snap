@@ -9,8 +9,6 @@ story:AthePondCodePush
         means,drop
   TimeSpool
     TimeTotal:beliefs,avg=0.024
-      sample=0.027,at=1792566758
-      sample=0.026,at=1792567755
       sample=0.023,at=1792570271
       sample=0.018,at=1792570545
       sample=0.023,at=1792570926
@@ -19,9 +17,9 @@ story:AthePondCodePush
       sample=0.019,at=1792578573
       sample=0.026,at=1792633895
       sample=0.036,at=1792636177
+      sample=0.026,at=1792649276
+      sample=0.028,at=1792650340
     TimeTotal:step,avg=0.004
-      sample=0.004,at=1792566758
-      sample=0.004,at=1792567755
       sample=0.004,at=1792570271
       sample=0.003,at=1792570545
       sample=0.004,at=1792570926
@@ -30,6 +28,8 @@ story:AthePondCodePush
       sample=0.003,at=1792578573
       sample=0.004,at=1792633895
       sample=0.006,at=1792636177
+      sample=0.004,at=1792649276
+      sample=0.005,at=1792650340
   step,dige:c2f1728dc0b239b5
   step=2,desc:stand the tank and a bystander holding other code — and take turn one,dige:4476f6e6a52b821e
   step=3,desc:the toy file arrives once — the push waits on the tank,dige:66c28940b9d54f5b

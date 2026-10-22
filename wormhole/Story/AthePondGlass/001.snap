@@ -1,0 +1,7 @@
+Snap:H
+  H:AthePondGlass,Run
+    A:AthePondGlass
+      self,round	{"mung":["age"]}
+      w:AthePondGlass
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

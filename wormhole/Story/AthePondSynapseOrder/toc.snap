@@ -8,8 +8,7 @@ story:AthePondSynapseOrder
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.036
-      sample=0.093,at=1792550820
+    TimeTotal:beliefs,avg=0.029
       sample=0.054,at=1792563878
       sample=0.028,at=1792566869
       sample=0.03,at=1792567910
@@ -19,8 +18,8 @@ story:AthePondSynapseOrder
       sample=0.027,at=1792578875
       sample=0.027,at=1792634170
       sample=0.028,at=1792636260
-    TimeTotal:step,avg=0.006
-      sample=0.016,at=1792550820
+      sample=0.024,at=1792650599
+    TimeTotal:step,avg=0.005
       sample=0.009,at=1792563878
       sample=0.005,at=1792566869
       sample=0.005,at=1792567910
@@ -30,6 +29,7 @@ story:AthePondSynapseOrder
       sample=0.004,at=1792578875
       sample=0.005,at=1792634170
       sample=0.005,at=1792636260
+      sample=0.004,at=1792650599
   step,dige:524147803a9f96c6
   step=2,desc:stand two pairs — P streaming into Q nine turns behind — and wake each pair whole,dige:054afef3987e9e9c
   step=3,desc:12 clock pulses each — pair 5 woken whole and in pair 6 only P moves,dige:bc1f96aa1daee7ec

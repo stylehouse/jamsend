@@ -32,8 +32,9 @@ Credulate,of_Book:AthePondSunpitPassOrder
   GhostInclude:Ghost_A_Theory,dige:5a467c7a918d1877~g1
   GhostInclude:Ghost_A_AtheFishTesting,dige:1e4725315d9a38a7~g1
   GhostInclude:Ghost_A_Stuffica,dige:117de985e6f1ee65~g1
-  GhostInclude:Ghost_A_AtheTesting,dige:3539be2dc94439a5~g1
-  last_ok,at=1792636248.748,ok_pct
+  GhostInclude:Ghost_A_AtheTesting,dige:01d61e92f2726302~g1
+  GhostInclude:Ghost_O_Story,dige:1ad7a2ac27c70c67~g1
+  last_ok,at=1792650590.215,ok_pct
     uses:Ghost_N_Peeroleum,dige:ee39d52bb1441684~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:526de2694efaf4c7~g1
@@ -67,4 +68,5 @@ Credulate,of_Book:AthePondSunpitPassOrder
     uses:Ghost_A_Theory,dige:5a467c7a918d1877~g1
     uses:Ghost_A_AtheFishTesting,dige:1e4725315d9a38a7~g1
     uses:Ghost_A_Stuffica,dige:117de985e6f1ee65~g1
-    uses:Ghost_A_AtheTesting,dige:3539be2dc94439a5~g1
+    uses:Ghost_A_AtheTesting,dige:01d61e92f2726302~g1
+    uses:Ghost_O_Story,dige:1ad7a2ac27c70c67~g1

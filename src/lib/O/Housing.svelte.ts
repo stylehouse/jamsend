@@ -2363,9 +2363,19 @@ export class House extends StorableHousing {
             //         page with a resident Book; no headless boot (CredRunner/daemon/jsdom) ever sets
             //          listen_choice, so the no-picker AUTO path below still keeps its `!book` guard — a
             //           book boot in jsdom (no picker, book set, no click) still holds the gate for the tree.
+            // THE `!book` GUARD LOCKED OUT EVERY PHONE (2026-10-22, the owner on Brave/Android off-LAN: "an open share button
+            //  that wouldn't go away (or operate)").  The paragraph above already says why: BigQualand stamps book='Sounditron'
+            //   on EVERY end-user page, so `!book` was false for every real listener and the no-picker AUTO path never fired —
+            //    a phone sat on the gate with Brave's advice beneath a button that can never succeed.  What the guard is FOR is
+            //     the headless boots (the daemon, CredRunner, Story CLI) that also lack a picker but must keep the tree; those all
+            //      run under jsdom, and a dispatch tab says so with ?B=.  So that is the test now: a real browser with no picker
+            //       and no ?B= is a listener, whatever default Book its page carries.
+            const headless = typeof navigator !== 'undefined' && /jsdom/i.test(String(navigator.userAgent || ''))
+            const dispatch = typeof location !== 'undefined' && new URLSearchParams(location.search || '').has('B')
+            const listener = !H.top_House().c.book || (!headless && !dispatch)
             if (typeof window !== 'undefined'
                 && (H.top_House().c.listen_choice
-                    || (!H.top_House().c.book && typeof (window as any).showDirectoryPicker !== 'function'))) {
+                    || (listener && typeof (window as any).showDirectoryPicker !== 'function'))) {
                 H.top_House().c.disk_gated = false
                 H.top_House().c.listen_only = true
                 // MORTALITY MITIGATION (MobilenoFSA_todo §0 #2): a shareless listener's identity
