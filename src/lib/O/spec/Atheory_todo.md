@@ -72,6 +72,45 @@ A capture doc, not yet a plan — the owner has reached for this three times in 
 *Food for thought (owner, 2026-10-21):* maybe the spheres are **Was\*\*** and **Trace\*\*** rather than K and D — the D sphere is
  what the Seem's trace leaves.  **RENAMED 2026-10-21 (owner): `TheAHeld` → `TheATrace`** — "Held" read as a req HOLD (a root keeping inner realities existing and waited upon), which the D point is not; that word stays free for the req side of the scheduler.  K → Was\*\* not renamed.
 
+**2026-10-22 — the lump is down; practice moves to `Aprac_todo.md`.**  What Atheory is (code held by an A, eras, compartments
+ and the boundary, a scheduler that never sweeps, spheres on a Seem with rollback and merge, time as IO with a tape, holds) is
+  built as a toy and proven (design §1).  What we BUILD on it — views (`Ghost/A/Stuffica.g`), Pondland, the UI pattern, the game,
+   Hackarium rebuilt within our walls — lives in **`Aprac_todo.md`**.  This doc keeps the theory and its **edges**, each of which
+    leads out into another topic when it's taken up:
+- **Turfs and authority** — leases at the relay; who and what code may run (crypto at the era seam is the first, toy-sized
+   step: a push carries `by:<pub>`, an A holds which keys it trusts).  → `Crew_todo.md`, `Cluster_spec.md`.
+- **Synapses across Houses** — a pulse whose receiver is in another House, then on another body.  → the wire (`Wire_spec.md`),
+   `ClusterAddressing_todo.md`.
+- **The manifest check** — Atlas (what the code says) joined with Electrode (what ran) against what a page declares.  →
+   `Wordland_todo.md`.
+- **Rollback beyond marks** — an A that knows what it must re-synthesise from a resumable point (§0.1 "Rollback — to study").
+- **The scheduler inside `beliefs()`** — the first Housing change (ledger row first); "unwatched work costs nothing" for real.
+   → `Datalayer_todo.md`, `Perf_todo.md`.
+- **Reqs woken by pulse for real** — one Hovercraft req held by a `%TheAWait` instead of a ttlilt.  → `Coding_guide.md`.
+- **Answers to one asker, waits that time out** — the toy's two loose ends of `%TheAWait` (design §1.13).
+
+**OVERNIGHT, DONE 2026-10-21 night** — items 1 and 2 built, each sabotaged three ways (S18–S23, every one bit as predicted, design §1.10), 24 AthePond Books green; item 3: Pondland draws the Trace, and Pond Plates has plates 18–22 (the scheduler as film strips, v6).  Read design §1.13 "Time is IO" and "A hold is a pulse not yet delivered".  *Watch:* AthePondSunpitPassOrder went red once on `swapping-the-egg-and` in the sweep, green on the rerun — unexplained.
+**Next, from here:** (1) answers addressed to one asker, and a wait that times out (a ttlilt as a pulse the clock sends — the Coding_guide pair, both halves in the toy); (2) a second IO beside time (a socket-ish `%TheAIO:inbox` the page types into) and a replay of Pondland’s own tape in a Book; (3) then the real step: one Hovercraft req woken by pulse, ledger row first.
+
+**OVERNIGHT PLAN (written 2026-10-21 for the owner to eye).**  Toy only, no Housing change.
+ Each item: build → compile + esbuild-parse → Sonnet subagent on runner `e747cbed6a9ca919` records the Book → predict a
+  sabotage per new oath in design §1.10 BEFORE running it → restore by checksum → full AthePond sweep → design §1.x + Credence
+   row + this list.  Never compile or write src while the subagent runs a Book.
+1. **Time as an IO compartment — `AthePondTape`.**  The page's `setInterval` stops poking `Clock` directly: it pulses a
+    `w:Athe_Host` compartment's synapse (`%TheAIO:time`), which records each arrival (`%TheAHeard,n`) and sends it on.  A
+     Book plays a recorded tape of host pulses into it and gets byte-identical rounds — the seed of "what a replay mocks"
+      (From the top, item 3).  Pondland moves onto it.  No ruling needed.
+2. **Reqs woken by pulse, as a toy — `AthePondAsk`** — ONLY IF the owner rules yes on: *a hold is a pulse not yet delivered*.
+    A tank asks a `w:Athe_Feeder` for food: an ask (name for the root still the owner's — `%TheAAsk`? `%TheAWait`?) sits on the
+     tank while its pulse is in flight; the Feeder answers some ticks later; the asker is never visited until the answer lands;
+      and "settled" = the run is quiet AND no ask is outstanding.  Sabotages: visit the waiting asker every round (sweep); count
+       a quiet run as settled with an ask out (wake taken for hold — Coding_guide's trap, reproduced on purpose).
+3. **Art school, if 1–2 are done or blocked.**  Pondland draws the Trace: a Seem over each tank, its sheet as tracing paper,
+    regards as dots (plates 12–17 come alive); and a Pond Plates plate for the scheduler — runs as a film strip, eras as
+     cuts where code arrived.
+*Ruled by the owner 2026-10-21:* (a) YES — a hold is a pulse not yet delivered; (b) the req-side root is **`%TheAWait`**;
+ (c) yes — CLAUDE.md's private-vite recipe now warns about the shared deps.
+
 **Next moves, in order:**
 1. *Done 2026-10-21:* all 13 AthePond Books green after A\*\* + the rename; S5 (`TheA_near` from the top) and S6 (`TheA_as`
     flat) bit as predicted.  Nest's heredity oath is a known gap under S6 (design §1.10).

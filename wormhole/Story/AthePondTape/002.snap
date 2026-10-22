@@ -1,0 +1,61 @@
+Snap:H
+  H:AthePondTape,Run
+    A:AthePondTape
+      w:AthePondTape
+        req:wrangle,eternal,ok
+        TheARun,rounds=3,quiet
+          TheARound:1,landed
+            TheAWent:Host
+          TheARound:2,landed=2
+            TheAWent:Clock_A
+          TheARound:3
+            TheAWent:K_P
+            TheAWent:K_Q
+        Ran:1,rounds:Host +1 / Clock_A +2 / K_P K_Q
+    A:Host
+      TheACode:Athe_Host,variant:plain,dige:f2a3a550d7ec56ba
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:76f6f0ac37a7c900~g1
+      w:Athe_Host
+        Beat,ms=1000
+        TheAIO:outside,heard,takes
+          TheAHeard:1,take,ms=1000
+        TheASynapse:outside,wake:hear,sum:count
+          TheAWoke,count,pulses
+        TheAAxon:beat
+        Beats,count
+    A:Clock_A
+      TheACode:Athe_Clock,variant:plain,dige:f2a3a550d7ec56ba
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:76f6f0ac37a7c900~g1
+      w:Athe_Clock
+        TheASynapse:beat,from:Host,wake:tick,sum:count
+          TheAWoke,count,pulses
+        TheAAxon:clock
+        Ticks,count
+    A:K_P
+      TheACode:Athe_Tank,variant:plain,dige:f2a3a550d7ec56ba
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:76f6f0ac37a7c900~g1
+      w:Athe_Tank
+        TheASynapse:clock,from:Clock_A,wake:turn,sum:count
+          TheAWoke,count,pulses
+        Turns,count
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+          TheAPass:Heron
+        EggsNamed,count=2
+        Egg:minnow 1,born
+        Egg:perch 2,born
+    A:K_Q
+      TheACode:Athe_Tank,variant:plain,dige:f2a3a550d7ec56ba
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:76f6f0ac37a7c900~g1
+      w:Athe_Tank
+        TheASynapse:clock,from:Clock_A,wake:turn,sum:count
+          TheAWoke,count,pulses
+        Turns,count
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+          TheAPass:Heron
+        EggsNamed,count=2
+        Egg:minnow 1,born
+        Egg:perch 2,born

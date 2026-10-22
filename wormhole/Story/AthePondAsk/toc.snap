@@ -1,0 +1,23 @@
+story:AthePondAsk
+  Styles
+  Plan
+  Opt
+    For
+  EntropyArrest
+    Entcase:Self_round
+      lematch,self,round
+        means,drop
+  TimeSpool
+    TimeTotal:beliefs,avg=0.017
+      sample=0.013,at=1792633857
+      sample=0.022,at=1792635998
+    TimeTotal:step,avg=0.004
+      sample=0.003,at=1792633857
+      sample=0.005,at=1792635998
+  step,dige:5c65fc80a8a8f1cf
+  step=2,desc:stand Clock_A — a Feeder that serves two ticks after an order — K_P who asks it — K_P gets hungry and runs,dige:4e60066ead253a46
+    Assertion:an-ask-holds-a,sentence:an ask holds a wait on the asker — the run goes quiet but is not settled while an answer is owed
+  step=3,desc:tick the clock once — run until quiet,dige:aafa5b741c102768
+    Assertion:a-waiting-asker-is,sentence:a waiting asker is never visited — the clock ticks and only the feeder moves
+  step=4,desc:tick the clock again — run until quiet,dige:90eec407187685e8
+    Assertion:the-answer-lands-and,sentence:the answer lands and ends the wait — the asker moves once more and the run is settled

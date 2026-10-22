@@ -1,39 +1,56 @@
 <script lang="ts">
     // Pondland — a page whose top is Atheory's scheduler (Ghost/A/Theory.g TheA_run), not Housing's think.
     //  A bare House with no ambient tick carries only Theory and its toy (AtheFishTesting.g).  The one thing from
-    //   outside is the page's timer, which pokes the Clock compartment; everything else moves only when a pulse reaches
-    //    it — the Clock ticks into P and Q, P streams its old fish into Q, and R (joined to a clock nobody pokes) is never
+    //   outside is time: the page's timer tells the Host compartment how many ms went by (Theory.g TheA_io — it lands on
+    //    Host's tape), Host owes them to its 500 ms beat and beats the Clock; everything else moves only when a pulse reaches
+    //     it — the Clock ticks into P and Q, P streams its old fish into Q, and R (joined to a clock nobody pokes) is never
     //     visited.  spec/Atheory_design.md §1.13; Atheory_todo §0.0 "From the top".
-    import { onMount, onDestroy } from 'svelte'
+    //  What reaches the screen are VIEWS (Ghost/A/Stuffica.g): each figure is a Seem on its compartment, walked after a run only
+    //   if that compartment moved and committed only if what it shows changed — one $state bump per view, all at the run's tail.
+    //    Nothing here subscribes to the tree; the figures read the views' Trace points, plain C a walk rewrites.
+    import { onMount, onDestroy, untrack } from 'svelte'
     import { House } from '$lib/O/Housing.svelte'
     // a .go is a Svelte component (svelte.config extensions) with no type declarations, hence the ignores
     // @ts-ignore
     import Theory from '$lib/gen/A/Theory.go'
     // @ts-ignore
     import Fish from '$lib/gen/A/AtheFishTesting.go'
+    // @ts-ignore
+    import Stuffica from '$lib/gen/A/Stuffica.go'
 
     const TOY = 'Ghost/A/AtheFishTesting.g'
     const TANKS = ['P', 'Q', 'R']
     const CLOCKS = ['Clock', 'Clock_B']
+    const BEAT = 500                // the Host's beat, in real ms — the timer's own rate is only how often it reports
 
     let H: any = $state(null)
     let ready = $state(false)
-    let beat = $state(0)            // bumps after each run, so the view re-reads the tree
     let running = $state(true)
     let every = $state(500)
     let visits: Record<string, number> = $state({})
-    let pokes = $state(0)
+    let pokes = $state(0)           // how many times the outside has spoken to Host
     let timer: any = null
+    let last = 0                    // when the outside last spoke (performance.now) — a pause stops the pond's time
+    let paper = $state(true)        // show the tracing paper: the view's own Seem, its Trace points showing through
+    let last_r: any = $state.raw(null)   // the last run (a new %TheARun each time, so assigning it is the one signal)
+    let committing: Promise<unknown> = Promise.resolve()   // commits walk (async); one at a time, in run order
+
+    // a view's handle: the one $state a commit bumps (Stuffica.g).  Everything a figure reads is plain C that only a walk rewrites
+    class Look { v = $state(0); commit() { this.v++ } }
+    const figs: Record<string, Look> = Object.fromEntries([...TANKS, ...CLOCKS, 'Host'].map(n => [n, new Look()]))
+    // the render ledger: every time Svelte re-runs a figure's block, which figure and the view's commit count then.  Plain (not
+    //  $state), so keeping it can't cause a render; window.__pond_ledger() hands it to a headless probe
+    const ledger: { name: string, v: number, at: number }[] = []
 
     // window.__pond() hands a headless probe the House
-    onMount(() => { H = new House({ name: 'Pondland' }); (window as any).__pond = () => H })
+    onMount(() => { H = new House({ name: 'Pondland' }); (window as any).__pond = () => H; (window as any).__pond_ledger = () => ({ ledger, commits: Object.fromEntries(Object.entries(figs).map(([k, f]) => [k, f.v])) }) })
     onDestroy(() => { clearInterval(timer); H?.stop?.() })
 
     // wait for both ghosts to be eaten, then stand the pond and start the clock
     $effect(() => {
         if (!H || ready) return
         const t = setInterval(() => {
-            if (typeof H.TheA_run !== 'function' || typeof H.Athe_Clock_woken !== 'function') return
+            if (typeof H.TheA_run !== 'function' || typeof H.Athe_Clock_woken !== 'function' || typeof H.Stuffica_commit !== 'function') return
             clearInterval(t)
             stand()
             ready = true
@@ -43,7 +60,7 @@
     $effect(() => {
         if (!ready) return
         clearInterval(timer)
-        if (running) timer = setInterval(tick, every)
+        if (running) { last = performance.now(); timer = setInterval(tick, every) }
         return () => clearInterval(timer)
     })
 
@@ -54,9 +71,17 @@
         // this House runs in eras: code that hot-reloads waits on the As that hold it until the next run takes it (Theory.g TheA_run)
         H.i({ TheAEras: 1 })
         H.i({ A: 'Pondland' }).i({ w: 'Pondland' })
+        // time's compartment: the only one the outside may speak to, and it keeps the tape of what it heard (the newest 12)
+        const host = H.TheA_stand(H, 'Host', [TOY], null, 'Athe_Host').i({ w: 'Athe_Host' })
+        host.i({ Beat: 1, ms: BEAT })
+        host.i({ TheAIO: 'outside', keep: 12 })
+        host.i({ TheASynapse: 'outside', wake: 'hear', sum: 'count' })
+        host.i({ TheAAxon: 'beat' })
         for (const name of CLOCKS) {
             const clock = H.TheA_stand(H, name, [TOY], null, 'Athe_Clock').i({ w: 'Athe_Clock' })
-            clock.i({ TheASynapse: 'poke', wake: 'tick', sum: 'count' })
+            // Clock keeps Host's beat; Clock_B keeps a poke synapse nobody ever pokes
+            if (name === 'Clock') clock.i({ TheASynapse: 'beat', from: 'Host', wake: 'tick', sum: 'count' })
+            else clock.i({ TheASynapse: 'poke', wake: 'tick', sum: 'count' })
             clock.i({ TheAAxon: 'clock' })
         }
         const P = H.TheA_stand(H, 'P', [TOY], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
@@ -69,6 +94,10 @@
         Q.i({ NamesAs: 'Q' })
         const R = H.TheA_stand(H, 'R', [TOY], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
         R.i({ TheASynapse: 'clock', from: 'Clock_B', wake: 'turn', sum: 'count' })
+        // what the screen shows of each: a view (a Seem the page holds open) and its handle
+        for (const [name, w] of [['P', P], ['Q', Q], ['R', R]] as const) H.Stuffica_view(w, 'fig', ['Turns', 'Egg', 'Fish', 'Heron'], figs[name])
+        H.Stuffica_view(host, 'fig', ['Beats', 'Spare', 'TheAIO'], figs.Host)
+        for (const name of CLOCKS) H.Stuffica_view(world(name), 'fig', ['Ticks'], figs[name])
         // P starts nine turns ahead, so its first fish grow old while Q's are young
         const pc = P.o({ TheASynapse: 'clock' })[0]
         for (let k = 0; k < 9; k++) pc.i({ TheAPulse: 1 })
@@ -82,14 +111,22 @@
         for (const round of r.o({ TheARound: 1 })) {
             for (const went of round.o({ TheAWent: 1 })) visits[went.sc.TheAWent] = (visits[went.sc.TheAWent] || 0) + 1
         }
-        beat++
+        last_r = r
+        // the run's tail: walk the views of what moved, commit the ones that changed (R's is never walked — R isn't)
+        committing = committing.then(() => H.Stuffica_commit(r))
     }
 
+    // the outside speaks: how long it has been since it last did.  A late timer says more ms, an early one fewer — Host
+    //  turns them into whole beats and keeps the rest, so the pond's time is real time, however the timer jitters
     function tick() {
-        const poke = world('Clock')?.o({ TheASynapse: 'poke' })[0]
-        poke?.i({ TheAPulse: 1 })
+        const now = performance.now()
+        say(Math.round(now - last))
+        last = now
+    }
+    function say(ms: number) {
+        H.TheA_io('Host', 'outside', { ms })
         pokes++
-        run(['Clock'])
+        run(['Host'])
     }
 
     function hash(s: string, k: number) {
@@ -99,38 +136,73 @@
         return (h >>> 0) / 4294967296
     }
 
-    type Row = { kind: string, name: string, born: number, came?: string, x: number, y: number, ang: number, age: number }
-    function tank(name: string, _beat: number) {
+    type Row = { key: string, kind: string, name: string, born: number, came?: string, x: number, y: number, ang: number, age: number }
+    // a tank as its view shows it: the points of its fig Seem (sc copied off each row by the last walk)
+    // what a figure reads: its view's counter (tracked), then everything else untracked — so it redraws on its commits only
+    function seen<T>(name: string, fn: () => T): T {
+        void figs[name].v
+        return untrack(fn)
+    }
+    function tank(name: string, _era: number) { return seen(name, () => tank_now(name)) }
+    function tank_now(name: string) {
         const w = world(name)
         if (!w) return null
-        const turns = w.o({ Turns: 1 })[0]?.sc.count || 0
+        // the read is the subscription: Stuffica_points reads this view's commit counter, and nothing else here is reactive
+        const points = H.Stuffica_points(w, 'fig')
+        if (ledger.length < 5000) ledger.push({ name, v: figs[name].v, at: Math.round(performance.now()) })
+        const turns = points.find((p: any) => p.sc.TheATrace === 'Turns')?.sc.count || 0
         const rows: Row[] = []
-        for (const r of w.o()) {
-            const k = Object.keys(r.sc)[0]
+        for (const r of points) {
+            const k = r.sc.TheATrace
             if (k !== 'Egg' && k !== 'Fish') continue
-            const n = String(r.sc[k])
+            const n = String(r.sc.of)
             const a = hash(n, 3) * Math.PI * 2, d = Math.sqrt(hash(n, 4)) * 66
-            rows.push({ kind: k, name: n, born: r.sc.born, came: r.sc.came, x: Math.cos(a) * d, y: Math.sin(a) * d, ang: hash(n, 5) * 360, age: turns - r.sc.born })
+            rows.push({ key: H.Stuffica_key(r) || n, kind: k, name: n, born: r.sc.born, came: r.sc.came, x: Math.cos(a) * d, y: Math.sin(a) * d, ang: hash(n, 5) * 360, age: turns - r.sc.born })
         }
-        const heron = w.o({ Heron: 1 })[0]
-        const waiting = w.o({ TheASynapse: 1 }).reduce((s: number, syn: any) => s + syn.o({ TheAPulse: 1 }).length, 0)
+        const heron = points.some((p: any) => p.sc.TheATrace === 'Heron')
+        // the code an A runs isn't in its view; it changes only at an era seam, which the page notes (era_at)
         const A = H.o({ A: name })[0]
         const code = String(A?.o({ TheACode: 1 })[0]?.sc.dige || '').slice(0, 6)
         const took = A?.o({ TheACodeTaken: 1 })[0]?.sc.count || 0
-        return { name, turns, rows, heron: !!heron, ate: heron ? heron.o({ Ate: 1 }).length : 0, waiting, code, took }
+        const view = w.o({ TheAView: 'fig' })[0]
+        return { name, turns, rows, heron, code, took, commits: view?.sc.commits || 0 }
     }
-    function arrived(_beat: number) {
-        return log_w()?.o({ TheARun: 1 })[0]?.o({ TheAArrived: 1 }).map((x: any) => x.sc.TheAArrived) || []
+    type Mark = { x: number, y: number, kind: string, of: string, key: string, became?: string, neu?: boolean }
+    // the tracing paper: the view's Seem showing through — its points, and what the walk that last changed it saw happen
+    function trace(name: string) { return seen(name, () => trace_now(name)) }
+    function trace_now(name: string) {
+        const w = world(name)
+        const seem = w?.o({ TheASeem: 'fig' })[0]
+        if (!seem) return null
+        const shows = H.Stuffica_points(w, 'fig')
+        const at = (of: string) => { const a = hash(of, 3) * Math.PI * 2, d = Math.sqrt(hash(of, 4)) * 66; return { x: Math.cos(a) * d, y: Math.sin(a) * d } }
+        const walk = seem.o({ TheAWalk: 1 })[0]
+        const became = new Map((walk?.o({ TheABecame: 1 }) || []).map((b: any) => [String(b.sc.of), b.sc.was]))
+        const neu = new Set((walk?.o({ TheANeu: 1 }) || []).map((b: any) => String(b.sc.of)))
+        const drawn = (k: string) => k === 'Egg' || k === 'Fish'
+        const points: Mark[] = shows.filter((p: any) => drawn(p.sc.TheATrace)).map((p: any) => ({ ...at(String(p.sc.of)), kind: p.sc.TheATrace, of: String(p.sc.of), key: H.Stuffica_key(p) || String(p.sc.of),
+            became: became.get(String(p.sc.of)) as string | undefined, neu: neu.has(String(p.sc.of)) }))
+        const gone = (walk?.o({ TheAGoner: 1 }) || []).filter((g: any) => drawn(g.sc.TheAGoner)).map((g: any) => ({ ...at(String(g.sc.of)), of: String(g.sc.of), kind: g.sc.TheAGoner }))
+        return { points, gone, walks: seem.sc.walks || 0 }
+    }
+    function arrived(r: any) {
+        return r?.o({ TheAArrived: 1 }).map((x: any) => x.sc.TheAArrived) || []
     }
     // the last run that took code: a new era began there
     let era_at = $state(0)
     let era_who: string[] = $state([])
-    function last_run(_beat: number) {
-        const r = log_w()?.o({ TheARun: 1 })[0]
+    function last_run(r: any) {
         if (!r) return []
         return r.o({ TheARound: 1 }).map((round: any) => ({ n: round.sc.TheARound, landed: round.sc.landed || 0, went: round.o({ TheAWent: 1 }).map((x: any) => x.sc.TheAWent) }))
     }
-    function ticks(name: string, _beat: number) { return world(name)?.o({ Ticks: 1 })[0]?.sc.count || 0 }
+    function tape() {
+        return seen('Host', () => (world('Host')?.o({ TheAIO: 'outside' })[0]?.o({ TheAHeard: 1 }) || []).map((h: any) => ({ n: h.sc.TheAHeard, take: h.sc.take, ms: h.sc.ms })))
+    }
+    function shown(name: string, kind: string) { return seen(name, () => world(name) ? H.Stuffica_points(world(name), 'fig').find((p: any) => p.sc.TheATrace === kind) : null) }
+    function host() {
+        return { beats: shown('Host', 'Beats')?.sc.count || 0, spare: shown('Host', 'Spare')?.sc.ms || 0 }
+    }
+    function ticks(name: string) { return shown(name, 'Ticks')?.sc.count || 0 }
     function colour(r: Row) {
         if (r.came) return 'var(--came)'
         const t = Math.min(r.age / 18, 1)
@@ -140,20 +212,21 @@
 
 <svelte:head><title>Pondland</title></svelte:head>
 
-{#if H}<Theory {H} /><Fish {H} />{/if}
+{#if H}<Theory {H} /><Fish {H} /><Stuffica {H} />{/if}
 
 <div class="land">
     <header>
         <div class="eyebrow">Atheory · a page whose top is the scheduler</div>
         <h1>Pondland</h1>
-        <p class="lede">No ambient tick. The page pokes the clock; the clock ticks into P and Q; P sends its old fish down the stream to Q. R hears Clock_B, which nobody pokes, so neither is visited — except once, with nothing asked, when new code arrives.</p>
+        <p class="lede">No ambient tick. The page tells Host how long it has been; Host beats the clock every {BEAT} ms of real time; the clock ticks into P and Q; P sends its old fish down the stream to Q. Each figure is a view: a Seem the page holds open, walked only when its tank moved and redrawn only when what it shows changed. The tracing paper is that Seem showing through — a ring for every point, a red ring where an egg became a fish, a cross where something left. R hears Clock_B, which nobody pokes, so neither is visited — except once, with nothing asked, when new code arrives.</p>
     </header>
 
     <div class="controls">
         <button onclick={() => (running = !running)}>{running ? 'Pause' : 'Run'}</button>
-        <button onclick={tick} disabled={running || !ready}>Poke once</button>
+        <button onclick={() => say(BEAT)} disabled={running || !ready}>One beat</button>
+        <label><input type="checkbox" bind:checked={paper} /> tracing paper</label>
         <label for="every">every <input id="every" type="range" min="80" max="1500" step="20" bind:value={every} /> {every} ms</label>
-        <span class="stat">pokes {pokes} · Clock ticked {ticks('Clock', beat)} · Clock_B ticked {ticks('Clock_B', beat)}, visited {visits['Clock_B'] || 0}×</span>
+        <span class="stat">Host heard {pokes}× · beat {host().beats}{host().spare ? ` (+${host().spare} ms spare)` : ''} · Clock ticked {ticks('Clock')} · Clock_B ticked {ticks('Clock_B')}, visited {visits['Clock_B'] || 0}×</span>
     </div>
 
     {#if !ready}
@@ -161,12 +234,12 @@
     {:else}
         <div class="ponds">
             {#each TANKS as name (name)}
-                {@const t = tank(name, beat)}
+                {@const t = tank(name, era_at)}
                 {#if t}
                     <figure class="pond" class:idle={!visits[name]}>
                         <svg viewBox="-80 -80 160 160" role="img" aria-label="tank {name}">
                             <circle r="76" class="water" />
-                            {#each t.rows as r (r.name)}
+                            {#each t.rows as r (r.key)}
                                 {#if r.kind === 'Egg'}
                                     <circle cx={r.x} cy={r.y} r="2.6" class="egg"><title>egg {r.name}, laid turn {r.born}</title></circle>
                                 {:else}
@@ -178,11 +251,29 @@
                                     </g>
                                 {/if}
                             {/each}
+                            {#if paper}
+                                {@const tr = trace(name)}
+                                {#if tr}
+                                    <g class="paper">
+                                        <rect x="-74" y="-74" width="148" height="148" rx="2" transform="rotate(-3)" class="sheet" />
+                                        {#each tr.gone as g (g.of)}
+                                            <g transform="translate({g.x} {g.y})" class="gone"><title>{g.kind} {g.of} — gone since the last walk</title><path d="M -3 -3 L 3 3 M 3 -3 L -3 3" /></g>
+                                        {/each}
+                                        {#each tr.points as p (p.key)}
+                                            <g transform="translate({p.x} {p.y})">
+                                                <title>point {p.kind} {p.of}{p.became ? ` — was ${p.became} until this walk` : ''}{p.neu ? ' — new this walk' : ''}</title>
+                                                <circle r="6.5" class="ring" class:became={p.became} class:neu={p.neu} />
+                                            </g>
+                                        {/each}
+                                    </g>
+                                {/if}
+                            {/if}
                         </svg>
                         <figcaption>
                             <b>{name}</b>
-                            <span>turn {t.turns} · {t.rows.filter(r => r.kind === 'Fish').length} fish · {t.rows.filter(r => r.kind === 'Egg').length} eggs{t.heron ? ` · heron (ate ${t.ate})` : ''}</span>
-                            <span class="visits">visited {visits[name] || 0}×{t.waiting ? ` · ${t.waiting} waiting` : ''}</span>
+                            <span>turn {t.turns} · {t.rows.filter(r => r.kind === 'Fish').length} fish · {t.rows.filter(r => r.kind === 'Egg').length} eggs{t.heron ? ' · heron' : ''}</span>
+                            <span class="visits">visited {visits[name] || 0}× · drawn {t.commits}×</span>
+                            {#if paper}{@const tr = trace(name)}{#if tr}<span>paper: {tr.points.length} points · walked {tr.walks}×</span>{/if}{/if}
                             <span>code {t.code || '—'}{t.took ? ` · took ${t.took} push${t.took > 1 ? 'es' : ''}` : ''}</span>
                         </figcaption>
                     </figure>
@@ -192,12 +283,21 @@
         <section class="rounds" aria-label="the last run">
             <h2>The last run</h2>
             <ol>
-                {#if arrived(beat).length}<li><span class="n">era seam</span> code arrived: {arrived(beat).join(' · ')}</li>{/if}
-                {#each last_run(beat) as r (r.n)}
+                {#if arrived(last_r).length}<li><span class="n">era seam</span> code arrived: {arrived(last_r).join(' · ')}</li>{/if}
+                {#each last_run(last_r) as r (r.n)}
                     <li><span class="n">round {r.n}</span> {r.went.join(' · ')}{r.landed ? ` — ${r.landed} landed` : ''}</li>
                 {/each}
             </ol>
-            <p class="note">{era_who.length ? `Code last arrived at poke ${era_at} (${era_who.join(', ')}). ` : 'No code has arrived since the page opened — edit the toy and it lands at the next run. '}Each run starts from the clock alone and stops by itself when nothing is waiting. Nothing is scanned for work: the boundary readies whoever a pulse lands on.</p>
+            <p class="note">{era_who.length ? `Code last arrived at arrival ${era_at} (${era_who.join(', ')}). ` : 'No code has arrived since the page opened — edit the toy and it lands at the next run. '}Each run starts from Host alone and stops by itself when nothing is waiting. Nothing is scanned for work: the boundary readies whoever a pulse lands on.</p>
+        </section>
+        <section class="rounds" aria-label="the tape">
+            <h2>The tape — what Host heard, newest last</h2>
+            <ol class="tape">
+                {#each tape() as h (h.n)}
+                    <li><span class="n">#{h.n}</span> {h.ms} ms <span class="take">· run {h.take}</span></li>
+                {/each}
+            </ol>
+            <p class="note">The only thing in the pond from outside. Played back into a fresh pond, run by run, it gives the same rounds and the same fish (Book AthePondTape).</p>
         </section>
     {/if}
 </div>
@@ -229,6 +329,11 @@
     .pond svg { width: 100%; max-width: 240px; height: auto; }
     .water { fill: var(--water); stroke: var(--water-edge); stroke-width: 1.5; }
     .egg { fill: var(--egg); stroke: var(--ink-soft); stroke-width: .8; }
+    .paper .sheet { fill: var(--sheet); fill-opacity: .42; stroke: var(--ink-soft); stroke-opacity: .35; stroke-width: .6; stroke-dasharray: 2 2; }
+    .paper .ring { fill: none; stroke: var(--ink); stroke-opacity: .55; stroke-width: .7; }
+    .paper .ring.became { stroke: var(--came); stroke-opacity: 1; stroke-width: 1.2; }
+    .paper .ring.neu { stroke-dasharray: 1.5 1.5; }
+    .paper .gone path { stroke: var(--came); stroke-opacity: .7; stroke-width: 1; }
     .pond.idle .water { fill: var(--sheet); stroke-dasharray: 4 4; }
     figcaption { display: grid; gap: 2px; justify-items: center; font-family: var(--mono); font-size: 12px; color: var(--ink-soft); text-align: center; }
     figcaption b { color: var(--ink); font-size: 14px; }
@@ -237,6 +342,10 @@
     .rounds h2 { font-family: inherit; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 6px; }
     .rounds ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 3px; }
     .rounds .n { color: var(--ink-soft); display: inline-block; min-width: 7ch; }
+    .tape { grid-template-columns: repeat(auto-fill, minmax(24ch, 1fr)); column-gap: 16px; }
+    .tape li { white-space: nowrap; }
+    .tape .n { min-width: 5ch; }
+    .take { color: var(--ink-soft); }
     .note, .wait { color: var(--ink-soft); font-size: 13px; max-width: 62ch; font-family: inherit; }
     @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>

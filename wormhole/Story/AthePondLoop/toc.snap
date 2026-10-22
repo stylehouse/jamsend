@@ -8,28 +8,28 @@ story:AthePondLoop
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.037
-      sample=0.088,at=1792543193
-      sample=0.03,at=1792545167
-      sample=0.058,at=1792546022
-      sample=0.026,at=1792549185
+    TimeTotal:beliefs,avg=0.029
       sample=0.031,at=1792550840
       sample=0.04,at=1792563899
       sample=0.026,at=1792566766
       sample=0.023,at=1792567764
       sample=0.019,at=1792570967
       sample=0.031,at=1792576024
-    TimeTotal:step,avg=0.01
-      sample=0.022,at=1792543193
-      sample=0.007,at=1792545167
-      sample=0.015,at=1792546022
-      sample=0.007,at=1792549185
+      sample=0.028,at=1792577499
+      sample=0.028,at=1792578717
+      sample=0.037,at=1792633912
+      sample=0.028,at=1792636195
+    TimeTotal:step,avg=0.007
       sample=0.008,at=1792550840
       sample=0.01,at=1792563899
       sample=0.007,at=1792566766
       sample=0.006,at=1792567764
       sample=0.005,at=1792570967
       sample=0.008,at=1792576024
+      sample=0.007,at=1792577499
+      sample=0.007,at=1792578717
+      sample=0.009,at=1792633912
+      sample=0.007,at=1792636195
   step,dige:2343a48d4f4a8651
   step=2,desc:stand two looped pairs with P nine turns ahead of Q — and wake each in its own order,dige:f0b1090e53c60104
   step=3,desc:12 clock pulses each — each pair woken in its own order,dige:52b6cc9702205272

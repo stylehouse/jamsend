@@ -8,22 +8,28 @@ story:AthePondEra
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.016
-      sample=0.024,at=1792570101
-      sample=0.013,at=1792570117
+    TimeTotal:beliefs,avg=0.017
       sample=0.011,at=1792570123
       sample=0.019,at=1792570649
       sample=0.019,at=1792570778
       sample=0.017,at=1792570939
       sample=0.012,at=1792576014
+      sample=0.021,at=1792576992
+      sample=0.013,at=1792577486
+      sample=0.021,at=1792578583
+      sample=0.01,at=1792633903
+      sample=0.022,at=1792636186
     TimeTotal:step,avg=0.004
-      sample=0.006,at=1792570101
-      sample=0.003,at=1792570117
       sample=0.003,at=1792570123
       sample=0.005,at=1792570649
       sample=0.005,at=1792570778
       sample=0.004,at=1792570939
       sample=0.003,at=1792576014
+      sample=0.005,at=1792576992
+      sample=0.003,at=1792577486
+      sample=0.005,at=1792578583
+      sample=0.003,at=1792633903
+      sample=0.005,at=1792636186
   step,dige:78f5f2e5bc30ddac
   step=2,desc:stand Clock_A and two tanks that hear it — K_P and K_Q — poke once and run,dige:35af167883ed62f8
   step=3,desc:push the toy to K_P mid-step — it waits — then poke and run,dige:6066b339f4fb355a

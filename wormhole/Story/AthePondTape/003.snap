@@ -1,0 +1,67 @@
+Snap:H
+  H:AthePondTape,Run
+    A:AthePondTape
+      w:AthePondTape
+        req:wrangle,eternal,ok
+        Ran:1,rounds:Host +1 / Clock_A +2 / K_P K_Q
+        Ran:2,rounds:Host +1 / Clock_A +2 / K_P K_Q
+        TheARun,rounds=3,quiet
+          TheARound:1,landed=2
+            TheAWent:Host
+          TheARound:2,landed=4
+            TheAWent:Clock_A
+          TheARound:3
+            TheAWent:K_P
+            TheAWent:K_Q
+        Ran:3,rounds:Host +2 / Clock_A +4 / K_P K_Q
+    A:Host
+      TheACode:Athe_Host,variant:plain,dige:f2a3a550d7ec56ba
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:76f6f0ac37a7c900~g1
+      w:Athe_Host
+        Beat,ms=1000
+        TheAIO:outside,heard=4,takes=3
+          TheAHeard:1,take,ms=1000
+          TheAHeard:2,take=2,ms=400
+          TheAHeard:3,take=2,ms=900
+          TheAHeard:4,take=3,ms=2300
+        TheASynapse:outside,wake:hear,sum:count
+          TheAWoke,count=4,pulses=4
+        TheAAxon:beat
+        Beats,count=4
+        Spare,ms=600
+    A:Clock_A
+      TheACode:Athe_Clock,variant:plain,dige:f2a3a550d7ec56ba
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:76f6f0ac37a7c900~g1
+      w:Athe_Clock
+        TheASynapse:beat,from:Host,wake:tick,sum:count
+          TheAWoke,count=4,pulses=4
+        TheAAxon:clock
+        Ticks,count=4
+    A:K_P
+      TheACode:Athe_Tank,variant:plain,dige:f2a3a550d7ec56ba
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:76f6f0ac37a7c900~g1
+      w:Athe_Tank
+        TheASynapse:clock,from:Clock_A,wake:turn,sum:count
+          TheAWoke,count=4,pulses=4
+        Turns,count=4
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+          TheAPass:Heron
+        EggsNamed,count=2
+        Fish:minnow 1,born=4
+        Fish:perch 2,born=4
+    A:K_Q
+      TheACode:Athe_Tank,variant:plain,dige:f2a3a550d7ec56ba
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:76f6f0ac37a7c900~g1
+      w:Athe_Tank
+        TheASynapse:clock,from:Clock_A,wake:turn,sum:count
+          TheAWoke,count=4,pulses=4
+        Turns,count=4
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+          TheAPass:Heron
+        EggsNamed,count=2
+        Fish:minnow 1,born=4
+        Fish:perch 2,born=4

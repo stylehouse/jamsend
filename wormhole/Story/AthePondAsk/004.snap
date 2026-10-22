@@ -1,0 +1,44 @@
+Snap:H
+  H:AthePondAsk,Run
+    A:AthePondAsk
+      w:AthePondAsk
+        req:wrangle,eternal,ok
+        Ran:1,rounds:K_P +1 / Feeder
+        Ran:2,rounds:Clock_A +1 / Feeder
+        TheARun,rounds=3,quiet
+          TheARound:1,landed
+            TheAWent:Clock_A
+          TheARound:2,landed
+            TheAWent:Feeder
+          TheARound:3
+            TheAWent:K_P
+        Ran:3,rounds:Clock_A +1 / Feeder +1 / K_P
+    A:Clock_A
+      TheACode:Athe_Clock,variant:plain,dige:78b844d64bc4c39b
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:1e4725315d9a38a7~g1
+      w:Athe_Clock
+        TheASynapse:poke,wake:tick,sum:count
+          TheAWoke,count=2,pulses=2
+        TheAAxon:clock
+        Ticks,count=2
+    A:Feeder
+      TheACode:Athe_Feeder,variant:plain,dige:78b844d64bc4c39b
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:1e4725315d9a38a7~g1
+      w:Athe_Feeder
+        TheASynapse:ask,from:K_P,wake:order,sum:count
+          TheAWoke,count,pulses
+        TheASynapse:clock,from:Clock_A,wake:serve,sum:count
+          TheAWoke,count=2,pulses=2
+        TheAAxon:fed
+        Ticks,count=2
+    A:K_P
+      TheACode:Athe_Tank,variant:plain,dige:78b844d64bc4c39b
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:1e4725315d9a38a7~g1
+      w:Athe_Tank
+        TheASynapse:hunger,wake:ask,sum:count
+          TheAWoke,count,pulses
+        TheASynapse:fed,from:Feeder,wake:eat,sum:count
+          TheAWoke,count,pulses
+        TheAAxon:ask
+        TheAAsked,count
+        Fed:worms,count

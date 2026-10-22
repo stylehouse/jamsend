@@ -1,0 +1,22 @@
+story:AthePondView
+  Styles
+  Plan
+  Opt
+    For
+  EntropyArrest
+    Entcase:Self_round
+      lematch,self,round
+        means,drop
+  TimeSpool
+    TimeTotal:beliefs,avg=0.06
+    TimeTotal:step,avg=0.012
+  step,dige:8f15a3f712445cf7
+  step=2,desc:stand Clock_A ticking K_P and K_Q — K_R hearing Clock_B which nobody pokes — a view on each tank — poke once,dige:ad2a3284841a0827
+    Assertion:a-view-is-walked,sentence:a view is walked only when what it shows moved — it commits once at the end of the run — K_R is never read
+  step=3,desc:poke Clock_A once — the tanks turn and nothing they show changes,dige:0e44bf3a1fdea789
+    Assertion:plain-equivalence-stops-the,sentence:plain equivalence stops the wire — a tank that moved without changing what its view shows commits nothing
+  step=4,desc:poke Clock_A twice — two turns and the eggs hatch in one run,dige:ae8b39249617c2a8
+    Assertion:two-turns-and-a,sentence:two turns and a hatch in one run are one commit — the screen never sees the middle of a run
+    Assertion:a-point-keeps-its,sentence:a point keeps its name through a hatch — the fish is drawn under the egg’s key and no new name was claimed
+  step=5,desc:the hand feeds K_P — a click is IO on its tape — run from K_P alone,dige:5ba851f678d6b877
+    Assertion:what-the-hand-does,sentence:what the hand does is IO — the click is on the tank’s tape and only that tank’s view is walked and commits

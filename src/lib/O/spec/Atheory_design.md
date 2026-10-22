@@ -233,6 +233,47 @@ Each oath fell to the sabotage aimed at it, and only to that: the unrelated oath
    falls.  Story’s seam at the start of step 4 then takes it (an elvis), so step 4 still shows `TheACodeTaken,count=1`, nothing
     arrived in its run — its oath HOLDS.  That is the tell that Story and the era seam are two seams for one thing.
 
+**Time as IO, sabotaged once each (S18–S20, `AthePondTape`) — predicted 2026-10-21 before running; ALL THREE BIT AS PREDICTED** (S18 lost only `the-host-turns-the`, no `Spare` row; S19 lost all but step 3’s, no `Tape` rows and empty `EndedAgain`; S20 lost only `replaying-the-tape-runs` — `Tape:1,ms:1000 400 900 2300` and one `Replayed:1,rounds:Host +4 / Clock_A +8 / K_P K_Q`).  Restored by checksum and recompiled; all 23 AthePond Books green after.
+- **S18 — the host ignores the ms: one beat per arrival.**  Step 3 still ends with `Beats,count=4` (1 + 2 + 1, by chance) but
+   no `Spare` and different runs, so only "the host turns the outside’s ms into whole beats…" falls.  The replay oaths HOLD:
+    a replay reproduces whatever the code does with the tape — it proves the tape is the whole outside, not that the code is right.
+- **S19 — `TheA_io` pulses but writes no Heard.**  No tape: step 2’s "time comes in only through the host — what the outside
+   said is on its tape…" falls, and step 4 has nothing to play — "replaying the tape runs as the outside ran" and "a replay
+    hears exactly the tape it played" fall (no Tape rows), and "the replayed tanks end as the live ones did" falls too (the
+     replayed tanks never turn).  Held: step 3’s.
+- **S20 — `TheA_move` doesn’t count takes.**  Every Heard says `take=1`, so the tape is one take of four arrivals and the
+   replay is ONE run.  "replaying the tape runs as the outside ran" falls; "the replayed tanks end as the live ones did" HOLDS
+    (one run of four beats is four turns either way) and so does "a replay hears exactly the tape it played" (it records the
+     same wrong grouping).  The tell: an end state can’t see how the outside was cut into runs — the rounds can.
+
+**A hold, sabotaged once each (S21–S23, `AthePondAsk`) — predicted 2026-10-21 before running; ALL THREE BIT AS PREDICTED** (S21 lost steps 3 and 4 — round 1 read `Clock_A K_P` with K_P still waiting; S22 lost steps 2 and 3 — `TheARun,rounds=2,quiet` with a wait standing — and step 4’s snap matched clean; S23 lost step 4 — `quiet,waiting` beside `Fed:worms`).  Restored by checksum and recompiled; all 24 AthePond Books green after (SunpitPassOrder red once on `swapping-the-egg-and`, green on the rerun — a flake to watch).
+- **S21 — the run polls: every A holding a wait is readied in round one.**  Step 2 holds (K_P asks during round one, so nothing
+   waits when the run starts).  Step 3’s rounds become `Clock_A K_P +1 / Feeder` — "a waiting asker is never visited" falls —
+    and step 4’s `Clock_A K_P +1 / Feeder +1 / K_P`, so "the answer lands and ends the wait — the asker moves once more…" falls
+     too.  A poll looks harmless (K_P’s move finds no pulse and does nothing) and is exactly the cost the scheduler exists to avoid.
+- **S22 — a quiet run is taken for settled (no `waiting`).**  Steps 2 and 3 fall (both owe an answer and say nothing); step 4
+   HOLDS — a settled run looks the same either way.  The tell: a wake taken for a hold can only be seen while something is owed.
+- **S23 — the answer doesn’t end the wait.**  Steps 2 and 3 hold; step 4 falls — fed, but still `waiting=1`, never settled.
+
+**A view, sabotaged once each (S24–S26, `AthePondView`, Stuffica.g) — predicted 2026-10-22 before running; ALL THREE BIT AS PREDICTED** (S24 lost B C D — step 3 `commits=2` with the digest unchanged; S25 lost A D — K_R walked every step, K_Q walked in K_P’s run; S26 lost C D — `dige:2` held through the hatch).  Restored by checksum; all 25 AthePond Books green after.  Oaths: (A) step 2
+ "walked only when what it shows moved — commits once — K_R is never read"; (B) step 3 "plain equivalence stops the wire"; (C)
+  step 4 "two turns and a hatch in one run are one commit"; (D) step 5 "what the hand does is IO — only that tank’s view is walked
+   and commits".  The checks are on absolute commit counts, so a sabotage that adds a commit cascades into later steps.
+- **S24 — no equivalence: every walked view commits.**  A holds (the first commit happens either way); B, C and D fall
+   (K_P commits 2, 3, 4 where 1, 2, 3 were sworn).
+- **S25 — every view walked every run, moved or not.**  A falls (K_R walked, and its empty sheet commits once against no
+   digest at all); B and C hold (they check K_P and K_Q); D falls (K_Q walked in a run that only readied K_P).
+- **S26 — equivalence by shape: the count of points.**  A and B hold; C falls (two eggs hatching into two fish is still two
+   points — no commit, the screen keeps drawing eggs); D falls by the cascade (the food makes three points — one commit, 2
+    where 3 was sworn).  The tell: equality must be on content; a shape check misses the most important change in the pond.
+
+**A point’s name, sabotaged (S27, `AthePondView` re-recorded with oath E) — predicted 2026-10-22 before running; BIT AS PREDICTED** (sworn 1 of 5 — only A; snap 3 showed `Dip:seem,value:fig,i=4` with fig_1…fig_4 on two points and `commits=2`).  Restored by checksum; all 25 AthePond Books green after.  E (step 4): "a
+ point keeps its name through a hatch — the fish is drawn under the egg’s key and no new name was claimed".
+- **S27 — `TheA_dip` ignores the name a point already has: every walk claims a new one.**  The point keeps its old `%Dip`
+   and gains another, so what a view says changes on EVERY walk: A holds (first commit), B falls (step 3 commits with nothing
+    in the pond changed — a churning key is a change the screen can’t tell from a real one), C and D fall by the cascade, and
+     E falls (the seed has claimed far more than two).  The tell: identity that isn’t kept leaks into equivalence.
+
 ### 1.11 A\*\* — As in As, each running its own code — `AthePondVersions`, `AthePondNest`
 
 **Owner, 2026-10-21:** A\*\* is a recursive pile of A (`A/A/A/A`), and where an A stands in it has meaning — what code it
@@ -379,9 +420,53 @@ TheARun,rounds=2,quiet
 ```
    So a run is all one era, and an era ends only where code arrives.  On `/Pondland`, a hot reload of the toy lands at the
     next poke: every A holding it moves once (R and `Clock_B` included — arrival is a wake, the only one they ever get).
-- **Where it goes next:** (a) the page’s timer is the last elvis from outside — it belongs to IO-as-compartments (From the
+- **Time is IO — `AthePondTape`.**  The page’s timer was the last elvis from outside; now it isn’t an elvis at all.  A
+   compartment may declare **`%TheAIO:<synapse>`**: that synapse is fed from outside the House and from no A.  Everything from
+    outside comes in by **`TheA_io(name, io, sc)`**, which pulses the synapse AND writes **`%TheAHeard:<n>,take:<k>,…`** under
+     the `%TheAIO` — the **tape**.  `TheA_move` counts the IO's `takes`, so a Heard knows which move ate it, and so which run.
+      `w:Athe_Host` (the toy file) is time's compartment: the outside says how many ms went by; the host owes them to its
+       `%Beat,ms`, sends one `beat` per whole beat on to a clock, and keeps the rest as `%Spare,ms` — a timer that fires early
+        or late loses nothing.
+```
+A:Host
+  w:Athe_Host
+    TheAIO:outside,heard=4,takes=3     the tape: what the outside said, and which move ate it
+      TheAHeard:1,take=1,ms=1000
+      TheAHeard:2,take=2,ms=400        early…
+      TheAHeard:3,take=2,ms=900        …then late: one beat, 300 spare
+      TheAHeard:4,take=3,ms=2300       2600: two beats, 600 spare
+    Beat,ms=1000
+    Beats,count=4
+    Spare,ms=600
+```
+   `TheA_tape(name, io)` reads it back as plain takes (`[[{ms:1000}], [{ms:400},{ms:900}], [{ms:2300}]]`) and
+    `TheA_replay(at, name, io, takes, after)` plays them into a pond stood again from nothing, one run per take.  The Book
+     keeps each live run as one line (`%Ran:2,rounds=Host +1 / Clock_A +2 / K_P K_Q`) and each replayed one beside it: the
+      same, run for run, the tanks the same egg for egg, and the replay hears exactly the tape it played.  This is what a
+       replay mocks (From the top, item 3): the IO compartment, and nothing else — there is nothing else from outside.
+- **A hold is a pulse not yet delivered — `AthePondAsk`** (owner’s ruling, 2026-10-21; the root named `%TheAWait`).  The
+   Coding_guide’s worst trap, wake taken for hold, as two rows that can’t be confused.  `TheA_ask(w, axon, sc)` sends the ask
+    AND, in the same move, writes **`%TheAWait:<A>#<n>,on:<axon>,…`** on the asker — the hold armed at the cause.  A wait wakes
+     nobody: the asker isn’t visited while it waits.  The answer is an ordinary pulse carrying `wait:<id>` back; the move that
+      eats it ends the wait (`TheA_move`).  So a run can be **quiet** (nothing ready) and not **settled** (an answer owed):
+       `TheA_run` writes `waiting:<n>` on a quiet run while any wait stands, and `TheA_settled(run)` is quiet with none.  The
+        toy’s `w:Athe_Feeder` takes orders on `ask` and serves them two ticks of its clock later on `fed`.
+```
+TheARun,rounds=2,quiet,waiting=1     step 2: K_P asked; quiet, but owed an answer
+A:K_P
+  w:Athe_Tank
+    TheAAsked,count
+    TheAWait:K_P#1,on:ask,food:worms
+    TheASynapse:fed,from:Feeder,wake:eat    nothing on it until step 4 — K_P isn’t visited in step 3
+A:Feeder
+  w:Athe_Feeder
+    Order:worms,wait:K_P#1,due=2
+```
+   An answer goes to every synapse that hears the feeder; only the asker whose id it carries stops waiting.  Addressing an
+    answer to one asker, and a wait that times out (a ttlilt as a pulse the clock sends), are still to do.
+- **Where it goes next:** (a) *done — time is IO, above;* the page’s timer was the last elvis from outside — it belongs to IO-as-compartments (From the
    top, item 3): real time as a compartment whose pulses come from the host, the same shape as audio or a socket; (b) req
-   machinery woken by pulse instead of by sweep — the first step that touches Hovercraft (todo §0.0).
+   machinery woken by pulse instead of by sweep — *the toy done above (`%TheAWait`)*; the real one is the first step that touches Hovercraft (todo §0.0).
 
 ### 1.14 Still to design
 
@@ -426,6 +511,7 @@ No Atheory adjustments yet.
 | date | where | what | why |
 |---|---|---|---|
 | 2026-10-21 | `src/routes/Pondland/+page.svelte` + `src/lib/A/Pondland.svelte` (new) | a route whose page is a bare House driven by `TheA_run` (§1.13) — imports `gen/A/Theory.go` and `gen/A/AtheFishTesting.go` directly as components (`@ts-ignore`d: a .go has no type declarations); exposes `window.__pond()` for headless probes | the owner's "a replacement of Otro.svelte or something — minimal changes to Housing.svelte until we've got a lot of experience": nothing in Housing changed.  The first page to mount ghosts without GhostList |
+| 2026-10-21 | `src/lib/A/Pondland.svelte` (time as IO; tracing paper) | the timer no longer pokes `Clock`: it tells `Host` the real ms since it last spoke (`TheA_io`, tape `keep:12`), Host beats `Clock` every 500 ms; a pause stops the pond’s time; "One beat" says 500 ms.  Each tank wears a Seem (`eye`, Egg+Fish) with a Regard sphere; after a run only the tanks that moved are walked (queued — walks are async), the eye regards each point `seen:n`, and the page draws the sheet: rings, regard dots, a red ring for `TheABecame`, crosses for `TheAGoner` | design §1.13 "Time is IO"; todo §0.0 overnight plan item 3 (art school).  Page only — nothing in Housing |
 | 2026-10-21 | `src/lib/Selection.svelte.ts`, `SelectionItself.process`'s `pairs_fn` (the `a && b` branch) | `a.c.T.sc.bD` → `a.c.T?.sc.bD`, and `z?.c.T.sc.bD` → `z?.c.T?.sc.bD` (the point two walks back) | a D sphere thawed from text (`TheA_thaw`, Book `AthePondReload`) has no Travel on `.c`, so the first walk after a reload threw in `pairs_fn` (and, with only the first `?`, the second walk did) and the Seem never walked again — Selection assumed every old D was walked in this session.  Read by every Selection (Seem, Repli, LE, Voro, Story's snap); the old behaviour for a walked D is unchanged.  To undo: drop the two `?` |
 | 2026-10-20 | `src/lib/O/Story.svelte`: the editor's pause-verify forgive (`run.sc.check_snap`) and the post-run forgive sweep (`run.sc.sweeping`) | each now sets `caveat` only when `entropy_forgive_muted` says the step needed more than `tol:same` | the two other places a step gets forgiven still caveated a digest-only move; `snap_step` already didn't.  Not yet exercised live (every Athe Book passes on the inline path) |
 | 2026-10-20 | EntropyArrest `tol:same` (`EntropyArrest.md` §11): `Text.svelte` (`spay_same_pairs`, `spay_graft`'s `same` arg, `spay_within`), `Hovercraft.svelte` (`entropy_forgive`, `entropy_same_of`, `entropy_same_note`, `entropy_forgive_muted`), `Story.svelte` (`story_drive` makes `w.c.dige_same`; `snap_step`'s inline check notes exact steps and mutes; the GhostList read rule's `dige:` spayer `any` → `same`) | a `dige:` may change only as a consistent substitution over the run; a step forgiven by that alone passes with no caveat | every code edit moved the toy's digest in every Athe snap, costing a hand re-baseline of every Athe Book; and `tol:any` let a real digest move pass as noise.  Touches EVERY Book (the spayer reaches every `dige:` line) |

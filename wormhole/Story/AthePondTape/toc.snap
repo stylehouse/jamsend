@@ -1,0 +1,27 @@
+story:AthePondTape
+  Styles
+  Plan
+  Opt
+    For
+  EntropyArrest
+    Entcase:Self_round
+      lematch,self,round
+        means,drop
+  TimeSpool
+    TimeTotal:beliefs,avg=0.023
+      sample=0.027,at=1792633866
+      sample=0.025,at=1792636140
+      sample=0.018,at=1792636145
+    TimeTotal:step,avg=0.006
+      sample=0.007,at=1792633866
+      sample=0.006,at=1792636140
+      sample=0.005,at=1792636145
+  step,dige:573d64e5e69a8860
+  step=2,desc:stand a host that time comes in by — Clock_A hears its beat — K_P and K_Q hear the clock — the outside says 1000 ms and runs,dige:ea43a1b0ddd1aaee
+    Assertion:time-comes-in-only,sentence:time comes in only through the host — what the outside said is on its tape and a beat reaches the tanks two rounds later
+  step=3,desc:the timer runs early then late — the outside says 400 and 900 and runs — then 2300 and runs,dige:c517b2df0615002c
+    Assertion:the-host-turns-the,sentence:the host turns the outside’s ms into whole beats — what is left over waits as spare so an early or late timer loses nothing
+  step=4,desc:keep the tape — stand the pond again from nothing — play the tape into the new host,dige:efb43be9d3db1640
+    Assertion:replaying-the-tape-runs,sentence:replaying the tape runs as the outside ran — run for run and round for round
+    Assertion:the-replayed-tanks-end,sentence:the replayed tanks end as the live ones did — every egg and fish and turn
+    Assertion:a-replay-hears-exactly,sentence:a replay hears exactly the tape it played — the tape is the whole outside

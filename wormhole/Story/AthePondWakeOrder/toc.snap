@@ -8,28 +8,28 @@ story:AthePondWakeOrder
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.029
-      sample=0.039,at=1792543206
-      sample=0.018,at=1792545135
-      sample=0.033,at=1792545990
-      sample=0.081,at=1792549156
+    TimeTotal:beliefs,avg=0.018
       sample=0.032,at=1792550809
       sample=0.021,at=1792563908
       sample=0.017,at=1792566910
       sample=0.015,at=1792567960
       sample=0.017,at=1792571270
       sample=0.012,at=1792576145
-    TimeTotal:step,avg=0.01
-      sample=0.013,at=1792543206
-      sample=0.006,at=1792545135
-      sample=0.011,at=1792545990
-      sample=0.027,at=1792549156
+      sample=0.012,at=1792577825
+      sample=0.019,at=1792579087
+      sample=0.015,at=1792634218
+      sample=0.016,at=1792636654
+    TimeTotal:step,avg=0.006
       sample=0.011,at=1792550809
       sample=0.007,at=1792563908
       sample=0.006,at=1792566910
       sample=0.005,at=1792567960
       sample=0.006,at=1792571270
       sample=0.004,at=1792576145
+      sample=0.004,at=1792577825
+      sample=0.006,at=1792579087
+      sample=0.005,at=1792634218
+      sample=0.005,at=1792636654
   step,dige:22773408303823e0
   step=2,desc:stand four pairs of tanks — two pairs sharing a name counter — and wake each in its pair order,dige:cdb0f0766d039264
   step=3,desc:8 more clock pulses — each pair woken in its order,dige:ff604af6e31f2fc7

@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheTesting(): string { return 'a9c4ff3188da9376~g1' },
+    Ghostmeta_Ghost_A_AtheTesting(): string { return '3539be2dc94439a5~g1' },
 
 // AtheTesting.g — Atheory's proof (Ghost/A/Theory.g; spec/Atheory_todo.md §0.2 "The first Atheory tests").
 //
@@ -2088,6 +2088,303 @@ AthePondEra_witness(w) {
     }
     if (n === 4 && run.sc.quiet && !arrived && went.length === 2 && went[0] === 'Clock_A' && went[1] === 'K_P K_Q' && taken('K_P') === 1 && turns('K_P') === 3) {
         this.story_swear(w, 'an era lasts until code arrives — the next run takes nothing and moves only what the clock wakes')
+    }
+},
+//#endregion
+//#region the test routine — Book AthePondTape
+// time is IO (Theory.g TheA_io; AtheFishTesting.g Athe_Host).  The outside — here the Book, playing a page's timer — says how
+//  many ms have gone by to Host, the one compartment it may speak to; Host turns them into beats for Clock_A, which ticks K_P and
+//   K_Q.  Step 2 says 1000 and runs.  Step 3 says 400 and 900 and runs, then 2300 and runs.  Step 4 keeps the tape, stands the
+//    pond again from nothing and plays the tape into the new Host: the runs come out the same, round for round
+AthePondTape(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.AthePondTape_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async AthePondTape_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.AthePondTape_start(w)
+        if (n === 3) this.AthePondTape_jitter(w)
+        if (n === 4) this.AthePondTape_replay(w)
+    }
+    this.AthePondTape_witness(w)
+
+},
+AthePondTape_start(w) {
+    w.i({ desc: 'stand a host that time comes in by — Clock_A hears its beat — K_P and K_Q hear the clock — the outside says 1000 ms and runs' })
+    if (typeof this.TheA_io !== 'function' || typeof this.Athe_Host_woken !== 'function') {
+        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
+        return
+    }
+    this.AthePondTape_pond()
+    this.AthePondTape_say(w, [1000])
+
+},
+AthePondTape_jitter(w) {
+    w.i({ desc: 'the timer runs early then late — the outside says 400 and 900 and runs — then 2300 and runs' })
+    this.AthePondTape_say(w, [400, 900])
+    this.AthePondTape_say(w, [2300])
+
+},
+AthePondTape_replay(w) {
+    w.i({ desc: 'keep the tape — stand the pond again from nothing — play the tape into the new host' })
+    let takes = this.TheA_tape('Host', 'outside')
+    takes.forEach((heard, k) => w.i({ Tape: String(k + 1), ms: heard.map(h => h.ms).join(' ') }))
+    for (const name of ['K_P', 'K_Q']) w.i({ Ended: name, rows: this.AthePondTape_rows(name) })
+    this.AthePondTape_pond()
+    this.TheA_replay(w, 'Host', 'outside', takes, (run, k) => w.i({ Replayed: String(k), rounds: this.AthePondTape_rounds(run) }))
+    for (const name of ['K_P', 'K_Q']) w.i({ EndedAgain: name, rows: this.AthePondTape_rows(name) })
+
+},
+// the pond, from nothing: Host (beat 1000 ms, its IO synapse outside), Clock_A hearing Host's beat, K_P and K_Q hearing the clock
+AthePondTape_pond() {
+    for (const name of ['Host', 'Clock_A', 'K_P', 'K_Q']) {
+        let old = this.o({ A: name })[0]
+        if (old) this.drop(old)
+    }
+    let h = this.TheA_stand(this, 'Host', ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Host').i({ w: 'Athe_Host' })
+    h.i({ Beat: 1, ms: 1000 })
+    h.i({ TheAIO: 'outside' })
+    h.i({ TheASynapse: 'outside', wake: 'hear', sum: 'count' })
+    h.i({ TheAAxon: 'beat' })
+    let c = this.TheA_stand(this, 'Clock_A', ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Clock').i({ w: 'Athe_Clock' })
+    c.i({ TheASynapse: 'beat', from: 'Host', wake: 'tick', sum: 'count' })
+    c.i({ TheAAxon: 'clock' })
+    for (const name of ['K_P', 'K_Q']) {
+        let t = this.TheA_stand(this, name, ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
+        t.i({ TheASynapse: 'clock', from: 'Clock_A', wake: 'turn', sum: 'count' })
+    }
+
+},
+// the outside says each of these ms to Host, then runs from Host — and the Book keeps how that run went, as %Ran
+AthePondTape_say(w, ms_list) {
+    for (const ms of ms_list) this.TheA_io('Host', 'outside', { ms })
+    let run = this.TheA_run(w, null, ['Host'])
+    w.i({ Ran: String(w.o({ Ran: 1 }).length + 1), rounds: this.AthePondTape_rounds(run) })
+
+},
+// how a run went, as one line: each round's movers, and how many pulses landed after it
+AthePondTape_rounds(run) {
+    return run.o({ TheARound: 1 }).map(round => round.o({ TheAWent: 1 }).map(x => x.sc.TheAWent).join(' ') + (round.sc.landed ? ' +' + round.sc.landed : '')).join(' / ')
+
+},
+// what a tank holds, as one line — its own rows (the kinds its Sunpit passes over), not Atheory's furniture
+AthePondTape_rows(name) {
+    let t = this.Athe_Tank_of(name)
+    return t ? this.TheA_rows(t, t.o()).map(row => Object.entries(row.sc).map(([k, v]) => k + '=' + v).join(' ')).join(' / ') : ''
+
+},
+AthePondTape_witness(w) {
+    let n = this.c.run?.c.step_n ?? 0
+    let run = w.o({ TheARun: 1 })[0]
+    if (!run) return
+    let host = this.o({ A: 'Host' })[0]?.o({ w: 'Athe_Host' })[0]
+    let io = host?.o({ TheAIO: 'outside' })[0]
+    let heard = io?.o({ TheAHeard: 1 }) || []
+    let turns = (name) => this.Athe_Tank_of(name)?.o({ Turns: 1 })[0]?.sc.count || 0
+    let ticks = this.o({ A: 'Clock_A' })[0]?.o({ w: 'Athe_Clock' })[0]?.o({ Ticks: 1 })[0]?.sc.count || 0
+    let ran = (k) => w.o({ Ran: String(k) })[0]?.sc.rounds
+    if (n === 2 && run.sc.quiet && heard.length === 1 && heard[0].sc.ms === 1000 && ran(1) === 'Host +1 / Clock_A +2 / K_P K_Q' && turns('K_P') === 1 && turns('K_Q') === 1) {
+        this.story_swear(w, 'time comes in only through the host — what the outside said is on its tape and a beat reaches the tanks two rounds later')
+    }
+    if (n === 3 && host?.o({ Beats: 1 })[0]?.sc.count === 4 && host?.o({ Spare: 1 })[0]?.sc.ms === 600 && ticks === 4 && turns('K_P') === 4 && ran(2) === 'Host +1 / Clock_A +2 / K_P K_Q' && ran(3) === 'Host +2 / Clock_A +4 / K_P K_Q') {
+        this.story_swear(w, 'the host turns the outside’s ms into whole beats — what is left over waits as spare so an early or late timer loses nothing')
+    }
+    if (n !== 4) return
+    let tape = w.o({ Tape: 1 })
+    let replayed = w.o({ Replayed: 1 })
+    if (tape.length === 3 && replayed.length === w.o({ Ran: 1 }).length && replayed.every(r => r.sc.rounds === ran(r.sc.Replayed))) {
+        this.story_swear(w, 'replaying the tape runs as the outside ran — run for run and round for round')
+    }
+    let ended = w.o({ Ended: 1 })
+    if (ended.length === 2 && ended.every(e => e.sc.rows && w.o({ EndedAgain: e.sc.Ended })[0]?.sc.rows === e.sc.rows)) {
+        this.story_swear(w, 'the replayed tanks end as the live ones did — every egg and fish and turn')
+    }
+    let again = this.TheA_tape('Host', 'outside')
+    if (tape.length && again.length === tape.length && again.every((heard, k) => tape[k].sc.ms === heard.map(h => h.ms).join(' '))) {
+        this.story_swear(w, 'a replay hears exactly the tape it played — the tape is the whole outside')
+    }
+},
+//#endregion
+//#region the test routine — Book AthePondAsk
+// a hold is a pulse not yet delivered (Theory.g TheA_ask, %TheAWait).  K_P asks the Feeder for food; the Feeder serves two ticks
+//  of Clock_A later.  Step 2 makes K_P hungry and runs: it asks, and the run goes quiet owing an answer.  Step 3 ticks the clock
+//   once: only the Feeder moves.  Step 4 ticks again: the food lands, K_P eats, the wait ends and the run is settled
+AthePondAsk(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.AthePondAsk_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async AthePondAsk_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.AthePondAsk_stand(w)
+        if (n === 3) this.AthePondAsk_tick(w, 'tick the clock once — run until quiet')
+        if (n === 4) this.AthePondAsk_tick(w, 'tick the clock again — run until quiet')
+    }
+    this.AthePondAsk_witness(w)
+
+},
+AthePondAsk_stand(w) {
+    w.i({ desc: 'stand Clock_A — a Feeder that serves two ticks after an order — K_P who asks it — K_P gets hungry and runs' })
+    if (typeof this.TheA_ask !== 'function' || typeof this.Athe_Feeder_woken !== 'function') {
+        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
+        return
+    }
+    for (const name of ['Clock_A', 'Feeder', 'K_P']) {
+        let old = this.o({ A: name })[0]
+        if (old) this.drop(old)
+    }
+    let c = this.TheA_stand(this, 'Clock_A', ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Clock').i({ w: 'Athe_Clock' })
+    c.i({ TheASynapse: 'poke', wake: 'tick', sum: 'count' })
+    c.i({ TheAAxon: 'clock' })
+    let f = this.TheA_stand(this, 'Feeder', ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Feeder').i({ w: 'Athe_Feeder' })
+    f.i({ TheASynapse: 'ask', from: 'K_P', wake: 'order', sum: 'count' })
+    f.i({ TheASynapse: 'clock', from: 'Clock_A', wake: 'serve', sum: 'count' })
+    f.i({ TheAAxon: 'fed' })
+    let t = this.TheA_stand(this, 'K_P', ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
+    t.i({ TheASynapse: 'hunger', wake: 'ask', sum: 'count' })
+    t.i({ TheASynapse: 'fed', from: 'Feeder', wake: 'eat', sum: 'count' })
+    t.i({ TheAAxon: 'ask' })
+    t.o({ TheASynapse: 'hunger' })[0].i({ TheAPulse: 1, food: 'worms' })
+    this.AthePondAsk_run(w, ['K_P'])
+
+},
+AthePondAsk_tick(w, desc) {
+    w.i({ desc })
+    this.o({ A: 'Clock_A' })[0]?.o({ w: 'Athe_Clock' })[0]?.o({ TheASynapse: 'poke' })[0]?.i({ TheAPulse: 1 })
+    this.AthePondAsk_run(w, ['Clock_A'])
+
+},
+// a run, and how it went as one line (%Ran — the AthePondTape shape)
+AthePondAsk_run(w, ready) {
+    let run = this.TheA_run(w, null, ready)
+    w.i({ Ran: String(w.o({ Ran: 1 }).length + 1), rounds: this.AthePondTape_rounds(run) })
+
+},
+AthePondAsk_witness(w) {
+    let n = this.c.run?.c.step_n ?? 0
+    let run = w.o({ TheARun: 1 })[0]
+    if (!run) return
+    let P = this.Athe_Tank_of('K_P')
+    let ran = w.o({ Ran: String(n - 1) })[0]?.sc.rounds
+    let waits = P?.o({ TheAWait: 1 }) || []
+    let woke = (syn) => P?.o({ TheASynapse: syn })[0]?.o({ TheAWoke: 1 })[0]?.sc.count || 0
+    let fed = P?.o({ Fed: 'worms' })[0]?.sc.count || 0
+    if (n === 2 && run.sc.quiet && run.sc.waiting === 1 && !this.TheA_settled(run) && ran === 'K_P +1 / Feeder' && waits.length === 1 && waits[0].sc.food === 'worms') {
+        this.story_swear(w, 'an ask holds a wait on the asker — the run goes quiet but is not settled while an answer is owed')
+    }
+    if (n === 3 && run.sc.quiet && run.sc.waiting === 1 && ran === 'Clock_A +1 / Feeder' && woke('hunger') === 1 && !woke('fed') && !fed) {
+        this.story_swear(w, 'a waiting asker is never visited — the clock ticks and only the feeder moves')
+    }
+    if (n === 4 && this.TheA_settled(run) && ran === 'Clock_A +1 / Feeder +1 / K_P' && !waits.length && fed === 1 && woke('fed') === 1 && !this.TheA_waits()) {
+        this.story_swear(w, 'the answer lands and ends the wait — the asker moves once more and the run is settled')
+    }
+},
+//#endregion
+//#region the test routine — Book AthePondView
+// a view is a Seem the screen holds (Stuffica.g).  Clock_A ticks K_P and K_Q; K_R hears Clock_B, which nobody pokes.  Each tank
+//  wears a view of its eggs, fish and food, with a handle that counts commits as a page's $state would.  Step 2 pokes once: both
+//   tanks lay, both views commit.  Step 3 pokes once: the tanks turn but nothing they show changes.  Step 4 pokes twice: two
+//    turns and a hatch, one commit.  Step 5 the hand feeds K_P — IO, like time — and runs from K_P alone
+AthePondView(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.AthePondView_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async AthePondView_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 5
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.AthePondView_stand(w)
+        if (n === 3) await this.AthePondView_poke(w, 1, 'poke Clock_A once — the tanks turn and nothing they show changes')
+        if (n === 4) await this.AthePondView_poke(w, 2, 'poke Clock_A twice — two turns and the eggs hatch in one run')
+        if (n === 5) await this.AthePondView_feed(w)
+    }
+    this.AthePondView_witness(w)
+
+},
+async AthePondView_stand(w) {
+    w.i({ desc: 'stand Clock_A ticking K_P and K_Q — K_R hearing Clock_B which nobody pokes — a view on each tank — poke once' })
+    if (typeof this.Stuffica_commit !== 'function' || typeof this.TheA_io !== 'function') {
+        w.i({ log: 'Theory.g, AtheFishTesting.g or Stuffica.g is not loaded — ghost_load them beside AtheTesting.g' })
+        return
+    }
+    for (const name of ['Clock_A', 'Clock_B', 'K_P', 'K_Q', 'K_R']) {
+        let old = this.o({ A: name })[0]
+        if (old) this.drop(old)
+    }
+    for (const name of ['Clock_A', 'Clock_B']) {
+        let c = this.TheA_stand(this, name, ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Clock').i({ w: 'Athe_Clock' })
+        c.i({ TheASynapse: 'poke', wake: 'tick', sum: 'count' })
+        c.i({ TheAAxon: 'clock' })
+    }
+    for (const [name, clock] of [['K_P', 'Clock_A'], ['K_Q', 'Clock_A'], ['K_R', 'Clock_B']]) {
+        let t = this.TheA_stand(this, name, ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
+        t.i({ TheASynapse: 'clock', from: clock, wake: 'turn', sum: 'count' })
+        t.i({ TheAIO: 'hand' })
+        t.i({ TheASynapse: 'hand', wake: 'eat', sum: 'count' })
+        // the handle a page would hang here is a $state counter; this one keeps a tally the witness reads
+        this.Stuffica_view(t, 'fig', ['Egg', 'Fish', 'Fed'], { bumps: 0, commit() { this.bumps++ } })
+    }
+    await this.AthePondView_poke(w, 1)
+
+},
+async AthePondView_poke(w, n, desc) {
+    if (desc) w.i({ desc })
+    let poke = this.o({ A: 'Clock_A' })[0]?.o({ w: 'Athe_Clock' })[0]?.o({ TheASynapse: 'poke' })[0]
+    for (let k = 0; k < n; k++) poke?.i({ TheAPulse: 1 })
+    await this.Stuffica_commit(this.TheA_run(w, null, ['Clock_A']))
+
+},
+async AthePondView_feed(w) {
+    w.i({ desc: 'the hand feeds K_P — a click is IO on its tape — run from K_P alone' })
+    this.TheA_io('K_P', 'hand', { food: 'flakes' })
+    await this.Stuffica_commit(this.TheA_run(w, null, ['K_P']))
+
+},
+AthePondView_witness(w) {
+    let n = this.c.run?.c.step_n ?? 0
+    let tank = (name) => this.Athe_Tank_of(name)
+    let view = (name) => tank(name)?.o({ TheAView: 'fig' })[0]
+    let commits = (name) => view(name)?.sc.commits || 0
+    let bumps = (name) => view(name)?.c.ui?.bumps || 0
+    let walks = (name) => tank(name)?.o({ TheASeem: 'fig' })[0]?.sc.walks || 0
+    let shows = (name, kind) => this.Stuffica_points(tank(name), 'fig').filter(p => p.sc.TheATrace === kind).length
+    if (!view('K_P')) return
+    let even = ['K_P', 'K_Q', 'K_R'].every(name => commits(name) === bumps(name))
+    if (n === 2 && even && commits('K_P') === 1 && commits('K_Q') === 1 && walks('K_P') === 1 && shows('K_P', 'Egg') === 2 && !walks('K_R') && !commits('K_R')) {
+        this.story_swear(w, 'a view is walked only when what it shows moved — it commits once at the end of the run — K_R is never read')
+    }
+    if (n === 3 && even && walks('K_P') === 2 && walks('K_Q') === 2 && commits('K_P') === 1 && commits('K_Q') === 1) {
+        this.story_swear(w, 'plain equivalence stops the wire — a tank that moved without changing what its view shows commits nothing')
+    }
+    if (n === 4 && even && walks('K_P') === 3 && commits('K_P') === 2 && commits('K_Q') === 2 && shows('K_P', 'Fish') === 2 && !shows('K_P', 'Egg')) {
+        this.story_swear(w, 'two turns and a hatch in one run are one commit — the screen never sees the middle of a run')
+    }
+    let keys = this.Stuffica_points(tank('K_P'), 'fig').filter(p => p.sc.TheATrace === 'Fish').map(p => this.Stuffica_key(p)).sort().join(' ')
+    let seed = tank('K_P')?.o({ TheASeem: 'fig' })[0]?.o({ Dip: 'seem' })[0]
+    if (n === 4 && keys === 'fig_1 fig_2' && seed?.sc.i === 2) {
+        this.story_swear(w, 'a point keeps its name through a hatch — the fish is drawn under the egg’s key and no new name was claimed')
+    }
+    let tape = tank('K_P')?.o({ TheAIO: 'hand' })[0]?.o({ TheAHeard: 1 }) || []
+    if (n === 5 && even && tape.length === 1 && tape[0].sc.food === 'flakes' && shows('K_P', 'Fed') === 1 && commits('K_P') === 3 && walks('K_P') === 4 && commits('K_Q') === 2 && walks('K_Q') === 3 && !walks('K_R')) {
+        this.story_swear(w, 'what the hand does is IO — the click is on the tank’s tape and only that tank’s view is walked and commits')
     }
 },
 //#endregion

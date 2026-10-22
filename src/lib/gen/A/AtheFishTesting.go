@@ -17,7 +17,7 @@ const NAMES = ['minnow', 'perch', 'carp', 'trout', 'roach', 'bream', 'tench', 'd
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheFishTesting(): string { return '353e0e723c1d4e30~g1' },
+    Ghostmeta_Ghost_A_AtheFishTesting(): string { return '1e4725315d9a38a7~g1' },
 
 // AtheFishTesting.g — the TOY that Atheory's Books test: Athe_Tank, a small pond with its own turn clock (and its own code digest, which moves on every edit — EntropyArrest §11 mutes that).
 //
@@ -197,6 +197,10 @@ Athe_Tank_woken(w, synapse, pulse) {
         this.Athe_Tank_heron(w)
     } else if (wake === 'arrive') {
         this.Athe_Tank_arrive(w, synapse, pulse)
+    } else if (wake === 'ask') {
+        this.Athe_Tank_ask(w, synapse, pulse)
+    } else if (wake === 'eat') {
+        this.Athe_Tank_eat(w, synapse, pulse)
     } else {
         w.oai({ log: 'a synapse wakes something this tank has no handler for: ' + wake })
     }
@@ -239,6 +243,65 @@ Athe_Clock_woken(w, synapse, pulse) {
     let n = (w.o({ Ticks: 1 })[0]?.sc.count || 0) + 1
     w.oai({ Ticks: 1 }, { count: n })
     this.TheA_send(w, 'clock', { tick: n })
+
+},
+// a host: the compartment time comes in by (Theory.g TheA_io).  The outside — a page's timer — says how long it has been
+//  (ms) on the host's IO synapse; the host owes that to its beat (%Beat,ms, whoever stood it says; 1000 if not), sends one
+//   %TheAAxon:beat per whole beat, and keeps the rest as %Spare,ms for next time — so a timer that fires late or early loses
+//    nothing.  The ms are the only thing in the pond that came from outside, and they are on the tape
+Athe_Host(A, w) {
+    return
+
+},
+Athe_Host_woken(w, synapse, pulse) {
+    let beat = w.o({ Beat: 1 })[0]?.sc.ms || 1000
+    let spare = (w.o({ Spare: 1 })[0]?.sc.ms || 0) + (pulse.sc.ms ?? beat)
+    let beats = Math.floor(spare / beat)
+    spare -= beats * beat
+    if (spare) {
+        w.oai({ Spare: 1 }, { ms: spare })
+    } else {
+        for (const old of w.o({ Spare: 1 })) w.drop(old)
+    }
+    for (let k = 0; k < beats; k++) {
+        let n = (w.o({ Beats: 1 })[0]?.sc.count || 0) + 1
+        w.oai({ Beats: 1 }, { count: n })
+        this.TheA_send(w, 'beat', { beat: n })
+    }
+
+},
+// a tank that asks: hungry (a pulse on its hunger synapse), it asks the feeder for food (Theory.g TheA_ask) and holds a wait
+//  until the food comes.  It is visited when it gets hungry and when it is fed — never in between
+Athe_Tank_ask(w, synapse, pulse) {
+    this.TheA_ask(w, 'ask', { food: pulse.sc.food || 'worms' })
+
+},
+Athe_Tank_eat(w, synapse, pulse) {
+    let fed = (w.o({ Fed: pulse.sc.food })[0]?.sc.count || 0) + 1
+    w.oai({ Fed: pulse.sc.food }, { count: fed })
+
+},
+// a feeder: takes orders on its ask synapse and serves each one a few ticks of its clock later (%Order,due), answering on its
+//  fed axon with the asker's wait id — the feeder neither knows nor cares who waits
+Athe_Feeder(A, w) {
+    return
+
+},
+Athe_Feeder_woken(w, synapse, pulse) {
+    let ticks = w.o({ Ticks: 1 })[0]?.sc.count || 0
+    if (synapse.sc.wake === 'order') {
+        w.i({ Order: pulse.sc.food, wait: pulse.sc.wait, due: ticks + (w.o({ Slow: 1 })[0]?.sc.ticks || 2) })
+    } else if (synapse.sc.wake === 'serve') {
+        ticks++
+        w.oai({ Ticks: 1 }, { count: ticks })
+        for (const order of w.o({ Order: 1 })) {
+            if (order.sc.due > ticks) continue
+            this.TheA_send(w, 'fed', { food: order.sc.Order, wait: order.sc.wait })
+            w.drop(order)
+        }
+    } else {
+        w.oai({ log: 'a synapse wakes something this feeder has no handler for: ' + synapse.sc.wake })
+    }
 },
 //#endregion
 // (ends on a comment — a .g must not end on a method-final brace)

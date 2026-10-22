@@ -357,6 +357,11 @@ TheA_move(w, wake):
                 wake(w, synapse, pulse)
             }
         }
+        for (const pulse of pulses) {
+            if (pulse.sc.wait) for (const held of w.o({ TheAWait: pulse.sc.wait })) w.drop(held)
+        }
+        let io = w.o({ TheAIO: synapse.sc.TheASynapse })[0]
+        if (io) w.oai({ TheAIO: io.sc.TheAIO }, { takes: (io.sc.takes || 0) + 1 })
         let woke = synapse.o({ TheAWoke: 1 })[0]
         synapse.oai({ TheAWoke: 1 }, { count: (woke?.sc.count || 0) + runs.length, pulses: (woke?.sc.pulses || 0) + pulses.length })
         if (was) this.TheA_turn_commit(w, was, synapse, pulses.length, before, sent_before)
@@ -438,8 +443,100 @@ TheA_run(at, wake, ready, most):
         let round = run.i({ TheARound: String(n), ...(landed ? { landed } : {}) })
         for (const name of names) round.i({ TheAWent: name })
     }
-    at.oai({ TheARun: 1 }, todo.size ? { rounds: n, cut: 1 } : { rounds: n, quiet: 1 })
+    let waits = this.TheA_waits()
+    at.oai({ TheARun: 1 }, { rounds: n, ...(todo.size ? { cut: 1 } : { quiet: 1 }), ...(waits ? { waiting: waits } : {}) })
     return run
+
+// IO — where the outside comes in (Atheory_todo §0.0 "From the top", item 3: what a replay mocks).  A compartment declaring
+//  %TheAIO:<synapse> takes that synapse's pulses from outside the House — a page's timer, one day a socket — and from no A.
+//   Every arrival comes through TheA_io, which pulses the synapse AND writes it down: %TheAHeard:<n> under the %TheAIO, the
+//    TAPE.  A Heard's take: is which of the compartment's moves eats it (TheA_move counts takes on the %TheAIO), so the tape
+//     knows which arrivals went in one run.  Nothing else from outside gets in, so playing a tape back through TheA_io, one
+//      run per take, is the whole outside again.  keep: on the %TheAIO keeps only the newest that many (a page runs forever)
+//
+//      A:Host
+//        w:Athe_Host
+//          %TheAIO:outside,heard:4,takes:2
+//            %TheAHeard:3,take:2,ms:900
+//          %TheASynapse:outside,wake:hear,sum:count
+
+// TheA_io — the outside says something to a compartment's IO synapse (by the A's name).  Returns the Heard, or nothing if that
+//  A declares no such IO
+TheA_io(name, io, sc):
+    let A = this.TheA_all(this).find(A => A.sc.A === name)
+    let w = A?.o({ w: 1 }).find(w => w.o({ TheAIO: io }).length)
+    let synapse = w?.o({ TheASynapse: io })[0]
+    if (!synapse) return null
+    let n = (w.o({ TheAIO: io })[0].sc.heard || 0) + 1
+    let tape = w.oai({ TheAIO: io }, { heard: n })
+    let heard = tape.i({ TheAHeard: String(n), take: (tape.sc.takes || 0) + 1, ...sc })
+    synapse.i({ TheAPulse: 1, ...sc })
+    let all = tape.o({ TheAHeard: 1 })
+    while (tape.sc.keep && all.length > tape.sc.keep) tape.drop(all.shift())
+    return heard
+
+// TheA_tape — what an IO heard, as plain takes: [[sc, sc], [sc]], one list per move that ate them, oldest first.  Plain
+//  objects, so they outlive the compartment they came from
+TheA_tape(name, io):
+    let A = this.TheA_all(this).find(A => A.sc.A === name)
+    let tape = A?.o({ w: 1 }).map(w => w.o({ TheAIO: io })[0]).find(t => t)
+    let takes = []
+    for (const heard of tape ? tape.o({ TheAHeard: 1 }) : []) {
+        let { TheAHeard, take, ...sc } = heard.sc
+        let last = takes[takes.length - 1]
+        if (last && last.take === take) {
+            last.heard.push(sc)
+        } else {
+            takes.push({ take, heard: [sc] })
+        }
+    }
+    return takes.map(t => t.heard)
+
+// TheA_replay — play a tape back: each take's arrivals through TheA_io, then a run from that A, as the outside did.  after(run, k)
+//  sees each run as it ends (a Book compares it to what it kept)
+TheA_replay(at, name, io, takes, after):
+    let k = 0
+    for (const heard of takes) {
+        k++
+        for (const sc of heard) this.TheA_io(name, io, sc)
+        let run = this.TheA_run(at, null, [name])
+        if (after) after(run, k)
+    }
+
+// Waits — a hold, by hand (Coding_guide "Wake ≠ Hold"; owner 2026-10-21: a hold is a pulse not yet delivered).  A compartment
+//  that asks something of another sends the ask AND, in the same move, writes %TheAWait:<id> on itself: an answer it is owed.
+//   A wait wakes nobody — the asker is not visited while it waits; only the answer, landing on a synapse like any pulse, readies
+//    it.  The answer carries the id back (wait:<id>), and the move that eats it ends the wait.  So a run can be QUIET (nothing
+//     ready) and still not SETTLED (an answer owed): TheA_run says waiting:<n> on a quiet run while any wait stands.  A wake
+//      taken for a hold is the bug that guide names; here they are two different rows and can't be confused.
+//
+//      A:K_P
+//        w:Athe_Tank
+//          %TheAAxon:ask
+//          %TheAWait:K_P#1,on:ask,food:worms      ← owed an answer; K_P is not visited until it comes
+//          %TheASynapse:fed,from:Feeder,wake:eat  ← where it comes, carrying wait:K_P#1
+
+// TheA_ask — send on an axon and hold for the answer.  The id is the A's name and its count of asks, so an answer that reaches
+//  several hearers ends only its own asker's wait
+TheA_ask(w, axon, sc):
+    let n = (w.o({ TheAAsked: 1 })[0]?.sc.count || 0) + 1
+    w.oai({ TheAAsked: 1 }, { count: n })
+    let id = this.TheA_A(w)?.sc.A + '#' + n
+    w.i({ TheAWait: id, on: axon, ...sc })
+    this.TheA_send(w, axon, { wait: id, ...sc })
+    return id
+
+// how many waits stand in this House (the As' compartments)
+TheA_waits():
+    let n = 0
+    for (const A of this.TheA_all(this)) {
+        for (const w of A.o({ w: 1 })) n += w.o({ TheAWait: 1 }).length
+    }
+    return n
+
+// TheA_settled — a run is settled when it went quiet AND nothing is owed an answer
+TheA_settled(run):
+    return !!(run?.sc.quiet && !run.sc.waiting)
 
 // TheA_A — the A a compartment belongs to
 TheA_A(w):
@@ -581,6 +678,7 @@ async TheA_seem_walk(w, name):
         trace_fn: async (uD, n, T) => uD.i(this.TheA_trace_sc(n.sc)),
         traced_fn: async (D, bD, n, T) => {
             D.c.C = n
+            if (seem.sc.dip) this.TheA_dip(seem, D, T)
             if (T.c.path.length - 1 === row_depth && bD && bD.sc.TheATrace !== D.sc.TheATrace) became.push([D, bD])
         },
         resolved_fn: async (T, N, gone, neu) => {
@@ -602,6 +700,23 @@ async TheA_seem_walk(w, name):
     let limbo = seem.o({ TheALimbo: 1 })[0]
     if (limbo) this.TheA_seem_limbo(seem, limbo, walk, walks, all_gone, all_neu)
     return walk
+
+// TheA_dip — a point's own name, for whoever must tell points apart over time (a UI keying an {#each}).  A Seem holding dip
+//  stamps each new point with %Dip:seem,value:<name>_<n> — the Cyto/Waft protocol (Hovercraft Dip_assign): a slot claimed from
+//   the nearest Dip above, the Seem's own row seeding it.  It hangs ON the point, so it rides resume like a regard: the same
+//    point keeps it walk after walk, and a point that moves through limbo carries it.  Never reused, so a gone point's name
+//     can't turn up on a stranger
+TheA_dip(seem, D, T):
+    let have = D.o({ Dip: 'seem' })[0]
+    if (have) return have.sc.value
+    let above = T.c.path.slice(0, -1).reverse().map(t => t.sc.D).find(uD => uD && uD !== seem && uD.o({ Dip: 'seem' }).length)
+    let holder = above || seem
+    let up = holder.o({ Dip: 'seem' })[0] || holder.i({ Dip: 'seem', value: String(seem.sc.TheASeem) })
+    let i = (up.sc.i || 0) + 1
+    holder.oai({ Dip: 'seem' }, { i })
+    let value = up.sc.value + '_' + i
+    D.i({ Dip: 'seem', value })
+    return value
 
 // TheA_seem_limbo — atoms that move in the structure.  resolve() pairs a point only among its siblings, so a row that leaves one
 //  place and turns up in another (a fish down a stream) is a goner here and a newcomer there.  A Seem holding %TheALimbo,keep:<n>

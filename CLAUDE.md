@@ -253,7 +253,9 @@ What still holds: **don't `npm install` on a whim** — the lockfile pins the tr
   whether the fault is the repo or their process: `SVELTEKIT_OUTDIR=.svelte-kit-9099 npx vite dev --port 9099 --host 127.0.0.1`, then
    fetch `/BigSoundland` ⚠ **ALWAYS with `SVELTEKIT_OUTDIR=`** (found 2026-10-04): any fresh process loading the sveltekit plugin rewrites
     its outDir (the skip-unchanged cache is in-memory); on the shared `.svelte-kit/` that makes :9091's Vite full-reload
-     EVERY live tab, wedging Books mid-run. svelte.config.js reads the env var for exactly this. (A 200 with ~280KB of SSR'd HTML means the repo is healthy; `/` legitimately
+     EVERY live tab, wedging Books mid-run. svelte.config.js reads the env var for exactly this. ⚠ **And it still re-optimizes the SHARED
+      `node_modules/.vite/deps`** (found 2026-10-21): every FRESH :9091 load then dies "reading 'source'" until you `touch vite.config.ts`
+       (restarts :9091, which re-optimizes its own deps; gate on 3 green pings). (A 200 with ~280KB of SSR'd HTML means the repo is healthy; `/` legitimately
     404s, the app has no root route). Related tell: `fetch('…:9091/src/lib/O/X.svelte')` returning 200
      while `/` returns 500 means your SOURCE is fine and the fault is server/tree state.
 **Ownership.** Everything the dev server writes into the mount (`.svelte-kit`, `node_modules/.vite/deps`,
