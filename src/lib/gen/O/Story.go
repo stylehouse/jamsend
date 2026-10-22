@@ -89,7 +89,7 @@ const FRONTIER_COLOR = '#c55'
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_O_Story(): string { return '26bbf071b1b88708~g1' },
+    Ghostmeta_Ghost_O_Story(): string { return 'ad3112f61124f293~g1' },
 
 // Ghost: Story — mounts into the parent House via M.eatfunc({...}).
 // All methods below become House instance methods once eatfunc completes.
@@ -3277,8 +3277,6 @@ async story_ui(this: House, Run: House, w: TheC, run: TheC) {
         })
 
 },
-// (ends on a comment — a .g must not end on a method-final brace)
-
 
     })
     })

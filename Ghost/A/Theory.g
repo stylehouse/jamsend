@@ -656,12 +656,24 @@ TheA_seem_rows(w, seem):
     return this.TheA_seem_source(w, seem).o().filter(row => kinds.includes(Object.keys(row.sc)[0]))
 
 // TheA_seem_walk — one walk: the Trace points follow the rows, paired to last walk's by resolve(); what happened is the new
-//  %TheAWalk.  Async (Selection is), so a routine awaits it between turns — a move never walks
+//  %TheAWalk.  Async (Selection is), so a routine awaits it between turns — a move never walks.
+//  A Seem holding %TheADeep holds a whole tree: its kinds pick the top rows (TheAKind:* — any), and below them every row, to any
+//   depth, is a point nested as the rows are — a snap decoded to C, seen whole.  Pointed at another tree (its .c.from) it RE-SEATS:
+//    each point pairs with the one it was, so the view holds still and what fits stays put.  Every point says how this walk took
+//     it (.c.how: fit — paired and unchanged; shift — paired, changed; neu — new; .c.at the walk), and the walk tallies them
+//      (fit, shift, neu, gone; reseat when the tree was another one) — what a screen glows by
 async TheA_seem_walk(w, name):
     let seem = w.o({ TheASeem: name })[0]
     if (!seem) return null
     let kinds = this.TheA_seem_kinds(seem)
     let says = this.TheA_seem_says(seem)
+    let deep = seem.o({ TheADeep: 1 }).length
+    let walks = (seem.sc.walks || 0) + 1
+    let source = this.TheA_seem_source(w, seem)
+    let reseat = deep && seem.c.walked_from !== undefined && seem.c.walked_from !== source
+    seem.c.walked_from = source
+    let tally = { fit: 0, shift: 0, neu: 0 }
+    let said = (D) => Object.entries(D.sc).map(([k, v]) => k + '=' + v).join(',')
     let Se = seem.c.Se
     if (!Se) {
         Se = new Selection()
@@ -671,7 +683,7 @@ async TheA_seem_walk(w, name):
     seem.c.T = null
     // a Seem holding %TheAOver walks the As standing in its world's A, and their rows: a pond's view of its tanks
     let over = seem.o({ TheAOver: 1 }).length
-    let rows_of = (v) => (v ? v.o().filter(row => kinds.includes(Object.keys(row.sc)[0])) : [])
+    let rows_of = (v) => (v ? v.o().filter(row => kinds.includes('*') || kinds.includes(Object.keys(row.sc)[0])) : [])
     let row_depth = over ? 2 : 1
     let became = []
     let neus = []
@@ -679,7 +691,7 @@ async TheA_seem_walk(w, name):
     let all_gone = []
     let all_neu = []
     await Se.process({
-        n: over ? this.TheA_A(w) : this.TheA_seem_source(w, seem),
+        n: over ? this.TheA_A(w) : source,
         process_D: seem,
         match_sc: {},
         trace_sc: { TheATrace: 1 },
@@ -687,11 +699,17 @@ async TheA_seem_walk(w, name):
             let depth = T.c.path.length - 1
             if (depth === 0) T.sc.more = over ? n.o({ A: 1 }) : rows_of(n)
             if (over && depth === 1) T.sc.more = rows_of(n.o({ w: 1 })[0])
+            if (deep && depth >= 1) T.sc.more = n.o()
         },
         trace_fn: async (uD, n, T) => uD.i(this.TheA_trace_sc(n.sc, says)),
         traced_fn: async (D, bD, n, T) => {
             D.c.C = n
             if (seem.sc.dip) this.TheA_dip(seem, D, T)
+            if (deep) {
+                D.c.how = !bD ? 'neu' : said(bD) === said(D) ? 'fit' : 'shift'
+                D.c.at = walks
+                tally[D.c.how]++
+            }
             if (T.c.path.length - 1 === row_depth && bD && bD.sc.TheATrace !== D.sc.TheATrace) became.push([D, bD])
         },
         resolved_fn: async (T, N, gone, neu) => {
@@ -702,10 +720,9 @@ async TheA_seem_walk(w, name):
             for (const D of neu) neus.push([D, T.sc.D])
         },
     })
-    let walks = (seem.sc.walks || 0) + 1
     w.oai({ TheASeem: name }, { walks })
     for (const old of seem.o({ TheAWalk: 1 })) seem.drop(old)
-    let walk = seem.i({ TheAWalk: String(walks) })
+    let walk = seem.i({ TheAWalk: String(walks), ...(deep ? this.TheA_nonzero({ reseat: reseat ? 1 : 0, ...tally, gone: all_gone.length }) : {}) })
     for (const [D, bD] of became) walk.i({ TheABecame: D.sc.TheATrace, of: D.sc.of, was: bD.sc.TheATrace })
     let where = (up) => (over && up && up !== seem ? { in: this.TheA_point_key(up) } : {})
     for (const [D, up] of neus) walk.i({ TheANeu: D.sc.TheATrace, of: D.sc.of, ...where(up) })
@@ -713,6 +730,14 @@ async TheA_seem_walk(w, name):
     let limbo = seem.o({ TheALimbo: 1 })[0]
     if (limbo) this.TheA_seem_limbo(seem, limbo, walk, walks, all_gone, all_neu)
     return walk
+
+// a tally said without its zeros: a count of nothing is absent, as a false is
+TheA_nonzero(o):
+    let out = {}
+    for (const [k, v] of Object.entries(o)) {
+        if (v) out[k] = v
+    }
+    return out
 
 // TheA_dip — a point's own name, for whoever must tell points apart over time (a UI keying an {#each}).  A Seem holding dip
 //  stamps each new point with %Dip:seem,value:<name>_<n> — the Cyto/Waft protocol (Hovercraft Dip_assign): a slot claimed from
@@ -967,4 +992,3 @@ TheA_thaw(H, snap):
     if (C) H.i(C)
     return C
 //#endregion
-// (a .g must end on a comment or a statement, never a method-final brace)

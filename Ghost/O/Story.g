@@ -3198,5 +3198,3 @@ async story_ui(this: House, Run: House, w: TheC, run: TheC):
             cls:   'save',
             fn: () => { this.i_elvisto('Story/Story', 'story_resnap', {}) },
         })
-
-// (ends on a comment — a .g must not end on a method-final brace)

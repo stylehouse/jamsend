@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_ElectrodeTesting(): string { return '75a9b97480c70ccb~g1' },
+    Ghostmeta_Ghost_L_ElectrodeTesting(): string { return 'bc3653d38188ea3d~g1' },
 
 // ElectrodeTesting.g — né Electrodation.g.  The Electrode.g proof, under the `<Name>Testing.g`
 //  convention (owner ruling 2026-09-09; src/lib/L/testing.ts is the one predicate).
@@ -217,9 +217,8 @@ async ElectrodeStaple_witness(w) {
     if (w.c.disarmed) {
         this.story_swear(w, 'disarming restores the raw functions and a call leaves no mark')
     }
-},
-// (ends on a comment — a .g must not end on a method-final brace)
 
+},
 
     })
     })

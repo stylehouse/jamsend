@@ -2241,6 +2241,111 @@ AthePondGlass_witness(w):
         this.story_swear(w, 'pointed at nothing, a view lets every point go — one commit — and its neighbour is not walked')
     }
 //#endregion
+//#region the test routine — Book AthePondReseat
+// a view of a whole tree, re-seated on another (Theory.g %TheADeep; Stuffica_view's deep).  Storica's open step is this: the
+//  recorded snap, decoded to C, seen whole; when the live run's snap of that step arrives the same view is pointed at it, and
+//   it holds still — each point pairs with the one it was, what fits stays put (a screen glows it), what changed shifts in place.
+//    The trees are held elsewhere (on the glass's .c, as Story holds The); only the view's points are in the world.  Step 2
+//     seats the recorded pond; step 3 re-seats on an equal tree; step 4 on a changed one (chub older, a roach, no weather);
+//      step 5 refreshes with nothing moved
+AthePondReseat(A,w):
+    w oai %req:wrangle,eternal
+        await &AthePondReseat_drive,w,req
+        req%ok = 1
+
+async AthePondReseat_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 5
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.AthePondReseat_stand(w)
+        if (n === 3) await this.AthePondReseat_seat(w, 'equal', 'point the view at the live tree — equal to the recorded one')
+        if (n === 4) await this.AthePondReseat_seat(w, 'changed', 'point the view at a live tree that changed — the chub older, a roach come, the weather gone')
+        if (n === 5) await this.AthePondReseat_refresh(w)
+    }
+    this.AthePondReseat_witness(w)
+
+// the pond as snaps say it: recorded, an equal live one, a changed live one
+AthePondReseat_snap(which):
+    let chub = which === 'changed' ? '    Fish:chub 2,born=5' : '    Fish:chub 2,born=4'
+    let tail = which === 'changed' ? ['    Fish:roach 3,born=6'] : ['    Weather:warm']
+    return ['Snap:H', '  w:Pond', '    Fish:minnow 1,born=1', '      Fin:left', '      Fin:right', chub, ...tail].join('\n')
+
+AthePondReseat_tree(which):
+    return this.decode_wh_lines(this.AthePondReseat_snap(which)).C
+
+async AthePondReseat_stand(w):
+    w.i({ desc: 'a glass with a deep view of the recorded pond — a snap decoded to C, held on the glass, not in the world' })
+    if (typeof this.Stuffica_refresh !== 'function' || typeof this.decode_wh_lines !== 'function') {
+        w.i({ log: 'Theory.g or Stuffica.g is not loaded — ghost_load them beside AtheTesting.g' })
+        return
+    }
+    let glass = w.oai({ w: 'Athe_Glass' })
+    glass.c.trees = { recorded: this.AthePondReseat_tree('recorded') }
+    this.Stuffica_view(glass, 'pond', ['*'], { bumps: 0, commit() { this.bumps++ } }, { from: glass.c.trees.recorded, deep: 1 })
+    await this.Stuffica_refresh(glass)
+    glass.c.names = this.AthePondReseat_names(glass)
+
+async AthePondReseat_seat(w, which, desc):
+    w.i({ desc })
+    let glass = w.o({ w: 'Athe_Glass' })[0]
+    if (!glass) return
+    glass.c.trees[which] = this.AthePondReseat_tree(which)
+    this.Stuffica_from(glass, 'pond', glass.c.trees[which])
+    await this.Stuffica_refresh(glass)
+
+async AthePondReseat_refresh(w):
+    w.i({ desc: 'refresh the view with nothing moved' })
+    let glass = w.o({ w: 'Athe_Glass' })[0]
+    if (glass) await this.Stuffica_refresh(glass)
+
+// every point, depth first, as of:name — what the screen keys by
+AthePondReseat_names(glass):
+    let out = {}
+    let visit = (point) => {
+        out[point.sc.of] = this.Stuffica_key(point)
+        for (const kid of point.o({ TheATrace: 1 })) visit(kid)
+    }
+    for (const point of this.Stuffica_points(glass, 'pond')) visit(point)
+    return out
+
+AthePondReseat_witness(w):
+    let n = this.c.run?.c.step_n ?? 0
+    let glass = w.o({ w: 'Athe_Glass' })[0]
+    if (!glass) return
+    let view = glass.o({ TheAView: 'pond' })[0]
+    let commits = view?.sc.commits || 0
+    let even = commits === (view?.c.ui?.bumps || 0)
+    let seem = glass.o({ TheASeem: 'pond' })[0]
+    let walk = seem?.o({ TheAWalk: 1 })[0]?.sc || {}
+    let names = this.AthePondReseat_names(glass)
+    let first = glass.c.names || {}
+    let held = (keys) => keys.every(k => names[k] && names[k] === first[k])
+    let pond = this.Stuffica_points(glass, 'pond')[0]
+    let fins = pond?.o({ TheATrace: 1 }).find(p => p.sc.of === 'minnow 1')?.o({ TheATrace: 1 }).length
+    if (n === 2 && even && commits === 1 && walk.neu === 6 && pond?.sc.of === 'Pond' && fins === 2 && !glass.o({ Fish: 1 }).length) {
+        this.story_swear(w, 'a deep view seats a whole tree — every line a point, nested as the snap is, and the tree held elsewhere')
+    }
+    if (n === 3 && even && commits === 2 && walk.reseat && walk.fit === 6 && !walk.neu && !walk.shift && !walk.gone && held(Object.keys(first))) {
+        this.story_swear(w, 're-seated on an equal tree every point fits and keeps its name — one commit, though the sheet says the same')
+    }
+    let how = (of) => {
+        let found = null
+        let visit = (point) => {
+            if (point.sc.of === of) found = point.c.how
+            for (const kid of point.o({ TheATrace: 1 })) visit(kid)
+        }
+        if (pond) visit(pond)
+        return found
+    }
+    if (n === 4 && even && commits === 3 && walk.reseat && walk.fit === 4 && walk.shift === 1 && walk.neu === 1 && walk.gone === 1 && held(['Pond', 'minnow 1', 'left', 'right', 'chub 2']) && how('chub 2') === 'shift' && how('roach 3') === 'neu' && !names.warm) {
+        this.story_swear(w, 'a line that changed shifts in place — the same name — a new line comes in and a lost one goes')
+    }
+    if (n === 5 && even && commits === 3 && !walk.reseat && walk.fit === 6 && seem?.sc.walks === 4) {
+        this.story_swear(w, 'walked again with nothing moved, a seated view commits nothing — and nothing glows')
+    }
+//#endregion
 //#region the test routine — Book AtheStoryCode
 // Story on TheACode (spec/Aprac_todo.md §0 item 1).  Story.svelte was ported to Ghost/O/Story.g by scripts/ghost_svelte_to_g.mjs
 //  and proved member by member; a runner that has ghost_loaded it runs Story from the .g — every method of it laid over the
@@ -2290,4 +2395,3 @@ AtheStoryCode_witness(w):
         this.story_swear(w, 'this House runs Story from its .g — every method asked about came from Ghost/O/Story.g')
     }
 //#endregion
-// (ends on a comment — a .g must not end on a method-final brace)

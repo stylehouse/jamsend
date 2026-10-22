@@ -29,7 +29,7 @@ const OATH_LINE_RE      = /^\s*Assertion:([a-z0-9-]+),/gm
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Lagoon(): string { return '455337b7cceee87c~g1' },
+    Ghostmeta_Ghost_L_Lagoon(): string { return 'd15c2b3de9c4d79e~g1' },
 
 // Lagoon.g — the READER LAYER over the censuses.  The third ghost in Ghost/L/ (the land); spec home:
 //  src/lib/O/spec/Lagoon_todo.md.  `Lagoon` is the owner's working title (2026-09-08) and the image is
@@ -2456,7 +2456,6 @@ async Lagoon_verb_lint(w, a) {
     return out
 },
 //#endregion
-// (a .g must end on a comment or a statement, never a method-final brace)
 
 
     })

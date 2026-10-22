@@ -192,4 +192,3 @@ ElectrodeStaple_witness(w):
     if (w.c.disarmed) {
         this.story_swear(w, 'disarming restores the raw functions and a call leaves no mark')
     }
-// (ends on a comment — a .g must not end on a method-final brace)

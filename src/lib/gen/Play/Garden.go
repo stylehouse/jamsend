@@ -15,7 +15,7 @@ const NAMES = ['rose', 'tulip', 'daisy', 'iris', 'poppy', 'lily', 'fern', 'clove
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Play_Garden(): string { return '8c56c8dcc6b0bce8~g1' },
+    Ghostmeta_Ghost_Play_Garden(): string { return '4e5061a1ef0f164b~g1' },
 
 // Garden.g — your first creation.  Watch it in BigWordland: type  :watch Garden  into the hole.
 //
@@ -95,9 +95,8 @@ Garden_plants(w) {
 Garden_name(w) {
     w.c.n = (w.c.n || 0) + 1
     return NAMES[(w.c.n - 1) % NAMES.length] + ' ' + w.c.n
-},
-// (a .g must end on a comment or a statement, never a method-final brace)
 
+},
 
     })
     })

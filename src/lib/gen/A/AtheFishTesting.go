@@ -17,7 +17,7 @@ const NAMES = ['minnow', 'perch', 'carp', 'trout', 'roach', 'bream', 'tench', 'd
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheFishTesting(): string { return '1e4725315d9a38a7~g1' },
+    Ghostmeta_Ghost_A_AtheFishTesting(): string { return '426ea8a90ecf1e85~g1' },
 
 // AtheFishTesting.g — the TOY that Atheory's Books test: Athe_Tank, a small pond with its own turn clock (and its own code digest, which moves on every edit — EntropyArrest §11 mutes that).
 //
@@ -304,7 +304,6 @@ Athe_Feeder_woken(w, synapse, pulse) {
     }
 },
 //#endregion
-// (ends on a comment — a .g must not end on a method-final brace)
 
 
     })

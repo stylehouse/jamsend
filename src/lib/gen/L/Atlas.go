@@ -165,7 +165,7 @@ const ATLAS_EXT   = { g: 1, svelte: 1, ts: 1, md: 1 }
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Atlas(): string { return 'ea23056643ebec03~g1' },
+    Ghostmeta_Ghost_L_Atlas(): string { return '664b81421cc33488~g1' },
 
 // Atlas.g — every doc's %Map, kept.  The first ghost in Ghost/L/ (the land; spec home for now:
 //  Stemdex_todo.md §0 "relation EDGES", 2026-09-05).  `Atlas` is a PLACEHOLDER name — an atlas is a
@@ -1066,7 +1066,6 @@ async Atlas_verb_refresh(w, a) {
     return { fresh: fresh, census: atlas.o({ see: 'atlas' })[0]?.sc ?? null }
 },
 //#endregion
-// (a .g must end on a comment or a statement, never a method-final brace)
 
 
     })

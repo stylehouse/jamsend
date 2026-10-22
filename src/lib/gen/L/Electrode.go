@@ -11,7 +11,7 @@ const ELECTRODE_SKIP = /^(Ghostmeta_|Electrode_|Electrode$)/   // never coat the
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Electrode(): string { return '0bb36d4e3918152f~g1' },
+    Ghostmeta_Ghost_L_Electrode(): string { return '7058b5045ba4f814~g1' },
 
 // Electrode.g — both ends of every ghost call, kept as marks, reduced to a picture.  The second ghost
 //  in Ghost/L/ (the land); spec home: src/lib/O/spec/Electrode_todo.md.
@@ -330,7 +330,6 @@ Electrode_verb(w, a) {
     return this.Electrode_top(ew, Number(a.k ?? 20))
 },
 //#endregion
-// (a .g must end on a comment or statement, never a method-final brace)
 
 
     })

@@ -384,7 +384,6 @@ for (const m of members) {
         report.refused.push(`${name}: a ${ts.SyntaxKind[m.kind]} — the .g compiler has no shape for it`)
     }
 }
-out.push('// (ends on a comment — a .g must not end on a method-final brace)')
 
 fs.writeFileSync(out_path, out.join('\n') + '\n')
 fs.writeFileSync(out_path.replace(/\.g$/, '.port.json'), JSON.stringify({ from: src_path, ...report }, null, 1) + '\n')

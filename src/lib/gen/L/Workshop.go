@@ -13,7 +13,7 @@ const HEART_MS = 300          // how often a watched creation is given a beat (i
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Workshop(): string { return '603dd141f69c038a~g1' },
+    Ghostmeta_Ghost_L_Workshop(): string { return '27e36e9ae751aee5~g1' },
 
 // Workshop.g — the place to build a creation and watch it live (spec/Verbs_todo.md §5).
 //
@@ -136,9 +136,8 @@ async Workshop_make(w, a) {
         compiled = true
     }
     return { made: path, compiled: compiled, next: ':watch ' + name }
-},
-// (a .g must end on a comment or a statement, never a method-final brace)
 
+},
 
     })
     })

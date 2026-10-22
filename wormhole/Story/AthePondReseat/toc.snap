@@ -1,0 +1,23 @@
+story:AthePondReseat
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.015
+      sample=0.015,at=1792666002
+      sample=0.015,at=1792666015
+      sample=0.016,at=1792666026
+    TimeTotal:step,avg=0.003
+      sample=0.003,at=1792666002
+      sample=0.003,at=1792666015
+      sample=0.003,at=1792666026
+  step,dige:df14b1793d0b550f
+  {"step":2,"desc":"a glass with a deep view of the recorded pond — a snap decoded to C, held on the glass, not in the world","dige":"50c866b3e8bec7dc"}
+    {"Assertion":"a-deep-view-seats","sentence":"a deep view seats a whole tree — every line a point, nested as the snap is, and the tree held elsewhere"}
+  step=3,desc:point the view at the live tree — equal to the recorded one,dige:f56dcd80442fdb91
+    {"Assertion":"re-seated-on-an","sentence":"re-seated on an equal tree every point fits and keeps its name — one commit, though the sheet says the same"}
+  {"step":4,"desc":"point the view at a live tree that changed — the chub older, a roach come, the weather gone","dige":"2d03217fbfec0a42"}
+    Assertion:a-line-that-changed,sentence:a line that changed shifts in place — the same name — a new line comes in and a lost one goes
+  step=5,desc:refresh the view with nothing moved,dige:0a04c7c05648c602
+    {"Assertion":"walked-again-with-nothing","sentence":"walked again with nothing moved, a seated view commits nothing — and nothing glows"}

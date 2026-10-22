@@ -1033,4 +1033,3 @@ async Atlas_verb_refresh(w, a):
     let fresh = nav ? await this.Atlas_refresh(atlas, nav) : null
     return { fresh: fresh, census: atlas.o({ see: 'atlas' })[0]?.sc ?? null }
 //#endregion
-// (a .g must end on a comment or a statement, never a method-final brace)

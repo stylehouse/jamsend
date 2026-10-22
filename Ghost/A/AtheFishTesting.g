@@ -268,4 +268,3 @@ Athe_Feeder_woken(w, synapse, pulse):
         w.oai({ log: 'a synapse wakes something this feeder has no handler for: ' + synapse.sc.wake })
     }
 //#endregion
-// (ends on a comment — a .g must not end on a method-final brace)

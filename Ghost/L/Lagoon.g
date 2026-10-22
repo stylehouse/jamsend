@@ -2369,4 +2369,3 @@ async Lagoon_verb_lint(w, a):
     if (a.sees && nav) out.unproven = await this.Lagoon_unproven(c.lw, nav)
     return out
 //#endregion
-// (a .g must end on a comment or a statement, never a method-final brace)

@@ -145,4 +145,3 @@ WorkshopStaple_witness(w):
     if (String(w.c.listed || '').split(' ').indexOf('Garden') >= 0 && this.WorkshopStaple_at(w, 6)) {
         this.story_swear(w, 'the Workshop lists its creations — the Garden among them')
     }
-// (ends on a comment — a .g must not end on a method-final brace)

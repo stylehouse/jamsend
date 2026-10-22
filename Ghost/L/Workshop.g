@@ -119,4 +119,3 @@ async Workshop_make(w, a):
         compiled = true
     }
     return { made: path, compiled: compiled, next: ':watch ' + name }
-// (a .g must end on a comment or a statement, never a method-final brace)

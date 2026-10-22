@@ -93,4 +93,3 @@ Pond_count(w):
 Pond_name(w):
     w.c.n = (w.c.n || 0) + 1
     return NAMES[(w.c.n - 1) % NAMES.length] + ' ' + w.c.n
-// (a .g must end on a comment or a statement, never a method-final brace)

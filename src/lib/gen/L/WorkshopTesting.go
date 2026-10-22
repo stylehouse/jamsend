@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_WorkshopTesting(): string { return 'e890eac6a5332162~g1' },
+    Ghostmeta_Ghost_L_WorkshopTesting(): string { return 'e55f3111fc648e16~g1' },
 
 // WorkshopTesting.g — the Workshop's proof (Ghost/L/Workshop.g; spec/Verbs_todo.md §5).  Book: WorkshopStaple.
 //
@@ -168,9 +168,8 @@ WorkshopStaple_witness(w) {
     if (String(w.c.listed || '').split(' ').indexOf('Garden') >= 0 && this.WorkshopStaple_at(w, 6)) {
         this.story_swear(w, 'the Workshop lists its creations — the Garden among them')
     }
-},
-// (ends on a comment — a .g must not end on a method-final brace)
 
+},
 
     })
     })

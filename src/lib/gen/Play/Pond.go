@@ -19,7 +19,7 @@ const NAMES = ['minnow', 'perch', 'carp', 'trout', 'roach', 'bream', 'tench', 'd
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Play_Pond(): string { return '3d995dc6998e8add~g1' },
+    Ghostmeta_Ghost_Play_Pond(): string { return '92f278457599a9eb~g1' },
 
 // Pond.g — a creation where the rules MEET.  Watch it in BigWordland: type  :watch Pond  into the hole.
 //
@@ -108,9 +108,8 @@ Pond_count(w) {
 Pond_name(w) {
     w.c.n = (w.c.n || 0) + 1
     return NAMES[(w.c.n - 1) % NAMES.length] + ' ' + w.c.n
-},
-// (a .g must end on a comment or a statement, never a method-final brace)
 
+},
 
     })
     })

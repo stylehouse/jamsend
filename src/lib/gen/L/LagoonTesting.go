@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_LagoonTesting(): string { return 'b1a923fe609ce5c3~g1' },
+    Ghostmeta_Ghost_L_LagoonTesting(): string { return 'a558b162fb0e04ac~g1' },
 
 // LagoonTesting.g — né Lagoonation.g.  The Lagoon.g proof, under the `<Name>Testing.g` convention
 //  (owner ruling 2026-09-09; src/lib/L/testing.ts is the one predicate).
@@ -615,9 +615,8 @@ LagoonCave_witness(w) {
     if (w.c.left && this.LagoonStaple_at(w, 9)) {
         this.story_swear(w, 'climbing past the surface leaves the cave — and the face is told')
     }
-},
-// (ends on a comment — a .g must not end on a method-final brace)
 
+},
 // ═══ Book LagoonCaveBench — a MEASUREMENT, not a gate (2026-10-07, the owner: "this needs to be quite performant.
 //  maybe you could put some timers in and figure out what's slow") ═════════════════════════════════════════════════
 // Stands Atlas over the WHOLE tree (no roots override) and, per real query, times the three hops of a keystroke:
@@ -718,9 +717,8 @@ async LagoonCaveBench_time(w) {
         }
         w.c.bench = rows
     })
-},
-// (ends on a comment — a .g must not end on a method-final brace)
 
+},
 
     })
     })

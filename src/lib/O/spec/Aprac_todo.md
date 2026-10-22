@@ -88,17 +88,37 @@
 - **Hackarium direction: integrate the editor and Story.g a bit somehow** — the editor seat editing Story's own .g, pushing it,
    and the runner taking it at an era seam (CodePush, as the toy does).
 - **Two .g compiler fixes — DONE 2026-10-22** (`src/lib/O/lang/compile.ts`): `&&` is one token, never the `&method` sugar, and
-   the sugar never fires in string or template text; the "must not end on a method-final brace" dodge didn't reproduce (the
-    comments stay).  55 .g recompiled byte-identical; pinned_stable unaffected; the converter's `&&` rewrite is gone.
+   the sugar never fires in string or template text; the "must not end on a method-final brace" dodge didn’t reproduce (its
+    comments were deleted from all 14 .g and the converter).  55 .g recompiled byte-identical; pinned_stable unaffected; the converter's `&&` rewrite is gone.
 
 **Storica — Storui on Stuffica, first slice (2026-10-22).**  `src/lib/O/Storica.svelte`, mounted by Story.g's Story_plan
  beside Storui (so only on a tab that ghost_loaded Story.g, until the spine swap).  The strip is two views in the strip's own
   compartment, reading Story's piles from outside (Theory: a Seem's `c.from` + `%TheASay`; Book `AthePondGlass`): `plan` over
    The's %step (dige, desc), `live` over This's %Step (ok, caveat, accepted, dige).  Refreshed after each settled flush
     (`Stuffica_refresh`), drawn only on a commit, pips keyed by Dip; `window.__storica_ledger()` counts draws.  **Not yet seen
-     with eyes** — no console errors on the runner, but runner_ask has no eval, so nobody has looked at the tab.  Next: the open
-      step's snap as a nested view (a snap decoded to a C tree, a view per level), notes and oaths as their own views, then the
-       diff panel; a click becomes IO once Story is an A.
+     with eyes** — no console errors on the runner, but runner_ask has no eval, so nobody has looked at the tab.
+
+**Storica's snap panel — it Seems into place (2026-10-22, second slice).**  Owner: *"the snap C** should stay still in the same
+ view that starts looking at the live running version too.  It just Seems into place, with a slight green glow emit as things
+  fit into place … the visual paradigm, how to talk to the user about the latest wriggle of state in the system."*  Built: the
+   open step's snap is ONE deep view (Theory `%TheADeep`, not a view per level — a whole tree pairs in one walk), showing the
+    recorded snap until the live run's `got_snap` arrives, then re-pointed at it: it re-seats, every line keyed by its point's
+     Dip, so nothing is remade; each line glows what the walk did to it — fit green (only on a re-seat), shift amber (stays
+      tinted), new fades in (`el.animate`).  The head says "seated — N fit · N changed · N new · N gone".  Book
+       `AthePondReseat` proves the Theory half (4 oaths, 3× green).  Opening another step re-seats too, so what two steps
+        share glows — a step-to-step diff for free; keep or tame it once seen.  **Not yet seen with eyes.**
+ Next, in order:
+  1. **Look at it** (owner, or the eye — `scripts/runner_eye.mjs` can photograph a page over ticks): is the glow a whisper
+      or a strobe; is a 700-line snap readable at 40vh; does the re-seat land when a run reaches the open step.
+  2. **The wriggle, said** — the paradigm question.  A re-seat's tally is already a sentence ("seated — 412 fit · 2 changed");
+      the next layer is WHERE the eye goes: scroll the first shifted line into view, fold runs of fitting lines (Lang's
+       openness folds a Doc around engaged Points — the same move), a gone line left as a fading ghost for a beat (limbo has
+        it: `%TheALimbo` keeps gone points).
+  3. **Waft → Book explorer, smoothed.**  Credence lists every Book; from a `Funkcion:Storying,of_Book:X` line in a Waft the
+      way in should be one gesture — open the Book in Storica with its first step's snap seated, no run needed (the recorded
+       snaps are the Book at rest).  Then running it is the same view coming alive.
+  4. Notes and oaths as their own views; the diff panel retires once shift lines carry their old value (the walk has bD).
+  5. A click becomes IO once Story is an A.
 
 **Open questions.**
 - A view whose handle isn't hung (no UI open) — keep walking it, or stand views only while open (Stuffing's register /

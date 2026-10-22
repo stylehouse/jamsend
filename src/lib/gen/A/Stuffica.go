@@ -10,7 +10,7 @@ import { untrack } from "svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_Stuffica(): string { return 'd368e4f458081e28~g1' },
+    Ghostmeta_Ghost_A_Stuffica(): string { return '840830d9ace7b31f~g1' },
 
 // Stuffica.g — views: how a compartment reaches the screen (spec/Atheory_todo §0.0 "NEXT ERA"; Stuffing, made a citizen).
 //
@@ -40,7 +40,8 @@ import { untrack } from "svelte"
 
 // Stuffica_view — stand a view called name over a compartment, showing these kinds of row; ui (optional) is the handle a commit
 //  bumps.  opts (optional): says — the keys its points keep (Theory.g %TheASay; the rest of a row never reaches the screen, so a
-//   change to it commits nothing); from — the rows are held elsewhere (Theory.g TheA_seem_source).  Returns the %TheAView
+//   change to it commits nothing); from — the rows are held elsewhere (Theory.g TheA_seem_source); deep — the whole tree under
+//    them, nested (Theory.g %TheADeep: a snap seen whole, re-seated when pointed at another).  Returns the %TheAView
 Stuffica_view(w, name, kinds, ui, opts) {
     let seem = this.TheA_seem(w, name, kinds)
     // a view's points are named (Theory.g TheA_dip): what a UI keys its {#each} by
@@ -50,6 +51,7 @@ Stuffica_view(w, name, kinds, ui, opts) {
         for (const key of opts.says) seem.oai({ TheASay: key })
     }
     if (opts?.from) seem.c.from = opts.from
+    if (opts?.deep) seem.oai({ TheADeep: 1 })
     let view = w.oai({ TheAView: name })
     if (ui) view.c.ui = ui
     return view
@@ -119,12 +121,13 @@ async Stuffica_refresh(w, names) {
     return this.Stuffica_flush(changed)
 
 },
-// walk one view; what changed, if its sheet did
+// walk one view; what changed, if its sheet did — or if it was re-seated on another tree (Theory.g %TheADeep): the sheet may say
+//  the same, but the screen now shows another pile, and what fitted is worth showing
 async Stuffica_walked(w, view) {
     let name = view.sc.TheAView
-    await this.TheA_seem_walk(w, name)
+    let walk = await this.TheA_seem_walk(w, name)
     let dige = this.TheA_digest(this.Stuffica_said(w, name))
-    if (dige === view.sc.dige) return null
+    if (dige === view.sc.dige && !walk?.sc.reseat) return null
     return { w, view, dige }
 
 },
@@ -135,9 +138,8 @@ Stuffica_flush(changed) {
         view.c.ui?.commit?.()
     }
     return changed.map(x => x.view)
-},
-// (ends on a comment — a .g must not end on a method-final brace)
 
+},
 
     })
     })

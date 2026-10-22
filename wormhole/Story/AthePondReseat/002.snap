@@ -1,0 +1,27 @@
+Snap:H
+  H:AthePondReseat,Run
+    A:AthePondReseat
+      self,round=2	{"mung":["age"]}
+      w:AthePondReseat
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        w:Athe_Glass
+          TheASeem:pond,dip,walks
+            TheAKind:*
+            TheADeep
+            TheATrace:w,of:Pond
+              Dip:seem,value:pond_1,i=3
+              TheATrace:Fish,of:minnow 1,born
+                Dip:seem,value:pond_1_1,i=2
+                TheATrace:Fin,of:left
+                  Dip:seem,value:pond_1_1_1
+                TheATrace:Fin,of:right
+                  Dip:seem,value:pond_1_1_2
+              TheATrace:Fish,of:chub 2,born=4
+                Dip:seem,value:pond_1_2
+              TheATrace:Weather,of:warm
+                Dip:seem,value:pond_1_3
+            Dip:seem,value:pond,i
+            TheAWalk:1,neu=6
+              TheANeu:w,of:Pond
+          TheAView:pond,commits,dige:d3dc5f572af41df0
