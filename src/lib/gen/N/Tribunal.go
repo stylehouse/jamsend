@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Tribunal(): string { return '526de2694efaf4c7~g1' },
+    Ghostmeta_Ghost_N_Tribunal(): string { return 'a3d82cb8e0a8910f~g1' },
 
 
 // Tribunal — a peer connection's reputation, constantly on trial (spec §4.1, §11.2).
@@ -149,6 +149,8 @@ async Socket_real(w) {
     let intentional = false   // port.close() was called — stay down, do not re-dial
     let last_rx = Date.now()  // when ANY frame last arrived — the liveness clock (see the silence watch at the bottom)
     let alive_probe_at = 0    // when we sent the liveness probe still unanswered, else 0
+    let dial_at = 0           // when the current socket was dialled — a dial stuck CONNECTING is the silence watch's too
+    let closed_at = 0         // when the current socket closed — CLOSED past the longest backoff means the re-dial was lost
     let tries = 0             // reconnect attempt counter (drives the backoff)
     let stable_timer = null   // set on open; fires tries=0 ONLY if the socket survives STABLE_MS, so a
     //                           flapping open→die never resets the backoff (cleared by onclose)
@@ -230,6 +232,7 @@ async Socket_real(w) {
         //  never opened is the "relay not reachable" a pocket-player falls to its SoundPool on (Radio_relay_down).
         down_since: Date.now(),
         is_open() { return !!ws && ws.readyState === WebSocket.OPEN },
+        ready_state() { return ws ? ws.readyState : -1 },   // 0 CONNECTING · 1 OPEN · 2 CLOSING · 3 CLOSED · -1 no socket
         send(frame) {
             let h = frame && frame.header
             if (!ws || ws.readyState !== WebSocket.OPEN) {
@@ -402,6 +405,8 @@ async Socket_real(w) {
     }
     let connect = () => {
         let url = home()
+        dial_at = Date.now()
+        closed_at = 0
         ws = new WebSocket(url)
         port.ws = ws
         ws.binaryType = 'arraybuffer'   // so a binary frame arrives as ArrayBuffer (sync-decodable), not a Blob
@@ -424,6 +429,7 @@ async Socket_real(w) {
         ws.onclose = (ev) => {
             clearTimeout(stable_timer)   // a pending "proved stable" reset must not fire after a drop
             if (!port.down_since) port.down_since = Date.now()
+            closed_at = Date.now()
             note(`🛰 ws CLOSE code=${ev.code} clean=${ev.wasClean}${intentional ? ' (intentional)' : ''}`)
             // the bulk lane is pure repli_page — ephemeral, worthless once stale, self-heals via the
             //  sink's own re-ask — so it drops on close exactly like the noisy/run_phase frames above,
@@ -448,8 +454,40 @@ async Socket_real(w) {
     //  Quiet for 30s ⇒ ask the relay a `who` it always answers (who_ok, or who_error when unbound — any reply proves the
     //   path).  No frame within 15s of that ⇒ the socket is dead: drop it WITHOUT waiting on a close handshake that a
     //    half-open socket never completes, and dial again.  A busy socket never probes (traffic resets the clock).
+    // …AND A DIAL THAT NEVER LANDS (2026-10-23, the daemon: relay down 14 HOURS, never re-dialled).  A socket stuck in
+    //  CONNECTING — an upgrade the proxy accepted and never answered, the vite-restart race — fires neither onopen nor
+    //   onclose, so the backoff never runs and this watch (OPEN-only) never looked.  20s CONNECTING ⇒ abandon and dial again.
+    let redial = (why) => {
+        note(`🛰 ws ${why} — dropping the socket and re-dialling`, true)
+        alive_probe_at = 0
+        let dead = ws
+        dead.onopen = dead.onclose = dead.onerror = dead.onmessage = null
+        try { dead.close() } catch (e) {}
+        clearTimeout(stable_timer)
+        if (bulkQ.length) { bulkQ.length = 0; note_bulk_depth() }   // stale pages, exactly as onclose drops them
+        if (!port.down_since) port.down_since = Date.now()
+        try { connect() } catch (e) { closed_at = Date.now(); note(`🛰☠ ws re-dial threw: ${e && e.message}`, true) }
+    }
+    let last_redial = 0
     let silence = setInterval(() => {
         if (intentional) { clearInterval(silence); return }
+        // THE BLANKET RULE (owner 2026-10-23: *"maybe the whole thing could have a … 'connected || reconnect()' thing?"*).
+        //  The cases below each name a way a socket dies; this one doesn't care which.  Not OPEN for 90s, whatever the state
+        //   (a CLOSING that never finishes, a case nobody has met yet) ⇒ re-dial, at most once a minute.
+        if (!(ws && ws.readyState === WebSocket.OPEN) && port.down_since && Date.now() - port.down_since > 90000 && Date.now() - last_redial > 60000) {
+            last_redial = Date.now()
+            redial(`NOT OPEN ${Math.round((Date.now() - port.down_since) / 1000)}s (state ${ws ? ws.readyState : 'none'})`)
+            return
+        }
+        if (ws && ws.readyState === WebSocket.CONNECTING && dial_at && Date.now() - dial_at > 20000) {
+            redial(`STUCK CONNECTING ${Math.round((Date.now() - dial_at) / 1000)}s`)
+            return
+        }
+        // CLOSED for longer than the backoff can explain (cap 15s + jitter) ⇒ the scheduled re-dial never happened.
+        if (ws && ws.readyState === WebSocket.CLOSED && closed_at && Date.now() - closed_at > 30000) {
+            redial(`CLOSED ${Math.round((Date.now() - closed_at) / 1000)}s with no re-dial pending`)
+            return
+        }
         if (!ws || ws.readyState !== WebSocket.OPEN) return
         let now = Date.now()
         if (!alive_probe_at && now - last_rx > 30000) {
@@ -458,15 +496,7 @@ async Socket_real(w) {
             return
         }
         if (alive_probe_at && now - alive_probe_at > 15000) {
-            note(`🛰 ws SILENT ${Math.round((now - last_rx) / 1000)}s — the relay did not answer a liveness probe; dropping the dead socket and re-dialling`, true)
-            alive_probe_at = 0
-            let dead = ws
-            dead.onopen = dead.onclose = dead.onerror = dead.onmessage = null
-            try { dead.close() } catch (e) {}
-            clearTimeout(stable_timer)
-            if (bulkQ.length) { bulkQ.length = 0; note_bulk_depth() }   // stale pages, exactly as onclose drops them
-            if (!port.down_since) port.down_since = now
-            connect()
+            redial(`SILENT ${Math.round((now - last_rx) / 1000)}s — the relay did not answer a liveness probe`)
         }
     }, 5000)
     if (silence && silence.unref) silence.unref()

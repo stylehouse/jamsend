@@ -989,8 +989,37 @@ const relay_state = () => {
         const port = sw?.o?.({ transport: 1, type: 'websocket' })?.[0]?.c?.port
         if (!port || !port.real) return { standing: false }
         const open = !!port.is_open?.()
-        return { standing: true, open, down_s: port.down_since ? +((Date.now() - port.down_since) / 1000).toFixed(1) : 0 }
+        // the socket's own state + the last few relay lines: on 2026-10-23 the link sat down 14 HOURS and the daemon's log
+        //  had nothing to say why (its 🛰 topic is gated off), so /status carries the evidence itself.
+        const log = ((sw?.c?.relay_log ?? []) as any[]).slice(-6).map((r: any) => `${new Date(r.at).toISOString().slice(11, 19)} ${r.line}`)
+        return { standing: true, open, ready_state: port.ready_state?.() ?? null, down_s: port.down_since ? +((Date.now() - port.down_since) / 1000).toFixed(1) : 0, log }
     } catch { return { standing: false } }
+}
+
+// relay_guard — THE DAEMON CHECKS IT STAYS ON THE RELAY (2026-10-23, the owner: "can we make it check that it stays connected
+//  to the relay?" — after a 14-hour silent outage).  Socket_real re-dials what it can see is dead (silent, stuck CONNECTING,
+//   closed with no retry); this is the floor under that: down past RELAY_DOWN_WARN_S says so on the heartbeat, and down past
+//    RELAY_DOWN_EXIT_S the daemon EXITS so compose's `restart: always` brings it back on a fresh process.  A daemon nobody
+//     can reach is worth less than a 20-second reboot.  RELAY_DOWN_EXIT_S=0 disables the exit.
+const RELAY_DOWN_WARN_S = 60
+const RELAY_DOWN_EXIT_S = +(process.env.RELAY_DOWN_EXIT_S ?? 300)
+let relay_warned_at = 0
+let relay_exiting = false
+const relay_guard = (r: any) => {
+    if (!r || !r.standing || r.open) { relay_warned_at = 0; return }
+    const down = +(r.down_s || 0)
+    if (down < RELAY_DOWN_WARN_S) return
+    if (!relay_warned_at || Date.now() - relay_warned_at > 60000) {
+        relay_warned_at = Date.now()
+        say(`⚠ RELAY DOWN ${Math.round(down)}s (socket state ${r.ready_state}) — last lines: ${(r.log || []).slice(-3).join(' | ') || '(none)'}`)
+    }
+    if (RELAY_DOWN_EXIT_S > 0 && down > RELAY_DOWN_EXIT_S && !relay_exiting) {
+        relay_exiting = true
+        say(`☠ RELAY DOWN ${Math.round(down)}s > ${RELAY_DOWN_EXIT_S}s — exiting so the container restarts onto a fresh socket`)
+        // the SIGTERM path drains pending writes first (the same stop a `docker restart` gives); exit(3) only if it hangs
+        process.kill(process.pid, 'SIGTERM')
+        setTimeout(() => process.exit(3), 30000).unref()
+    }
 }
 
 const stats = () => {
@@ -1772,6 +1801,7 @@ while (!stopping) {
             //  out here, so the heartbeat has to carry it or nobody finds out.  Empty when correct.
             + nag_identity())
         if (s.wedge && s.wedge.ms > 2000) say(`   ↳ inside: ${probe_line()}`)
+        relay_guard(s.relay)
         lines.push(`   ▸ worlds=${worlds}`)
         if (s.book) {
             lines.push(`   ▸ Book ${s.book.Book} driving=${s.book.driving} phase=${s.book.phase} steps=${s.book.snapped}/${s.book.steps} ok=${s.book.ok} caveat=${s.book.caveat}`)
