@@ -9,7 +9,6 @@ story:AthePondSeem
         means,drop
   TimeSpool
     TimeTotal:beliefs,avg=0.039
-      sample=0.03,at=1792567851
       sample=0.032,at=1792571167
       sample=0.032,at=1792575960
       sample=0.042,at=1792577580
@@ -19,8 +18,8 @@ story:AthePondSeem
       sample=0.042,at=1792650553
       sample=0.032,at=1792659833
       sample=0.03,at=1792666051
+      sample=0.025,at=1792898502
     TimeTotal:step,avg=0.006
-      sample=0.005,at=1792567851
       sample=0.005,at=1792571167
       sample=0.005,at=1792575960
       sample=0.007,at=1792577580
@@ -30,6 +29,7 @@ story:AthePondSeem
       sample=0.007,at=1792650553
       sample=0.005,at=1792659833
       sample=0.005,at=1792666051
+      sample=0.004,at=1792898502
   step,dige:d563c4c89cce1319
   step=2,desc:stand a tank with a Seem over its rows and the eye’s sphere declared — turn one — walk and look,dige:49370c161056dde7
   step=3,desc:turn to turn 4 — the eggs hatch,dige:5119abf3390d90d2

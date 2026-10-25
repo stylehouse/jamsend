@@ -634,8 +634,15 @@ TheA_seem_says(seem):
 // where a Seem's rows live: its compartment, or what its .c.from holds — rows held ELSEWHERE (a screen's view of Story's steps,
 //  kept in the screen's own compartment).  Runtime, as a ref is: whoever stood the Seem points it, and points it again when the
 //   pile is replaced.  Pointed at nothing, it reads its own compartment, where there are no rows of its kinds
+//  A deep Seem (%TheADeep, kinds *) is the exception: its own compartment is the one tree it must never walk — the compartment
+//   holds the Seem, the Seem grows a point for every row it walks, so the walk goes down into the points it is making, a tree
+//    growing as fast as it is walked, all in microtasks, and the tab freezes (2026-10-25: Storica's snap view, pointed at null
+//     until a step is opened, froze every runner at the start of every run).  Pointed at nothing, a deep Seem reads an empty tree
 TheA_seem_source(w, seem):
-    return seem.c.from || w
+    if (seem.c.from) return seem.c.from
+    if (!seem.o({ TheADeep: 1 }).length) return w
+    seem.c.nothing = seem.c.nothing || new TheC({ c: {}, sc: { TheANothing: 1 } })
+    return seem.c.nothing
 
 // a row's sc as a Trace point's: TheATrace:<its mainkey>,of:<that key's value>, then everything else it says — what the machine
 //  believes the row's shape is.  resolve() pairs on whichever key:values are least ambiguous, so a named row holds together by

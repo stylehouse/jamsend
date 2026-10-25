@@ -1,0 +1,23 @@
+story:AthePondGround
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.01
+      sample=0.013,at=1792898448
+      sample=0.009,at=1792898463
+      sample=0.008,at=1792898469
+    TimeTotal:step,avg=0.002
+      sample=0.003,at=1792898448
+      sample=0.002,at=1792898463
+      sample=0.002,at=1792898469
+  step,dige:b217f13e63aa3000
+  step=2,desc:stand an A on Ground/Core — the base — and nothing else,dige:1bfff1b82ea1d912
+    Assertion:an-a-stands-on,sentence:an A stands on Ground/Core — its three .g as layers — each with the digest loaded here — and it is Firm
+  step=3,desc:ask for Ground/CoreTesting instead — it stands on Core,dige:187f9ccf3e27d455
+    Assertion:asked-for-a-ground,sentence:asked for a Ground the A stands on it and on Core beneath — Core said as pulled in — not asked
+  step=4,desc:ask for a Ground no area wears beside it,dige:11c9fed48190aaed
+    Assertion:a-ground-no-area,sentence:a Ground no area wears is refused by name — and what could stand still stands
+  step=5,desc:name no Ground at all,dige:4133988c58ed55d7
+    Assertion:named-nothing-the-a,sentence:named nothing the A lets its Grounds go — the rows go and the code stays on the House

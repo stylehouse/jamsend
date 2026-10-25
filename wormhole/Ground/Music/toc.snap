@@ -1,0 +1,23 @@
+Ground:Music,desc:the music pipeline — rastock racast raterm — stock a track then cast it then play it at the terminal — the radio dials and the pool keeps what played,FromWhat:Waft:Ghost/Music/Ality
+  Load:Ghost/M/Ra.g
+  Load:Ghost/M/Orig.g
+  Load:Ghost/M/Pool.g
+  Load:Ghost/M/Radio.g
+  Load:Ghost/M/Sound.g
+  Load:Ghost/M/Crate.g
+  Beside:src/lib/O/ui/PoolFace.svelte
+  Beside:src/lib/O/ui/RadioFace.svelte
+  Beside:src/lib/O/ui/LineupFace.svelte
+  Beside:src/lib/O/ui/TunerFace.svelte
+  Beside:src/lib/O/ui/StokerFace.svelte
+  Beside:src/lib/O/ui/RiffleFace.svelte
+  Beside:src/lib/O/Funk/Sound.svelte
+  Beside:src/lib/O/ui/CrateFace.svelte
+  Advice:src/lib/O/spec/Radio_todo.md
+  Advice:src/lib/O/spec/Radio_circuit_todo.md
+  Advice:src/lib/O/spec/SoundPooling_todo.md
+  Advice:src/lib/O/spec/Radio_spec.md
+  Advice:src/lib/O/spec/Radio_design.md
+  Advice:src/lib/O/spec/Radio_lowlevel.md
+  Advice:src/lib/O/spec/Radio_multicast_todo.md
+  Advice:src/lib/O/spec/Backpressure_todo.md

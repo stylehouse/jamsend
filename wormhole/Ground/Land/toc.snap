@@ -1,0 +1,27 @@
+Ground:Land,desc:the land — the bet turned on the code itself — what the code says what it does and who asks,FromWhat:Waft:Ghost/Land/Wordland
+  Stands:Glass
+  Load:Ghost/L/Atlas.g
+  Load:Ghost/L/Electrode.g
+  Load:Ghost/L/Lagoon.g
+  Load:Ghost/L/Workshop.g
+  Load:Ghost/Play/Garden.g
+  Load:Ghost/Play/Pond.g
+  Beside:src/lib/server/dige.ts
+  Beside:src/lib/O/lang/compile.ts
+  Beside:src/lib/O/LiesFunk.svelte
+  Beside:src/lib/L/everything.js
+  Beside:src/lib/L/BigWordland.svelte
+  Beside:src/lib/L/Hackarium.svelte
+  Beside:src/lib/L/Clerkdesk.svelte
+  Beside:src/lib/L/Educarium.svelte
+  Beside:src/lib/L/Lagui.svelte
+  Beside:src/lib/L/testing.ts
+  Advice:src/lib/O/spec/Wordland_todo.md
+  Advice:src/lib/O/spec/Lagoon_todo.md
+  Advice:src/lib/O/spec/Electrode_todo.md
+  Advice:src/lib/O/spec/Stemdex_todo.md
+  Advice:src/lib/O/spec/Stemdex_spec.md
+  Advice:src/lib/O/spec/Clerkdesk_todo.md
+  Advice:src/lib/O/spec/Meaningfold_todo.md
+  Advice:src/lib/O/spec/Verbs_todo.md
+  Advice:src/lib/O/spec/Emotion_todo.md

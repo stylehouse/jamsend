@@ -8,10 +8,12 @@ story:AtheStoryCode
       sample=0.004,at=1792659804
       sample=0.004,at=1792659817
       sample=0.003,at=1792666070
+      sample=0.004,at=1792898507
     TimeTotal:step,avg=0.002
       sample=0.002,at=1792659804
       sample=0.002,at=1792659817
       sample=0.002,at=1792666070
+      sample=0.002,at=1792898507
   step,dige:fb44592149c99222
   step=2,desc:stand an A holding Story’s code — Ghost/O/Story.g — and ask the House where Story’s methods came from,dige:f527b57be6851606
     Assertion:an-a-holds-story,sentence:an A holds Story’s code — its layer is Ghost/O/Story.g with the digest of the version loaded

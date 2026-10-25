@@ -1,0 +1,6 @@
+Ground:LandTesting,desc:the tests of Ground/Land — what a Book proving it loads,FromWhat:Waft:Ghost/Land/Wordland
+  Stands:Land
+  Load:Ghost/L/WorkshopTesting.g
+  Load:Ghost/L/AtlasTesting.g
+  Load:Ghost/L/ElectrodeTesting.g
+  Load:Ghost/L/LagoonTesting.g

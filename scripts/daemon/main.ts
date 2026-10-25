@@ -1218,7 +1218,27 @@ const server = http.createServer((req, res) => {
             }
         })()
     }
-    res.statusCode = 404; res.end('{"paths":["/status","/c?depth=3 (token)","/stop (token)","/restock (token)","/invite?base=<url> (token)","/census (token)","/profile?ms= (token)","/tune?idle_ms= (token)"]}')
+    // /wind?by=N — WIND THE ISSUER'S COUNTER FORWARD (owner 2026-10-25: "wind the serial number up another 1000").  A blotter
+    //  sheet printed in a daemon life whose `next` never reached disk carries serials PAST today's `next`; the door now heals
+    //   each such serial when it is redeemed (Swarm_hello's presig check), but a fresh mint would re-issue the same numbers —
+    //    and a presig is deterministic, so that is the SAME link handed to a second person.  Jumping `next` clear of the
+    //     printed range ends that.  Monotone only (by >= 1, capped at 100000); durable through Swarm_iz_mark like a mint.
+    if (url.pathname === '/wind') {
+        if (!token_ok(req, url)) { res.statusCode = 401; return res.end('{"error":"token required"}') }
+        const by = Math.floor(Number(url.searchParams.get('by') || '0'))
+        if (!(by >= 1 && by <= 100000)) { res.statusCode = 400; return res.end('{"error":"by=<1..100000> required"}') }
+        const A = (H.o?.({ A: 'Clustation' }) ?? [])[0]
+        const ident = ((A?.o?.({ Identity: 1 }) ?? []) as any[]).find(i => i.sc.active)
+        const peering = ident && (H as any).Swarm_peering?.(ident)
+        const iz = peering?.o?.({ Idzeug: '1', next: 1 })?.[0]
+        if (!iz || typeof (H as any).Swarm_iz_mark !== 'function') { res.statusCode = 409; return res.end('{"error":"no issuer yet — give it a moment after boot"}') }
+        const was = +(iz.sc.next || 1)
+        const next = String(was + by)
+        ;(H as any).Swarm_iz_mark(ident, iz, { next })
+        say(`🎟 wound the invite counter ${was} → ${next} (by ${by}) — serials below it stay redeemable; the next mint is ${next}`)
+        return res.end(safe_json({ was: String(was), next }))
+    }
+    res.statusCode = 404; res.end('{"paths":["/status","/c?depth=3 (token)","/stop (token)","/restock (token)","/invite?base=<url> (token)","/wind?by=N (token)","/census (token)","/profile?ms= (token)","/tune?idle_ms= (token)"]}')
   } catch (e: any) {
     // The backstop.  Nothing this server does is worth the process, and everything above is a READ.
     try { res.statusCode = 500; res.end(`{"error":${JSON.stringify(String(e?.message || e))}}`) } catch {}

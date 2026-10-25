@@ -1,0 +1,78 @@
+Waft:Ghost/Atheory/Theory,desc:Atheory — an A says which code it runs — the scheduler and its clock — the Seem that views a world — the Ground a tab stands on
+  Funkcion:CreduFunk
+    Funkcion:Storying,of_Book:AthePondCode
+    Funkcion:Storying,of_Book:AthePondCodePush
+    Funkcion:Storying,of_Book:AthePondVersions
+    Funkcion:Storying,of_Book:AthePondReload
+    Funkcion:Storying,of_Book:AthePondLoop
+    Funkcion:Storying,of_Book:AthePondClock
+    Funkcion:Storying,of_Book:AthePondTape
+    Funkcion:Storying,of_Book:AthePondAsk
+    Funkcion:Storying,of_Book:AthePondEra
+    Funkcion:Storying,of_Book:AthePondTurns
+    Funkcion:Storying,of_Book:AthePondTurnReaders
+    Funkcion:Storying,of_Book:AthePondRounds
+    Funkcion:Storying,of_Book:AthePondMoves
+    Funkcion:Storying,of_Book:AthePondWakeOrder
+    Funkcion:Storying,of_Book:AthePondStream
+    Funkcion:Storying,of_Book:AthePondSeem
+    Funkcion:Storying,of_Book:AthePondView
+    Funkcion:Storying,of_Book:AthePondGlass
+    Funkcion:Storying,of_Book:AthePondReseat
+    Funkcion:Storying,of_Book:AthePondGround
+    Funkcion:Storying,of_Book:AthePondNest
+    Funkcion:Storying,of_Book:AthePondMerge
+    Funkcion:Storying,of_Book:AthePondMergeHatch
+    Funkcion:Storying,of_Book:AthePondStampMerge
+    Funkcion:Storying,of_Book:AthePondSynapseOrder
+    Funkcion:Storying,of_Book:AthePondSynapseSum
+    Funkcion:Storying,of_Book:AthePondSunpitFrontier
+    Funkcion:Storying,of_Book:AthePondSunpitPassOrder
+    Funkcion:Storying,of_Book:AtheStoryCode
+  What:the code an A runs,desc:TheACode and its layers — a chain digest only once every layer is loaded — a pushed file waits for the era seam
+    Doc:Ghost/A/Theory.g
+    Point,method:TheA_stand,desc:an A arrives with its code
+    Point,method:TheA_code_stand,desc:stand the code rows from the .g paths
+    Point,method:TheA_code_push,desc:a compiled file arrived — mark every A that holds it
+    Point,method:TheA_code_take,desc:take the push in at the seam
+    Point,method:TheA_as,desc:call a method as this A runs it
+  What:the scheduler,desc:TheA_run — turns and rounds — the clock and the era seam — time as IO on a tape — the holds
+    Doc:Ghost/A/Theory.g
+    Point,method:TheA_run,desc:one turn of every A
+    Point,method:TheA_boundary,desc:the era seam
+    Point,method:TheA_io,desc:time as IO
+    Point,method:TheA_tape,desc:the tape
+    Point,method:TheA_replay,desc:play a tape back
+    Point,method:TheA_waits,desc:the holds
+    Point,method:TheA_turn_commit,desc:commit a turn
+  What:the Seem,desc:a view of a world as points — named by Dip — fit shift neu — re-seated when the source moves
+    Doc:Ghost/A/Theory.g
+    Point,method:TheA_seem,desc:a Seem
+    Point,method:TheA_seem_rows,desc:walk the source into points
+    Point,method:TheA_dip,desc:the name a point keeps
+    Point,method:TheA_merge_policy,desc:how two writers meet
+    Doc:Ghost/A/Stuffica.g
+    Point,method:Stuffica_view,desc:a named view on a world
+    Point,method:Stuffica_from,desc:point it at a source
+    Point,method:Stuffica_points,desc:its points
+    Point,method:Stuffica_moved,desc:what moved this run
+    Doc:src/lib/O/Storica.svelte
+  What:the Ground,desc:what a tab stands on — Ground tags on Waft:Everything — a Ground is a list of .g — the floor loads Core with no wormhole and Theory stands the rest
+    Doc:Ghost/A/Ground.g
+    Point,method:Ground_stand,desc:stand Grounds on an A — GroundUsed and a TheACode each
+    Point,method:Ground_closure,desc:a Ground and everything it stands on — Core first
+    Point,method:Ground_firm,desc:every layer loaded
+    Doc:src/lib/A/ground.ts
+    Point,method:ground_include,desc:the floor — include a Ground with no Theory
+    Doc:src/lib/L/everything.js
+    Point,method:grounds_derive,desc:the Ground tags into bundles
+  What:the pond,desc:Pondland — a bare House to play on — tracing paper
+    Doc:src/lib/A/Pondland.svelte
+    Doc:src/routes/Pondland/+page.svelte
+  What:the tests
+    Doc:Ghost/A/AtheTesting.g
+    Doc:Ghost/A/AtheFishTesting.g
+  What:the spec
+    Doc:src/lib/O/spec/Atheory_todo.md
+    Doc:src/lib/O/spec/Atheory_design.md
+    Doc:src/lib/O/spec/Aprac_todo.md

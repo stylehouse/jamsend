@@ -1,8 +1,4 @@
-Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 211 of 392 — one What per directory — give each a home in its area and re-run
-  What:Ghost/A,desc:3 files with no area
-    Doc:Ghost/A/AtheFishTesting.g
-    Doc:Ghost/A/AtheTesting.g
-    Doc:Ghost/A/Theory.g
+Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 206 of 400 — one What per directory — give each a home in its area and re-run
   What:Ghost/L/test_corpus,desc:1 file with no area
     Doc:Ghost/L/test_corpus/Sample.g
   What:Ghost/Story,desc:1 file with no area
@@ -76,11 +72,9 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 211 o
     Doc:src/lib/O/lang/grammars/tsstho/index.ts
   What:src/lib/O/lang,desc:1 file with no area
     Doc:src/lib/O/lang/registry.ts
-  What:src/lib/O/spec,desc:59 files with no area
+  What:src/lib/O/spec,desc:57 files with no area
     Doc:src/lib/O/spec/App_todo.md
     Doc:src/lib/O/spec/Arrival_todo.md
-    Doc:src/lib/O/spec/Atheory_design.md
-    Doc:src/lib/O/spec/Atheory_todo.md
     Doc:src/lib/O/spec/Attractor_todo.md
     Doc:src/lib/O/spec/Cello_meditation_todo.md
     Doc:src/lib/O/spec/Cello_synthesis_todo.md

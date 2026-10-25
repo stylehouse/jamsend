@@ -1,0 +1,19 @@
+Snap:H
+  H:AthePondGround,Run
+    A:AthePondGround
+      self,round=3	{"mung":["age"]}
+      w:AthePondGround
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+    A:Athe_Grounded
+      TheACode:Ground/Core,variant:plain,dige:4a208507d9a90623
+        TheALayer:Ghost/A/Theory.g,dige:60c84e79b3486551~g1
+        TheALayer:Ghost/A/Stuffica.g,dige:840830d9ace7b31f~g1
+        TheALayer:Ghost/A/Ground.g,dige:260f0531c6779267~g1
+      self,round	{"mung":["age"]}
+      w:Athe_Grounded
+      GroundUsed:Core,via:CoreTesting
+      GroundUsed:CoreTesting
+      TheACode:Ground/CoreTesting,variant:plain,dige:b7a7a7ebe892eec1
+        TheALayer:Ghost/A/AtheTesting.g,dige:273e5bbb71ef41b8~g1
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:426ea8a90ecf1e85~g1

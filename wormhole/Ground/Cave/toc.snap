@@ -1,0 +1,14 @@
+Ground:Cave,desc:the collection — heist original bytes into the Cave — the keep chooses — the Heard Mag is the ledger of love — a phone hands its loves to the laptop,FromWhat:Waft:Ghost/Music/Cave
+  Load:Ghost/M/Heist.g
+  Load:Ghost/M/Heard.g
+  Beside:src/lib/O/ui/HeistFace.svelte
+  Beside:src/lib/O/ui/HeistBarFace.svelte
+  Beside:src/lib/O/Funk/HeistSetup.svelte
+  Beside:src/lib/O/ui/HaulFace.svelte
+  Beside:src/lib/O/ui/PickFace.svelte
+  Beside:src/lib/O/ui/ZineFace.svelte
+  Advice:src/lib/O/spec/Heist_todo.md
+  Advice:src/lib/O/spec/Heist_design.md
+  Advice:src/lib/O/spec/Mag_todo.md
+  Advice:src/lib/O/spec/Fallen_out_of_mind_todo.md
+  Advice:src/lib/O/spec/Radio_circuit_todo.md

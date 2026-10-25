@@ -1,0 +1,11 @@
+Snap:H
+  H:AthePondGround,Run
+    A:AthePondGround
+      self,round=5	{"mung":["age"]}
+      w:AthePondGround
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok
+    A:Athe_Grounded
+      self,round=3	{"mung":["age"]}
+      w:Athe_Grounded
+        self,round=2	{"mung":["age"]}

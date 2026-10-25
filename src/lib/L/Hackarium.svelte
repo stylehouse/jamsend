@@ -20,7 +20,7 @@
     //
     //  IT STANDS THE LAND ITSELF.  `Ghost/L/` ghosts are outside `CREDULER_GHOSTS` by design, and the
     //   usual door (`runner_ask ghost_load`) needs the relay — which a hacker does not have.  So this
-    //    recipe stands Atlas and Lagoon through `Lies_ghost_include` (LiesLies — the door that loads a
+    //    recipe stands Ground/Land (2026-10-25: was Atlas and Lagoon by hand) through `Lies_ghost_include` (LiesLies — the door that loads a
     //     ghost WITHOUT drawing it, and leaves a `%GhostInclude,stood` row saying so) and mints their
     //      worlds, and the tab comes up whole with no CLI, no relay and no editor.  That
     //       self-sufficiency is the point of the room.
@@ -30,11 +30,14 @@
     import { onMount } from "svelte"
     import type { TheC } from "$lib/Stuff.svelte"
     import { boot_param } from "$lib/boot"
+    import { ground_include } from "$lib/A/ground"
 
     let { M } = $props()
 
     // The Waft this room opens on boot, from ?W=<Waft>.  Same default as Educarium/Editron.
     const HACKER_WAFT = boot_param('W') || 'Ghost/Net/Easy'
+    // The Grounds this room stands on (Core is under them and never said) — see Hackarium() below
+    const HACKER_GROUNDS = ['Land']
 
     onMount(async () => {
     await M.eatfunc({
@@ -59,50 +62,50 @@
             console.log(`🔎 ${H.name} Hackarium wired — role:hacker (no channel, no editor claim)`)
         },
 
-        // Hackarium(A,w) — the per-beat handler.  Stands the land and opens the Waft, once.
-        //  FIRE AND FORGET, never awaited here: this runs under the belief loop, and `Lies_ghost_set`
-        //   is a dynamic import whose eatfunc only lands after further ticks — awaiting it from a do_fn
-        //    holds the very mutex the load depends on (AtlasTesting.g beat 2 paid a whole recording to
-        //     learn this).  Minting the worlds as each import resolves is safe and is exactly what
-        //      `ghost_load --stand` does: `do_fn_for` simply finds no handler until the ghost is haunted,
-        //       and the world starts ticking the moment it is.
+        // Hackarium(A,w) — the per-beat handler.  Stands the room's Ground and opens the Waft, once.
+        //  THE GROUND (2026-10-25, spec/Aprac_todo.md §0.5).  This used to name its ghosts by hand — Atlas, Lagoon, the
+        //   Workshop, Vyto — and now names one Ground: Ground/Land (Atlas Electrode Lagoon Workshop and its toys), which stands
+        //    on Ground/Glass (Voro Vyto), with Ground/Core (Theory Stuffica Ground) under both.  The lists come from the Ground
+        //     tags on Waft:Everything, baked into $lib/A/grounds.gen.js.  The FLOOR (`ground_include`, $lib/A/ground.ts) loads
+        //      them in order with no Theory and no wormhole — Core can't load itself, that's the chicken and the egg — and once it
+        //       resolves, `e_Hackarium_grounded` has Theory say it: %GroundUsed + %TheACode:Ground/<Name> on A:Hackarium.  So the
+        //        room runs TheACode now: its A says which code it stands on, layer by layer, at which version.
+        //  FIRE AND FORGET, never awaited here: this runs under the belief loop, and an include is a dynamic import whose
+        //   eatfunc only lands after further ticks — awaiting it from a do_fn holds the very mutex the load depends on
+        //    (AtlasTesting.g beat 2 paid a whole recording to learn this).  The Theory side runs as an elvis, under the mutex.
         async Hackarium(A: TheC, w: TheC) {
             const H = this as House
             if (w.c.Hackarium_stood) return
             w.c.Hackarium_stood = true
             const top = H.top_House()
-            for (const [path, name] of [['Ghost/L/Atlas.g', 'Atlas'], ['Ghost/L/Lagoon.g', 'Lagoon']] as const) {
-                top.Lies_ghost_include(path)
-                    .then((stood: boolean) => {
-                        if (!stood) return   // the shelf already says why — %GhostInclude,stood
-
-                        // the census stands on the TOP House and must: every reader looks it up there
-                        //  by name (`Lagoon_atlas`, the `lagoon`/`atlas_*` CLI ops, `LagoonStaple`).
-                        //   But its FACE belongs to this room — `face_on` is the room naming itself, so
-                        //    `UI:Lagoon` enrolls on `H:Hackarium` beside `UI:Langui` instead of landing
-                        //     on `H:Mundo`, a different page of the show-one-thing switcher.  Two
-                        //      questions, two answers; before this they shared one and the room split.
-                        const gw = top.oai({ A: name }).oai({ w: name })
-                        gw.c.face_on = H
-                        H.i_elvisto(w, 'think')
-                        console.log(`🔎 ${H.name} Hackarium stood ${name}`)
-                    })
-                    .catch((e: any) => console.log(`🔎 Hackarium could not stand ${name} — ${String(e?.message ?? e)}`))
-            }
-            // THE GLASS (2026-09-25).  The cave (Lagoon.g, THE CAVE) draws a search over the code on a
-            //  Vyto glass, and a hacker never loads the runner's CREDULER_GHOSTS — so Vyto.g is not here
-            //   unless the room includes it.  No world is minted: the cave stands A:Vyto on THIS room at
-            //    its first search, so UI:Vyto enrolls beside Langui and BigWordland lifts it over the code.
-            //     (eatfunc pushes a ghost onto every House, so including it from the top reaches the room.)
-            // THE WORKSHOP (2026-10-09) — the place to build a creation and watch it live (Ghost/L/Workshop.g: :play :watch
-            //  :make).  Verbs only, no world: its creations' worlds stand on this room when watched.
-            top.Lies_ghost_include('Ghost/L/Workshop.g')
-                .catch((e: any) => console.log(`🔎 Hackarium could not stand the Workshop — ${String(e?.message ?? e)}`))
-            top.Lies_ghost_include('Ghost/V/Vyto.g')
-                .then((stood: boolean) => console.log(`🔎 ${H.name} Hackarium ${stood ? 'stood' : 'could not stand'} the glass (Vyto)`))
-                .catch((e: any) => console.log(`🔎 Hackarium could not stand the glass — ${String(e?.message ?? e)}`))
+            ground_include(top, HACKER_GROUNDS)
+                .then((r) => {
+                    if (r.failed.length) console.log(`🔎 ${H.name} Hackarium — ${r.failed.length} .g did not load: ${r.failed.join(' ')} (each %GhostInclude,stood says why)`)
+                    H.i_elvisto(w, 'Hackarium_grounded')
+                })
+                .catch((e: any) => console.log(`🔎 Hackarium could not stand its Ground — ${String(e?.message ?? e)}`))
             H.i_elvisto('Lies/Lies', 'Lies_open_Waft', { path: HACKER_WAFT })
             console.log(`🔎 ${H.name} Hackarium — opening Waft:${HACKER_WAFT}`)
+        },
+
+        // e_Hackarium_grounded — the floor has loaded the room's Ground: stand the land's worlds and have Theory say it.
+        //  The census stands on the TOP House and must: every reader looks it up there by name (`Lagoon_atlas`, the
+        //   `lagoon`/`atlas_*` CLI ops, `LagoonStaple`).  But its FACE belongs to this room — `face_on` is the room naming
+        //    itself, so `UI:Lagoon` enrolls on `H:Hackarium` beside `UI:Langui` instead of landing on `H:Mundo`.
+        //  The glass (Vyto, in Ground/Glass) mints no world: the cave stands A:Vyto on this room at its first search.  The
+        //   Workshop is verbs only: its creations' worlds stand on this room when watched.
+        e_Hackarium_grounded(A: TheC, w: TheC, e: TheC) {
+            const H = this as House
+            const top = H.top_House()
+            for (const [path, name] of [['Ghost/L/Atlas.g', 'Atlas'], ['Ghost/L/Lagoon.g', 'Lagoon']] as const) {
+                if (!top.Lies_ghost_get(path)) continue   // the shelf already says why — %GhostInclude,stood
+                const gw = top.oai({ A: name }).oai({ w: name })
+                gw.c.face_on = H
+                console.log(`🔎 ${H.name} Hackarium stood ${name}`)
+            }
+            const firm = H.Ground_stand?.(A, HACKER_GROUNDS)
+            console.log(`🔎 ${H.name} Hackarium stands on ${HACKER_GROUNDS.join(' ')} — ${firm ? 'Firm' : H.Ground_stand ? 'not Firm yet' : 'no Theory (Core did not load)'}`)
+            H.i_elvisto(w, 'think')
         },
 
     })

@@ -1,0 +1,13 @@
+Snap:H
+  H:AthePondGround,Run
+    A:AthePondGround
+      self,round=2	{"mung":["age"]}
+      w:AthePondGround
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+    A:Athe_Grounded
+      GroundUsed:Core
+      TheACode:Ground/Core,variant:plain,dige:4a208507d9a90623
+        TheALayer:Ghost/A/Theory.g,dige:60c84e79b3486551~g1
+        TheALayer:Ghost/A/Stuffica.g,dige:840830d9ace7b31f~g1
+        TheALayer:Ghost/A/Ground.g,dige:260f0531c6779267~g1

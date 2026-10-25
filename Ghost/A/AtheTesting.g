@@ -2346,6 +2346,73 @@ AthePondReseat_witness(w):
         this.story_swear(w, 'walked again with nothing moved, a seated view commits nothing — and nothing glows')
     }
 //#endregion
+//#region the test routine — Book AthePondGround
+// what an A stands on (Ghost/A/Ground.g; spec/Aprac_todo.md §0.5).  A Ground is a list of .g derived from the Ground tags on
+//  Waft:Everything; Ground_stand says it on an A — a %GroundUsed and a %TheACode:Ground/<Name> for each Ground in the closure.
+//   It stands real Grounds a pond runner already holds, so nothing is fetched: step 2 Core alone, step 3 CoreTesting (which pulls
+//    Core in beneath it), step 4 the same plus a name no area wears, step 5 nothing at all.  Green only on a runner that loaded
+//     Ghost/A/Ground.g beside Theory, Stuffica and this file
+AthePondGround(A,w):
+    w oai %req:wrangle,eternal
+        await &AthePondGround_drive,w,req
+        req%ok = 1
+
+async AthePondGround_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 5
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.AthePondGround_stand(w, ['Core'], 'stand an A on Ground/Core — the base — and nothing else')
+        if (n === 3) this.AthePondGround_stand(w, ['CoreTesting'], 'ask for Ground/CoreTesting instead — it stands on Core')
+        if (n === 4) this.AthePondGround_stand(w, ['CoreTesting', 'Nope'], 'ask for a Ground no area wears beside it')
+        if (n === 5) this.AthePondGround_stand(w, [], 'name no Ground at all')
+    }
+    this.AthePondGround_witness(w)
+
+AthePondGround_A(w):
+    return this.o({ A: 'Athe_Grounded' })[0] ?? null
+
+AthePondGround_stand(w, names, desc):
+    w.i({ desc })
+    if (typeof this.Ground_stand !== 'function' || typeof this.TheA_code_stand !== 'function') {
+        w.i({ log: 'Theory.g or Ground.g is not loaded — ghost_load them beside AtheTesting.g' })
+        return
+    }
+    let A = this.AthePondGround_A(w) || this.i({ A: 'Athe_Grounded' })
+    w.c.firm = this.Ground_stand(A, names)
+
+// a Ground's code, said right: every .g of it a layer carrying the digest loaded here, and the chain digest over them
+AthePondGround_whole(A, name):
+    let code = A?.o({ TheACode: 'Ground/' + name })[0]
+    if (!code) return false
+    let paths = this.Ground_loads(name)
+    let layers = code.o({ TheALayer: 1 })
+    if (layers.length !== paths.length) return false
+    let diges = paths.map(p => this.Lies_ghost_get(p))
+    if (!diges.every((d, k) => d && layers[k].sc.TheALayer === paths[k] && layers[k].sc.dige === d)) return false
+    return code.sc.dige === this.TheA_digest(diges.join(' '))
+
+AthePondGround_witness(w):
+    let n = this.c.run?.c.step_n ?? 0
+    let A = this.AthePondGround_A(w)
+    if (!A) return
+    let used = A.o({ GroundUsed: 1 }).map(u => u.sc.GroundUsed + (u.sc.via ? '<' + u.sc.via : '')).sort().join(' ')
+    let codes = A.o({ TheACode: 1 }).map(c => c.sc.TheACode).sort().join(' ')
+    let refused = A.o({ GroundRefused: 1 }).map(r => r.sc.GroundRefused + ':' + r.sc.why).join(' ')
+    if (n === 2 && used === 'Core' && codes === 'Ground/Core' && this.AthePondGround_whole(A, 'Core') && w.c.firm && this.Ground_firm(A)) {
+        this.story_swear(w, 'an A stands on Ground/Core — its three .g as layers — each with the digest loaded here — and it is Firm')
+    }
+    if (n === 3 && used === 'Core<CoreTesting CoreTesting' && codes === 'Ground/Core Ground/CoreTesting' && this.AthePondGround_whole(A, 'Core') && this.AthePondGround_whole(A, 'CoreTesting') && w.c.firm && !refused) {
+        this.story_swear(w, 'asked for a Ground the A stands on it and on Core beneath — Core said as pulled in — not asked')
+    }
+    if (n === 4 && used === 'Core<CoreTesting CoreTesting' && refused === 'Nope:unknown' && w.c.firm) {
+        this.story_swear(w, 'a Ground no area wears is refused by name — and what could stand still stands')
+    }
+    if (n === 5 && !used && !codes && !refused && !w.c.firm && typeof this.Ground_stand === 'function') {
+        this.story_swear(w, 'named nothing the A lets its Grounds go — the rows go and the code stays on the House')
+    }
+//#endregion
 //#region the test routine — Book AtheStoryCode
 // Story on TheACode (spec/Aprac_todo.md §0 item 1).  Story.svelte was ported to Ghost/O/Story.g by scripts/ghost_svelte_to_g.mjs
 //  and proved member by member; a runner that has ghost_loaded it runs Story from the .g — every method of it laid over the

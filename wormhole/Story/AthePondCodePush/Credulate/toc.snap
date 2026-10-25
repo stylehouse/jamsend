@@ -1,7 +1,7 @@
 Credulate,of_Book:AthePondCodePush
   GhostInclude:Ghost_N_Peeroleum,dige:ee39d52bb1441684~g1
   GhostInclude:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
-  GhostInclude:Ghost_N_Tribunal,dige:526de2694efaf4c7~g1
+  GhostInclude:Ghost_N_Tribunal,dige:a3d82cb8e0a8910f~g1
   GhostInclude:Ghost_N_Presence,dige:14efd88c08b5219c~g1
   GhostInclude:Ghost_N_Repli,dige:e16a0ac2266ae4f8~g1
   GhostInclude:Ghost_Story_PeerTesting,dige:0f932bb96f66ab47~g1
@@ -18,7 +18,7 @@ Credulate,of_Book:AthePondCodePush
   GhostInclude:Ghost_Story_HeistTesting,dige:e54f69bd22718ee6~g1
   GhostInclude:Ghost_Story_BerthTesting,dige:25d25e655deaa666~g1
   GhostInclude:Ghost_Story_ErrchannelTesting,dige:55f4a7dd9c9193f1~g1
-  GhostInclude:Ghost_S_Swarm,dige:a0b1321415a2c4d7~g1
+  GhostInclude:Ghost_S_Swarm,dige:5238a4f8314c2f9e~g1
   GhostInclude:Ghost_Story_SwarmTesting,dige:d59c792bb5d695a3~g1
   GhostInclude:Ghost_Story_InvSeal,dige:3be936ab81f63e26~g1
   GhostInclude:Ghost_Story_InvFerry,dige:25d7e048c292e562~g1
@@ -29,15 +29,16 @@ Credulate,of_Book:AthePondCodePush
   GhostInclude:Ghost_Story_VoroTesting,dige:ba7f8d826ff81866~g1
   GhostInclude:Ghost_Story_Sounditron,dige:0de272b54e59b42d~g1
   GhostInclude:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
-  GhostInclude:Ghost_A_Theory,dige:5a467c7a918d1877~g1
-  GhostInclude:Ghost_A_AtheFishTesting,dige:1e4725315d9a38a7~g1
-  GhostInclude:Ghost_A_Stuffica,dige:117de985e6f1ee65~g1
-  GhostInclude:Ghost_A_AtheTesting,dige:01d61e92f2726302~g1
-  GhostInclude:Ghost_O_Story,dige:1ad7a2ac27c70c67~g1
-  last_ok,at=1792650340.385,ok_pct
+  GhostInclude:Ghost_A_Theory,dige:60c84e79b3486551~g1
+  GhostInclude:Ghost_A_AtheFishTesting,dige:426ea8a90ecf1e85~g1
+  GhostInclude:Ghost_A_Stuffica,dige:840830d9ace7b31f~g1
+  GhostInclude:Ghost_A_Ground,dige:260f0531c6779267~g1
+  GhostInclude:Ghost_A_AtheTesting,dige:273e5bbb71ef41b8~g1
+  GhostInclude:Ghost_O_Story,dige:ad3112f61124f293~g1
+  last_ok,at=1792898477.022,ok_pct
     uses:Ghost_N_Peeroleum,dige:ee39d52bb1441684~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
-    uses:Ghost_N_Tribunal,dige:526de2694efaf4c7~g1
+    uses:Ghost_N_Tribunal,dige:a3d82cb8e0a8910f~g1
     uses:Ghost_N_Presence,dige:14efd88c08b5219c~g1
     uses:Ghost_N_Repli,dige:e16a0ac2266ae4f8~g1
     uses:Ghost_Story_PeerTesting,dige:0f932bb96f66ab47~g1
@@ -54,7 +55,7 @@ Credulate,of_Book:AthePondCodePush
     uses:Ghost_Story_HeistTesting,dige:e54f69bd22718ee6~g1
     uses:Ghost_Story_BerthTesting,dige:25d25e655deaa666~g1
     uses:Ghost_Story_ErrchannelTesting,dige:55f4a7dd9c9193f1~g1
-    uses:Ghost_S_Swarm,dige:a0b1321415a2c4d7~g1
+    uses:Ghost_S_Swarm,dige:5238a4f8314c2f9e~g1
     uses:Ghost_Story_SwarmTesting,dige:d59c792bb5d695a3~g1
     uses:Ghost_Story_InvSeal,dige:3be936ab81f63e26~g1
     uses:Ghost_Story_InvFerry,dige:25d7e048c292e562~g1
@@ -65,8 +66,9 @@ Credulate,of_Book:AthePondCodePush
     uses:Ghost_Story_VoroTesting,dige:ba7f8d826ff81866~g1
     uses:Ghost_Story_Sounditron,dige:0de272b54e59b42d~g1
     uses:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
-    uses:Ghost_A_Theory,dige:5a467c7a918d1877~g1
-    uses:Ghost_A_AtheFishTesting,dige:1e4725315d9a38a7~g1
-    uses:Ghost_A_Stuffica,dige:117de985e6f1ee65~g1
-    uses:Ghost_A_AtheTesting,dige:01d61e92f2726302~g1
-    uses:Ghost_O_Story,dige:1ad7a2ac27c70c67~g1
+    uses:Ghost_A_Theory,dige:60c84e79b3486551~g1
+    uses:Ghost_A_AtheFishTesting,dige:426ea8a90ecf1e85~g1
+    uses:Ghost_A_Stuffica,dige:840830d9ace7b31f~g1
+    uses:Ghost_A_Ground,dige:260f0531c6779267~g1
+    uses:Ghost_A_AtheTesting,dige:273e5bbb71ef41b8~g1
+    uses:Ghost_O_Story,dige:ad3112f61124f293~g1

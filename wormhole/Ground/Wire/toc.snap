@@ -1,0 +1,23 @@
+Ground:Wire,desc:the wire — one spine and its carriers — the relay in the middle — the cluster channel the editor and its runners ride,FromWhat:Waft:Ghost/Net/Easy
+  Load:Ghost/N/Peeroleum.g
+  Load:Ghost/N/Tribunal.g
+  Load:Ghost/N/Reliable.g
+  Load:Ghost/N/Presence.g
+  Load:Ghost/N/Repli.g
+  Beside:src/lib/server/relay.ts
+  Beside:src/lib/pinned_stable/Tribunal.go
+  Beside:src/lib/pinned_stable/Peeroleum.go
+  Beside:src/lib/O/LiesLies.svelte
+  Beside:src/lib/O/LiesRun.svelte
+  Beside:src/lib/cluster_trust.ts
+  Beside:scripts/runner_ask.mjs
+  Beside:scripts/relay-test.ts
+  Advice:src/lib/O/spec/Peeroleum_spec.md
+  Advice:src/lib/O/spec/Wire_spec.md
+  Advice:src/lib/O/spec/Repli_design.md
+  Advice:src/lib/O/spec/Cluster_spec.md
+  Advice:src/lib/O/spec/Social_demarcation_todo.md
+  Advice:src/lib/O/spec/Backpressure_todo.md
+  Advice:src/lib/O/spec/Presence_todo.md
+  Advice:src/lib/O/spec/Network_procedures_todo.md
+  Advice:src/lib/O/spec/Networky_directions_todo.md

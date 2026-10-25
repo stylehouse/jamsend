@@ -196,6 +196,25 @@ export function everything_map() {
      ['What:the spec', 'Doc:src/lib/O/spec/Wordland_todo.md', 'Doc:src/lib/O/spec/Lagoon_todo.md', 'Doc:src/lib/O/spec/Electrode_todo.md', 'Doc:src/lib/O/spec/Stemdex_todo.md', 'Doc:src/lib/O/spec/Stemdex_spec.md', 'Doc:src/lib/O/spec/Clerkdesk_todo.md', 'Doc:src/lib/O/spec/Meaningfold_todo.md', 'Doc:src/lib/O/spec/Verbs_todo.md', 'Doc:src/lib/O/spec/Emotion_todo.md'],
     ]])
 
+    W.push(['Ghost/Atheory/Theory', 'Atheory — an A says which code it runs — the scheduler and its clock — the Seem that views a world — the Ground a tab stands on',
+     ['AthePondCode','AthePondCodePush','AthePondVersions','AthePondReload','AthePondLoop','AthePondClock','AthePondTape','AthePondAsk','AthePondEra','AthePondTurns','AthePondTurnReaders','AthePondRounds','AthePondMoves','AthePondWakeOrder','AthePondStream','AthePondSeem','AthePondView','AthePondGlass','AthePondReseat','AthePondGround','AthePondNest','AthePondMerge','AthePondMergeHatch','AthePondStampMerge','AthePondSynapseOrder','AthePondSynapseSum','AthePondSunpitFrontier','AthePondSunpitPassOrder','AtheStoryCode'], [
+     ['What:the code an A runs', 'TheACode and its layers — a chain digest only once every layer is loaded — a pushed file waits for the era seam',
+      'Doc:Ghost/A/Theory.g', P('TheA_stand', 'an A arrives with its code'), P('TheA_code_stand', 'stand the code rows from the .g paths'), P('TheA_code_push', 'a compiled file arrived — mark every A that holds it'), P('TheA_code_take', 'take the push in at the seam'), P('TheA_as', 'call a method as this A runs it')],
+     ['What:the scheduler', 'TheA_run — turns and rounds — the clock and the era seam — time as IO on a tape — the holds',
+      'Doc:Ghost/A/Theory.g', P('TheA_run', 'one turn of every A'), P('TheA_boundary', 'the era seam'), P('TheA_io', 'time as IO'), P('TheA_tape', 'the tape'), P('TheA_replay', 'play a tape back'), P('TheA_waits', 'the holds'), P('TheA_turn_commit', 'commit a turn')],
+     ['What:the Seem', 'a view of a world as points — named by Dip — fit shift neu — re-seated when the source moves',
+      'Doc:Ghost/A/Theory.g', P('TheA_seem', 'a Seem'), P('TheA_seem_rows', 'walk the source into points'), P('TheA_dip', 'the name a point keeps'), P('TheA_merge_policy', 'how two writers meet'),
+      'Doc:Ghost/A/Stuffica.g', P('Stuffica_view', 'a named view on a world'), P('Stuffica_from', 'point it at a source'), P('Stuffica_points', 'its points'), P('Stuffica_moved', 'what moved this run'),
+      'Doc:src/lib/O/Storica.svelte'],
+     ['What:the Ground', 'what a tab stands on — Ground tags on Waft:Everything — a Ground is a list of .g — the floor loads Core with no wormhole and Theory stands the rest',
+      'Doc:Ghost/A/Ground.g', P('Ground_stand', 'stand Grounds on an A — GroundUsed and a TheACode each'), P('Ground_closure', 'a Ground and everything it stands on — Core first'), P('Ground_firm', 'every layer loaded'),
+      'Doc:src/lib/A/ground.ts', P('ground_include', 'the floor — include a Ground with no Theory'), 'Doc:src/lib/L/everything.js', P('grounds_derive', 'the Ground tags into bundles')],
+     ['What:the pond', 'Pondland — a bare House to play on — tracing paper',
+      'Doc:src/lib/A/Pondland.svelte', 'Doc:src/routes/Pondland/+page.svelte'],
+     ['What:the tests', 'Doc:Ghost/A/AtheTesting.g', 'Doc:Ghost/A/AtheFishTesting.g'],
+     ['What:the spec', 'Doc:src/lib/O/spec/Atheory_todo.md', 'Doc:src/lib/O/spec/Atheory_design.md', 'Doc:src/lib/O/spec/Aprac_todo.md'],
+    ]])
+
     W.push(['Ghost/Hoho/Easy', 'the foundation — particles in a House — the req machine — the Story that proves — the Lies pipeline that compiles and runs — the language of Wafts',
      ['HohoSurfer','HohoNets','HohoFlush','HohoTiles','HohoSurprise','HohoLocate','HohoFunk','HohoKeep','HohoLango','HohoWaftMap','HohoSearch','HohoTtlilt','PortPlan','PortPlanet','PortPlant','PortPain','StuffFlipping','StuffResolving','LeafFarm','LeafJuggle','Diffmatication','Editron','Interesting','MundaneStation','MundaneStaying','ReactiveWaft','Snapmigrating','Snaptesting','TextInca','Understandication','Understandity','Understandium','Engage','WaftMapPacked','ErrChannel','RehealSmoke','Nestcut','BootGateNoFSA'], [
      ['What:the particle', 'everything is a C — the mainkey is what a thing IS — sc snaps and c is runtime only — o finds i creates oai finds-or-creates',
@@ -211,7 +230,7 @@ export function everything_map() {
       'Doc:src/lib/O/spec/Hovercraft.design.md', 'Doc:src/lib/O/spec/Coding_guide.md', 'Doc:src/lib/O/spec/EntropyArrest.md'],
      ['What:the Story', 'the test runner — a Book of steps — snap diff and dige — sworn assertions — the Supervisor watches a run',
       'Doc:src/lib/O/Story.svelte', P('story_drive', 'drive the steps'), P('story_snap', 'snap the world between steps'), P('story_swear', 'swear a sentence — an oath the Book must say'), P('story_harvest_sworn', 'gather oaths to the Assertioning shelf'), P('story_save', 'write the fixture'), P('story_analysis', 'the verdict'), P('The_step_dige', 'the change-sensitivity digest'), P('e_story_accept', 'accept a step as the new fixture'),
-      'Doc:src/lib/O/Storui.svelte', 'Doc:Ghost/O/Supervisor.g', P('Supervisor', 'the ghost'), P('Supervisor_beat', 'the beat'), P('Supervisor_watch', 'watch a runner'), P('Supervisor_verdict', 'the verdict on a run'), P('Supervisor_summary', 'one line'),
+      'Doc:src/lib/O/Storui.svelte', 'Doc:Ghost/O/Story.g', 'Doc:Ghost/O/Supervisor.g', P('Supervisor', 'the ghost'), P('Supervisor_beat', 'the beat'), P('Supervisor_watch', 'watch a runner'), P('Supervisor_verdict', 'the verdict on a run'), P('Supervisor_summary', 'one line'),
       'Doc:src/lib/O/Funk/CreduFunk.svelte', 'Doc:src/lib/O/Funk/Storying.svelte', 'Doc:scripts/story_accept.mjs'],
      ['What:the compile pipeline', 'Lies — Store Cortex Codebit Rundown — the dock compiles to a .go and a runner runs it',
       'Doc:src/lib/O/Lies.svelte', P('Lies_resolve_locator', 'Waft:x/What:y — the loose locator'), P('Lies_focus_waft', 'which Waft is in focus'), P('e_Lies_open_Waft', 'open a Waft'), P('e_Lies_ghost_pick', 'jump if open else today Aside'), P('e_Lies_want', 'a want lands'),
@@ -232,19 +251,21 @@ export function everything_map() {
     // ── Waft:Everything — the front door.  Each area What carries FromWhat:Waft:<key> (the locator
     //  Lies_resolve_locator reads) and the area's own front-door docs so there is something to click today.
     W.push([EVERYTHING, 'READ THIS FIRST — one Waft per area of the program lists its main functions with keywords — this Waft locates them all — the policy is the last What', [], [
-     ['What:the wire', 'Ghost/Net/Easy — Peeroleum Tribunal Reliable Tyrant Presence Repli — the relay — the cluster channel', 'FromWhat:Waft:Ghost/Net/Easy',
+     ['What:the wire', 'Ghost/Net/Easy — Peeroleum Tribunal Reliable Tyrant Presence Repli — the relay — the cluster channel', 'FromWhat:Waft:Ghost/Net/Easy', 'Ground:Wire',
       'Doc:Ghost/N/Peeroleum.g', 'Doc:src/lib/server/relay.ts', 'Doc:src/lib/O/spec/Peeroleum_spec.md'],
-     ['What:the swarm', 'Ghost/Swarm/Easy — soul crew invite door reach ferry bodies gossip stash theft', 'FromWhat:Waft:Ghost/Swarm/Easy',
+     ['What:the swarm', 'Ghost/Swarm/Easy — soul crew invite door reach ferry bodies gossip stash theft', 'FromWhat:Waft:Ghost/Swarm/Easy', 'Ground:Swarm',
       'Doc:Ghost/S/Swarm.g', 'Doc:src/lib/O/spec/Swarm_spec.md', 'Doc:src/lib/O/spec/Crew_todo.md'],
-     ['What:the music', 'Ghost/Music/Ality — Ra Radio Pool Sound Crate Orig — stock cast term — the pool', 'FromWhat:Waft:Ghost/Music/Ality',
+     ['What:the music', 'Ghost/Music/Ality — Ra Radio Pool Sound Crate Orig — stock cast term — the pool', 'FromWhat:Waft:Ghost/Music/Ality', 'Ground:Music',
       'Doc:Ghost/M/Ra.g', 'Doc:Ghost/M/Radio.g', 'Doc:src/lib/O/spec/Radio_todo.md'],
-     ['What:the cave', 'Ghost/Music/Cave — Heist Heard — the keep the Mag the hand road', 'FromWhat:Waft:Ghost/Music/Cave',
+     ['What:the cave', 'Ghost/Music/Cave — Heist Heard — the keep the Mag the hand road', 'FromWhat:Waft:Ghost/Music/Cave', 'Ground:Cave',
       'Doc:Ghost/M/Heist.g', 'Doc:Ghost/M/Heard.g', 'Doc:src/lib/O/spec/Heist_todo.md'],
-     ['What:the visual', 'Ghost/Vis/Visua — Voro Vyto Vytui Cyto Matstyle — crush glass solve attention', 'FromWhat:Waft:Ghost/Vis/Visua',
+     ['What:the visual', 'Ghost/Vis/Visua — Voro Vyto Vytui Cyto Matstyle — crush glass solve attention', 'FromWhat:Waft:Ghost/Vis/Visua', 'Ground:Glass',
       'Doc:Ghost/V/Vyto.g', 'Doc:src/lib/O/Vytui.svelte', 'Doc:src/lib/O/spec/Glassbeast_todo.md'],
-     ['What:the land', 'Ghost/Land/Wordland — Atlas Electrode Lagoon — BigWordland Hackarium Clerkdesk — the terminal and its verbs — the Workshop', 'FromWhat:Waft:Ghost/Land/Wordland',
+     ['What:the land', 'Ghost/Land/Wordland — Atlas Electrode Lagoon — BigWordland Hackarium Clerkdesk — the terminal and its verbs — the Workshop', 'FromWhat:Waft:Ghost/Land/Wordland', 'Ground:Land', 'Stands:Glass',
       'Doc:Ghost/L/Lagoon.g', 'Doc:src/lib/L/BigWordland.svelte', 'Doc:src/lib/O/spec/Wordland_todo.md'],
-     ['What:the foundation', 'Ghost/Hoho/Easy — the particle the House the req machine the Story Lies Lang the faces', 'FromWhat:Waft:Ghost/Hoho/Easy',
+     ['What:the theory', 'Ghost/Atheory/Theory — Theory Stuffica Ground — the code an A runs — the Seem — the Ground — the base every tab stands on', 'FromWhat:Waft:Ghost/Atheory/Theory', 'Ground:Core',
+      'Doc:Ghost/A/Theory.g', 'Doc:Ghost/A/Ground.g', 'Doc:src/lib/O/spec/Atheory_todo.md'],
+     ['What:the foundation', 'Ghost/Hoho/Easy — the particle the House the req machine the Story Lies Lang the faces', 'FromWhat:Waft:Ghost/Hoho/Easy', 'Ground:Story',
       'Doc:src/lib/Stuff.svelte.ts', 'Doc:src/lib/O/Housing.svelte.ts', 'Doc:src/lib/O/Hovercraft.svelte', 'Doc:src/lib/O/spec/Coding_guide.md'],
      ['What:the Books', 'Credence — every Book grouped by What with a desc naming what the group tests — run one from its Storying', 'FromWhat:Waft:Credence',
       'Doc:src/lib/O/Funk/CreduFunk.svelte', 'Doc:scripts/runner_ask.mjs', 'Doc:scripts/story_accept.mjs'],
@@ -287,6 +308,15 @@ export async function everything_build(W, host) {
     pol.push(['What:every file has a home', `every source file under ${COVER_ROOTS.join(' and ')} is cited by an area Waft or sits in the unsorted Waft — re-running this map recounts it`])
     const coverage = { cited: files.length - rest.length, total: files.length, unsorted: rest.length, dirs: byDir.size }
 
+    // ── GROUNDS — the tags on Waft:Everything become bundles (spec/Aprac_todo.md §0.5) ──
+    const grounds = grounds_derive(W, files, problems)
+    const groundless = files.filter(f => /\.g$/.test(f) && !grounds.home.has(f))
+    every[3].splice(every[3].findIndex(w => w[0] === 'What:the policy'), 0,
+        ['What:the groundless', `${groundless.length} .g in no Ground — nothing loads them by recipe — tag their area on this Waft`, ...groundless.map(f => 'Doc:' + f)])
+    pol.push(['What:every .g has a Ground', 'an area What here wears ground:<Name> — its Waft becomes Ground/<Name> — an inner What may wear its own — a .g lives in the first Ground that cites it and a Ground citing another Ground .g stands on it — *Testing.g and every .g under a What:the tests go to <Name>Testing — Core is under everything and never said'])
+    coverage.grounds = grounds.list.length
+    coverage.groundless = groundless.length
+
     // ── validate + emit ──
     const defs = new Map()
     const defsOf = async (p) => {
@@ -311,12 +341,14 @@ export async function everything_build(W, host) {
             const pad = '  '.repeat(depth)
             let lastDoc = null
             const [head, ...rest_] = node
-            const desc = (typeof rest_[0] === 'string' && !/^(Doc:|Point:|FromWhat:)/.test(rest_[0])) ? rest_.shift() : null
+            const desc = (typeof rest_[0] === 'string' && !MARK_RE.test(rest_[0])) ? rest_.shift() : null
             const from = (typeof rest_[0] === 'string' && rest_[0].startsWith('FromWhat:')) ? rest_.shift().slice(9) : null
+            const m = ground_marks(node)
             if (/,/.test(desc || '') || /,/.test(head)) problems.push(`${name}: comma in ${head}`)
-            lines.push(`${pad}${head}${desc ? ',desc:' + desc : ''}${from ? ',FromWhat:' + from : ''}`)
+            lines.push(`${pad}${head}${desc ? ',desc:' + desc : ''}${from ? ',FromWhat:' + from : ''}${m.ground ? ',ground:' + m.ground : ''}${m.stands.length ? ',stands:' + m.stands.join('|') : ''}`)
             for (const c of rest_) {
                 if (Array.isArray(c)) { await emit(c, depth + 1); continue }
+                if (/^(Ground|Stands):/.test(c)) continue
                 if (c.startsWith('Doc:')) {
                     lastDoc = c.slice(4)
                     if (!(await host.exists(lastDoc))) problems.push(`${name}: missing ${lastDoc}`)
@@ -332,5 +364,116 @@ export async function everything_build(W, host) {
         for (const w of tree) await emit(w, 1)
         out.push([name, lines.join('\n') + '\n'])
     }
-    return { out, problems, coverage }
+    for (const g of grounds.list) out.push(['Ground/' + g.name, ground_toc(g)])
+    return { out, problems, coverage, files: [[GROUND_MANIFEST, ground_manifest(grounds.list)]] }
+}
+
+// ── GROUNDS ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+//  A Ground is a list of .g a tab loads to stand some work (spec/Aprac_todo.md §0.5).  It is not authored: Waft:Everything's
+//   area Whats wear 'Ground:<Name>' (and 'Stands:<Name>' when it needs a Ground it doesn't cite), an inner What in an area
+//    Waft may wear its own, and this derives the bundles.  No diges in a Ground — Credulate keeps each .g's dige.
+//  Rules: a .g's HOME is the first Ground that cites it (map order); a Ground that cites another's .g stands on that one;
+//   a *Testing.g (or any .g under a What:the tests) goes to <Name>Testing, which stands on <Name>; Core is under every Ground and is never written as a stand.
+//  Out: wormhole/Ground/<Name>/toc.snap (the readable recipe) and GROUND_MANIFEST (the same, baked — the floor loads Core
+//   from it with no wormhole, and a prod tab with no wormhole tree reads it too).
+export const GROUND_CORE     = 'Core'
+export const GROUND_MANIFEST = 'src/lib/A/grounds.gen.js'
+const MARK_RE = /^(Doc:|Point:|FromWhat:|Ground:|Stands:)/
+
+export function ground_marks(node) {
+    const m = { ground: null, stands: [] }
+    for (const c of node.slice(1)) {
+        if (typeof c !== 'string') continue
+        if (c.startsWith('Ground:')) m.ground = c.slice(7)
+        else if (c.startsWith('Stands:')) m.stands.push(c.slice(7))
+    }
+    return m
+}
+
+export function grounds_derive(W, files, problems) {
+    const by = new Map()
+    const home = new Map()
+    const G = (name) => {
+        if (!by.has(name)) by.set(name, { name, desc: '', from: '', stands: new Set(), load: [], beside: [], advice: [] })
+        return by.get(name)
+    }
+    const every = W.find(w => w[0] === EVERYTHING)
+    const areas = new Map()
+    for (const what of every[3]) {
+        const m = ground_marks(what)
+        if (!m.ground) continue
+        const from = what.find(c => typeof c === 'string' && c.startsWith('FromWhat:Waft:'))
+        if (!from) { problems.push(`${EVERYTHING}: ${what[0]} wears Ground:${m.ground} but points at no Waft`); continue }
+        if (!/^[A-Z][A-Za-z]*$/.test(m.ground)) problems.push(`${EVERYTHING}: Ground name ${m.ground} — one capitalised word`)
+        areas.set(from.slice(14), m)
+    }
+    const place = (path, ground, tests) => {
+        if (/\.g$/.test(path)) {
+            const g = (tests || /Testing\.g$/.test(path)) ? ground + 'Testing' : ground
+            if (g !== ground) G(g).stands.add(ground)
+            if (!home.has(path)) { home.set(path, g); G(g).load.push(path) }
+            else if (home.get(path) !== g) G(g).stands.add(home.get(path))
+        }
+        else if (/\.md$/.test(path)) { if (!G(ground).advice.includes(path)) G(ground).advice.push(path) }
+        else if (!G(ground).beside.includes(path)) G(ground).beside.push(path)
+    }
+    for (const [name, wdesc, , tree] of W) {
+        const area = areas.get(name)
+        if (!area) continue
+        const top = G(area.ground)
+        if (top.from) problems.push(`Ground/${area.ground}: tagged on two areas — ${top.from} and ${name}`)
+        top.from = name
+        top.desc = wdesc
+        for (const s of area.stands) top.stands.add(s)
+        const walk = (node, ground, tests) => {
+            const m = ground_marks(node)
+            tests = tests || node[0] === 'What:the tests'
+            if (m.ground) { ground = m.ground; G(ground).from ||= name; G(ground).desc ||= node[1] }
+            for (const s of m.stands) G(ground).stands.add(s)
+            for (const c of node.slice(1)) {
+                if (Array.isArray(c)) walk(c, ground, tests)
+                else if (typeof c === 'string' && c.startsWith('Doc:')) place(c.slice(4), ground, tests)
+            }
+        }
+        for (const w of tree) walk(w, area.ground)
+    }
+    for (const g of by.values()) {
+        g.stands.delete(g.name)
+        g.stands.delete(GROUND_CORE)
+        if (/Testing$/.test(g.name) && !g.desc) { g.desc = `the tests of Ground/${g.name.replace(/Testing$/, '')} — what a Book proving it loads`; g.from = by.get(g.name.replace(/Testing$/, ''))?.from || '' }
+        for (const s of g.stands) if (!by.has(s)) problems.push(`Ground/${g.name}: stands on Ground/${s} — no area wears it`)
+        for (const p of g.load) if (!files.includes(p)) problems.push(`Ground/${g.name}: ${p} is not a source file`)
+    }
+    // no Ground stands on itself through another — the load order must exist
+    const state = new Map()
+    const visit = (n, trail) => {
+        if (state.get(n) === 2) return
+        if (state.get(n) === 1) { problems.push(`Ground cycle: ${[...trail, n].join(' → ')}`); return }
+        state.set(n, 1)
+        for (const s of by.get(n)?.stands || []) visit(s, [...trail, n])
+        state.set(n, 2)
+    }
+    for (const n of by.keys()) visit(n, [])
+    if (!by.has(GROUND_CORE)) problems.push(`no Ground/${GROUND_CORE} — some area must wear Ground:${GROUND_CORE}`)
+    const list = [...by.values()].filter(g => g.load.length || g.stands.size).sort((a, b) => a.name < b.name ? -1 : 1)
+    return { list, home }
+}
+
+export function ground_toc(g) {
+    const lines = [`Ground:${g.name}${g.desc ? ',desc:' + g.desc : ''}${g.from ? ',FromWhat:Waft:' + g.from : ''}`]
+    for (const s of g.stands) lines.push(`  Stands:${s}`)
+    for (const p of g.load) lines.push(`  Load:${p}`)
+    for (const p of g.beside) lines.push(`  Beside:${p}`)
+    for (const p of g.advice) lines.push(`  Advice:${p}`)
+    return lines.join('\n') + '\n'
+}
+
+export function ground_manifest(list) {
+    const o = {}
+    for (const g of list) o[g.name] = { stands: [...g.stands], load: g.load }
+    return `// grounds.gen.js — GENERATED by src/lib/L/everything.js (node scripts/wafts_everything.mjs) — never hand-edit.
+//  The Ground tags on Waft:Everything, baked: what each Ground loads, in order, and what it stands on (Core is under all).
+//   The floor (src/lib/A/ground.ts) loads Core from this with no wormhole; wormhole/Ground/<Name>/toc.snap says the same.
+export const GROUNDS = ${JSON.stringify(o, null, 1)}
+`
 }

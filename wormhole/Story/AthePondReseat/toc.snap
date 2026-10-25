@@ -4,14 +4,16 @@ story:AthePondReseat
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.015
+    TimeTotal:beliefs,avg=0.016
       sample=0.015,at=1792666002
       sample=0.015,at=1792666015
       sample=0.016,at=1792666026
+      sample=0.016,at=1792898483
     TimeTotal:step,avg=0.003
       sample=0.003,at=1792666002
       sample=0.003,at=1792666015
       sample=0.003,at=1792666026
+      sample=0.003,at=1792898483
   step,dige:df14b1793d0b550f
   {"step":2,"desc":"a glass with a deep view of the recorded pond — a snap decoded to C, held on the glass, not in the world","dige":"50c866b3e8bec7dc"}
     {"Assertion":"a-deep-view-seats","sentence":"a deep view seats a whole tree — every line a point, nested as the snap is, and the tree held elsewhere"}

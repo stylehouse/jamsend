@@ -28,8 +28,8 @@ const host = {
     book:   (b) => fs.existsSync(`${ROOT}/wormhole/Story/${b}/toc.snap`),
 }
 
-const { out, problems, coverage } = await everything_build(everything_map(), host)
-console.log(`coverage: ${coverage.cited} of ${coverage.total} source files cited by an area — ${coverage.unsorted} unsorted across ${coverage.dirs} directories`)
+const { out, problems, coverage, files } = await everything_build(everything_map(), host)
+console.log(`coverage: ${coverage.cited} of ${coverage.total} source files cited by an area — ${coverage.unsorted} unsorted across ${coverage.dirs} directories — ${coverage.grounds} Grounds — ${coverage.groundless} .g in none`)
 for (const p of problems) console.log('✗ ' + p)
 if (problems.length) { console.log(`${problems.length} problem(s) — nothing written`); process.exit(1) }
 for (const [name, text] of out) {
@@ -37,4 +37,11 @@ for (const [name, text] of out) {
     fs.mkdirSync(dir, { recursive: true })
     fs.writeFileSync(`${dir}/toc.snap`, text)
     console.log(`✓ wormhole/${name}/toc.snap  ${text.split('\n').length - 1} lines`)
+}
+// the baked Ground manifest (src/lib/A/grounds.gen.js) — written only when it changed, so Vite reloads nothing for nothing
+for (const [p, text] of files) {
+    const at = ROOT + '/' + p
+    if (fs.existsSync(at) && fs.readFileSync(at, 'utf8') === text) { console.log(`= ${p}  unchanged`); continue }
+    fs.writeFileSync(at, text)
+    console.log(`✓ ${p}`)
 }

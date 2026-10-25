@@ -1,0 +1,25 @@
+Ground:Glass,desc:the visual — the crush that gangs leaves — the glass that cuts cells from the model — what a Book looks like while it runs,FromWhat:Waft:Ghost/Vis/Visua
+  Load:Ghost/V/Voro.g
+  Load:Ghost/V/Vyto.g
+  Beside:src/lib/O/vyto_foam.ts
+  Beside:src/lib/O/vyto_seat.ts
+  Beside:src/lib/O/vyto_geometry.ts
+  Beside:src/lib/O/vyto_gauge.ts
+  Beside:src/lib/O/vyto_focus.ts
+  Beside:src/lib/O/vyto_pane.ts
+  Beside:src/lib/O/Vytui.svelte
+  Beside:src/lib/O/Cyto.svelte
+  Beside:src/lib/O/Cytui.svelte
+  Beside:src/lib/O/Matstyle.svelte
+  Beside:src/lib/O/glass_faces.ts
+  Beside:src/lib/O/glass_kinds.ts
+  Beside:src/lib/V/BigShapeland.svelte
+  Beside:scripts/runner_shot.mjs
+  Beside:scripts/runner_eye.mjs
+  Advice:src/lib/O/spec/Glassbeast_todo.md
+  Advice:src/lib/O/spec/Vyto_spec.md
+  Advice:src/lib/O/spec/Vyto_sizing_todo.md
+  Advice:src/lib/O/spec/Cellsizing_todo.md
+  Advice:src/lib/O/spec/Voromay_todo.md
+  Advice:src/lib/O/spec/Lens_posable_TODO.md
+  Advice:src/lib/O/spec/Waft_styling_todo.md

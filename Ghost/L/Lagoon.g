@@ -2313,6 +2313,12 @@ async Lagoon_everything(w, a, write):
         let ab = split('wormhole/' + x[0] + '/toc.snap')
         await nav.write_file(ab[0], ab[1], x[1])
     }
+    // the baked Ground manifest beside the tocs (src/lib/L/everything.js GROUND_MANIFEST) — only when it changed
+    for (const x of r.files || []) {
+        if ((await read(x[0])) === x[1]) continue
+        let ab = split(x[0])
+        await nav.write_file(ab[0], ab[1], x[1])
+    }
     out.written = r.out.length
     return out
 
