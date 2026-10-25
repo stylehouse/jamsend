@@ -22,7 +22,6 @@
     //     the splash, so no tap showed until arrival).  See the render comment.
     import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
     import { onMount } from "svelte"
-    import { boot_param, invite_dismissed, dismiss_invite, invite_pending, invite_pending_clear } from "$lib/boot"
     import type { House } from "$lib/O/Housing.svelte"
 
     let { H, who, audio_fullscreen = false, proactive = false }: {
@@ -54,49 +53,16 @@
     const open_share = gate.open_share
     let explain = $state(false)   // the "?" reveals a short line about what a share is
 
-    // ── THE WELCOME (owner 2026-10-25: "a bit more welcome at the first OPENSHARE prompt").  Two sentences, by what the
-    //  browser can do.  A capable one is asked for a folder (disk_gated) and told it is optional; a no-picker one — a phone —
-    //   is never asked (Housing stands it straight into listen-only) and only meets this bar for the AUDIO tap, so the
-    //    sentence rides that tap, once, while the listen-only life is the browser's doing rather than a choice.  Arriving on
-    //     an invite it adds the other way out: CANCEL, and open the link on a device that can keep a folder.
-    let invite_iz = $derived.by(() => { gate.poll; return boot_param('Iz') || invite_pending()?.iz || '' })
-    let friend_invite = $derived(!!invite_iz && !/\*My[A-Z]/.test(invite_iz) && !invite_dismissed(invite_iz))
+    // ── THE WELCOME (owner 2026-10-25: "a bit more welcome at the first OPENSHARE prompt").  By what the browser can do.
+    //  A capable one is asked for a folder (disk_gated) and told it is optional.  A no-picker one — a phone — is never asked
+    //   (Housing stands it straight into listen-only) and only meets this bar for the AUDIO tap, so it gets one plain
+    //    sentence and ONE button, OK, which IS that tap (owner, same day: "just be an OK there — they can abandon the tab if
+    //     they don't like it"; an earlier CANCEL-and-open-elsewhere was dropped as more choice than the moment needs).
     let phone_welcome = $derived.by(() => {
         gate.poll
         const c: any = (H as any)?.top_House?.()?.c
-        return proactive && gate.fsa_missing && !!c?.listen_only && !c?.listen_choice
+        return proactive && gate.fsa_missing && !!c?.listen_only && !c?.listen_choice && !disk_gated
     })
-    let sent_elsewhere = $state('')
-    // CANCEL on a phone that landed on an invite: do NOT spend it here.  Put the link on the clipboard, drop this
-    //  device's claim (the Door row, the reload stash, the auto-join), and take the token out of the bar.
-    function invite_elsewhere() {
-        const iz = invite_iz
-        if (!iz) return
-        let link = ''
-        try {
-            const u = new URL(location.origin + location.pathname)
-            u.searchParams.set('Iz', iz)
-            const from = boot_param('From') || invite_pending()?.from
-            if (from) u.searchParams.set('From', from)
-            link = u.toString()
-        } catch {}
-        try { const t = (H as any)?.Swarm_token_parse?.(iz); if (t) (H as any)?.Swarm_invite_cancel?.(t.serial) } catch {}
-        dismiss_invite(iz)
-        invite_pending_clear(iz)
-        try {
-            const u = new URL(location.href)
-            u.searchParams.delete('Iz'); u.searchParams.delete('From')
-            history.replaceState(history.state, '', u.pathname + u.search + u.hash)
-        } catch {}
-        sent_elsewhere = '✓ not used here. Open the invite on a computer with Chrome or Edge'
-        if (link) {
-            try {
-                navigator.clipboard?.writeText(link).then(
-                    () => { sent_elsewhere = '✓ link copied — not used here. Open it on a computer with Chrome or Edge' },
-                    () => { sent_elsewhere = '✓ not used here. Open this link on a computer with Chrome or Edge: ' + link })
-            } catch { sent_elsewhere = '✓ not used here. Open this link on a computer with Chrome or Edge: ' + link }
-        }
-    }
 </script>
 
 <!-- THE SHARE SHOWS THROUGH A CEREMONY; ONLY AUDIO DEFERS (owner 2026-08-29: the deferral "must be only for AC
@@ -126,25 +92,17 @@
     <div class="bg-bar">
         <div class="bg-row">
             <button class="bg-open" onclick={open_share} disabled={opening_share}>
-                {opening_share ? 'opening…' : 'OPEN SHARE'}
+                {opening_share ? 'opening…' : phone_welcome ? 'OK' : 'OPEN SHARE'}
             </button>
-            {#if phone_welcome && !disk_gated && friend_invite}
-                <button class="bg-listen" onclick={invite_elsewhere} title="don’t use this invite on this device — copy the link to open on a computer">CANCEL</button>
-            {/if}
             {#if disk_gated}
                 <button class="bg-q" onclick={() => (explain = !explain)} aria-label="what is this?" title="what is this?">?</button>
             {/if}
         </div>
         {#if disk_gated && !gate.fsa_advice}
             <p class="bg-welcome">You should open a folder to save music in, or link another device to do so later.</p>
-        {:else if phone_welcome && !disk_gated}
-            {#if friend_invite}
-                <p class="bg-welcome">Your device doesn’t allow folder access — link another device to do so later, or CANCEL and open this Invite link elsewhere.</p>
-            {:else if !sent_elsewhere}
-                <p class="bg-welcome">Your device doesn’t allow folder access — your music pools in this browser. Link another device to keep it in a folder later.</p>
-            {/if}
+        {:else if phone_welcome}
+            <p class="bg-welcome">No folder access. In Door you may link a device to download to. You can still play.</p>
         {/if}
-        {#if sent_elsewhere}<p class="bg-welcome">{sent_elsewhere}</p>{/if}
         {#if disk_gated && explain}
             <p class="bg-explain">this device keeps your music &amp; account in a folder you pick, so they survive across visits and stay on YOUR disk — not a server. or listen without one and it pools in browser storage.</p>
         {/if}

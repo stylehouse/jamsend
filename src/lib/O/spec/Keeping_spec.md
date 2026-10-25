@@ -1,11 +1,13 @@
 # req:Keeping — consolidating the focused-and-remembered workspace
 
 > **Attention-layer trio.** This is the **persistence** doc; `Interest.md` is the attention
-> *channel*, `Lang_handover.md` the editor surface. The medium all three act on — the Waft, a
+> *channel*, `Lies_attention_todo.md` the editor surface (né `Lies_handover.md`, after `history/Lang_handover.md`);
+> `LiesLang_todo.md` maps the whole Lies|Lang machine. The medium all three act on — the Waft, a
 > named container holding Whats/Docs/Points — is documented atop `Waft.svelte` (the old
 > `Waft_spec.md` is gutted to a pointer).
 
-Status: **design, for review.** The **`req:Keeping` driver is unbuilt** — but the
+Status: **mostly landed** — `req:Keeping` was never built as ONE driver; its legs landed distributed (P3/P4, see
+"proposed as one driver, built distributed" below).  *(Corrected 2026-10-25: this line said "unbuilt".)*  Originally — but the
 Keep *noun* it would own is already live: `Waft:Keep` is a real snapped Waft (Persist
 loads/creates it), and the `Lies_keep_*` helpers (`_boot`/`_reopen`/`_resume_waft`/
 `_resume_what`/`_note`/`_mark_focus`/`_push_cursor`/`_note_cursor`, `Lies.svelte`

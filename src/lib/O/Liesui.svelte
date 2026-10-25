@@ -199,6 +199,8 @@
     }
     function delete_waft(waft: TheC) {
         if (!Lies) return
+        // said out loud: a Waft leaving the roster was silent, and "no wafts" took an afternoon to not-explain (2026-10-25)
+        console.log(`🗂 Waft:${waft.sc.Waft} deleted from the Lies panel`)
         Lies.drop(waft)
         Lies.bump_version()
     }

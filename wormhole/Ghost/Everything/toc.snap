@@ -42,7 +42,7 @@ Waft:Ghost/Everything,desc:READ THIS FIRST — one Waft per area of the program 
     Doc:src/lib/O/LiesStore.svelte
     Doc:src/lib/O/spec/Keeping_spec.md
     Doc:src/lib/O/spec/Clerkdesk_todo.md
-  What:the unsorted,desc:Ghost/Rest/Unsorted — 206 of 400 source files no area claims yet — by directory — the debt of this map,FromWhat:Waft:Ghost/Rest/Unsorted
+  What:the unsorted,desc:Ghost/Rest/Unsorted — 207 of 402 source files no area claims yet — by directory — the debt of this map,FromWhat:Waft:Ghost/Rest/Unsorted
   What:the groundless,desc:11 .g in no Ground — nothing loads them by recipe — tag their area on this Waft
     Doc:Ghost/L/test_corpus/Sample.g
     Doc:Ghost/Story/ErrchannelTesting.g

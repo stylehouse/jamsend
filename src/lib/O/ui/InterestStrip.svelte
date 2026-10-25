@@ -132,7 +132,7 @@
     // Dismiss acts Lies-side — drop Lies/Waft; the roster re-push then marks it gone.
     //  GhostList is the self-listing singleton, not dismissable.
     const dismiss = (r: Row) => {
-        if (r.waft && r.kind !== 'GhostList') H.i_elvisto('Lies/Lies', 'Lies_close_Waft', { path: r.waft })
+        if (r.waft && r.kind !== 'GhostList') H.i_elvisto('Lies/Lies', 'Lies_close_Waft', { path: r.waft, why: 'the Interest strip ×' })
         open_key = undefined; confirming = false
     }
 </script>

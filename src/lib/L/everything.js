@@ -245,7 +245,7 @@ export function everything_map() {
       'Doc:src/lib/O/LangPoint.svelte', 'Doc:src/lib/O/LangWhatwhere.svelte', 'Doc:src/lib/O/Langui.svelte', 'Doc:src/lib/O/lang/lang.ts', 'Doc:src/lib/O/spec/stho_primer.md'],
      ['What:the faces', 'the Waft body and its Funkcions — the Searchbar the Aside the Keep',
       'Doc:src/lib/O/ui/Waft.svelte', 'Doc:src/lib/O/ui/NaviCado.svelte', 'Doc:src/lib/O/ui/Searchbar.svelte', 'Doc:src/lib/O/Funk/DocGhostList.svelte', 'Doc:src/lib/O/Funk/DocWaftMap.svelte', 'Doc:src/lib/O/Funk/Shelver.svelte', 'Doc:src/lib/O/Editron.svelte', 'Doc:src/lib/O/Otro.svelte'],
-     ['What:the spec', 'Doc:src/lib/O/spec/Homethink_todo.md', 'Doc:src/lib/O/spec/Story_future.md', 'Doc:src/lib/O/spec/Story_hygiene_todo.md', 'Doc:src/lib/O/spec/Seen_split_todo.md', 'Doc:src/lib/O/spec/Editron.md', 'Doc:src/lib/O/spec/Supervisor_todo.md', 'Doc:src/lib/O/spec/Keeping_spec.md', 'Doc:src/lib/O/spec/Interest.md', 'Doc:src/lib/O/spec/Loose_ends_todo.md', 'Doc:src/lib/O/spec/Everything_todo.md'],
+     ['What:the spec', 'Doc:src/lib/O/spec/Homethink_todo.md', 'Doc:src/lib/O/spec/Story_future.md', 'Doc:src/lib/O/spec/Story_hygiene_todo.md', 'Doc:src/lib/O/spec/Seen_split_todo.md', 'Doc:src/lib/O/spec/Editron.md', 'Doc:src/lib/O/spec/LiesLang_todo.md', 'Doc:src/lib/O/spec/Supervisor_todo.md', 'Doc:src/lib/O/spec/Keeping_spec.md', 'Doc:src/lib/O/spec/Interest.md', 'Doc:src/lib/O/spec/Loose_ends_todo.md', 'Doc:src/lib/O/spec/Everything_todo.md'],
     ]])
 
     // ── Waft:Everything — the front door.  Each area What carries FromWhat:Waft:<key> (the locator

@@ -1,4 +1,4 @@
-Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 206 of 400 — one What per directory — give each a home in its area and re-run
+Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 207 of 402 — one What per directory — give each a home in its area and re-run
   What:Ghost/L/test_corpus,desc:1 file with no area
     Doc:Ghost/L/test_corpus/Sample.g
   What:Ghost/Story,desc:1 file with no area
@@ -16,12 +16,13 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 206 o
   What:src,desc:2 files with no area
     Doc:src/app.d.ts
     Doc:src/demo.spec.ts
-  What:src/lib,desc:5 files with no area
+  What:src/lib,desc:6 files with no area
     Doc:src/lib/Common.ts
     Doc:src/lib/Selection.svelte.ts
     Doc:src/lib/app_data_dir.ts
     Doc:src/lib/boot.ts
     Doc:src/lib/cluster_name.ts
+    Doc:src/lib/dexie_safe.ts
   What:src/lib/O,desc:20 files with no area
     Doc:src/lib/O/Audio.svelte.ts
     Doc:src/lib/O/BigQualand.svelte.ts

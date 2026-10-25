@@ -33,7 +33,7 @@
     //    {thang:1, name:'music', class:'DirectoryShare'} → spawn instance.
     //    Not built here — separate concern from persistence.
 
-    import { Dexie, liveQuery, type EntityTable } from 'dexie'
+    import { Dexie, liveQuery, type EntityTable } from '$lib/dexie_safe'   // dexie, or a Map when IndexedDB is dead
 
     interface ThangRow {
         table: string

@@ -84,8 +84,10 @@
                     H.i_elvisto(w, 'Hackarium_grounded')
                 })
                 .catch((e: any) => console.log(`🔎 Hackarium could not stand its Ground — ${String(e?.message ?? e)}`))
-            H.i_elvisto('Lies/Lies', 'Lies_open_Waft', { path: HACKER_WAFT })
-            console.log(`🔎 ${H.name} Hackarium — opening Waft:${HACKER_WAFT}`)
+            // the front door beside the area Waft: Waft:Everything maps every area to its Waft (CLAUDE.md "Read Waft:Everything
+            //  first"), and wears each area's Ground tag — the room should open on the whole map, not one area of it
+            for (const path of [...new Set([HACKER_WAFT, 'Ghost/Everything'])]) H.i_elvisto('Lies/Lies', 'Lies_open_Waft', { path })
+            console.log(`🔎 ${H.name} Hackarium — opening Waft:${HACKER_WAFT} and Waft:Ghost/Everything`)
         },
 
         // e_Hackarium_grounded — the floor has loaded the room's Ground: stand the land's worlds and have Theory say it.

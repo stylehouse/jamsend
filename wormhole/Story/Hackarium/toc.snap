@@ -4,26 +4,26 @@ story:Hackarium
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=3.395
-      sample=2.687,at=1792539703
-      sample=0.109,at=1792539912
-      sample=8.96,at=1792542511
-      sample=2.875,at=1792542544
-      sample=8.3,at=1792710699
+    TimeTotal:beliefs,avg=3.039
       sample=2.545,at=1792887463
       sample=4,at=1792889917
       sample=1.395,at=1792890505
       sample=0.909,at=1792907394
       sample=2.168,at=1792907419
-    TimeTotal:step,avg=3.395
-      sample=2.687,at=1792539703
-      sample=0.109,at=1792539912
-      sample=8.96,at=1792542511
-      sample=2.875,at=1792542544
-      sample=8.3,at=1792710699
+      sample=3.552,at=1792908708
+      sample=2.443,at=1792908791
+      sample=5.733,at=1792908966
+      sample=2.072,at=1792909015
+      sample=5.577,at=1792909482
+    TimeTotal:step,avg=3.039
       sample=2.545,at=1792887463
       sample=4,at=1792889917
       sample=1.395,at=1792890505
       sample=0.909,at=1792907394
       sample=2.168,at=1792907419
-  step,dige:29c7975b74f8b5f9,desc:the wire — one spine and its carriers — the relay in the middle — the cluster channel the editor and its runners ride
+      sample=3.552,at=1792908708
+      sample=2.443,at=1792908791
+      sample=5.733,at=1792908966
+      sample=2.072,at=1792909015
+      sample=5.577,at=1792909482
+  step,dige:29c7975b74f8b5f9,desc:READ THIS FIRST — one Waft per area of the program lists its main functions with keywords — this Waft locates them all — the policy is the last What

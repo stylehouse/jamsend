@@ -198,6 +198,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const path = e.sc.path as string | undefined
         if (!path) throw 'e_Lies_close_Waft: needs path'
         const waft = w.o({ Waft: path })[0] as TheC | undefined
+        // said out loud, with who asked: a Waft leaving the roster was silent (2026-10-25, the hacker room's "no wafts")
+        if (waft) console.log(`🗂 Waft:${path} closed${e.sc.why ? ' — ' + e.sc.why : ''}`)
         if (waft) { w.drop(waft); w.bump_version() }
         this.i_elvisto(w, 'think')
     },

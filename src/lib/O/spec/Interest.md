@@ -4,8 +4,8 @@
 > you expect Whats, Docs and Points (the medium itself is now documented atop `Waft.svelte`;
 > the old `Waft_spec.md` is gutted to a pointer). Three docs *act* on that medium:
 > **this** = the Lang↔Lies attention *channel*; **`Keeping_spec.md`** = its persistence
-> (focus / cursor / open-set resume from `Waft:Keep`, `Lies_keep_*`); **`Lang_handover.md`**
-> = the editor surface the Interest's cursor points into. The "Rejoin the stack frame" and
+> (focus / cursor / open-set resume from `Waft:Keep`, `Lies_keep_*`); **`Lies_attention_todo.md`** (né `Lies_handover.md`, which took over from
+> `history/Lang_handover.md`) = the editor surface the Interest's cursor points into; `LiesLang_todo.md` maps the whole machine. The "Rejoin the stack frame" and
 > "Per-(Interest, Waft) cursor-memory" TODOs below are the resume half the Keep now backs.
 >
 > **Live decks are `Trail` + `Aside`.** `Aside` (stance `%aside`, the persisted daily

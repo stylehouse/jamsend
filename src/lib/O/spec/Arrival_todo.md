@@ -35,6 +35,20 @@ This is that machine. It is NOT a new page/toplevel — it is one **arrival auth
 - **D, `silent`** — `Swarm_invite_silence_watch`: each hello arms a 30s check; still `redeeming` ⇒ settle `silent` with words.
    Live-only (`station_up`). The Door row offers ↻ for silent/unreachable.
 
+**⚠ THE PHONE STALL WAS A PRIVATE WINDOW (found the same night, the owner on Brave incognito: "⏳ identity…" forever,
+ no hello ever reached jamserve).** A private window can refuse IndexedDB (missing / open errors / open never answers), and
+  every durable store rides Dexie — the House stash (start_checks wait on it), `thangs` (identities), vessel keys, stemdex — so
+   the boot never stood an identity. Reproduced headless all three ways (`arrival_eye.mjs` + `NOFSA=1 EYE_INIT=…`). **Fixed**:
+    `src/lib/dexie_safe.ts` — the four stores import Dexie from it; one probe per page, then every call routes synchronously to
+     the real Dexie, or (dead IndexedDB) to an in-memory Map (the daemon's dexie-node shim minus the file). Logs
+      `⛁ no browser storage (…) — running memory-only`. All three headless variants then name + send the hello. Owed: a face
+       that says "this tab forgets you when closed" (`globalThis.__jamsend_storage_dead` is set for it), and the owner's
+        incognito walk after a prod pull.
+- **E revised (owner):** the no-folder phone line is now *"No folder access. In Door you may link a device to download to. You
+   can still play."* with ONE button, **OK**, which is the audio tap; CANCEL-and-open-elsewhere dropped.
+- **jamserve's counter wound to 23255** (`/wind?by=1000`, new daemon route) clear of the printed blotter sheet; printed serials
+   stay redeemable (below `next`). A headless invite client on prod sealed in ~0.2s, so the daemon is compliant.
+
 **Not done:** the Books for C and D (SwarmTesting beats). The Supervisor `swarm.arrival` give-up still speaks separately (D's
  timer covers the case it was for).
 

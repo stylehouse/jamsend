@@ -7,7 +7,7 @@ import { grap, grep, tex, throttle } from "$lib/Common"
 import { mount_opfs_github_nav, mount_lazy_github_nav, mount_opfs_pool_nav, JAMSEND_SOURCE } from "./WormholeOpfs.svelte.ts";
 import { MountNav, AppTreeNav, app_tree_decision } from "./MountNav.svelte.ts";
 import { APP_DATA_DIR } from "$lib/app_data_dir";
-import { Dexie, liveQuery, type EntityTable } from 'dexie';
+import { Dexie, liveQuery, type EntityTable } from '$lib/dexie_safe';   // dexie, or a Map when IndexedDB is dead (a private window)
 
 // concat_chunks — join a file's reader chunks into ONE ArrayBuffer in a single linear pass.
 //  Sum the sizes, allocate once, copy each chunk in at a running offset — O(total bytes).  The prior

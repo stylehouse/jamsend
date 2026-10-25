@@ -15,9 +15,18 @@ const ticks = ticksArg.split(',').map(Number)
 const clicks = clickArg ? clickArg.split(';').map(c => { const at = c.lastIndexOf('@'); let sel = c.slice(0, at); let text = null; let enter = false; if (sel.startsWith('enter:')) { enter = true; sel = sel.slice(6) } if (sel.startsWith('type:')) { const eq = sel.indexOf('='); text = sel.slice(eq + 1); sel = sel.slice(5, eq) } return { sel, text, enter, sec: +c.slice(at + 1) } }) : []
 let target = new URL(url); const [thost, tport] = [target.hostname, +(target.port || 80)]
 const proxy = net.createServer(c => { const up = net.connect(tport, thost); c.pipe(up); up.pipe(c); c.on('error', () => up.destroy()); up.on('error', () => c.destroy()) })
-await new Promise(r => proxy.listen(0, '127.0.0.1', r)); target.hostname = 'localhost'; target.port = String(proxy.address().port)
-const b = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required', '--use-fake-ui-for-media-stream'] })
-const p = await (await b.newContext({ viewport: { width: 1100, height: 800 } })).newPage()
+// EYE_PORT: a fixed origin, so a PROFILE's storage is found again
+await new Promise(r => proxy.listen(+(process.env.EYE_PORT || 0), '127.0.0.1', r)); target.hostname = 'localhost'; target.port = String(proxy.address().port)
+// PROFILE=<dir> — a RETURNING visitor: one persistent browser profile across runs (pair with EYE_PORT, same origin)
+const launch_args = ['--autoplay-policy=no-user-gesture-required', '--use-fake-ui-for-media-stream']
+const ctx_opts = process.env.NOFSA ? { viewport: { width: 412, height: 860 }, isMobile: true, hasTouch: true, userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Mobile Safari/537.36' } : { viewport: { width: 1100, height: 800 } }
+const b = process.env.PROFILE ? null : await chromium.launch({ args: launch_args })
+const ctx = process.env.PROFILE ? await chromium.launchPersistentContext(process.env.PROFILE, { args: launch_args, ...ctx_opts }) : await b.newContext(ctx_opts)
+const p = await ctx.newPage()
+// NOFSA=1 — be a PHONE: no directory picker (every mobile browser, Brave-by-default), a mobile UA beside it.
+if (process.env.NOFSA) await p.addInitScript(() => { try { delete window.showDirectoryPicker; Object.defineProperty(window, 'showDirectoryPicker', { value: undefined, configurable: true }) } catch {} })
+// EYE_INIT=<js> — any page-start script (e.g. break a storage API to be a private window)
+if (process.env.EYE_INIT) await p.addInitScript(process.env.EYE_INIT)
 if (process.env.ARM_SOCKLOG) await p.addInitScript(() => { try { localStorage.setItem('socklog', '1') } catch {} })
 const t0 = Date.now(); const log = fs.createWriteStream(out + '.console.log')
 p.on('console', m => log.write(((Date.now() - t0) / 1000).toFixed(1) + 's ' + m.text().replace(/\n/g, ' ⏎ ').slice(0, 400) + '\n'))
@@ -40,4 +49,4 @@ for (const ev of events) {
   else { try { await p.locator(ev.sel).first().click({ timeout: 3000, force: true }); console.log(`clicked ${ev.sel} @${ev.s}s`) } catch (e) { console.log(`click FAILED ${ev.sel} @${ev.s}s: ${String(e).split('\n')[0].slice(0, 120)}`) } }
 }
 await p.waitForTimeout(Math.max(0, end * 1000 - (Date.now() - t0)))
-log.end(); wsl.end(); await b.close(); proxy.close()
+log.end(); wsl.end(); await (b ? b.close() : ctx.close()); proxy.close()

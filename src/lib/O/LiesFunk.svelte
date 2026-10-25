@@ -31,7 +31,7 @@ import { SoundSystem } from "$lib/O/Audio.svelte"
 import { mint_grant, verify_grant, type GrantAtom } from "$lib/O/Funk/Grant"
 import { browserTrustedPubs, prepubOf } from "$lib/cluster_trust"
 import { RemoteWormholeNav } from "$lib/O/RemoteWormholeNav.svelte"
-import { Dexie } from "dexie"
+import { Dexie } from "$lib/dexie_safe"   // dexie, or a Map when IndexedDB is dead
 import { onMount } from "svelte"
 import { socklog_arm, socklog_armed, concap_read, concap_count } from "$lib/O/sockcap"
 import { TESTING_RE } from "$lib/L/testing"

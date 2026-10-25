@@ -19,7 +19,7 @@
 //  Story boot, a quota refusal) must cost the caller nothing: the guarded path returns the safe empty
 //   answer and the body simply behaves as it did before any of this existed (mint a fresh key, run
 //    solo, no census).  No call here ever throws into a ghost.
-import { Dexie, type EntityTable } from 'dexie'
+import { Dexie, type EntityTable } from '$lib/dexie_safe'   // dexie, or a Map when IndexedDB is dead
 
 export interface BodyKeyRow {
     /** PK: the soul's prepub — one body key per soul per store. */
