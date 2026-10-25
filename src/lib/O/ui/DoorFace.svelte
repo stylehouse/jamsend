@@ -3,6 +3,8 @@
     calm_watch()   // measure the fps once; under ~40 the glow below is switched off (calm.ts)
     import { lifewatch } from './micro/lifetell'   // DIAGNOSTIC — strip with the rest of the remount probes
     import InvitePanel from './InvitePanel.svelte'
+    import { folder_capable, open_folder_again } from './boot_gate.svelte.ts'
+    import { invite_pending, invite_pending_clear } from '$lib/boot'
     import { pier_marks } from './pier_marks'
     import DeleteX from './micro/DeleteX.svelte'   // the confirmey delete (arm → "forget?" → confirm)
     // DoorFace — WHO AM I and WHO'S WITH ME, floating in the glass: the identity + front-door
@@ -271,7 +273,7 @@
             //  radio terminal — and its identity is mortal (Dexie only) until Linked Devices travels
             //   it.  Read live off H.c.listen_only (set in Housing's boot-role branch); the badge is
             //    the one honest place that whisper lives.
-            listen_only: !!(H as any)?.c?.listen_only,
+            listen_only: !!((H as any)?.c?.listen_only || (H as any)?.top_House?.()?.c?.listen_only),
             door,
             friends,
             up,
@@ -390,7 +392,16 @@
 
     function invite_cancel(serial: string) {
         try { (H as any)?.Swarm_invite_cancel?.(serial) } catch {}
+        // …and stop keeping it for the next reload (boot.ts invite_pending) — the ✕ is the person concluding it
+        try { const p = invite_pending(); if (p && String((H as any)?.Swarm_token_parse?.(p.iz)?.serial) === String(serial)) invite_pending_clear(p.iz) } catch {}
         try { (H as any)?.top_House?.()?.bump_version?.() } catch {}
+    }
+    // the Door's "open a folder" (boot_gate.open_folder_again): the picker starts inside this click, a grant reloads
+    const can_folder = folder_capable()
+    let folder_err = $state('')
+    function folder_again() {
+        folder_err = ''
+        open_folder_again(H).then((er) => { folder_err = er }).catch((e) => { folder_err = String(e) })
     }
     function invite_retry(serial: string) {
         try { void (H as any)?.Swarm_invite_retry?.(serial) } catch {}
@@ -558,6 +569,11 @@
 
         {#if face.listen_only}<span class="df-listen"
             title="listening only — this browser can't open a music folder, so you're a radio terminal. Your identity lives only in this browser: clearing site data forgets you (linked devices will fix that).">🎧 listening only</span>{/if}
+        <!-- OPEN A FOLDER AFTER ALL (Arrival_todo 2026-10-25 F) — only where the browser CAN: a listen-only life on a
+             capable browser was a choice ("listen without a folder", or a cancelled picker), and this undoes it. -->
+        {#if face.listen_only && can_folder}<button class="df-folder" onclick={folder_again}
+            title="open a music folder on this computer — your music and account then live on your own disk, and survive clearing site data">📁 open a folder</button>{/if}
+        {#if folder_err}<span class="df-note">⚠ {folder_err}</span>{/if}
         <!-- "settling…" is gone from the face (owner 2026-10-03: "unsettling") — every save flashed it; the save
              logs `🪪 account mirrored` in the console.  Only the real worry stays: a write with nowhere to go. -->
         <!-- the "up 3m" uptime tag is gone (owner 2026-10-07: "pointless") -->
@@ -589,7 +605,7 @@
          stands.  arrived|redeeming are the live states today; sealed|refused wear their colours
          for when the walk grows those legs. -->
     {#each invites as inv (inv.serial + inv.prepub)}
-        <div class="df-invrow" class:sealed={inv.state === 'sealed'} class:refused={inv.state === 'refused'} class:unreachable={inv.state === 'unreachable'}
+        <div class="df-invrow" class:sealed={inv.state === 'sealed'} class:refused={inv.state === 'refused'} class:unreachable={inv.state === 'unreachable' || inv.state === 'silent'}
             title={`invite #${inv.serial} from ${inv.prepub}${inv.to ? ` — grants ${inv.to}` : ''}${inv.n ? ` (n ${inv.n})` : ''} — ${inv.state}`}>
             <span>✉ #{inv.serial}{inv.to ? ` ${inv.to}` : ''} from {inv.prepub}</span>
             <span class="df-invstate">{inv.state}</span>
@@ -603,7 +619,8 @@
                 <span class="df-invwhy">no answer for {inv.waited}s — they may be offline, or this invite came from another of their devices
                     <button class="df-invretry" onclick={() => invite_retry(inv.serial)}>↻ again</button></span>
             {:else if inv.why}
-                <span class="df-invwhy">{inv.why}</span>
+                <span class="df-invwhy">{inv.why}
+                    {#if inv.state === 'silent' || inv.state === 'unreachable'}<button class="df-invretry" onclick={() => invite_retry(inv.serial)}>↻ again</button>{/if}</span>
             {/if}
         </div>
     {/each}
@@ -903,6 +920,8 @@
     .df-pub { font-size: 8px; opacity: 0.55; font-family: monospace; margin-left: 4px; }
     /* 🎧 the listening-only badge — a quiet, honest tag on the self line, not an alarm: the mode
        works, it just can't hold a share, and hover carries the mortal-identity whisper. */
+    .df-folder { font-size: 9px; margin-left: 6px; padding: 1px 6px; cursor: pointer; pointer-events: auto; color: #2b1500;
+        background: linear-gradient(180deg, #ffb156, #ff8c1a); border: none; border-radius: 4px; font-weight: 700; }
     .df-listen { font-size: 9px; color: #8fd0e8; margin-left: 5px; cursor: help; pointer-events: auto; }
     .df-settle { font-size: 9px; margin-left: 5px; cursor: help; pointer-events: auto; }
     .df-settle.ok { color: #7fc98a; }

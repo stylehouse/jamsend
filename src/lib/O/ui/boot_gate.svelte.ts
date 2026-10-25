@@ -182,3 +182,35 @@ export function boot_gate(H_in: any, opts: { proactive?: boolean } = {}) {
         listen_only,
     }
 }
+
+// ── OPEN A FOLDER AFTER ALL (Arrival_todo 2026-10-25 F, owner: "a little widget in Door as well where they can try and
+//  open it again in case they clicked no there").  For a listen-only life that was a CHOICE on a capable browser: run the
+//   picker inside the caller's click (the same DirectoryOpener action open_share uses — never a raw showDirectoryPicker),
+//    and on a grant drop the persisted 'thin' choice and reload, so the tab boots clean with the folder (the stood
+//     listen-only boot cannot be retro-fitted, the same reason open_share reloads after a no-share boot).  A cancelled
+//      picker changes nothing: they stay listen-only, and the button stays.
+//  Must be called SYNCHRONOUSLY from the click handler — the picker is initiated before the first await.
+export function folder_capable(): boolean {
+    return typeof window !== 'undefined' && typeof (window as any).showDirectoryPicker === 'function'
+}
+export async function open_folder_again(H: any): Promise<string> {
+    const top = H?.top_House?.() ?? H
+    const act = [H, top].map((h: any) => h?.o?.({ watched: 'actions' })?.[0]?.o?.({ action: 1, role: 'open_dir' })?.[0]).find((a: any) => a?.sc?.fn)
+    if (!act) return 'the folder opener is not ready yet — a moment'
+    let p: Promise<any>
+    try { p = act.sc.fn() } catch (e: any) { return String(e?.message ?? e) }
+    let got: any
+    try { got = await p }
+    catch (e: any) {
+        if (e?.name === 'AbortError' || /abort/i.test(String(e))) return ''
+        return String(e?.message ?? e)
+    }
+    // the action swallows a dismissed picker and resolves anyway — only its 'granted' means a folder stands.
+    if (got !== 'granted') return ''
+    const tc: any = top?.c
+    try { top?.imem?.('share')?.set?.('mode', 'folder') } catch {}
+    if (tc) { delete tc.listen_only; delete tc.listen_choice }
+    console.log('📁 folder opened from the Door — reloading to boot clean with it')
+    try { location.reload() } catch {}
+    return ''
+}

@@ -67,6 +67,61 @@ export function dismiss_invite(token: string | undefined): void {
     } catch { /* storage refused — the door will simply ask again next boot */ }
 }
 
+// ── THE PENDING INVITE (Arrival_todo 2026-10-25 B: "trying extra hard not to lose that invite!") ──────────────
+//  A friend invite's ?Iz is stripped from the bar the moment its hello is sent (InvitePanel strip_iz), and the
+//   %Invite row that tracks it is station-world furniture a reload forgets — so a reload, a crash or a tab kill
+//    between "hello sent" and "sealed" lost the invite outright (the owner's phone, 2026-10-25).  Keep the token
+//     here from the moment the page lands on it until it CONCLUDES (sealed, or the person chose to go on without
+//      it), and put it back in the bar on the next boot, so the landing comes back exactly as it was.
+//  Friend invites only: a device link (`*My…*`) keeps its own token in the bar for the whole adopt.
+//  localStorage, like the dismiss list above: it has to survive exactly the reload this exists for.
+const PENDING_KEY = 'invitePending'
+export function invite_pending(): { iz: string, from?: string } | null {
+    try {
+        if (typeof localStorage === 'undefined') return null
+        const v = JSON.parse(localStorage.getItem(PENDING_KEY) || 'null')
+        return v && typeof v.iz === 'string' && v.iz ? v : null
+    } catch { return null }
+}
+export function invite_pending_set(iz: string | undefined, from?: string): void {
+    if (!iz || /\*My[A-Z]/.test(iz)) return
+    try {
+        if (typeof localStorage === 'undefined') return
+        localStorage.setItem(PENDING_KEY, JSON.stringify(from ? { iz, from } : { iz }))
+    } catch {}
+}
+export function invite_pending_clear(iz?: string): void {
+    try {
+        if (typeof localStorage === 'undefined') return
+        const p = invite_pending()
+        if (!p || (iz && p.iz !== iz)) return
+        localStorage.removeItem(PENDING_KEY)
+    } catch {}
+}
+// THE RESTORE, at module load — before any face reads boot_param('Iz').  A dispatch tab (?B=/?E=) and a tab
+//  that already carries a token (in the query or the anchor) are left alone; so is an invite the person put
+//   aside or sent elsewhere.  Whatever ?I= the bar carries stays: strip_iz pinned it so the reload is the same
+//    person, and the restored token rides beside it.
+;(() => {
+    try {
+        if (typeof location === 'undefined' || typeof history === 'undefined') return
+        const u = new URL(location.href)
+        if (u.searchParams.has('B') || u.searchParams.has('E') || u.searchParams.has('Iz')) return
+        if (/(^#|&)Iz=/.test(u.hash || '')) return
+        const p = invite_pending()
+        if (!p || invite_dismissed(p.iz)) return
+        u.searchParams.set('Iz', p.iz)
+        if (p.from) u.searchParams.set('From', p.from)
+        history.replaceState(history.state, '', u.pathname + u.search + u.hash)
+        console.log('✉ restored a pending invite to the bar — it had not concluded before the last reload')
+    } catch {}
+})()
+// The landing's own record of it: stash the URL's friend token as soon as any face sees it.
+export function invite_pending_note(): void {
+    const iz = boot_param('Iz')
+    if (iz && !invite_dismissed(iz)) invite_pending_set(iz, boot_param('From'))
+}
+
 const AUDIO_KEY = 'hasAudioContext'
 export function has_audio(): boolean {
     try { return typeof localStorage !== 'undefined' && localStorage.getItem(AUDIO_KEY) === '1' } catch { return false }

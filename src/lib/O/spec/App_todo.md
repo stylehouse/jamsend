@@ -120,6 +120,10 @@ A permanent description, folding in `Onboard_todo.md` (commissioned 2026-07-22, 
     live successor for the state-machine build is `Arrival_todo.md` — read it for the `%Arrival`/`%Share`
      particles and the build order; this section is the standing map of the ARC itself, not its log.
 
+**⚑ Built, owner walk owed (2026-10-25):** the newcomer is HELD on the Door until their invite concludes, with a durable invite,
+ an issuer that heals a lost serial counter, a `silent` outcome, OPEN SHARE saying it's optional, and a Door widget to open
+  a folder again. What landed and what's left: `Arrival_todo.md` "HOLD THE NEWCOMER".
+
 **The arc: boot → share → name → (link).** A new identity's first encounter is the splash. **OPEN SHARE**
  is one button (`boot_gate.svelte.ts`) that harvests an AudioContext wake and the FSA folder picker in the
   SAME click — both must be initiated inside the gesture, or the browser refuses the deferred half. Beside

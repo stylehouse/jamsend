@@ -22,7 +22,7 @@
     //  The strip mount stays on the non-glass views on purpose: a scanned ?Iz must be joinable BEFORE
     //   any glass commissions, and the boot-diagnostic page is where that person lands.
     import InviteQR from "$lib/O/ui/micro/InviteQR.svelte"
-    import { boot_param } from "$lib/boot"
+    import { boot_param, invite_pending_note, invite_pending_clear, invite_dismissed } from "$lib/boot"
     import { replaceState } from "$app/navigation"   // shallow-router bar rewrite — raw history.replaceState warns
 
     //  ARRIVAL (2026-08-12) — the THIRD dress, and a display mode for the same reason `inglass` is one
@@ -336,6 +336,7 @@
     async function name_save() {
         name_err = ''
         if (!name_fit(name_draft)) { name_err = 'a name needs at least one letter or number'; return }
+        if (/^[0-9a-f]{16}\*|[?&#]Iz=/i.test(String(name_draft || ''))) { name_err = 'that looks like the invite link — paste it in the link box, and type your name here'; return }
         try {
             const ok = await H?.Clustation_friendly?.(name_draft)
             if (!ok) { name_err = 'not saved — is the identity still standing up? try again'; return }
@@ -373,6 +374,9 @@
     //  beside the query so an anchor-form landing counts as a scan-landing too (old ?Iz links still land).
     const hash_iz = (() => { try { return typeof location !== 'undefined' ? (new URLSearchParams(String(location.hash || '').slice(1)).get('Iz') || '') : '' } catch { return '' } })()
     const landed_url = !!boot_param('Iz') || !!hash_iz
+    // KEEP IT UNTIL IT CONCLUDES (boot.ts invite_pending, Arrival_todo 2026-10-25 B): the bar's token is stripped at the
+    //  hello, so stash it now — a reload before the seal puts it back and this landing returns as it was.
+    invite_pending_note()
     let iz = $state<string>(boot_param('Iz') || hash_iz || '')
     // the inviter's NAME, as the invite URL carries it (`&From=`, Swarm_invite_url) — display only, worn
     //  until the seal brings the signed one; without it the landing greeted a stranger with a hex.
@@ -476,7 +480,7 @@
         // A DEVICE LINK NEVER AUTO-JOINS (owner 2026-08-30): becoming a body of the soul is a consent, and it now
         //  lives in the Link cell's `offer` phase.  The effect below parks that offer and runs the redeem only when
         //   the human accepts there — so a scanned MyCave no longer silently redeems under their hands.
-        if (!landed_url || !invite || !self || !stood || !born_today || !named || auto_fired || joined || ceremony_live || device_link(invite)) return
+        if (!landed_url || !invite || !self || !stood || !born_today || !named || auto_fired || joined || ceremony_live || device_link(invite) || invite_dismissed(iz)) return
         auto_fired = true
         joined = '… joining by itself'
         join()
@@ -618,6 +622,7 @@
         }
         joined = '… hello delivered — waiting for the seal'
         const sealed = await wait_for(() => H.Swarm_peering(self)?.o({ Pier: 1, pub: invite.prepub })[0], 8000)
+        if (sealed) invite_pending_clear(iz)
         // no seal — the inviter's pier_reject (heard by the station) rides the identity as a
         //  %rebuff,rejected_<why>; naming the why beats "is the tab still open?" every time.
         const denied = (self.o({ rebuff: 1 }) as any[]).filter(r => String(r.sc.rebuff).startsWith('rejected_')).at(-1)

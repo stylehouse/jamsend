@@ -60,7 +60,7 @@
     import InvitePanel from "$lib/O/ui/InvitePanel.svelte"
     import LinkDevice from "$lib/O/ui/LinkDevice.svelte"
     import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
-    import { boot_param, invite_dismissed, dismiss_invite } from "$lib/boot"
+    import { boot_param, invite_dismissed, dismiss_invite, invite_pending, invite_pending_clear } from "$lib/boot"
     import { onMount } from "svelte"
     import { fly, fade } from "svelte/transition"
     import { quintOut } from "svelte/easing"
@@ -261,17 +261,58 @@
     //       hedging: the release must exist before the hold, or the first dead token traps someone.
     //  `dismissed` is read through the SAME `tick` as everything else in this file, so the click that
     //   writes it re-renders the ladder on the next beat with no extra plumbing.
+    //  ── THE STRICTER HOLD LANDS (2026-10-25, Arrival_todo A — the owner: *"keep the modal UI that captures your name
+    //   … on until your Invite is processed … dropping them into a stalled radio UI is ungood"*).  The prerequisites the
+    //    paragraphs above demanded now exist: the per-invite release (below, and "continue alone"), a terminal for every
+    //     road (sealed · refused · unreachable · `silent` after 30s unanswered, Swarm_invite_silence_watch), and the token
+    //      surviving the strip (boot.ts invite_pending — the bar loses it at the hello, the stash keeps it until it
+    //       concludes).  So a FRIEND invite now holds until SEALED; a ✗ keeps holding, showing what happened, with retry
+    //        and "continue alone" — which is always offered once a landing has stood a minute unsealed, so no road traps.
+    //   A device link (`*My…*`) keeps the old release-on-either-terminal: its ceremony owns the screen elsewhere.
+    let pending_iz = $derived.by(() => { void tick; return boot_param('Iz') || invite_pending()?.iz || '' })
     let dismissed = $derived.by(() => {
         void tick
-        return invite_dismissed(boot_param('Iz'))
+        return invite_dismissed(pending_iz)
+    })
+    let inv_state = $derived.by(() => {
+        void tick
+        if (!pending_iz) return null
+        try { return (H as any)?.Swarm_invite_state?.(pending_iz) ?? null } catch { return null }
     })
     let landing = $derived.by(() => {
         void tick
-        if (!boot_param('Iz')) return false
+        if (!pending_iz) return false
         if (dismissed) return false
         const note = String(H?.c?.door?.note || '')
-        return !(note.startsWith('✓') || note.startsWith('✗'))
+        if (/\*My[A-Z]/.test(pending_iz)) return !(note.startsWith('✓') || note.startsWith('✗'))
+        return !(inv_state?.state === 'sealed' || note.startsWith('✓'))
     })
+    // a concluded invite leaves the reload stash: sealed, or refused (a refusal does not change on a retry).  silent and
+    //  unreachable STAY — those are exactly the ones a later reload should try again.
+    $effect(() => {
+        const st = inv_state?.state
+        if (pending_iz && (st === 'sealed' || st === 'refused')) invite_pending_clear(pending_iz)
+    })
+    // how long this landing has stood unsealed — after a minute "continue alone" is always on offer, whatever the cause
+    let landing_since = 0
+    let landing_long = $derived.by(() => {
+        void tick
+        if (!landing) { landing_since = 0; return false }
+        if (!landing_since) landing_since = Date.now()
+        return Date.now() - landing_since > 60000
+    })
+    let invite_failed = $derived(['refused', 'unreachable', 'silent'].includes(String(inv_state?.state || '')))
+    function continue_alone() {
+        const iz = pending_iz
+        dismiss_invite(iz)
+        invite_pending_clear(iz)
+        try { if (inv_state?.serial && inv_state.state !== 'sealed') (H as any)?.Swarm_invite_cancel?.(inv_state.serial) } catch {}
+        tick++
+    }
+    function invite_again() {
+        try { if (inv_state?.serial) void (H as any)?.Swarm_invite_retry?.(inv_state.serial) } catch {}
+        tick++
+    }
     // …and once shown it STAYS shown for the life of this screen, even after the token is spent: the
     //  panel is mid-`join()` when that happens ("… hello delivered — waiting for the seal"), and
     //   unmounting it there would delete the only report of whether the friendship sealed.
@@ -522,8 +563,21 @@
                              invite while promising later would be the worst thing on this card.
                              Drawn only while one is actually pending: after a ✓ or ✗ there is nothing
                              to release and the verb would be wrong. -->
-                        {#if landing && !friendless}
-                            <button class="later" onclick={() => { dismiss_invite(boot_param('Iz')); tick++ }}
+                        <!-- WHAT HAPPENED, in the invite's own words (Arrival_todo G: one place) — the same %Invite row the Door
+                             shows, said large while it holds the screen, with its two ways forward. -->
+                        {#if landing && invite_failed}
+                            <p class="inv-outcome">✉ {inv_state?.why || inv_state?.state}</p>
+                            {#if inv_state?.state !== 'refused'}
+                                <button class="later" onclick={invite_again}>↻ try again</button>
+                            {/if}
+                        {/if}
+                        {#if landing && (invite_failed || landing_long)}
+                            <button class="later" onclick={continue_alone}
+                                title="stop waiting on this invite and go into the app — open the link again, or ask for a fresh one, to retry">
+                                continue alone
+                            </button>
+                        {:else if landing && !friendless}
+                            <button class="later" onclick={() => { dismiss_invite(pending_iz); tick++ }}
                                 title="stop holding the whole screen for THIS invite — it stays on the page’s own door with its join button, and a different invite would still stop you">
                                 ✕ put this to the side
                             </button>
@@ -814,6 +868,7 @@
        they can't, and a button that competes with `join` for attention would be inviting the
        failure instead of allowing it.  Underline on hover only, so it is findable by someone
        looking for a way out and invisible to someone getting on with the invite. */
+    .inv-outcome { margin: .6rem 0 .2rem; font-size: .95rem; line-height: 1.4; color: #ffd6a0; }
     .later {
         background: none; border: none; color: #7f92a6; cursor: pointer;
         font: inherit; font-size: .8rem; padding: .3rem .1rem; margin-top: .15rem;

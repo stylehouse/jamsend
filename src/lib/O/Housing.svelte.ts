@@ -2252,6 +2252,9 @@ export class House extends StorableHousing {
                     A.c.app_tree_checked = null; A.c.app_tree = null
                     await w.r({ wants_directory: 1 }, {})
                     H.i_elvisto(H, 'think')
+                    // the answer, for a caller that must know whether a folder now stands (the Door's "open a
+                    //  folder", boot_gate.open_folder_again) — a dismissed picker resolves too.  open_share ignores it.
+                    return fsh.started ? 'granted' : ''
                 },
             })
         }

@@ -31,7 +31,7 @@ story:SwarmDoor
     Assertion:two-bare-stations-stand,sentence:two bare stations stand on the spine — a carrier each — and neither holds a Pier yet
   step=3,dige:184a2be9d176d76d
     Assertion:the-inviter-holds-a,sentence:the inviter holds a single-use Idzeug — its station still routes to no one
-  step=4,dige:2f8f55198bef0aab
+  step=4,dige:40d2988a873eb105
     Assertion:the-joiner-promotes-a,sentence:the joiner promotes a transport Pier to the inviter before dialing — the redeemer knows the target
-  step=5,dige:144641094ecbf013
+  step=5,dige:4f3d23bf4f7d2df5
     Assertion:readiness-rode-station-up,sentence:readiness rode station_up — neither transport Pier ran a handshake yet the frames crossed and sealed

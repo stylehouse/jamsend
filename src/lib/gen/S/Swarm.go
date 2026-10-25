@@ -17,7 +17,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'a0b1321415a2c4d7~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '5238a4f8314c2f9e~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -697,6 +697,34 @@ Swarm_invite_settle(w, prepub, state, why) {
     return n
 
 },
+// Swarm_invite_silence_watch — THE `silent` OUTCOME (Arrival_todo 2026-10-25 D).  An issuer that cannot verify a hello
+//  never answers it (Swarm_hello: a reply would confirm us to a spammer), so silence is the only "no" a joiner can get,
+//   and before this the %Invite sat at `redeeming` until something dropped it.  Each hello arms one check; a retry's
+//    newer `redeem_at` retires the older one.  A late accept still seals — settle only skips `sealed`.  Live-only, like
+//     the row itself (station_up), so no Book clock ever sees the timer.
+Swarm_invite_silence_watch(w, inv) {
+    if (!w || !w.c || !w.c.station_up || !inv) return
+    let at = inv.c.redeem_at
+    let who = String(inv.sc.prepub || '')
+    setTimeout(() => {
+        if (inv.c.redeem_at !== at || inv.sc.state !== 'redeeming') return
+        if (!w.o({ Invite: String(inv.sc.Invite), prepub: who })[0]) return
+        this.Swarm_invite_settle(w, who, 'silent', 'no answer from them — they may be offline, or this link may be from another of their devices. Try again, or ask for a fresh link')
+    }, 30000)
+
+},
+// Swarm_invite_state — one invite's lifecycle, for the faces that hold the screen on it (Butler, BootGate): the
+//  matching %Invite row on the station world, by serial (and issuer, when known), as plain { serial, state, why }.
+Swarm_invite_state(iz) {
+    let t = this.Swarm_token_parse(iz)
+    if (!t) return null
+    let A = this.top_House().o({ A: 'Clustation' })[0]
+    let w = A ? A.o({ w: 'Swarm' })[0] : null
+    let inv = w ? w.o({ Invite: String(t.serial), prepub: t.prepub })[0] : null
+    if (!inv) return { serial: String(t.serial), prepub: String(t.prepub), state: '' }
+    return { serial: String(t.serial), prepub: String(t.prepub), state: String(inv.sc.state || ''), why: inv.sc.why ? String(inv.sc.why) : '' }
+
+},
 // Swarm_invite_words — a refusal's code, said the way a person would say it.
 Swarm_invite_words(why) {
     let k = String(why || '')
@@ -839,7 +867,7 @@ Swarm_iz_wire(z, i) {
 //    refuse an invite we really did issue.  An existing row always wins; only an unmatched serial
 //     falls through to the issuer arithmetic.  277 of the owner's 279 legacy rows are still
 //      outstanding in the world, so this path is not a transitional courtesy — it is the door.
-Swarm_iz_find(ident, serial) {
+Swarm_iz_find(ident, serial, heal) {
     let peering = this.Swarm_peering(ident)
     let s = String(serial)
     let legacy = peering.o({ Idzeug: s })[0]
@@ -853,8 +881,16 @@ Swarm_iz_find(ident, serial) {
     if (!(i >= 1)) return null
     let iz = peering.o({ Idzeug: String(z), next: 1 })[0]
     if (!iz) return null
-    if (i >= +(iz.sc.next || 1)) return null
-    return { kind: 'serial', iz: iz, i: i, canon: String(z) + '.' + String(i), to: String(iz.sc.to), params: this.Swarm_record_params(iz) }
+    // A SERIAL PAST `next` IS ONE WE NEVER ISSUED — OR ONE WE ISSUED IN A LIFE WHOSE COUNTER NEVER REACHED DISK
+    //  (2026-10-25: the owner's phone carried a serial the daemon's ledger, at next=22253, had no memory of, and was
+    //   refused `hello_unknown` in silence).  Only the DOOR may ask for the second reading (`heal`), and only because
+    //    it then checks the presig: that MAC regenerates from our own key alone, so a valid one proves we minted this
+    //     link, and Swarm_hello raises `next` past it before spending.  Every other caller keeps the strict answer.
+    let lost = i >= +(iz.sc.next || 1)
+    if (lost && !heal) return null
+    let found = { kind: 'serial', iz: iz, i: i, canon: String(z) + '.' + String(i), to: String(iz.sc.to), params: this.Swarm_record_params(iz) }
+    if (lost) found.lost = 1
+    return found
 
 },
 // Swarm_claimed_has / Swarm_claimed_add — the run-list codec.  "3-5~9~14" means 3,4,5,9,14 claimed.
@@ -3353,6 +3389,7 @@ async Swarm_redeem(w, ident, iz, advice) {
             inv.c.redeem_at = Date.now()
             inv.bump()
             console.log('✉ invite #' + String(inv.sc.Invite) + ' — hello sent to ' + String(t.prepub || '').slice(0, 8) + ', waiting for their accept')
+            this.Swarm_invite_silence_watch(w, inv)
         }
     }
     // DEAD-WINDOW FIX (2026-08-28) — redeeming a MyCave (device-link) invite means a soul is about to be
@@ -3431,7 +3468,7 @@ async Swarm_hello(w, ident, frame) {
     // Swarm_iz_find resolves BOTH shapes — a legacy per-invite row, or a serial drawn off an issuer
     //  (`i < next`). Either way it hands back the canonical presig domain, so the regeneration below
     //   is unchanged: it is still the maker's own state that decides, never the carried $n (§10.1).
-    let f = this.Swarm_iz_find(ident, t.serial)
+    let f = this.Swarm_iz_find(ident, t.serial, frame.relic ? 0 : 1)
     if (!f) return refuse('unknown')
     let record = f.record
     let n = this.Swarm_token_n(f.to, f.params)
@@ -3455,7 +3492,14 @@ async Swarm_hello(w, ident, frame) {
     } else {
         presig = await this.Swarm_presig(this.Swarm_keys(ident), ident.sc.prepub, f.canon, n)
     }
-    if (!presig || presig !== t.presig) return refuse('forged')
+    if (!presig || presig !== t.presig) return refuse(f.lost ? 'unknown' : 'forged')
+    // HEAL THE LOST COUNTER (Swarm_iz_find's `heal`): the presig just proved this serial is ours, so the ledger
+    //  forgot it — raise `next` past it (durably, through the same mark a mint uses) and carry on as for any
+    //   outstanding serial.  `claimed` still spends it exactly once below.
+    if (f.lost) {
+        console.log('🩹 invite serial ' + String(t.serial) + ' was minted in a lost life (next was ' + String(f.iz.sc.next) + ') — presig proves it ours; next → ' + String(f.i + 1))
+        this.Swarm_iz_mark(ident, f.iz, { next: String(f.i + 1) })
+    }
     // proven: OUR invite, on a bound page — a real redeemer. NOW promote the return route (the
     //  pier_accept and every reason below ride it), and answer with denials the honest redeemer can act on.
     this.Swarm_station_pier(w, ident, frame.page?.prepub)

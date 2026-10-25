@@ -9,6 +9,95 @@ This is that machine. It is NOT a new page/toplevel — it is one **arrival auth
  legible C particles, that every boot surface (Splash, BootGate, Butler, LinkDevice, BigSoundland)
   READS instead of each deriving its own truth from a pile of `.c` flags.
 
+## ⚑ 2026-10-25 — HOLD THE NEWCOMER UNTIL THEIR INVITE CONCLUDES (the owner's field report — BUILT the same day, owner walk owed)
+
+**What landed (A–G below, all in one pass; nothing committed):**
+- **E, the welcome** — `BootGate.svelte`. Capable browser, folder asked: *"You should open a folder to save music in, or link
+   another device to do so later."* No-picker browser (a phone), on its audio tap, once, while listen-only is the browser's
+    doing: *"Your device doesn't allow folder access — link another device to do so later, or CANCEL and open this Invite link
+     elsewhere."* (the invite clause and the **CANCEL** button only when a friend invite is pending). CANCEL does not spend the
+      invite here: copies the link to the clipboard, cancels the Door row, dismisses it, clears the stash, takes `?Iz` out of the
+       bar; InvitePanel's auto-join now refuses a dismissed token.
+- **F, open a folder from the Door** — `DoorFace.svelte` "📁 open a folder" beside "🎧 listening only", only where
+   `showDirectoryPicker` exists. `boot_gate.open_folder_again` runs the same DirectoryOpener `open_dir` action (whose fn now
+    returns `granted` — one line in Housing), and on a grant sets `share/mode:'folder'` and reloads. A dismissed picker changes nothing.
+- **B, the durable invite** — `src/lib/boot.ts` `invite_pending` (localStorage `invitePending`, friend tokens only). InvitePanel
+   stashes the URL's token on mount; boot.ts puts it back in the bar at module load when a reload finds the bar empty (not on
+    `?B=`/`?E=`, not if dismissed). Cleared on sealed / refused (Butler), the Door row's ✕, CANCEL, "continue alone".
+- **A + G, the hold** — `Butler.svelte` `landing` now keys on the stashed token, not only the bar's, and for a friend invite holds
+   until **sealed** (a ✗ no longer releases). A failed invite shows its own words (`inv-outcome`, from `Swarm_invite_state`) with
+    **↻ try again** (not for `refused`) and **continue alone**; continue alone is also always offered once the landing has stood
+     60s unsealed, so no road traps. Device links keep the old release-on-either-terminal.
+- **C, the issuer heals a lost counter** — `Swarm_iz_find(ident, serial, heal)`; only `Swarm_hello` passes `heal` (never for a
+   relic). A serial ≥ `next` whose presig regenerates is ours from a lost life: `🩹` log, `next` → serial+1 via `Swarm_iz_mark`,
+    then the ordinary spend. A bad presig on such a serial still refuses locally as `hello_unknown` (unchanged to a stranger).
+     **Takes effect on jamserve only after its restart.**
+- **D, `silent`** — `Swarm_invite_silence_watch`: each hello arms a 30s check; still `redeeming` ⇒ settle `silent` with words.
+   Live-only (`station_up`). The Door row offers ↻ for silent/unreachable.
+
+**Not done:** the Books for C and D (SwarmTesting beats). The Supervisor `swarm.arrival` give-up still speaks separately (D's
+ timer covers the case it was for).
+
+### the plan as written (kept for the reasoning)
+
+
+**What happened** (Brave on an Android phone, off the LAN, first visit, opened from an invite link):
+1. **Stuck on OPEN SHARE.** The button wouldn't go away or work, with "Brave blocks folder access…" under it. Cause: the
+    no-picker auto path in `Housing.svelte.ts` had a `!c.book` guard, and BigQualand stamps `book='Sounditron'` on every
+     music page, so no phone ever qualified. **FIXED 2026-10-22**: a real browser with no picker and no `?B=` is a
+      listener (jsdom and `?B=` keep the gate). BootGateNoFSA green 2×. **Needs a prod pull.**
+2. **The invite got lost while the page loaded.** The Door showed it in progress for a while, then it was gone, and the
+    newcomer was dropped into a stalled radio. Jamserve's side: three `pier_hello`s from `82efa528`, each answered by
+     `🚪 rebuff %hello_unknown`. **That rebuff is LOCAL and sends NO reply** (`Swarm_hello`, Swarm.g ~3296: serials are
+      guessable, so an unknown serial confirms nothing to a spammer). So the joiner can never learn what happened, and its
+       `%Invite` sits at `redeeming` until something drops it.
+    **Why unknown:** `Swarm_iz_find` misses only when the serial is ≥ the issuer's `next`. The daemon's issuer then read
+     `next:22253, claimed:…22226-22243`, so the phone carried a serial the CURRENT ledger never issued. Most likely it was
+      minted in a daemon life whose `next` never reached disk (the 2026-09-29 off-by-one class, which `Swarm_iz_mark`'s
+       restash was meant to close). **Unconfirmed:** read the serial off the phone's URL or Door row and compare. The daemon
+        boot logs `🪪… account mirror waiting — %Identity … has no .c.keys`, so suspect its account mirror first.
+
+**What the owner asked for** (2026-10-25):
+- *"I want the modal UI that captures your name when you first sign in to keep on until your Invite is processed."*
+- *"Keep the app focused on it until it is concluded… dropping them into a stalled radio UI is ungood."* And *"trying
+   extra hard not to lose that invite!"*
+- On the first OPEN SHARE, when it might work: explain that it isn't absolutely necessary.
+- *"A little widget in Door as well where they can try and open it again in case they clicked no there."*
+- *"Where we'd surface any errors that happened eludes me."*
+
+**The plan** (one shape: the invite is an arrival PHASE, not a side panel):
+- **A. Hold the screen.** While any `%Invite` is non-terminal, the screen authority (`Screen_decide`, Sounditron.g:1267,
+   and `%Arrival` once it is the authority, §2) keeps the Door's name/invite modal up. It never yields to the radio.
+    Terminal states:
+    - `sealed`: release into the radio, with the friend named and their music on its way;
+    - `refused` / `unreachable` / **`silent`** (new): stay on a face that says what happened and offers **retry**,
+       **ask for a fresh link**, or **continue alone**. Continue alone is the explicit exit, the per-invite dismissal
+        (`invite_dismissed`, `src/lib/boot.ts`), so the hold can never become a trap.
+- **B. Make the invite durable.** Stash the token the moment the page sees `?Iz=` (Dexie, before the rest of boot), so a
+   reload or crash mid-boot resumes it. Clear it only on a terminal state the person has seen. *Verify first what
+    `%Invite` persistence exists today.*
+- **C. The issuer heals a lost counter.** For a serial ≥ `next`, check its presig over the canonical domain anyway. Only
+   the issuer key can make that MAC, so a valid one proves we minted this link in a lost life. Then raise `next` to
+    serial+1 and continue the hello as normal (`claimed` still spends it once). No weaker than today, and it ends the
+     restart-rollback class at the door rather than at every persistence seam. An invalid presig still refuses silently.
+- **D. A `silent` outcome on the joiner.** K hellos with no accept or refusal within N seconds settle the `%Invite` to
+   `silent` (`Swarm_invite_settle`), with words like "no answer from <name> — they may be offline, or this link may be
+    stale". Retry re-says hello; a fresh link is the other way out. Today it just stays `redeeming` and then disappears.
+- **E. OPEN SHARE says it's optional** (a capable browser only; a no-picker one never sees it now). For example: "Open
+   your music folder — optional: you can listen without one and open it later from the Door."
+- **F. A Door widget to open a folder again**: shown when listen-only was a CHOICE (`share/mode:'thin'`), never when the
+   browser is incapable. It reuses `boot_gate.open_share` and clears the 'thin' stash on success. It also does the job
+    of the read-only "🎧 listening only" badge (App_todo §0.7).
+- **G. Where errors surface: one place.** The invite's own row in the Door carries `state` + `why`
+   (`Swarm_invite_settle` and `Swarm_invite_words` already speak plainly), and the held face from A is that same row,
+    enlarged. Supervisor's `swarm.arrival` watch already exists; its give-up should settle the invite rather than speak
+     separately.
+
+**How to know it works:** a Book for C (lost counter heals: mint, roll `next` back, redeem, seal), and one for D (an issuer
+ that never answers settles `silent`). SwarmTesting already has the `hello_unknown` refusal to extend. Then a headless
+  arrival walk (`scripts/arrival_eye.mjs`): open an invite cold, reload mid-boot, and confirm the hold survives and
+   concludes. The field trip is the phone again, after a prod pull.
+
 ## ⚑ THE NEWCOMER, WALKED HEADLESS (2026-09-11 night — "what's the app lacking?")
 
 **Method.** A headless Chrome (`scratchpad/arrival.mjs` — the eye with clicks, typed input, body text

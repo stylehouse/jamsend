@@ -394,6 +394,9 @@
         // a name is not an address: a browser autofill (or a paste) that drops a URL into the name box would
         //  otherwise sail as the crew name ("add to your Crew the device showing https://…", 2026-09-03)
         if (/^[a-z][a-z0-9+.-]*:\/\//i.test(clean) || /^[\w.-]+\.[a-z]{2,}(\/|$)/i.test(clean)) return false
+        // …nor an invite: a pasted token (`<16 hex>*<serial>*Music*…`) became a friend's name at jamserve (Pier 65ce7ac4,
+        //  named `7950f300faa8a4f9*22243*M`, found 2026-10-25) — the 24-char cut leaves exactly that shape
+        if (/^[0-9a-f]{16}\*/i.test(clean) || /[?&#]Iz=/.test(String(name ?? ''))) return false
         ident.sc.friendly = clean
         const peering = ident.o({ Peering: 1 })[0] as TheC | undefined
         if (peering) peering.sc.friendly = clean
