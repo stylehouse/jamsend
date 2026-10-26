@@ -10,19 +10,21 @@ The editor machine is two ghost families and the faces over them.  **Lies** hold
 
 ## 0. What to get on with next
 
-1. **"No wafts" in the hacker room — not explained yet.**  /BigWordland opened `Waft:Ghost/Net/Easy` on both boots of
-    2026-10-25 (console: `🗂 Waft:Ghost/Net/Easy opened`), then the `Waft:` particle was gone from w:Lies with no log line,
-     leaving its `Good,type:text/Waft` and `Funkcions/req:Waftica` behind — exactly what `e_Lies_close_Waft`'s "minimal
-      close" leaves (`Lies.svelte` ~:190).  Only two things drop a Waft: that close (fired by the Interest strip's ×) and the
-       Lies panel's delete (`Liesui.svelte` `delete_waft`).  Both now log (`🗂 Waft:X closed — the Interest strip ×` /
-        `🗂 Waft:X deleted from the Lies panel`).  Next time it happens, the console says who.  If neither logs, something
-         else replaces w:Lies's children — then follow `w.place`/`replace` in `Stuff.svelte.ts`.
-2. **The hacker room now opens Waft:Everything too** (`Hackarium.svelte`, 2026-10-25), beside its area Waft.  Nothing opened
-    it before, anywhere.
-3. **Close should finish the job**: GC the orphaned `Good` and the `Waftica` carrier (its own comment calls this "a separate
-    follow-up").  The debris is what made (1) hard to read.
-4. **The first Atheory seam** (§9): the `%GhostInclude` shelf + `CREDULER_GHOSTS` are a hand-built TheACode/Ground.
-5. Diagrams owed in §3–§5 (the req stack per tick; doc → .go; a keystroke → a particle).
+The destination (owner, 2026-10-26): **BigWordland becomes the one editor** — several docs open at once as viewports you
+ grow, shrink and rearrange, standing on the Wafts that give it its sense of place.  Editron (`?E=`) is the legacy editor
+  and is usually not awake, so nothing on the road may depend on it.  The road is §11.  Next moves, in order:
+
+1. **"No wafts" — FOUND and fixed (2026-10-26).**  `story_harvest_desc` (Story.svelte) harvests a Book's step description
+    with `fw.o({ desc: 1 })` — a presence wildcard, so it took ANY child carrying `desc`, and a Waft does: at every step snap
+     it set the step's desc from the Waft and DROPPED the Waft.  Only Book rooms (Hackarium, Educarium — their tocs carried the
+      stolen desc, now cleared) hit it.  Fixed to mainkey `desc` only.  Found by `Lies_waft_census` (`🗂⚠ Waft:X LEFT w:Lies`,
+       stays) and a one-reload `drop()` probe.  Also landed on the way: a Waft read lost after the Book ends is retried (2s
+        wake); close drops its Good; a loaded-but-missing Waft is said and re-read; STUCK reads are one line per 10s.
+        ⚠ Any recorded Book that opened a Waft with a `desc` was recorded WITHOUT it — expect such a step to red once.
+2. **The write seat** (§11 step 1).
+3. **The compile authority off Editron** (§11 step 2).
+4. **Viewports in Langui** (§11 step 3).
+5. The first Atheory seam (§9); diagrams owed in §3–§5.
 
 ## 1. The map in one breath
 
@@ -110,3 +112,27 @@ The editor is the one writer (Waft saves, the compile `dock_source`, Keep cursor
  `Lies_attention_todo.md` · `LiesEnd_spec.md` · `Keeping_spec.md` · `LangCompiler_TODO.md` · `LangSolver_report.md` ·
   `GhostHMR_todo.md` · `Verbs_todo.md` (a terminal's controls) · `Clerkdesk_todo.md` · `Lagoon_todo.md` (the reader layer) ·
    Aprac_todo §0.5 (the Ground).
+
+## 11. Toward the one editor (plotted 2026-10-26)
+
+**Which room means what, today.**  `/Otro?E=<Book>` boots `role:editor` (the one writer — Waft saves, Keep, Cluster,
+ compile tickets); `/Otro?B=<Book>` boots a runner; `/Otro?H=<Book>` a hacker.  `/BigWordland` defaults to `?H=Hackarium`
+  (hacker: reads, compiles locally, writes nothing) and takes `?E=<Book>` for the old editor role in its presentation — so
+   `/BigWordland?E=Editron` is Editron wearing BigWordland's room, and it takes the editor slot.  BigWordland has no `?B`:
+    runners board through /Otro.  So BigWordland does not merge the meanings; it picks one at boot, and the editor one
+     rides the LIVE spine (Editron proper rides `pinned_stable/`), which §8.2 B of `Editron.md` says a compiler must not.
+
+**The road** — `Editron.md` §8.2 is the design; this is the order, changed by Editron being asleep:
+
+1. **The write seat** (§8.2 A): `seat:editor` held at the relay (hello's `seats` arbiter, one more name), asked for by a
+    deliberate act, lost with `seat_lost` after flushing; every `=== 'editor'` write gate reads `Lies_holds_seat(w)`.
+     First slice: BigWordland takes the seat when no holder is live (the manual rule of §8.3, automated), so the hacker
+      room can save Wafts and `.g`.  Needs the seat's liveness ping — the "two of you" hazard is the same problem.
+2. **The compile authority off Editron** (§8.2 B, its "Later — Atheory's" made first): Editron is not awake, so the compile
+    holder is headless — LocalGen's real translator in node, behind the dev server, answering `ghost_compile` tickets as
+     `seat:compiler`, verdict by corr.  Wordland saves; the compiler compiles; nobody compiles the spine it rides.  Editron
+      becomes a fallback holder of the same seat.
+3. **Viewports** — Langui shows several docs at once, each a viewport you grow, shrink and rearrange.  The layout is
+    particles (one per viewport, under the room), each viewport an Interest; Lang already arbitrates several givers for the
+     one LE (§6), so the step is from "one foreground" to "several visible, one with the keys".
+4. **Editron retires to fallback** — kept stable, honours the seat, otherwise left alone.

@@ -189,18 +189,23 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //   Drop a loaded Waft from the roster — the giver/lister leaves.  The
     //   roster sig (interest_roster_sig) then moves, Lies_waft_roster_pump
     //   re-pushes, and interest_reconcile's gone-loop marks the matching
-    //   %Interest state:gone on Lang.  Minimal close: the matching
-    //   Good,type:'text/Waft' slot under req:Store is left loaded-but-orphaned —
-    //   LiesPersist's already-loaded branch only re-syncs `if (waft)`, so it does
-    //   not re-create the dropped Waft (a full close that GCs the Good slot, to
-    //   let a later re-open reload fresh, is a separate follow-up).
+    //   %Interest state:gone on Lang.  The close takes its Good,type:'text/Waft'
+    //   slot with it (2026-10-26; was left loaded-but-orphaned), so a re-open reads
+    //   fresh — and so LiesPersist can tell a CLOSED Waft (no Good) from one that
+    //   went MISSING (a loaded Good, no Waft), which it now says and heals.  The
+    //   Funkcions/req:Waftica carrier stays: it holds the Waft's %Lango,Cursor touch
+    //   memory, which a re-open should find.
     async e_Lies_close_Waft(A: TheC, w: TheC, e: TheC) {
+        const H    = this as House
         const path = e.sc.path as string | undefined
         if (!path) throw 'e_Lies_close_Waft: needs path'
         const waft = w.o({ Waft: path })[0] as TheC | undefined
         // said out loud, with who asked: a Waft leaving the roster was silent (2026-10-25, the hacker room's "no wafts")
         if (waft) console.log(`🗂 Waft:${path} closed${e.sc.why ? ' — ' + e.sc.why : ''}`)
-        if (waft) { w.drop(waft); w.bump_version() }
+        if (waft) { H.unwatch_owner(waft); w.drop(waft); w.bump_version() }
+        const store = w.o({ req: 'Store' })[0] as TheC | undefined
+        const good  = H.LiesStore_good_of(w, 'text/Waft', H.Lies_waft_snap_path(path))
+        if (store && good) store.drop(good)
         this.i_elvisto(w, 'think')
     },
 
@@ -727,12 +732,15 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             uis.oai({ UI: 'Lies' }, { component: Liesui })
             H.watch_c(w, () => {
                 examining.bump_version()
+                H.Lies_waft_census(w)
             })
         }
         // the one-time setup is done: Cortex armed, the Liesui component mounted.  Everything after
         //  this is per-tick work, so this is the boundary between "the ghost exists" and "the ghost
         //   is working".
         H.Lies_mark(w, 'setup')
+
+        H.Lies_waft_census(w)
 
         // ── opts — every tick ─────────────────────────────────────────────────
         const Opt = w.o({ Opt: 1 })[0] as TheC
@@ -836,6 +844,31 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         }
     },
 
+    // ── Lies_waft_census — say the moment a Waft leaves w:Lies, whoever took it ───────────
+    //   The hacker room's "no wafts" (2026-10-25/26): both Wafts opened, then were gone, with no close, no
+    //    delete and no MISSING heal logged.  This runs on every w:Lies bump (the watch_c above) and every
+    //     tick, and names what left, whether a replace() was in flight on w (and from where — DX keeps the
+    //      caller's stack on replace_having), and whether the Waft C still exists marked c.drop.
+    Lies_waft_census(w: TheC) {
+        // inside a replace() window every child it isn't re-adding is hidden — no evidence; but a window that
+        //  never closes IS the evidence (it hides the Wafts for good), so say that once
+        if ((w as any).X_before) {
+            w.c.census_inflight = ((w.c.census_inflight as number) ?? 0) + 1
+            if (w.c.census_inflight === 20) console.warn(`🗂⚠ a replace() on w:Lies has been in flight for 20 looks — its window hides the Wafts${(w as any).replace_having ? ': ' + [].concat((w as any).replace_having).slice(0, 6).join(' ⟵ ') : ''}`)
+            return
+        }
+        w.c.census_inflight = 0
+        const now  = new Map<string, TheC>()
+        for (const wf of w.o({ Waft: 1 }) as TheC[]) now.set(wf.sc.Waft as string, wf)
+        const was  = w.c.waft_census as Map<string, TheC> | undefined
+        w.c.waft_census = now
+        if (!was) return
+        for (const [path, wf] of was) {
+            if (now.has(path)) continue
+            console.warn(`🗂⚠ Waft:${path} LEFT w:Lies${wf.c.drop ? ' (its C is marked drop)' : ' (not dropped — removed from the index)'}`, new Error('who').stack?.split('\n').slice(2, 9).join(' ⟵ '))
+        }
+    },
+
     // ── Lies_order_wafts — keep the ambient Ting at the bottom of the Waft list ───
     //   Liesui renders the Wafts in child order, so the order in w:Lies IS the on-screen
     //   order.  The taker Ting is the ambient "where I've been" footer — it sinks below
@@ -847,6 +880,9 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const wafts = w.o({ Waft: 1 }) as TheC[]
         if (wafts.length < 2) return
         const sorted = [...wafts].sort((a, b) => (a.sc.takes ? 1 : 0) - (b.sc.takes ? 1 : 0))
+        // the no-op its header promises: place() is a replace() — a window on w:Lies that hides every child it isn't
+        //  re-adding — and it ran on EVERY tick once two Wafts were open (2026-10-26, hunting the hacker room's "no wafts")
+        if (sorted.every((c, i) => c === wafts[i])) return
         await w.place({ Waft: 1 }, sorted)
     },
 
@@ -902,14 +938,31 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             if (good.c.content !== undefined && !good.c.retake) {
                 // already loaded, nothing pending — Lies_sync_waft_docs is the %Good GC hook
                 const waft = w.o({ Waft: path })[0] as TheC | undefined
-                if (waft) H.Lies_sync_waft_docs(w, waft)
-                continue
+                if (waft) { H.Lies_sync_waft_docs(w, waft); continue }
+                // MISSING (2026-10-26, the hacker room's "no wafts"): loaded, not closed (a close drops this
+                //  Good), yet no Waft — something removed it without saying.  Say so, and read it back in.
+                //   Not while a replace() is in flight on w: its window hides every child it isn't re-adding
+                //    (CLAUDE.md memory "r() is an async replace"), so an absence then is no evidence.  Three
+                //     heals per Good, then it stays gone and says so — a loop that re-loses it must show.
+                if (w.X_before || good.c.vanished > 3) continue
+                good.c.vanished = (good.c.vanished ?? 0) + 1
+                console.warn(`🗂 Waft:${path} went MISSING from w:Lies — not closed, not deleted (${w.o().length} children left)${good.c.vanished > 3 ? '; healed 3× already, leaving it gone' : '; reading it back in'}`)
+                if (good.c.vanished > 3) continue
+                delete good.c.content
             }
 
             if (good.c.content === undefined) {
                 await H.LiesStore_read_good(w, 'text/Waft', snap_path)
                 if (good.c.content === undefined) {
                     w.i({ see: `⏳ loading Waft:${path}…` })
+                    // LOOK AGAIN IN 2s (2026-10-26).  LiesStore_read's lost-dispatch retry only runs when something
+                    //  ticks w:Lies — inside a Book the step's poll does, but a room whose Book has finished (the
+                    //   hacker room completes in one step and releases its heartbeat) had nothing to: a read lost
+                    //    on the way out sat "loading" until reload (seen headless: Waft:Ghost/Everything, 150s).
+                    //     A wake, not a hold — one in flight per w.
+                    if (!w.c.loading_wake) {
+                        w.c.loading_wake = setTimeout(() => { w.c.loading_wake = undefined; H.i_elvisto(w, 'think') }, 2000)
+                    }
                     return false
                 }
             }

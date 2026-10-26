@@ -213,6 +213,10 @@
         for (const A of Run.o({ A: 1 }) as TheC[]) {
             for (const fw of A.o({ w: 1 }) as TheC[]) {
                 for (const d of fw.o({ desc: 1 }) as TheC[]) {
+                    // a %desc PARTICLE only — `{desc:1}` is a presence wildcard and also matches anything that merely
+                    //  carries a desc (a Waft does: this harvested both of the hacker room's Wafts as the step's desc and
+                    //   DROPPED them at every snap — the "no wafts", found 2026-10-26)
+                    if (Object.keys(d.sc)[0] !== 'desc') continue
                     const sentence = d.sc.desc
                     if (typeof sentence === 'string' && sentence) H.The_step(w, n).sc.desc = sentence
                     fw.drop(d)

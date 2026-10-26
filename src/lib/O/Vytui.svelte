@@ -87,8 +87,8 @@
         if (prevN !== undefined && prevN !== out.length) {
             const nA = (H.ob({ A: 'Vyto' }) as TheC[]).length
             const same = out.length === 1 && lastWorldObj === out[0]
-            console.log('◈ Vyto WORLDS', prevN, '→', out.length, '| A:Vyto rows=', nA,
-                        'sameObject=', same, '(false on a 0-render is expected — nothing to compare)')
+            // the console line is off (owner, 2026-10-26: it flickers dozens of times a second on a live room);
+            //  the supply_trace ring below still records every transition
             const M: any = (H as any).top_House?.()
             if (M) { const log = M.c.supply_trace || (M.c.supply_trace = []); log.push({ t: Date.now(), ev: 'vyto-worlds', id: 'Vyto', from: prevN, to: out.length, actors: nA, same: same ? 1 : 0 }); if (log.length > 300) log.splice(0, log.length - 300) }
         }

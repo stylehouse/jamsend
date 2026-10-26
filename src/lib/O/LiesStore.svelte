@@ -984,7 +984,16 @@
             const why = good.c.last_error
                 ? `last error: ${good.c.last_error} (×${good.c.error_count})`
                 : 'no reply landed at all — transport? grant? editor nav?'
-            console.warn(`🗂⚠ read STUCK ${Math.round(waited / 1000)}s: ${path} — ${why}`)
+            // ONE console line per w per 10s, not one per path (2026-10-26: Waft:Everything cites ~200 docs, and on a
+            //  slow disk every one of them complained in turn and buried the console) — the count, the oldest few.
+            const stuck = (w.c.stuck_reads ??= new Map()) as Map<string, string>
+            stuck.set(path, `${path} ${Math.round(waited / 1000)}s`)
+            if (!((w.c.stuck_said_at as number) > Date.now() - 10_000)) {
+                w.c.stuck_said_at = Date.now()
+                const some = [...stuck.values()].slice(0, 3).join(' · ')
+                console.warn(`🗂⚠ ${stuck.size} read(s) STUCK — ${some}${stuck.size > 3 ? ' …' : ''} — ${why}`)
+                stuck.clear()
+            }
             w.i({ see: `⚠ read stuck ${Math.round(waited / 1000)}s: ${path} — ${why}` })
         }
 
