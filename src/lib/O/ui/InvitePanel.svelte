@@ -167,7 +167,10 @@
             if (w && typeof H.Swarm_station_up === 'function' && H.Swarm_station_up(w, self)) stood = true
             // no nonce any more: the %Idzeug IS the issuer and assigns the number (Onboard_todo §0
             //  2026-08-12).  Minting no longer plants a particle per invite — it winds one counter.
-            url = await H.Swarm_invite_url(null, self, { Music: 1 }, location.origin + location.pathname)
+            // an invite opens the app at its ROOT (owner 2026-10-26: BigSoundland is `/`, "which the Invites should say") —
+            //  a music page anywhere else (/BigSoundland) still mints for `/`; any other room keeps its own path.
+            const room = /^\/(BigSoundland\/?)?$/.test(location.pathname) ? '/' : location.pathname
+            url = await H.Swarm_invite_url(null, self, { Music: 1 }, location.origin + room)
             open_big()
         } catch (e) { err = String(e) }
     }
@@ -1044,7 +1047,8 @@
             {/each}
         </div>
     {:else}
-        <span class="ip-note">⏳ identity…</span>
+        <!-- the identity takes a few seconds on a phone (the ghosts load first) — a spinner says it is moving (owner 2026-10-26) -->
+        <span class="ip-note ip-standing"><span class="ip-spin" aria-hidden="true"></span>making you an identity…</span>
     {/if}
     {#if friends.length && !inglass && !arrival}
         <!-- the sealed friendships — each a %Pier under our page, its Music grant the proof;
@@ -1352,4 +1356,7 @@
     }
     .ip-sheet-chip:hover:not(:disabled) { background: #fff; }
     .ip-sheet-chip:disabled { opacity: 0.45; cursor: default; }
+    .ip-standing { display: inline-flex; align-items: center; gap: .45em; }
+    /* on the dark landing the brown spinner vanishes — take the text colour there */
+    .ip-standing .ip-spin { border-color: currentColor; border-right-color: transparent; opacity: .8; }
 </style>

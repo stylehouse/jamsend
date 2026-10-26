@@ -1211,7 +1211,10 @@ const server = http.createServer((req, res) => {
             try {
                 const token = await (H as any).Swarm_mint_invite(w, ident, feature)
                 say(`🎟 minted an invite (${Object.keys(feature)[0]}) → ${String(token).slice(0, 20)}… — its serial is in THIS ledger (DAEMON_STATE), so a redeem seals here`)
-                const link = base ? `${base}${base.includes('?') ? '&' : '?'}Iz=${encodeURIComponent(String(token))}` : null
+                // the inviter's NAME rides the link (`From=`, display only — Swarm_invite_url does the same in a tab), so the
+                //  newcomer's landing says "an invite from S", not a hex
+                const from = ident?.sc?.friendly ? `&From=${encodeURIComponent(String(ident.sc.friendly))}` : ''
+                const link = base ? `${base}${base.includes('?') ? '&' : '?'}Iz=${encodeURIComponent(String(token))}${from}` : null
                 res.end(safe_json({ invite: String(token), link, note: 'paste `invite` into a friend\'s Door "paste a link" hole (or open `link` if you passed ?base=<jamsend-page-url>)' }))
             } catch (e: any) {
                 try { res.statusCode = 500; res.end(`{"error":${JSON.stringify(String(e?.message || e))}}`) } catch {}

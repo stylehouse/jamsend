@@ -179,6 +179,9 @@ async Radio_go(radio, opts):
     radio.c.gat = gat
     if (!radio.c.aud) radio.c.aud = gat.new_audiolet()
     if (opts && opts.mute) radio.c.aud.mute()
+    // opts.fade_in = seconds: come up from silence (the newcomer's first-ever play — owner 2026-10-26, "perhaps the first time
+    //  ever we can fade in the audio too, we're just desperate for a bit more grace").  Ramps the voice's tapped gain from 0.
+    if (opts && opts.fade_in) { try { radio.c.aud.fade_in(+opts.fade_in) } catch (er) {} }
     this.Stoker_wake(this.Stoker_ensure(radio.c.w))
     this.Radio_pump(radio, era)
 

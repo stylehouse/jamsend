@@ -4,9 +4,7 @@ story:Hackarium
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=3.039
-      sample=2.545,at=1792887463
-      sample=4,at=1792889917
+    TimeTotal:beliefs,avg=2.744
       sample=1.395,at=1792890505
       sample=0.909,at=1792907394
       sample=2.168,at=1792907419
@@ -15,9 +13,9 @@ story:Hackarium
       sample=5.733,at=1792908966
       sample=2.072,at=1792909015
       sample=5.577,at=1792909482
-    TimeTotal:step,avg=3.039
-      sample=2.545,at=1792887463
-      sample=4,at=1792889917
+      sample=2.519,at=1792977980
+      sample=1.07,at=1792978189
+    TimeTotal:step,avg=2.744
       sample=1.395,at=1792890505
       sample=0.909,at=1792907394
       sample=2.168,at=1792907419
@@ -26,4 +24,6 @@ story:Hackarium
       sample=5.733,at=1792908966
       sample=2.072,at=1792909015
       sample=5.577,at=1792909482
+      sample=2.519,at=1792977980
+      sample=1.07,at=1792978189
   step,dige:29c7975b74f8b5f9,desc:READ THIS FIRST — one Waft per area of the program lists its main functions with keywords — this Waft locates them all — the policy is the last What

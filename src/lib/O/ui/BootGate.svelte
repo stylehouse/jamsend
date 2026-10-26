@@ -58,11 +58,37 @@
     //   (Housing stands it straight into listen-only) and only meets this bar for the AUDIO tap, so it gets one plain
     //    sentence and ONE button, OK, which IS that tap (owner, same day: "just be an OK there — they can abandon the tab if
     //     they don't like it"; an earlier CANCEL-and-open-elsewhere was dropped as more choice than the moment needs).
-    let phone_welcome = $derived.by(() => {
+    // FOLDERLESS = a listener whose browser cannot open a folder at all.  Its one tap only ever wakes the audio, so it says
+    //  OK, every boot (owner 2026-10-26: "once we accept they're going noFSA, we can say OK instead of OPEN SHARE … basically
+    //   the smoothest way we can solicit that tap").  The sentence explaining why rides only the first (phone_welcome).
+    let folderless = $derived.by(() => {
         gate.poll
         const c: any = (H as any)?.top_House?.()?.c
         return proactive && gate.fsa_missing && !!c?.listen_only && !c?.listen_choice && !disk_gated
     })
+    let phone_welcome = $derived(folderless && !folderless_said)
+    // ONCE EVER (owner 2026-10-26: "the OK to noFSA speech occurred every boot, it should be a once ever thing").  Read at
+    //  boot; the first boot that SHOWS the line records it (it then stays up for that boot), later boots get the bare tap.
+    //   localStorage throws in some private windows: then it simply says it again, the safe direction.
+    const SAID_KEY = 'noFolderSaid'
+    const folderless_said = (() => { try { return typeof localStorage !== 'undefined' && localStorage.getItem(SAID_KEY) === '1' } catch { return false } })()
+    $effect(() => { if (phone_welcome) { try { localStorage.setItem(SAID_KEY, '1') } catch {} } })
+    // KEEP THE SCREEN ON WHILE WE CLIMB IN (owner 2026-10-26: "the phone kept falling asleep" through a slow first load).  The
+    //  silent keep-awake source (open_share → keep_awake_acquire, the coffee-cup trick) stops a hidden tab being throttled,
+    //   but not the screen locking.  A screen Wake Lock does that; taken on this tap, given back once the Butler lifts (the
+    //    newcomer has arrived) or after 3 minutes.  Absent API or refusal: nothing changes.
+    let wake: any = null
+    let wake_at = 0
+    async function wake_on() {
+        try { if (!wake && (navigator as any).wakeLock) { wake = await (navigator as any).wakeLock.request('screen'); wake_at = Date.now(); wake.addEventListener?.('release', () => { wake = null }) } } catch {}
+    }
+    $effect(() => {
+        gate.poll
+        if (!wake) return
+        const up = !!(H as any)?.c?.butler_up
+        if ((!up && Date.now() - wake_at > 5000) || Date.now() - wake_at > 180000) { try { wake.release() } catch {}; wake = null }
+    })
+    const tap = () => { open_share(); if (proactive) void wake_on() }
 </script>
 
 <!-- THE SHARE SHOWS THROUGH A CEREMONY; ONLY AUDIO DEFERS (owner 2026-08-29: the deferral "must be only for AC
@@ -91,8 +117,8 @@
 {#if disk_gated || (ac_wanted && !ac_via_brink && !link_active)}
     <div class="bg-bar">
         <div class="bg-row">
-            <button class="bg-open" onclick={open_share} disabled={opening_share}>
-                {opening_share ? 'opening…' : phone_welcome ? 'OK' : 'OPEN SHARE'}
+            <button class="bg-open" onclick={tap} disabled={opening_share}>
+                {opening_share ? 'opening…' : (folderless || (proactive && gate.fsa_missing && !disk_gated)) ? 'OK' : 'OPEN SHARE'}
             </button>
             {#if disk_gated}
                 <button class="bg-q" onclick={() => (explain = !explain)} aria-label="what is this?" title="what is this?">?</button>

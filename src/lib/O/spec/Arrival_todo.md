@@ -44,6 +44,18 @@ This is that machine. It is NOT a new page/toplevel — it is one **arrival auth
       `⛁ no browser storage (…) — running memory-only`. All three headless variants then name + send the hello. Owed: a face
        that says "this tab forgets you when closed" (`globalThis.__jamsend_storage_dead` is set for it), and the owner's
         incognito walk after a prod pull.
+- **2026-10-26, after the owner's private-tab walk sealed (Incrow, serial 23266):** the phone line is once-ever
+   (`localStorage noFolderSaid`, written the boot it is first shown); "⏳ identity…" is a spinner, "making you an identity…";
+    the Butler shows the CLIMB under the invite (you are X ✓ → hello sent ✓ → X answered ✓ → X's music is here — N tracks ✓ →
+     ♪ title), and GLIDES past the seal until the music plays (cap 25s); on arrival it presses ▶ itself once audio is unlocked,
+      fading in over 4s the first time ever (`Radio_go(radio, { fade_in })`, `localStorage firstPlayFaded`). Invites minted on the
+       music page say `/`. jamserve's `/invite` links carry `From=` (after its restart). **Owed:** a walk that SEALS with the new
+        code (prod pull) to see the glide + autoplay — the dev relay can't reach jamserve.
+- **…and later the same day:** a folderless phone's one tap is labelled **OK** every boot (it only ever wakes audio); that
+   tap also takes a screen **Wake Lock** (released when the Butler lifts, cap 3 min) beside the silent keep-awake source it
+    already started; the splash says *"first time! this may take an extra minute to load — stand by…"* until a NAMED
+     identity stands (`localStorage jamsendArrived`, so the reloads before that keep saying it). Caddy already compresses
+      (`encode zstd gzip`); the code-size cuts wait for the code-loading rewrite (App_todo).
 - **E revised (owner):** the no-folder phone line is now *"No folder access. In Door you may link a device to download to. You
    can still play."* with ONE button, **OK**, which is the audio tap; CANCEL-and-open-elsewhere dropped.
 - **jamserve's counter wound to 23255** (`/wind?by=1000`, new daemon route) clear of the printed blotter sheet; printed serials

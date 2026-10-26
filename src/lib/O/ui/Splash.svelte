@@ -28,8 +28,9 @@
     //  ("starting engines…", "sealing your links…", "restoring your library (674)…", "tuning the radio…") and
     //   `frac` a coarse 0..1 progress, both derived in BigSoundland off boot facts the ghosts ALREADY write to
     //    `top.c` (off-snap `.c` — no Book fixture moves).  So the tree is a moving progress, not a frozen cover.
-    let { ready = false, urge = false, hold = false, phase = '', frac = 0 }:
-        { ready?: boolean, urge?: boolean, hold?: boolean, phase?: string, frac?: number } = $props()
+    // `note`: one more line under the label (the first-visit "this may take an extra minute", BigSoundland)
+    let { ready = false, urge = false, hold = false, phase = '', frac = 0, note = '' }:
+        { ready?: boolean, urge?: boolean, hold?: boolean, phase?: string, frac?: number, note?: string } = $props()
 
     // FROM THE VERY FIRST PAINT (owner 2026-08-31: "I want the splash to go from the very start of the page
     //  load … right now we have a bare Supervisor glass saying 'starting up' at the start, like a splash for
@@ -105,6 +106,7 @@
                     <span>{phase}</span>
                 </div>
                 <div class="splash-bar"><div class="splash-fill" style:width={`${Math.round(Math.max(0, Math.min(1, frac)) * 100)}%`}></div></div>
+                {#if note}<div class="splash-note">{note}</div>{/if}
             </div>
         {/if}
     </div>
@@ -174,4 +176,5 @@
     @media (prefers-reduced-motion: reduce) {
         .splash-spin { animation: none; }
     }
+    .splash-note { margin-top: .55rem; font-size: .85rem; line-height: 1.4; opacity: .85; text-align: center; max-width: 22rem; }
 </style>

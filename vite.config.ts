@@ -125,8 +125,25 @@ function digePlugin(): PluginOption {
 	};
 }
 
+// NO SOURCEMAPS ON PROD (owner 2026-10-26: "can we just leave out the prod source maps? it's not really supposed to be a dev
+//  server").  Prod IS a Vite dev server (docker-compose.prod.yml, NODE_ENV=production), and the dev server inlines every
+//   module's sourcemap as a base64 `sourceMappingURL=data:` comment — measured as HALF of a cold music page (≈11 of 22.5 MB),
+//    which Caddy's gzip barely dents.  A last (`post`) transform that answers an EMPTY map is Vite's own way of saying
+//     "no sourcemap for this module", so nothing is inlined.  Prod-only: dev keeps its maps (stack traces, DevTools).
+function noProdSourcemaps(): PluginOption {
+	return {
+		name: 'no-prod-sourcemaps',
+		apply: 'serve',
+		enforce: 'post',
+		transform(code) {
+			if (process.env.NODE_ENV !== 'production' || process.env.KEEP_SOURCEMAPS) return null;   // KEEP_SOURCEMAPS=1: the escape hatch
+			return { code, map: { mappings: '' } };
+		},
+	};
+}
+
 export default defineConfig({
-	plugins: [sveltekit(), relayPlugin(), digePlugin()],
+	plugins: [sveltekit(), relayPlugin(), digePlugin(), noProdSourcemaps()],
 
 	// THE SSR ENVIRONMENT MUST NOT RELOAD THE BROWSER (2026-09-17, measured on a spare vite + a headless page).
 	//  Vite 6 runs HMR in TWO environments.  For a module the CLIENT can hot-apply (every .svelte is a Svelte HMR

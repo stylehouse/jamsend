@@ -120,6 +120,20 @@ A permanent description, folding in `Onboard_todo.md` (commissioned 2026-07-22, 
     live successor for the state-machine build is `Arrival_todo.md` — read it for the `%Arrival`/`%Share`
      particles and the build order; this section is the standing map of the ARC itself, not its log.
 
+**⚑ The music page is heavy (measured 2026-10-26, a headless cold load of prod `/` ≡ `/BigSoundland`):** ~22.5 MB over ~418 requests,
+ uncompressed (Vite sends no content-encoding), and HALF of it is inline sourcemaps (11 MB). The browser's own counter says
+  16.6 MB because it misses the 52 dynamic imports (every `.go`). Ranked hacks, before the code-loading rewrite:
+  1. **gzip + strip `sourceMappingURL=data:` on prod** → ~3–3.5 MB on the wire, no app change. Caddy `encode zstd gzip` alone
+     gives ~6.9 MB. (Owner: Caddyfile / a prod-only middleware in vite.config.ts.)
+  2. **A listener-only Creduler list** (`CREDULER_GHOSTS`, LiesLies.svelte:56): drop `*Testing.g` + InvSeal/InvFerry/InvWalk when
+     no `?B=`/`?E=` → −1.4 MB, −11 requests, all of it on the path that gates Story start. Move `Voro_hash` from VoroTesting into
+      Voro.g first (Voro.g:2121 calls it).
+  3. **Lazy UI components** (Cytui 1.1 MB, Langui 0.8 MB, Liesui 0.5 MB, Storui 0.5 MB — registered statically by their ghosts) →
+     −3 MB, −52 requests for every tab.
+  4. Machinery (test recipes only) off the listener → −0.75 MB, needs an async Ghost mount on no-`?B=` tabs.
+  A real production build is feasible (svelte.config.prod.js has adapter-node) but blocked on the `/* @vite-ignore */` ghost
+   imports, the relay living in Vite's configureServer, and the hot-reswap path. Scripts: the session scratchpad (measure.mjs, graph.mjs).
+
 **⚑ Built, owner walk owed (2026-10-25):** the newcomer is HELD on the Door until their invite concludes, with a durable invite,
  an issuer that heals a lost serial counter, a `silent` outcome, OPEN SHARE saying it's optional, and a Door widget to open
   a folder again. What landed and what's left: `Arrival_todo.md` "HOLD THE NEWCOMER".

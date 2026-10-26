@@ -304,6 +304,17 @@
     //       edit — and hand the splash a short human label + a coarse 0..1 fraction so the tree isn't a frozen
     //        cover but a progress it can trust.  Keyed on H.version like every other toplevel read; a runner/
     //         editor boot has no humdinger so it shows nothing (Splash already hides on ?B=/?E= anyway). -->
+    // FIRST TIME EVER (owner 2026-10-26: "on the very first time through we could have a little more text saying first time!
+    //  this may take an extra minute to load… if they haven't got as far as setting up their identity first, as there are
+    //   random page reloads").  Remembered in localStorage once a NAMED identity stands, so the reloads before that keep
+    //    saying it.  A private window that refuses localStorage just says it every time.
+    const ARRIVED_KEY = 'jamsendArrived'
+    let first_visit = $state((() => { try { return typeof localStorage !== 'undefined' && localStorage.getItem(ARRIVED_KEY) !== '1' } catch { return true } })())
+    $effect(() => {
+        void H?.version
+        if (!first_visit) return
+        try { if ((H as any)?.Swarm_live_self?.()?.sc?.friendly) { localStorage.setItem(ARRIVED_KEY, '1'); first_visit = false } } catch {}
+    })
     let boot_progress = $derived.by(() => {
         void H?.version
         const top: any = (H as any)?.top_House?.()
@@ -418,7 +429,8 @@
      behind it), pointer-CATCHING (no fall-through into the machine room), holding until the Radio beginning (glass
      up + Butler lifted) or a boot gave-up, or a safety cap.  OPEN SHARE punches through it (BootGate, above).  Splash. -->
 <Splash ready={boot_ready} urge={boot_gaveup} hold={boot_share_hold}
-        phase={boot_progress.label} frac={boot_progress.frac} />
+        phase={boot_progress.label} frac={boot_progress.frac}
+        note={first_visit ? 'first time! this may take an extra minute to load — stand by…' : ''} />
 
 <BootGate {H} who="the piracy-scape" audio_fullscreen={true} proactive={true} />
 <!-- the Butler: the Supervisor's arrival screen, altitude 55 — UNDER BootGate, because a permission
