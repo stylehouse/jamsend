@@ -272,7 +272,7 @@ The editor is the one writer (Waft saves, the compile `dock_source`, Keep cursor
    where they coincide on meaning (Atheory_design §1.12; still in development).  The `.g` ↔ Ground link would be one:
     perhaps `%TheASphere:Grounding` (key and arrangement unruled) — and the Sphere's name could be how we find the code that
      knows the process of having one.  Data plus the code that knows about it: what OOP really is, housed by name.
-- **Later: the shape census.**  Every IOing path is a Lezer parse, so one `%Shape:X` per mainkey can be derived (keys, the leg
+- **Later: the shape census** (now `IOexpr_todo.md` §3, with the Map rows, conduits and `%TheASpilled`).  Every IOing path is a Lezer parse, so one `%Shape:X` per mainkey can be derived (keys, the leg
    it sits under, makers vs readers), with cardinality read off the consuming form (`[0]` at most one, iterated many, `oai`
     exactly one, `[0].sc` unguarded = null fatal).  The yield is contradictions: two makers' key sets under one mainkey, a
      read key no maker writes, a null-fatal read with no maker first.  Authored parameters only as corrections (§12's `%lematch`).

@@ -1185,3 +1185,9 @@ What Atheory now records (Theory.g TENDRILS, Book `AthePondTendril`): in a House
 - Turns trimmed under a slow reader, so some tendrils go `(gone)`.
  Its swears: the nesting holds everywhere; fan-in Ates name both clocks with the right n; the loop's tendrils return to their
   origin; the held Turn is the longest; nothing crosses an era inside a run.
+
+**Illustrate the inbound lanes** (2026-10-28).  Radio pulls content through Lies, and `Lies_drain_inbound` runs express frames
+ ahead of every `repli_page` — so a music slice and a control frame race in a way nobody can see.  A Story projection of one drain
+  (frames in, lanes, order out, how long the mutex was held) would make that legible; it's the first real customer for an
+   arrival tape outside the Atheory toys.  Story today keeps a tape of STATES (a snap per step), not of arrivals — Story reading
+    arrival tapes is §3's "Story adapted to read tapes".

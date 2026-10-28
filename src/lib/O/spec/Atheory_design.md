@@ -672,3 +672,74 @@ No Atheory adjustments yet.
 - **Is `TheA_io` the right name?**  It is the moment news from outside enters a compartment and is taped — `TheA_hear` (pairs with
    `%TheAHeard`) would say it at a glance.  If every IOexpr site pumps news, each is a synapse end; the A is the method or w that
     hosts them.
+
+**The patch, tied together** (2026-10-28, late — "think about everything some more").
+- **There is already a door, and it is the inbound batcher.**  Tribunal's `on_message` hands every frame to `Lies_deliver_soon`
+   (LiesLies), which coalesces a burst into ONE `post_do` drain in Atime — so sockets were never the off-loop leak; handlers that
+    fork off it with `void` (as `runner_ask` does, so a long op doesn't hold the drain) were, past their first await.  Make that
+     batcher the general door: every arrival — frame, key, verb, timer — queues there, and the door owns the UI qualities
+      (coalesce, quiet window, loop sense).  `UItime(fn)` becomes "an arrival whose body is fn".
+- **One arrival shape** — `{what, by, from, corr, at}` — for a key press, a `runner_ask`, a socket frame, a verb, a timer.  Through
+   the door it is a `TheA_io` pulse into a compartment: taped (`%TheAHeard`), proven (`by:`), placed (`from:`), answerable
+    (`corr` → egress), timed, on the board.  Replay, audit, security and Story all read the same tape.
+- **Verb, ActionButton, Point are one thing seen three ways.**  The method carries `kind:verb` (desc, args, writes) on its Ground
+   layer; an ActionButton is that verb with a face; `runner_ask`, the hole and a button are three callers making the same arrival
+    (`e:Verb,name,by`).  Then the `verbs_*` tables are the Ground's job, and the alignment is by method name.
+- **Sync by tree, explain by tape.**  The node editor and Chrome find WHERE they differ by Ground tree diges, and WHY by each
+   side's tape since the last common root — a three-way merge then has its causes, and a `%TheARefused` can name the arrivals
+    that collided.
+- **Rogue tickers — one mutex means starvation, not deadlock.**  Every House (Mundo, Story's run House, Atlas) drains under the
+   top House's one `beliefs` mutex, so an inner ticker going rogue monopolises it: a think storm (a w re-elvising itself; Atlas's
+    4s thinks), a holder awaiting the network (the 30s wedge alarm is the only guard), a `post_do(urgent)` feeder.  UItime only
+     waits for the current holder then races for the next turn, so a storm can starve it.  Cheap sight: ring every mutex hold
+      by its label (`H:x fn:see` is already a name) and put Atime's share per House on the board — "what woke up and how much"
+       for the trickle think too.  A bare Atheory House (Pondland) runs `TheA_run` off any mutex; inside Mundo it must enter
+        through the door.
+- **Spill is just a row** — `%TheASpilled:<synapse>,n:` on the sender.  Thread moved to `IOexpr_todo.md` §5.
+- **Next moves, small first:** (1) Theory guards — refuse an async wake handler, refuse a nested run, spill rows — Book-provable
+   on the toy; (2) split the long verbs (read outside, apply in UItime); (3) the Atime ring + board share; (4) `%Verb` as an arrival
+    with `by:`; (5) the `%Map` m9 — `kind:` on `%def`, `%i_elvis`/`%o_elvis` rows; (6) the Stuffica top-level UI as the door's
+     reference implementation.
+
+**Double-think — corrections to the above** (2026-10-28, a fork read the code against this section).
+- **Starvation is not real; latency is.**  `H.mutex` (`Housing.svelte.ts` ~242): every waiter awaits the holder's promise; on
+   release the waiters' continuations run before the releasing drain's own continuation, and the first one takes the lock with
+    no await in between.  So it is near-FIFO and fair, and `answer_calls` takes one elvis per pass behind the gallop gate.  A
+     storm cannot starve UItime; a long single hold delays everyone.  The Atime ring is still worth having, to show *holds*, not
+      starvation.
+- **The door is a pattern, not `Lies_deliver_soon`.**  That batcher is per-w:Lies, exists only where LiesLies is loaded, and
+   **reorders**: `Lies_drain_inbound` runs every express frame before any `repli_page` and holds the mutex across each awaited
+    `Peeroleum_deliver`.  Keys and verbs queued behind it would wait on bulk slices, and its `post_do` fns skip `beliefs()`
+     (no Story trace).  Generalise the *shape* (per-House arrival queue, lanes, one drain per burst) as its own thing; don't route
+      UI through the Lies batcher.
+- **The arrival shape splits sc from `.c`.**  `TheA_io(name, io, sc)` spreads sc onto BOTH the `%TheAHeard` row and the pulse, so
+   everything in it snaps.  `at` and `corr` must ride `.c` (volatile → reds fixtures, as a wall clock does); `from:` is minted by
+    `TheA_io` itself (`/Heard<n>`), never supplied; `by:<prepub>` makes a Book machine-dependent — snap a role or `proven:1`
+     and keep the prepub on `.c`.  So: sc = what (+proven), `.c` = by, corr, at.
+- **"Verbs are arrivals" is far.**  The app's verbs land in legacy Houses with no `%TheAIO`; the near move is a `%Verb` elvis
+   (`i_elvisto`) carrying `by` on `e.c`.
+- **Tapes exist only on Atheory toys** (`%TheAHeard` under a `%TheAIO`, trimmed by `keep:`).  "Sync by tree, explain by tape"
+   is tree-first for a long while; Story's step snaps and Electrode's call tap are today's nearest tapes.
+- **ActionButtons are closures, not names.**  `%action` rows carry `fn` (and `on_pick`) in sc (`Story.g` ~3087–3109;
+   `Actions.svelte` calls `a.sc.fn?.()`), so they are runtime-only and unencodable — and a click runs them **off Atime**.
+    Aligning them with verbs and Points means `method:` + args instead of a closure, and the click entering through UItime.
+- **The guards, made right.**  Async wake: check `me[wake](…)`'s return for `.then` in `TheA_move` and refuse loudly — right
+   and minimal.  Nested run: guard on `this.c.run_t0` — but `TheA_run` has no `try/finally`, so a throwing handler leaves
+    `run_t0` set and the guard would then refuse every later run; add the `finally` with the guard.  Spill: `IOexpr_todo.md` §5.
+
+
+**Older threads this resolves** (gathered before compacting, 2026-10-28).
+- **"A notation of all the UI interactions, so we can play them back and circuit-bend them"** (the UI-tape, held back earlier) —
+   is the door plus the arrival tape: every interaction is an arrival, taped as it enters; playback is replay of the tape;
+    circuit-bending is a Story projection of it.  Nothing separate to build.
+- **Receivers** ("a Waft targeted for taking that channel of data") — a synapse end with a hearer; a hearerless one is a plug-hole
+   (`%TheASpilled`, IOexpr_todo §5).
+- **The Keep** (cursor, resume-last) — not its own machine: what the seat holder's arrivals left, read back.  Belongs on the seat.
+- **The recipe → Ground** — the room's planting becomes arrivals a Ground sends at stand time, through the same door.
+- **Edges into the machine** — every way in, gated or not: relay controls (`seat`, `census`, `who`, `hello`), `runner_ask` (gated
+   2026-10-28), `ghost_compile` tickets and `gen_write` (signed per frame), the r2r bridge (trusted link — an old peer relay is the
+    hole), dev-server endpoints (`/__atlas/dige`, `/__gen/dige`), the daemon's HTTP introspect, socket inbound (the Lies batcher),
+     UI events (`$effect`s, ActionButton `fn`s), timers.  Each should become an arrival at a door with a `by`.
+- **Two classes of traffic at the relay.**  Dev control (seat, asks, census, compile, gen) needs a FLOCK-key hello; music and Swarm
+   stay open to friends and carry their own vouchers.  A tab joins the flock by holding a flock key — today via the 🪪 Id hatch
+    (paste `.env.cluster-<role>`; `Lies_cluster_idento` signs the hello with it); next, read once from the repo through FSA.

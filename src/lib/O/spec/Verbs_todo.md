@@ -17,7 +17,7 @@ A **working `_todo`**, opened 2026-10-09.  Homethink §4 already named the disea
 
 **Landed 2026-10-28 — verbs enter in Atime, and only flock members may ask.**
 - `Verb_run` runs a verb's body inside `H.UItime` (the beliefs mutex): both callers — the relay's `runner_ask` and BigWordland's
-   hole — are a socket event or a keypress, and used to read and write particles mid-tick.  `runner_ask run` (lease check, stamp,
+   hole — forked off the inbound drain (`void`) or a keypress, so past their first await they read and wrote particles mid-tick.  `runner_ask run` (lease check, stamp,
     the drive's first stretch) and `poke` enter the same way.  Cost: a long verb (`atlas_refresh`, `everything`) now holds the tab
      for its disk walk — **next, split them**: read the disk outside, then `UItime` only to apply.
 - **Received, then the answer.**  A CLI that sends `ask.acks` hears `runner_ack,phase:received` at once; the relay keeps the corr
@@ -28,6 +28,19 @@ A **working `_todo`**, opened 2026-10-09.  Homethink §4 already named the disea
    `CLUSTER_TRUSTED_PUBS` is refused (as a `runner_ack,ok:false,refused`).  `scripts/relay_hello.mjs` signs that hello with the
     claude key; runner_ask · reactap · story_repl · runner_shot call it.  `RELAY_ASK_CHECK=enforce|log|off`.  Note: a tab's own
      hello is self-signed by its identity, not a flock key — so the seat (`seat:editor`) still admits any hello'd socket.
+- **Holes a fork found (2026-10-28):** `poke` and a slow verb now hold Atime across their own network|disk awaits (the
+   split is the fix); a **runner_ask over the r2r bridge** (`routeFromPeer`) skips the ask gate (trusted link); the **seat** admits
+    any self-signed hello, so a stranger can take a free `seat:editor` and hold the editor's saves back (owed, not lost) — gate
+     `take` on something stronger than a tab key (a crew row, or refuse seat asks arriving through Caddy); **ActionButton clicks**
+      (`Actions.svelte` → `a.sc.fn?.()`) run off Atime too.
+- **TODO — really sign in the dev Chrome tabs.**  A tab's hello is self-signed by its own identity, so the relay can't tell your
+   tabs from a stranger's.  A dev tab could read the flock key (`.env.cluster-editor`) through its FSA grant on the repo and hello
+    with it — then it IS trusted, seat and asks alike.  Cost: the key sits in that browser's memory; fine for a dev box.  Until then:
+     the seat allowlist (below in LiesLang §11).
+- **TODO — ActionButtons through Atime, forward-escaping** (no instance changes): `Actions.svelte`'s `fire()` runs `a.sc.fn` inside
+   `H.UItime`; an action MAY carry `method:` + args instead of a closure, and `fire()` elvises it — old `fn` buttons keep working.
+    Watch: Pause/Stop must stay instant while a long step holds Atime (set the flag, then elvis).  Buttons, verbs and Points stay
+     three things; they align by method name where they meet.
 - **Owed:** a verb arrives as a named `%Verb` elvis carrying `by:<prepub>` (proven per command, not just per socket), so the
    board and tendrils see it; writing verbs gated on proof + the seat instead of `role === 'hacker'`; the rest of the op chain
     (`release`, `ghost_load --stand`, `tidy`, `crew`) entering through UItime as it moves into verbs.
