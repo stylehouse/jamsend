@@ -1142,3 +1142,46 @@ The Waft unification (§13) is not a stage so much as the *direction* every stag
    beside `This` and the Matstyle swatches (session-scoped, graph-clean) or on
     `Run.c` (per-run)? Lean `H.ave` so Cyto/Matstyle can read it too — a node could
      pulse on a `.vers` bump using the same wave machinery (§7).
+
+## 15. Time inside a run — the timing layer, the crawl, and a test to show it off (2026-10-28)
+
+What Atheory now records (Theory.g TENDRILS, Book `AthePondTendril`): in a House holding `%TheATendrils` every pulse carries
+ `from:` (the Turn that sent it, or the Heard it came in on) and every `%TheATurn` keeps `%TheAAte,from:,n:` per sender, plus
+  the `round:` it moved in.  Exact times ride `.c` always (run, round and Turn `t0|t1`, each pulse's `sent_at`, an Ate group's
+   first|last); with `%TheATiming` they also land in the snap as `%TheATime` children — `at:`/`sent:` relative to the run's
+    start, `ms:` durations, 0.01 ms — which a Book drops with one Entcase (`lematch,TheATime` / `means,drop`).
+
+**Owed to Story, so the timing layer can be SEEN without red fixtures:**
+- **Quantise and relativise.**  Raw ms differ every run.  Story should turn them into what compares: rank within the parent
+   (first, second…), share of the parent's span (a Turn took 40% of its round), buckets (≤0.1, ≤1, ≤10 ms), and drift flagged
+    only past a band — then `%TheATime` can stay in the snap instead of being dropped.  TimeSpool (§4.3) is the precedent: it
+     already keeps a rolling `sample` series per step; per-Turn spans are the same idea one level down.
+- **A separate snap layer.**  §2's "the snap is plural": a `Snap:time` channel carrying the `%TheATime` rows, joined back to the
+   main snap by the Turn's address (`<A>/<w>/Turn<n>`), so the clean channel stays clean and the timing channel is diffed with
+    its own tolerance.  Kept in the main snap for now (owner, 2026-10-28).
+- **Project the board.**  Pondland's board (who woke, how much, who woke them — dots along the tendrils, ordered by depth) is
+   ad-hoc Svelte for now.  Story should project the same picture from a step's snap: compartments as points, Ates as flows,
+    `round:` as the beat, `%TheATime` as the stretch.  Then every Atheory Book is watchable, not only Pondland.
+
+**The crawl — a debugger that watches this, with Electrodes.**  A slow-motion walk through one run:
+- **Step by round, Turn or Ate.**  `TheA_run(at, wake, ready, most)` already takes `most` — one round per click is a run with
+   `most:1` whose leftover ready set is kept for the next click.  Stepping by Turn is a move per click; by Ate, a pulse.
+- **Electrodes inside each Turn.**  The call electrodes (Electrode_todo §1, built, parked off) stamp both ends of every method
+   call; nest those inside the Turn's `t0..t1` and a Turn opens into the calls it made (`Athe_Tank_turn → Athe_Tank_egg …`).
+    Line/branch electrodes — the variant-bundle build an A can be pushed (Atheory's Variant slot) — would open a call into its
+     lines: the "program explaining itself" Electrode_todo names as the destination.
+- **Scrub back** along the tendrils: Turns kept by a reader are the history; back is `from:`, forward is `TheA_led_to`.
+- **What it shows**, the picture the owner keeps in their head: which globs of sand ticked, how many grains each ate, who
+   tipped them, and what was tucked inside what in time.
+
+**A more interesting test to reveal it — "the Waterworks" (a candidate Book, not built).**  One pond built to exercise every
+ shape the scheduler has, so the board and the crawl have something worth watching:
+- two clocks at different rates feeding one tank (fan-IN, interleaved Ates from two senders in one Turn);
+- a `sum:latest` tank and a `sum:count` tank on the same clock (collapse vs every pulse);
+- P ⇄ Q streams both ways (a loop: two batches round, tendrils that cycle);
+- a Feeder asked on an axon that holds (`%TheAWait`) and serves two ticks later (a wait you can see: the held Turn's span);
+- a deliberately slow compartment (a measured busy turn), so tucking shows — a Turn whose span swallows its round;
+- a code push mid-run (the era seam: `%TheAArrived`, code changing only between runs);
+- Turns trimmed under a slow reader, so some tendrils go `(gone)`.
+ Its swears: the nesting holds everywhere; fan-in Ates name both clocks with the right n; the loop's tendrils return to their
+  origin; the held Turn is the longest; nothing crosses an era inside a run.

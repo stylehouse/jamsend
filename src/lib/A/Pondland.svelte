@@ -249,17 +249,17 @@
         const nodes: Record<string, Node> = {}
         const dots = new Map<string, Dot>()
         for (const t of turns) {
-            const froms = H.TheA_came_from(t.turn) as string[]
+            const ate = H.TheA_ate(t.turn) as { from: string, n: number }[]
             woke_total[t.name] = (woke_total[t.name] || 0) + 1
             const nd = nodes[t.name] ??= { name: t.name, woke: 0, ate: 0, total: 0, depth: 0 }
             nd.depth = Math.max(nd.depth, depth[t.addr] ?? 0)
-            nd.woke++; nd.ate += froms.length; nd.total = woke_total[t.name]
-            for (const f of froms) {
-                const from = f ? sender(f) : 'outside'
+            nd.woke++; nd.ate += ate.reduce((k, g) => k + g.n, 0); nd.total = woke_total[t.name]
+            for (const g of ate) {
+                const from = g.from ? sender(g.from) : 'outside'
                 if (!SPOTS[from]) continue
                 const key = board_runs + ':' + from + '>' + t.name
                 const d = dots.get(key) ?? { key, from, to: t.name, n: 0, depth: Math.max(0, (depth[t.addr] ?? 1) - 1) }
-                d.n++
+                d.n += g.n
                 dots.set(key, d)
             }
         }

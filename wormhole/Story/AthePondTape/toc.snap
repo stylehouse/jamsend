@@ -8,13 +8,14 @@ story:AthePondTape
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.028
+    TimeTotal:beliefs,avg=0.029
       sample=0.027,at=1792633866
       sample=0.025,at=1792636140
       sample=0.018,at=1792636145
       sample=0.031,at=1792649268
       sample=0.025,at=1792650313
       sample=0.039,at=1793152740
+      sample=0.035,at=1793155948
     TimeTotal:step,avg=0.007
       sample=0.007,at=1792633866
       sample=0.006,at=1792636140
@@ -22,6 +23,7 @@ story:AthePondTape
       sample=0.008,at=1792649268
       sample=0.006,at=1792650313
       sample=0.01,at=1793152740
+      sample=0.009,at=1793155948
   step,dige:573d64e5e69a8860
   step=2,desc:stand a host that time comes in by — Clock_A hears its beat — K_P and K_Q hear the clock — the outside says 1000 ms and runs,dige:ea43a1b0ddd1aaee
     Assertion:time-comes-in-only,sentence:time comes in only through the host — what the outside said is on its tape and a beat reaches the tanks two rounds later

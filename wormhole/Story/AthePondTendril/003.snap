@@ -32,10 +32,10 @@ Snap:H
           TheAWoke,count=5,pulses=5
         TheAAxon:beat
         TheAWas,keep=2,made=5
-          TheATurn:4,synapse:outside,pulses,code_dige:bf8156c1dd2b8a94
+          TheATurn:4,synapse:outside,pulses,code_dige:bf8156c1dd2b8a94,round
             TheAAte,from:Host/Athe_Host/Heard4
             TheASent:beat
-          TheATurn:5,synapse:outside,pulses,code_dige:bf8156c1dd2b8a94
+          TheATurn:5,synapse:outside,pulses,code_dige:bf8156c1dd2b8a94,round
             TheAAte,from:Host/Athe_Host/Heard5
             TheASent:beat
         Spare,ms=300
@@ -50,10 +50,10 @@ Snap:H
           TheAWoke,count=8,pulses=8
         TheAAxon:clock
         TheAWas,keep=2,made=5
-          TheATurn:4,synapse:beat,pulses,code_dige:bf8156c1dd2b8a94
+          TheATurn:4,synapse:beat,pulses,code_dige:bf8156c1dd2b8a94,round=2
             TheAAte,from:Host/Athe_Host/Turn4
             TheASent:clock
-          TheATurn:5,synapse:beat,pulses,code_dige:bf8156c1dd2b8a94
+          TheATurn:5,synapse:beat,pulses,code_dige:bf8156c1dd2b8a94,round=2
             TheAAte,from:Host/Athe_Host/Turn5
             TheASent:clock
         Ticks,count=8
@@ -66,20 +66,17 @@ Snap:H
         TheASynapse:clock,from:Clock_A,wake:turn,sum:count
           TheAWoke,count=8,pulses=8
         TheAWas,keep=9,made=5
-          TheATurn:1,synapse:clock,pulses=4,code_dige:bf8156c1dd2b8a94
-            TheAAte,from:Clock_A/Athe_Clock/Turn1
-            TheAAte,from:Clock_A/Athe_Clock/Turn1
-            TheAAte,from:Clock_A/Athe_Clock/Turn1
-            TheAAte,from:Clock_A/Athe_Clock/Turn1
+          TheATurn:1,synapse:clock,pulses=4,code_dige:bf8156c1dd2b8a94,round=3
+            TheAAte,from:Clock_A/Athe_Clock/Turn1,n=4
             TheANeu:Fish,of:minnow 1
             TheANeu:Fish,of:perch 2
-          TheATurn:2,synapse:clock,pulses,code_dige:bf8156c1dd2b8a94
+          TheATurn:2,synapse:clock,pulses,code_dige:bf8156c1dd2b8a94,round=3
             TheAAte,from:Clock_A/Athe_Clock/Turn2
-          TheATurn:3,synapse:clock,pulses,code_dige:bf8156c1dd2b8a94
+          TheATurn:3,synapse:clock,pulses,code_dige:bf8156c1dd2b8a94,round=3
             TheAAte,from:Clock_A/Athe_Clock/Turn3
-          TheATurn:4,synapse:clock,pulses,code_dige:bf8156c1dd2b8a94
+          TheATurn:4,synapse:clock,pulses,code_dige:bf8156c1dd2b8a94,round=3
             TheAAte,from:Clock_A/Athe_Clock/Turn4
-          TheATurn:5,synapse:clock,pulses,code_dige:bf8156c1dd2b8a94
+          TheATurn:5,synapse:clock,pulses,code_dige:bf8156c1dd2b8a94,round=3
             TheAAte,from:Clock_A/Athe_Clock/Turn5
         Turns,count=8
         TheASunpit:turn
@@ -98,24 +95,21 @@ Snap:H
         TheASynapse:clock,from:Clock_A,wake:turn,sum:latest
           TheAWoke,count=5,pulses=8
         TheAWas,keep=9,made=5
-          TheATurn:1,synapse:clock,pulses=4,code_dige:bf8156c1dd2b8a94
-            TheAAte,from:Clock_A/Athe_Clock/Turn1
-            TheAAte,from:Clock_A/Athe_Clock/Turn1
-            TheAAte,from:Clock_A/Athe_Clock/Turn1
-            TheAAte,from:Clock_A/Athe_Clock/Turn1
+          TheATurn:1,synapse:clock,pulses=4,code_dige:bf8156c1dd2b8a94,round=3
+            TheAAte,from:Clock_A/Athe_Clock/Turn1,n=4
             TheANeu:Egg,of:minnow 1
             TheANeu:Egg,of:perch 2
-          TheATurn:2,synapse:clock,pulses,code_dige:bf8156c1dd2b8a94
+          TheATurn:2,synapse:clock,pulses,code_dige:bf8156c1dd2b8a94,round=3
             TheAAte,from:Clock_A/Athe_Clock/Turn2
-          TheATurn:3,synapse:clock,pulses,code_dige:bf8156c1dd2b8a94
+          TheATurn:3,synapse:clock,pulses,code_dige:bf8156c1dd2b8a94,round=3
             TheAAte,from:Clock_A/Athe_Clock/Turn3
-          TheATurn:4,synapse:clock,pulses,code_dige:bf8156c1dd2b8a94
+          TheATurn:4,synapse:clock,pulses,code_dige:bf8156c1dd2b8a94,round=3
             TheAAte,from:Clock_A/Athe_Clock/Turn4
             TheANeu:Fish,of:minnow 1
             TheANeu:Fish,of:perch 2
             TheAGoner:Egg,of:minnow 1
             TheAGoner:Egg,of:perch 2
-          TheATurn:5,synapse:clock,pulses,code_dige:bf8156c1dd2b8a94
+          TheATurn:5,synapse:clock,pulses,code_dige:bf8156c1dd2b8a94,round=3
             TheAAte,from:Clock_A/Athe_Clock/Turn5
         Turns,count=5
         TheASunpit:turn

@@ -929,7 +929,9 @@ AthePondTurnReaders_witness(w):
 //    fan-out of two.  Every compartment keeps Turns; Host and the clock keep only two.
 //  Step 2 the outside says 2300 ms — four beats — and runs from Host: the chain is followed forward from the Heard and back from
 //   K_Q.  Step 3 the outside says 500 ms four times, a run each, so Host's and the clock's first Turns trim — and the tanks'
-//    first Turns still say where they came from
+//    first Turns still say where they came from.  Step 4 turns timing on (%TheATiming) and says 2300 ms again: every run, round,
+//     Turn and Ate group says when (relative to the run's start) and for how long, as a %TheATime child the toc's Entcase drops
+//      from the snap — the numbers differ every run — and the routine swears the nesting from the exact .c times
 AthePondTendril(A,w):
     w oai %req:wrangle,eternal
         await &AthePondTendril_drive,w,req
@@ -937,12 +939,13 @@ AthePondTendril(A,w):
 
 async AthePondTendril_drive(w, req):
     let run = this.c.run
-    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 3
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
     let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) this.AthePondTendril_stand(w)
         if (n === 3) this.AthePondTendril_trim(w)
+        if (n === 4) this.AthePondTendril_time(w)
     }
     this.AthePondTendril_witness(w)
 
@@ -985,6 +988,39 @@ AthePondTendril_trim(w):
     }
     w.oai({ Chain: 'back' }, { path: this.AthePondTendril_back('K_Q/Athe_Tank/Turn1') })
 
+AthePondTendril_time(w):
+    w.i({ desc: 'timing on — the outside says 2300 ms — every run round Turn and Ate says when and how long' })
+    this.oai({ TheATiming: 1 })
+    this.TheA_io('Host', 'outside', { ms: 2300 })
+    let run = this.TheA_run(w, null, ['Host'])
+    // the nesting, from the exact times on .c: each Turn this run inside the round it says it moved in, each round inside the
+    //  run, each Ate group sent inside the Turn that sent it (when that Turn is still kept)
+    let rounds = run.o({ TheARound: 1 })
+    let inside = (a, b) => a.c.t0 >= b.c.t0 && a.c.t1 <= b.c.t1
+    let bad = []
+    let turns = 0
+    let ates = 0
+    for (const r of rounds) {
+        if (!inside(r, run)) bad.push('round ' + r.sc.TheARound)
+    }
+    for (const name of ['Host', 'Clock_A', 'K_P', 'K_Q']) {
+        let tw = this.o({ A: name })[0]?.o({ w: 1 })[0]
+        let last = tw?.o({ TheAWas: 1 })[0]?.o({ TheATurn: 1 }).filter(t => t.c.t0 >= run.c.t0) || []
+        for (const turn of last) {
+            turns++
+            let r = rounds.find(r => String(r.sc.TheARound) === String(turn.sc.round))
+            if (!r || !inside(turn, r)) bad.push(name + ' Turn' + turn.sc.TheATurn)
+            for (const ate of turn.o({ TheAAte: 1 })) {
+                let sender = ate.sc.from ? this.TheA_at(ate.sc.from) : null
+                if (!sender?.sc.TheATurn) continue
+                ates++
+                if (!(ate.c.first >= sender.c.t0 && ate.c.last <= sender.c.t1)) bad.push(name + ' Ate from ' + ate.sc.from)
+            }
+        }
+    }
+    let said = [run, ...rounds].every(C => C.o({ TheATime: 1 }).length === 1)
+    w.oai({ Nesting: 'time' }, { rounds: rounds.length, turns, ates, ...(bad.length ? { bad: bad.join(' · ') } : {}), ...(said ? { said: 1 } : {}) })
+
 // forward from an address: each step every Turn it led to, a step per line segment
 AthePondTendril_forward(addr):
     let steps = [addr]
@@ -1026,14 +1062,19 @@ AthePondTendril_witness(w):
     let kq = turn('K_Q/Athe_Tank/Turn1')
     let kq_turns = this.Athe_Tank_of('K_Q')?.o({ Turns: 1 })[0]?.sc.count
     let kp_turns = this.Athe_Tank_of('K_P')?.o({ Turns: 1 })[0]?.sc.count
-    if (n === 2 && kq?.sc.pulses === 4 && this.TheA_came_from(kq).length === 4 && kq_turns === 1 && kp_turns === 4) {
-        this.story_swear(w, 'a sum:latest Turn names every pulse it ate — four Ates though the tank turned once')
+    let kq_ate = this.TheA_ate(kq)
+    if (n === 2 && kq?.sc.pulses === 4 && kq_ate.length === 1 && kq_ate[0].n === 4 && kq_turns === 1 && kp_turns === 4) {
+        this.story_swear(w, 'a sum:latest Turn counts every pulse it ate — one Ate from the clock with n:4 though the tank turned once')
     }
     if (n === 2 && this.TheA_led_to('Clock_A/Athe_Clock/Turn1').length === 2) {
         this.story_swear(w, 'one Turn of the clock led to two Turns — one in each tank it ticks')
     }
     if (n === 3 && kq && !turn('Clock_A/Athe_Clock/Turn1') && this.TheA_came_from(kq)[0] === 'Clock_A/Athe_Clock/Turn1' && back === 'K_Q/Athe_Tank/Turn1 ← Clock_A/Athe_Clock/Turn1 ← (gone)') {
         this.story_swear(w, 'a trimmed Turn leaves the from: that named it as text — following it says gone rather than breaking')
+    }
+    let nest = w.o({ Nesting: 'time' })[0]
+    if (n === 4 && nest && !nest.sc.bad && nest.sc.said && nest.sc.rounds === 3 && nest.sc.turns === 4 && nest.sc.ates === 3) {
+        this.story_swear(w, 'with timing on every Turn sits inside the round it moved in and every round inside its run — and each Ate was sent inside the Turn that sent it')
     }
 //#endregion
 //#region A** helpers — a second version of the toy, and turning a tank as its own A

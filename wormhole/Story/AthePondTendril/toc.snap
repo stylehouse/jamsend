@@ -3,18 +3,38 @@ story:AthePondTendril
   Plan
   Opt
     For
+  EntropyArrest
+    Entcase:Timing
+      lematch,TheATime
+        means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.019
+    TimeTotal:beliefs,avg=0.025
       sample=0.02,at=1793152778
       sample=0.018,at=1793152795
+      sample=0.024,at=1793155973
+      sample=0.024,at=1793156005
+      sample=0.024,at=1793156006
+      sample=0.024,at=1793156006
+      sample=0.024,at=1793156007
+      sample=0.044,at=1793156011
+      sample=0.022,at=1793156017
     TimeTotal:step,avg=0.007
       sample=0.007,at=1793152778
       sample=0.006,at=1793152795
+      sample=0.006,at=1793155973
+      sample=0.006,at=1793156005
+      sample=0.006,at=1793156006
+      sample=0.006,at=1793156006
+      sample=0.006,at=1793156007
+      sample=0.011,at=1793156011
+      sample=0.006,at=1793156017
   step,dige:f0e1a5380adb7704
-  step=2,desc:stand Host beating Clock_A which ticks K_P by count and K_Q by latest — tendrils on — the outside says 2300 ms,dige:41babebeb938237d
+  step=2,desc:stand Host beating Clock_A which ticks K_P by count and K_Q by latest — tendrils on — the outside says 2300 ms,dige:9fb88f6e82670297
     Assertion:a-pulse-from-outside,sentence:a pulse from outside is followed forward from its Heard — through the host and the clock — to a Turn in each tank
     Assertion:back-from-a-tank,sentence:back from a tank the tendrils reach the Heard that started it — what the outside said
-    Assertion:a-sum-latest-turn,sentence:a sum:latest Turn names every pulse it ate — four Ates though the tank turned once
+    Assertion:a-sum-latest-turn,sentence:a sum:latest Turn counts every pulse it ate — one Ate from the clock with n:4 though the tank turned once
     Assertion:one-turn-of-the,sentence:one Turn of the clock led to two Turns — one in each tank it ticks
-  step=3,desc:the outside says 500 ms four times — a run each — Host and the clock keep only two Turns,dige:c849cbde4f7f3fd1
+  step=3,desc:the outside says 500 ms four times — a run each — Host and the clock keep only two Turns,dige:04a0dd918eff3c86
     Assertion:a-trimmed-turn-leaves,sentence:a trimmed Turn leaves the from: that named it as text — following it says gone rather than breaking
+  step=4,dige:0b21e1b36d8f9d4b,desc:timing on — the outside says 2300 ms — every run round Turn and Ate says when and how long
+    Assertion:with-timing-on-every,sentence:with timing on every Turn sits inside the round it moved in and every round inside its run — and each Ate was sent inside the Turn that sent it

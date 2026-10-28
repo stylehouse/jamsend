@@ -651,6 +651,13 @@ Each test is a sentence a person would say, and each can be sabotaged once to pr
  Book `AthePondTendril` (AtheTesting.g) swears forward, back, the latest-Turn's four Ates, the clock's fan-out of two, and a
   trimmed Turn's dangling `from:` — recorded by a Sonnet agent on a runner.
 
+**Grouped and timed (same day).**  An Ate is one row per sender, `%TheAAte,from:,n:` (`TheA_ate(turn)` → `[{from,n}]`;
+ `TheA_came_from` → each sender once).  Turns say the `round:` they moved in.  Exact times always ride `.c` — run, round and Turn
+  `t0|t1`, each pulse's `sent_at` (the boundary carries it), an Ate group's `first|last` — and with `%TheATiming` on the House
+   they land in the snap as `%TheATime` children, relative to the run's start, never wall clock.  Books drop that layer with
+    one Entcase until Story quantises it (Story_future §15, which also holds the crawl and the "Waterworks" test idea).
+     AthePondTendril step 4 swears the nesting from the `.c` times.
+
 **The design, as first written:**
 
 The owner: *"event after event can be traced back or forward … it's a major Housing concern, getting consistent eventing."*

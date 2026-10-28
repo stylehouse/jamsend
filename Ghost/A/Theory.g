@@ -352,7 +352,8 @@ TheA_move(w, wake):
         // TENDRILS (a House holding %TheATendrils): what each pulse came from, ALL of them — sum:latest runs one but ate N — and
         //  the address this move sends from, the Turn it is about to commit (or the bare compartment, keeping no Turns)
         let tendrils = this.TheA_tendrils()
-        let ate = tendrils ? pulses.map(pulse => pulse.sc.from || '') : null
+        let ate = tendrils ? this.TheA_ate_groups(pulses) : null
+        let t0 = performance.now()
         if (tendrils) w.c.sending_from = this.TheA_addr(w) + (was ? '/Turn' + ((was.sc.made || 0) + 1) : '')
         for (const pulse of pulses) synapse.drop(pulse)
         for (const pulse of runs) {
@@ -363,6 +364,7 @@ TheA_move(w, wake):
             }
         }
         delete w.c.sending_from
+        let t1 = performance.now()
         for (const pulse of pulses) {
             if (pulse.sc.wait) for (const held of w.o({ TheAWait: pulse.sc.wait })) w.drop(held)
         }
@@ -370,7 +372,7 @@ TheA_move(w, wake):
         if (io) w.oai({ TheAIO: io.sc.TheAIO }, { takes: (io.sc.takes || 0) + 1 })
         let woke = synapse.o({ TheAWoke: 1 })[0]
         synapse.oai({ TheAWoke: 1 }, { count: (woke?.sc.count || 0) + runs.length, pulses: (woke?.sc.pulses || 0) + pulses.length })
-        if (was) this.TheA_turn_commit(w, was, synapse, pulses.length, before, sent_before, ate)
+        if (was) this.TheA_turn_commit(w, was, synapse, pulses.length, before, sent_before, ate, { t0, t1 })
     }
 
 // TheA_send — a compartment sends on one of its synapses: into its own outbox, carrying whatever it says (a fish's name and age).
@@ -378,7 +380,8 @@ TheA_move(w, wake):
 //   boundary copies to every landing, after whatever the sender said, so a pulse can't pass on the from: it was woken by
 TheA_send(w, synapse, sc):
     let from = w.c.sending_from
-    w.oai({ TheAOutbox: 1 }).i({ TheAPulse: 1, synapse, ...sc, ...(from ? { from } : {}) })
+    let pulse = w.oai({ TheAOutbox: 1 }).i({ TheAPulse: 1, synapse, ...sc, ...(from ? { from } : {}) })
+    pulse.c.sent_at = performance.now()
 
 // TENDRILS — consistent eventing (Atheory_todo "Tendrils").  The unit of event is the Turn; a tendril is a pulse's from: (the Turn
 //  that sent it, or the Heard that brought it in from outside) and a Turn's %TheAAte,from: per pulse it ate.  Back is following
@@ -414,9 +417,56 @@ TheA_at(addr):
     }
     return null
 
-// TheA_came_from — back along a tendril: the addresses a Turn ate from (an untraced pulse, poked by hand, says '')
+// TheA_came_from — back along a tendril: the addresses a Turn ate from, each sender once (an untraced pulse, poked by hand, says '')
 TheA_came_from(turn):
     return turn ? turn.o({ TheAAte: 1 }).map(ate => ate.sc.from || '') : []
+
+// TheA_ate — what a Turn ate, by sender: [{ from, n }]
+TheA_ate(turn):
+    return turn ? turn.o({ TheAAte: 1 }).map(ate => ({ from: ate.sc.from || '', n: ate.sc.n || 1 })) : []
+
+// TheA_ate_groups — a move's pulses grouped by the from: they carry, in order of first arrival, each with how many and when the
+//  first and last of them were sent (.c, performance.now) — one %TheAAte,from:,n: per group, so a hundred pulses from one Turn
+//   are one row that says 100
+TheA_ate_groups(pulses):
+    let groups = []
+    for (const pulse of pulses) {
+        let from = pulse.sc.from || ''
+        let g = groups.find(g => g.from === from)
+        if (!g) {
+            g = { from, n: 0, first: null, last: null }
+            groups.push(g)
+        }
+        g.n++
+        let at = pulse.c.sent_at
+        if (at != null) {
+            if (g.first == null || at < g.first) g.first = at
+            if (g.last == null || at > g.last) g.last = at
+        }
+    }
+    return groups
+
+// TIMING into the snap — only in a House holding %TheATiming (and tracing).  A %TheATime child says when, RELATIVE to the run's
+//  start (never wall clock) and for how long, in ms to 0.01: on a run (ms), a round and a Turn (at, ms), an Ate group (sent, and
+//   last when its pulses were sent at different moments).  A child of its own so a Book drops the whole layer with one Entcase
+//    (lematch,TheATime / means,drop) — the numbers differ every run; Story quantising them is Story_future's.  Without a run
+//     (a move called by hand) there is no start to be relative to, so only the durations are said
+TheA_timing():
+    return this.TheA_tendrils() && this.o({ TheATiming: 1 }).length > 0
+
+TheA_time(C, t0, t1, at_key):
+    if (!this.TheA_timing() || t0 == null) return
+    let r = (x) => Math.round(x * 100) / 100
+    let base = this.c.run_t0
+    let sc = { TheATime: 1 }
+    let key = at_key || 'at'
+    if (base != null) sc[key] = r(t0 - base)
+    if (at_key) {
+        if (base != null && t1 != null && t1 !== t0) sc.last = r(t1 - base)
+    } else if (t1 != null) {
+        sc.ms = r(t1 - t0)
+    }
+    if (Object.keys(sc).length > 1) C.i(sc)
 
 // TheA_led_to — forward along the tendrils: every kept Turn that ate a pulse sent from addr, as addresses, by compartment name
 TheA_led_to(addr):
@@ -457,7 +507,7 @@ TheA_boundary(names, ready):
                     for (const synapse of v.o({ TheASynapse: name })) {
                         let hears = synapse.sc.from ? synapse.sc.from === A.sc.A : v === w
                         if (!hears) continue
-                        synapse.i({ TheAPulse: 1, ...rest })
+                        synapse.i({ TheAPulse: 1, ...rest }).c.sent_at = pulse.c.sent_at
                         landed++
                         if (ready) ready.add(B.sc.A)
                     }
@@ -489,10 +539,15 @@ TheA_run(at, wake, ready, most):
         todo.add(A.sc.A)
     }
     let n = 0
+    // TIMING (Theory.g TENDRILS): every run and round keeps when it began and ended on .c, never snapped; a move reads the run's
+    //  start (to say its Turn's offset) and its round (to say which round it moved in)
+    run.c.t0 = this.c.run_t0 = performance.now()
     while (todo.size && n < (most || 50)) {
         n++
         let names = [...todo].sort()
         todo = new Set()
+        let t_round = performance.now()
+        this.c.run_round = n
         for (const name of names) {
             let A = this.TheA_all(this).find(A => A.sc.A === name)
             for (const w of A ? A.o({ w: 1 }) : []) this.TheA_move(w, wake || w.sc.w + '_woken')
@@ -500,7 +555,14 @@ TheA_run(at, wake, ready, most):
         let landed = this.TheA_boundary(names, todo)
         let round = run.i({ TheARound: String(n), ...(landed ? { landed } : {}) })
         for (const name of names) round.i({ TheAWent: name })
+        round.c.t0 = t_round
+        round.c.t1 = performance.now()
+        this.TheA_time(round, round.c.t0, round.c.t1)
     }
+    run.c.t1 = performance.now()
+    this.TheA_time(run, run.c.t0, run.c.t1)
+    delete this.c.run_round
+    delete this.c.run_t0
     let waits = this.TheA_waits()
     at.oai({ TheARun: 1 }, { rounds: n, ...(todo.size ? { cut: 1 } : { quiet: 1 }), ...(waits ? { waiting: waits } : {}) })
     return run
@@ -528,7 +590,7 @@ TheA_io(name, io, sc):
     let n = (w.o({ TheAIO: io })[0].sc.heard || 0) + 1
     let tape = w.oai({ TheAIO: io }, { heard: n })
     let heard = tape.i({ TheAHeard: String(n), take: (tape.sc.takes || 0) + 1, ...sc })
-    synapse.i({ TheAPulse: 1, ...sc, ...(this.TheA_tendrils() ? { from: this.TheA_addr(w) + '/Heard' + n } : {}) })
+    synapse.i({ TheAPulse: 1, ...sc, ...(this.TheA_tendrils() ? { from: this.TheA_addr(w) + '/Heard' + n } : {}) }).c.sent_at = performance.now()
     let all = tape.o({ TheAHeard: 1 })
     while (tape.sc.keep && all.length > tape.sc.keep) tape.drop(all.shift())
     return heard
@@ -613,14 +675,25 @@ TheA_rows(w, rows):
 // TheA_turn_commit — one %TheATurn: which synapse woke the compartment, how many pulses it ate, the code it ran under (its A's
 //  %TheACode digest), and what changed ACROSS the move — %TheANeu (a row that wasn't there before), %TheAGoner (one that's
 //   gone), %TheASent (a pulse it sent).  A Turn is not a counter: three clock pulses are three pond turns and one Turn
-TheA_turn_commit(w, was, synapse, pulses, before_all, sent_before, ate):
+TheA_turn_commit(w, was, synapse, pulses, before_all, sent_before, ate, when):
     let before = this.TheA_rows(w, before_all)
     let after = this.TheA_rows(w, w.o())
     let made = (was.sc.made || 0) + 1
     w.oai({ TheAWas: 1 }, { made })
     let code = this.TheA_A(w)?.o({ TheACode: 1 })[0]?.sc.dige
-    let turn = was.i({ TheATurn: String(made), synapse: synapse.sc.TheASynapse, pulses, ...(code ? { code_dige: code } : {}) })
-    for (const from of ate || []) turn.i(from ? { TheAAte: 1, from } : { TheAAte: 1 })
+    let round = ate && this.c.run_round
+    let turn = was.i({ TheATurn: String(made), synapse: synapse.sc.TheASynapse, pulses, ...(code ? { code_dige: code } : {}), ...(round ? { round } : {}) })
+    if (when) {
+        turn.c.t0 = when.t0
+        turn.c.t1 = when.t1
+        if (ate) this.TheA_time(turn, when.t0, when.t1)
+    }
+    for (const g of ate || []) {
+        let row = turn.i({ TheAAte: 1, ...(g.from ? { from: g.from } : {}), ...(g.n > 1 ? { n: g.n } : {}) })
+        row.c.first = g.first
+        row.c.last = g.last
+        if (g.first != null) this.TheA_time(row, g.first, g.last, 'sent')
+    }
     let label = (row) => Object.keys(row.sc)[0]
     for (const row of after) {
         if (!before.includes(row)) turn.i({ TheANeu: label(row), of: row.sc[label(row)] })
