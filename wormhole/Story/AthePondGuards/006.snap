@@ -1,0 +1,35 @@
+Snap:H
+  H:AthePondGuards,Run
+    A:AthePondGuards
+      w:AthePondGuards
+        req:wrangle,eternal,ok
+        Saw:throw,clear:yes
+        TheAFault:nested_run,n
+        TheARun,rounds,quiet
+          TheARound:1
+            TheAWent:G_Hole
+    A:G_Async
+      TheACode:Athe_Guard,variant:plain,dige:e3b0c44298fc1c14
+      w:Athe_Guard
+        TheASynapse:poke
+          TheAWoke,count,pulses
+        TheAFault:async_wake,wake:guard_async,n
+    A:G_Throw
+      TheACode:Athe_Guard,variant:plain,dige:e3b0c44298fc1c14
+      w:Athe_Guard
+        TheASynapse:poke
+          TheAWoke,count=2,pulses=2
+        TheAFault:threw,wake:guard_throw,n,err:the guard throws on purpose
+        Said:after
+    A:G_Nest
+      TheACode:Athe_Guard,variant:plain,dige:e3b0c44298fc1c14
+      w:Athe_Guard
+        TheASynapse:poke
+          TheAWoke,count,pulses
+        Said:refused
+    A:G_Hole
+      TheACode:Athe_Guard,variant:plain,dige:e3b0c44298fc1c14
+      w:Athe_Guard
+        TheASynapse:poke
+          TheAWoke,count,pulses
+        TheASpilled:nowhere,n

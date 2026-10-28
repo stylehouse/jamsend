@@ -1,23 +1,23 @@
 Snap:H
   H:HohoTiles,Run
     A:Lies
-      self,round=14	{"mung":["age"]}
+      self,round=17	{"mung":["age"]}
       w:Lies
         Opt
           nowriting:^Ghost
           dontSnapGhostList
           wantPantheate
-        self,round=14	{"mung":["age"]}
+        self,round=17	{"mung":["age"]}
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/HohoTiles/Waftily/toc.snap,waft_path:Story/HohoTiles/Waftily
-            known,dige:1f545ca0106605b0,kind:read	{"mung":["at"]}
+            known,dige:f67a5e420c0c508b,kind:read	{"mung":["at"]}
           Good,type:text/Doc,path:Ghost/test/Story/Hoho/HohoTiles.g
-            known,dige:0177ce9ea65ef69a,kind:read	{"mung":["at"]}
+            known,dige:1ce1b9cf22922dc5,kind:read	{"mung":["at"]}
         examining	{"loopy":1}
           req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
           Spotlight	{"ref":{"src":"%What:labelofaWhat"}}
         req:Cortex,eternal,maz=5,ok
-          req:Codebit,path:Ghost/test/Story/Hoho/HohoTiles.g,maz=2,gen_path:gen/test/Story/Hoho/HohoTiles.go,source_dige:0177ce9ea65ef69a,dige:b8d859d21f2fa6d2,ghost_dige:0177ce9ea65ef69a~g1,permanent,write_finished,finished
+          req:Codebit,path:Ghost/test/Story/Hoho/HohoTiles.g,maz=2,gen_path:gen/test/Story/Hoho/HohoTiles.go,source_dige:1ce1b9cf22922dc5,dige:6c51f3a1c8290e9f,ghost_dige:1ce1b9cf22922dc5~g1,permanent,write_finished,finished
         Waft:Story/HohoTiles/Waftily,active
           What:labelofaWhat
             Doc:Ghost/test/Story/Hoho/HohoTiles.g
@@ -34,16 +34,17 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1783449898302,kind:cold,resolved
+          want=1793186904876,kind:cold,resolved
         o_elvis:dock_askies
         req:Langoer,eternal,focus:Story/HohoTiles/Waftily,ok	{"ref":{"w":"%w:Lies"}}
+        see:lies,docs:1,wafts:1
         see:🗂 1 doc · 1 Waft
     A:Lang
-      self,round=15	{"mung":["age"]}
+      self,round=17	{"mung":["age"]}
       w:Lang
         Opt
           txtsyntaxdump
-        self,round=15	{"mung":["age"]}
+        self,round=17	{"mung":["age"]}
         model,cyto_dir
           Line=5,line_from=74,line_to=98,str:    let la = i hut/$toot,the_bm_bm_98_132
             Name,from=78,to=81,str:let
@@ -104,10 +105,10 @@ Snap:H
               req:text_loaded,maz=3,finished
               req:text_mutated,maz=2,eternal
               req:compile,maz=2,finished
-            Text,dige:0177ce9ea65ef69a,disk_dige:0177ce9ea65ef69a,disk_rev
+            Text,dige:1ce1b9cf22922dc5,disk_dige:1ce1b9cf22922dc5,disk_rev
             Compile
               Map
-                def,method:theCompiledStuff,line=2,rel_from=17,rel_to=34
+                def,method:theCompiledStuff,line=2,kind:w,rel_from=17,rel_to=34
                 call,method:nothinging,line=34,via:theCompiledStuff,rel_from=1148,rel_to=1159
                 call,method:nothinging,line=35,via:theCompiledStuff,rel_from=1172,rel_to=1183
                 {"controlflow":1,"keyword":"if","title":"(&nothinging,A,w,{figuira:'out', all_these:3}) 3+2+4","line":36,"via":"theCompiledStuff","rel_from":1221,"rel_to":1224}
@@ -118,16 +119,16 @@ Snap:H
                 controlflow,keyword:elsif,title:1 && 0,line=63,via:theCompiledStuff,rel_from=2167,rel_to=2173
                 controlflow,keyword:elsif,title:50 > 5,line=66,via:theCompiledStuff,rel_from=2219,rel_to=2225
                 call,method:severally,line=70,via:theCompiledStuff,rel_from=2284,rel_to=2294
-                def,method:nothinging,line=72,rel_from=2306,rel_to=2317
-                def,method:severally,line=74,rel_from=2344,rel_to=2354
+                def,method:nothinging,line=72,kind:helper,rel_from=2306,rel_to=2317
+                def,method:severally,line=74,kind:helper,rel_from=2344,rel_to=2354
                 call,method:laterally,line=80,via:severally,rel_from=2496,rel_to=2508
-                def,method:laterally,line=82,rel_from=2520,rel_to=2530
-                def,method:moreTiles,line=85,rel_from=2587,rel_to=2597
-                def,method:replaceTiles,line=111,async,rel_from=4164,rel_to=4177
-                def,method:reqTiles,line=157,rel_from=6031,rel_to=6040
-                def,method:looseScTiles,line=211,rel_from=8711,rel_to=8724
+                def,method:laterally,line=82,kind:helper,rel_from=2520,rel_to=2530
+                def,method:moreTiles,line=85,kind:w,rel_from=2587,rel_to=2597
+                def,method:replaceTiles,line=111,async,kind:w,rel_from=4164,rel_to=4177
+                def,method:reqTiles,line=157,kind:w,rel_from=6031,rel_to=6040
+                def,method:looseScTiles,line=211,kind:w,rel_from=8711,rel_to=8724
                 controlflow,keyword:if,title:req%demand,line=228,via:looseScTiles,rel_from=9520,rel_to=9523
-                def,method:ampTiles,line=237,async,rel_from=9871,rel_to=9880
+                def,method:ampTiles,line=237,async,kind:w,rel_from=9871,rel_to=9880
                 call,method:do,line=240,via:ampTiles,rel_from=10056,rel_to=10059
                 call,method:bump,line=241,via:ampTiles,rel_from=10067,rel_to=10072
                 call,method:emit,line=243,via:ampTiles,rel_from=10153,rel_to=10158
@@ -136,28 +137,61 @@ Snap:H
                 {"controlflow":1,"keyword":"if","title":"(a > b) H.laterally(A,w,1)","line":258,"via":"ampTiles","rel_from":10976,"rel_to":10979}
                 controlflow,keyword:if,title:a > b,line=262,via:ampTiles,rel_from=11171,rel_to=11174
                 controlflow,keyword:if,title:(a > b) i %reached:also,line=264,via:ampTiles,rel_from=11208,rel_to=11211
-                def,method:obtainTiles,line=267,rel_from=11299,rel_to=11311
+                def,method:obtainTiles,line=267,kind:w,rel_from=11299,rel_to=11311
                 controlflow,keyword:if,title:(s && !(oa %taken)) i %seat:free,line=276,via:obtainTiles,rel_from=11732,rel_to=11735
-                def,method:captureOutTiles,line=280,rel_from=11930,rel_to=11946
+                def,method:captureOutTiles,line=280,kind:w,rel_from=11930,rel_to=11946
                 def,magic,method:IMPORT,line=291,rel_from=12461,rel_to=12468
-                def,magic,method:RENDER,line=295,rel_from=12597,rel_to=12604
-              time,compile=0.099,all=0.794,write=0
-              Output,gen_path:gen/test/Story/Hoho/HohoTiles.go,dige:b8d859d21f2fa6d2,source_dige:0177ce9ea65ef69a,ghost_dige:0177ce9ea65ef69a~g1
+                def,magic,method:RENDER,line=295,rel_from=12593,rel_to=12600
+                mint,sugar,mainkey:prefixy,line=11,via:theCompiledStuff,rel_from=242,rel_to=252
+                mint,sugar,mainkey:prefixy,line=12,via:theCompiledStuff,rel_from=275,rel_to=285
+                mint,sugar,mainkey:prefixy,line=13,via:theCompiledStuff,rel_from=315,rel_to=325
+                mint,sugar,mainkey:prefixy,line=31,via:theCompiledStuff,rel_from=1089,rel_to=1099
+                mint,sugar,mainkey:seat,line=138,via:replaceTiles,rel_from=5196,rel_to=5205
+                mint,sugar,mainkey:aim,line=140,via:replaceTiles,rel_from=5270,rel_to=5279
+                mint,sugar,mainkey:mo,line=142,via:replaceTiles,rel_from=5366,rel_to=5373
+                mint,sugar,mainkey:path,line=150,via:replaceTiles,rel_from=5677,rel_to=5684
+                mint,sugar,mainkey:oaim,line=151,via:replaceTiles,rel_from=5695,rel_to=5702
+                mint,sugar,mainkey:req,line=162,via:reqTiles,rel_from=6338,rel_to=6346
+                mint,sugar,mainkey:req,line=166,via:reqTiles,rel_from=6589,rel_to=6597
+                mint,sugar,mainkey:req,line=170,via:reqTiles,rel_from=6749,rel_to=6757
+                mint,sugar,mainkey:req,line=174,via:reqTiles,rel_from=6992,rel_to=7000
+                mint,sugar,mainkey:req,line=179,via:reqTiles,rel_from=7197,rel_to=7205
+                mint,sugar,mainkey:req,line=190,via:reqTiles,rel_from=7838,rel_to=7846
+                mint,sugar,mainkey:started,line=191,via:reqTiles,rel_from=7882,rel_to=7892
+                mint,sugar,mainkey:req,line=196,via:reqTiles,rel_from=8072,rel_to=8080
+                mint,sugar,mainkey:roster,line=197,via:reqTiles,rel_from=8109,rel_to=8118
+                mint,sugar,mainkey:seen,line=198,via:reqTiles,rel_from=8131,rel_to=8138
+                mint,sugar,mainkey:req,line=203,via:reqTiles,rel_from=8397,rel_to=8405
+                mint,sugar,mainkey:wanting,line=204,via:reqTiles,rel_from=8421,rel_to=8431
+                mint,sugar,mainkey:req,line=205,via:reqTiles,rel_from=8444,rel_to=8452
+                mint,sugar,mainkey:got,line=206,via:reqTiles,rel_from=8483,rel_to=8489
+                mint,sugar,mainkey:transport,line=214,via:looseScTiles,rel_from=8891,rel_to=8903
+                mint,sugar,mainkey:slug,line=217,via:looseScTiles,rel_from=9080,rel_to=9087
+                mint,sugar,mainkey:label,line=220,via:looseScTiles,rel_from=9200,rel_to=9208
+                mint,sugar,mainkey:go,line=229,via:looseScTiles,rel_from=9542,rel_to=9547
+                call,method:laterally,line=258,via:ampTiles,rel_from=10987,rel_to=10999
+                mint,sugar,mainkey:reached,line=263,via:ampTiles,rel_from=11188,rel_to=11198
+                mint,sugar,mainkey:reached,line=264,via:ampTiles,rel_from=11219,rel_to=11229
+                probe,mainkey:seat,line=271,via:obtainTiles,rel_from=11523,rel_to=11531
+                probe,mainkey:taken,line=276,via:obtainTiles,rel_from=11743,rel_to=11752
+                mint,sugar,mainkey:seat,line=276,via:obtainTiles,rel_from=11755,rel_to=11762
+              time,compile=0.092,all=1.094,write=0
+              Output,gen_path:gen/test/Story/Hoho/HohoTiles.go,dige:6c51f3a1c8290e9f,source_dige:1ce1b9cf22922dc5,ghost_dige:1ce1b9cf22922dc5~g1
                source: |
                  <script lang="ts">
                      // GENERATED by Lang compile — do not edit by hand.
-                     import { TheC } from "$lib/data/Stuff.svelte"
+                     import { TheC } from "$lib/Stuff.svelte"
                      import { onMount } from "svelte"
                  
                  import Peeroleum from "$lib/gen/N/Peeroleum.go"
-                 import { browserTrustedPubs, prepubOf } from "$lib/p2p/cluster_trust"
+                 import { browserTrustedPubs, prepubOf } from "$lib/cluster_trust"
                  
                      let { H } = $props()
                  
                      onMount(async () => {
                      await H.eatfunc({
                  
-                     Ghostmeta_Ghost_test_Story_Hoho_HohoTiles(): string { return '0177ce9ea65ef69a~g1' },
+                     Ghostmeta_Ghost_test_Story_Hoho_HohoTiles(): string { return '1ce1b9cf22922dc5~g1' },
                  
                  // yeti etc!!!!!
                  theCompiledStuff(A,w) {
@@ -513,7 +547,8 @@ Snap:H
               Mapule,kind:cf,key:if,depth=0,line=276,from=11732,to=11735
               Mapule,kind:def,key:captureOutTiles,depth=0,line=280,from=11930,to=11946
               Mapule,kind:def,key:IMPORT,depth=0,line=291,from=12461,to=12468
-              Mapule,kind:def,key:RENDER,depth=0,line=295,from=12597,to=12604
+              Mapule,kind:def,key:RENDER,depth=0,line=295,from=12593,to=12600
+              Mapule,kind:call,key:laterally,depth=0,line=258,from=10987,to=10999
             {"bookmark":"bm_98_132","from":98,"to":132,"label":" o hut/although:1,th"}
         scheme:req
           lematch	{"ref":{"sc_has":"Object()"}}
@@ -521,18 +556,18 @@ Snap:H
         Languinio	{"loopy":2}
           Interest:Trail,waft:Story/HohoTiles/Waftily,face:NaviCado,presence:active,state:locked,in_Doc:Ghost/test/Story/Hoho/HohoTiles.g	{"ref":{"src":"%What:labelofaWhat"}}
             cursor,what:Story/HohoTiles/Waftily,doc:Story/HohoTiles/Waftily/doc0,depth=0
-            MapReport,n_def=13,n_call=9,n_region=0,n_cf=12
+            MapReport,n_def=13,n_call=10,n_region=0,n_cf=12
           ActiveInterest,kind:Trail,waft:Story/HohoTiles/Waftily
           dock,active	{"loopy":0,"hid":1}
           Change
-            backend,dige:0177c
-            storage,dige:0177c
-            compile,dige:0177c,secs=0.099,dim,pending
+            backend,dige:1ce1b
+            storage,dige:1ce1b
+            compile,dige:1ce1b,secs=0.092,dim,pending
         req:workon,auto_push	{"ref":{"w":"%w:Lang"}}
           req:understanding,maz=3,permanent,sig:1:13:0:0,what:labelofaWhat,finished
           req:ingredients,maz=2,permanent,sig:Ghost/test/Story/Hoho/HohoTiles.g,finished
             req:furnishing,path:Ghost/test/Story/Hoho/HohoTiles.g,permanent,asked,finished
-          req:instrumentation,permanent,sig:Ghost/test/Story/Hoho/HohoTiles.g:0177ce9ea65ef69a:1:29:13,have_Map,n_pmirrors=3,finished
+          req:instrumentation,permanent,sig:Ghost/test/Story/Hoho/HohoTiles.g:1ce1b9cf22922dc5:1:29:13,have_Map,n_pmirrors=3,finished
         req:waft_roster,eternal,subscribed
         o_elvis:Lies_compile_settled
         o_elvis:dock_content
@@ -561,12 +596,12 @@ Snap:H
         received,doc_opened,doc:Ghost/test/Story/Hoho/HohoTiles.g
         received,editorBegins,doc:Ghost/test/Story/Hoho/HohoTiles.g
     A:Pantheate
-      self,round=5	{"mung":["age"]}
+      self,round=7	{"mung":["age"]}
       w:Pantheate
-        self,round=5	{"mung":["age"]}
+        self,round=7	{"mung":["age"]}
         o_elvis:Ghost_update_notify
         include:gen/test/Story/Hoho/HohoTiles.go
-        req:include,gen_path:gen/test/Story/Hoho/HohoTiles.go,path:Ghost/test/Story/Hoho/HohoTiles.g,ghost_dige:0177ce9ea65ef69a~g1,ghostmeta_name:Ghostmeta_Ghost_test_Story_Hoho_HohoTiles,permanent,live_dige:0177ce9ea65ef69a~g1,finished
+        req:include,gen_path:gen/test/Story/Hoho/HohoTiles.go,path:Ghost/test/Story/Hoho/HohoTiles.g,ghost_dige:1ce1b9cf22922dc5~g1,ghostmeta_name:Ghostmeta_Ghost_test_Story_Hoho_HohoTiles,permanent,live_dige:1ce1b9cf22922dc5~g1,finished
     watched:ave
       examining	{"loopy":1,"hid":1}
       Languinio	{"loopy":2,"hid":1}

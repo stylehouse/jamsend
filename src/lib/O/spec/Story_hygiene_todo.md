@@ -9,6 +9,26 @@ A NEW Story primitive: a declared, per-run **reset** of the disk working-area a 
 
 ## 0. What to get on with next
 
+### ⚠ Cold entropy profile — a fresh runner's FIRST run snaps without its shared drops (found 2026-10-29)
+
+**What happens.**  A Book's `The/EntropyProfile,Wref:Trope/Lies/NormalEntropy` is opened by Story (`Story.svelte` "open shared
+ EntropyProfiles") fire-once, never blocking, and only once the Book's own Waft is open (`foreground_up`) — which happens INSIDE
+  step 1 of the drive.  The open then took ~11s to land on e747 (drive start 01:34:12, `🗂 Waft:Trope/Lies/NormalEntropy opened`
+   01:34:23), i.e. after a 9-step HohoTiles run had finished.  So the first run after a reload encodes every step without the
+    profile's `means,drop` rows — HohoTiles carries `log:source_write` at steps 4/8/9 — and every later run (profile cached in
+     Mundo's Lies) drops them.  **An accept on a cold run bakes the rows in** (that is how HohoTiles went red 2026-10-28/29), and a
+      cold run of a correct fixture reds those steps.
+**Rule until fixed: re-record on a WARM runner** (run the Book once, then accept from the second run).
+**Fix, not yet built.**  A gate before the drive can't work (it waits on `foreground_up`, which the drive itself brings — tried,
+ timed out, reverted).  Candidates: open the profile at run boot when Mundo has an outside `Lies,runner` (the reorder worry is
+  only for an inner-Lies open); or hold each step's snap (not the drive) until the profile's EntropyArrest is readable — and find
+   out why the open takes ~11s first (the wh queue is serial and Story's expected-snap preload rides it).  Gate: HohoTiles green on
+    a fresh-reload first run.
+**Also open on HohoTiles — step 2 flakes (real, ~1 run in 3, warm runner).**  The live snap lacks the parse-tree block (`Line=5,
+ line_from=74…` through the `although:1,they,can,be,mixed` PeelGroup tree, ~53 lines) under `A:Lang/w:Lang/model,cyto_dir`, with
+  no `opening`/pending marker — the parsed model filled in after the snap.  A missing hold between parse and model; unattributed.
+   Re-recorded fixture (2026-10-29, warm) is correct; this is the code's flake, not the fixture's.
+
 ### ☀ MORNING NOTE 2026-09-17 — the Hoho family re-sworn; what is left, and why
 
 **Re-sworn overnight on live e747 (sonnet subagent, `story_accept.mjs` by filtered residual, never `--force`

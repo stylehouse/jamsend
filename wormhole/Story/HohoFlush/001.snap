@@ -48,7 +48,7 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1789564643871,kind:cold,resolved
+          want=1793184175586,kind:cold,resolved
         o_elvis:dock_askies
         req:Langoer,eternal,focus:Story/HohoFlush/Waftily,ok	{"ref":{"w":"%w:Lies"}}
         log:gen_write,path:gen/test/Story/Hoho/HohoAmeliorations.go,dige:00cecd6f
@@ -71,8 +71,8 @@ Snap:H
             Text,dige:3c3d7da714b8b09b,disk_dige:3c3d7da714b8b09b,disk_rev
             Compile
               Map
-                def,method:HohoNetherland,line=2,rel_from,rel_to=16
-              time,compile=0.007,all=0.085
+                def,method:HohoNetherland,line=2,kind:w,rel_from,rel_to=16
+              time,compile=0.007,all=0.046
               Output,gen_path:gen/test/Story/Hoho/HohoAmeliorations.go,dige:00cecd6fe3b17128,source_dige:3c3d7da714b8b09b,ghost_dige:3c3d7da714b8b09b~g1
                source: |
                  <script lang="ts">

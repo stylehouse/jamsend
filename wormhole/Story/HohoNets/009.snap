@@ -1,12 +1,12 @@
 Snap:H
   H:HohoNets,Run
     A:Lies
-      self,round=28	{"mung":["age"]}
+      self,round=29	{"mung":["age"]}
       w:Lies
         Opt
           nowriting
           dontSnapGhostList
-        self,round=28	{"mung":["age"]}
+        self,round=29	{"mung":["age"]}
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/HohoNets/Waftily/toc.snap,waft_path:Story/HohoNets/Waftily
             known,dige:a2cea91e2a0dadd0,kind:read	{"mung":["at"]}
@@ -52,8 +52,8 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1789565055928,kind:cold
-          want=1789565066319,kind:next,resolved
+          want=1793184295361,kind:cold
+          want=1793184304086,kind:next,resolved
         o_elvis:dock_askies
         req:Langoer,eternal,focus:Story/HohoNets/Waftily,ok	{"ref":{"w":"%w:Lies"}}
         log:gen_write,path:gen/test/Story/Hoho/HohoAntecedents.go,dige:dcdcf6db
@@ -77,8 +77,8 @@ Snap:H
             Text,dige:3c3d7da714b8b09b,disk_dige:3c3d7da714b8b09b,disk_rev
             Compile
               Map
-                def,method:HohoNetherland,line=2,rel_from,rel_to=16
-              time,compile=0.074,all=0.109
+                def,method:HohoNetherland,line=2,kind:w,rel_from,rel_to=16
+              time,compile=0.023,all=0.092
               Output,gen_path:gen/test/Story/Hoho/HohoAmeliorations.go,dige:00cecd6fe3b17128,source_dige:3c3d7da714b8b09b,ghost_dige:3c3d7da714b8b09b~g1
                source: |
                  <script lang="ts">
@@ -118,11 +118,11 @@ Snap:H
             Text,dige:69f9fd8539393ad7,disk_dige:69f9fd8539393ad7,disk_rev
             Compile
               Map
-                def,method:Peeroleum,line=2,rel_from,rel_to=11
-                def,method:transport,line=5,rel_from=65,rel_to=75
-                def,method:PeerJS,line=7,rel_from=108,rel_to=115
-                def,method:Socket,line=9,rel_from=145,rel_to=152
-              time,compile=0.022,all=0.09
+                def,method:Peeroleum,line=2,kind:w,rel_from,rel_to=11
+                def,method:transport,line=5,kind:w,rel_from=65,rel_to=75
+                def,method:PeerJS,line=7,kind:w,rel_from=108,rel_to=115
+                def,method:Socket,line=9,kind:w,rel_from=145,rel_to=152
+              time,compile=0.005,all=0.035
               Output,gen_path:gen/test/Story/Hoho/HohoAntecedents.go,dige:dcdcf6db23509a88,source_dige:69f9fd8539393ad7,ghost_dige:69f9fd8539393ad7~g1
                source: |
                  <script lang="ts">
@@ -175,7 +175,7 @@ Snap:H
           Change
             backend,dige:69f9f
             storage,dige:69f9f
-            compile,dige:69f9f,secs=0.022,dim,pending
+            compile,dige:69f9f,secs=0.005,dim,pending
           dock,active	{"loopy":0,"hid":1}
         req:workon	{"ref":{"w":"%w:Lang"}}
           req:understanding,maz=3,permanent,sig:2:13:4:0,what:peer,finished

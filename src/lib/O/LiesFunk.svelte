@@ -2583,7 +2583,7 @@ await M.eatfunc({
         // Verb_run — run a registered verb ON THIS TAB, through the one gate every caller shares (the relay dispatch below,
         //  and BigWordland's hole): a verb that WRITES is refused by name where writing is not this tab's duty — a music
         //   page, and a hacker room (read-only by construction; Verbs_todo §1).  Returns { ok, result }.
-        async Verb_run(w: TheC, name: string, ask: any): Promise<{ ok: boolean, result: any }> {
+        async Verb_run(w: TheC, name: string, ask: any, by?: { by?: string, proven?: 1, hand?: 1 }): Promise<{ ok: boolean, result: any }> {
             const H = this as any
             const v = H.Verb_find(name)
             if (!v) return { ok: false, result: { error: `no verb '${name}' on this tab — \`verbs\` lists what is here (its owner may not be loaded)` } }
@@ -2591,11 +2591,49 @@ await M.eatfunc({
             const role = H.Lies_role?.(w)
             if (v.writes && (ro_only || role === 'hacker'))
                 return { ok: false, result: { refused: `verb '${name}' writes — this tab is ${role === 'hacker' ? 'a hacker room' : 'a music-page listener'} (read-only); run it on the editor terminal` } }
-            // INSIDE Atime: a verb is a socket event or a keypress, and its body reads and writes particles —
-            //  so it waits for the beliefs mutex like any UI transaction, never landing mid-tick (2026-10-28)
+            // A VERB IS AN ARRIVAL (Atheory_design §3, the near move; 2026-10-28): an e:Verb elvis to this w, run by the House in
+            //  its own think — Atime, like any elvis, and on Story's trace.  Who asked rides e.c.by (a prepub would make a Book
+             //   machine-dependent); e.sc says only proven:1 (the relay vouched a flock key) or hand:1 (this tab's own keyboard).
+            //  A SPLIT verb (read:) keeps its disk|network out of Atime: prepare? in Atime → read outside → land? in Atime.
+            const enter = (phase: string, got?: any) => new Promise<any>((resolve) => {
+                const e = H.i_elvisto(w, 'Verb', { verb: name, phase, ...(by?.proven ? { proven: 1 } : {}), ...(by?.hand ? { hand: 1 } : {}) })
+                e.c.ask = ask ?? {}
+                e.c.by = by?.by
+                e.c.got = got
+                e.c.done = resolve
+                ;(e.c.targeting as Promise<void>).catch((err: any) => resolve({ error: `verb '${name}' could not enter: ${err}` }))
+                // an elvis that lands nowhere would hang the asker forever — give up if it never STARTS (a long verb may run on)
+                setTimeout(() => { if (!e.c.started) resolve({ error: `verb '${name}' never entered (no e_Verb on this tab?)` }) }, 60_000)
+            })
+            const unwrap = (r: any) => { if (r?.error && !('value' in r)) throw new Error(r.error); return r?.value }
             let result: any
-            await H.UItime(async () => { result = await v.run(w, ask ?? {}) })
+            try {
+                if (typeof v.read === 'function') {
+                    const plan = typeof v.prepare === 'function' ? unwrap(await enter('prepare')) : undefined
+                    if (plan?.error) return { ok: false, result: plan }
+                    const got = await v.read(w, ask ?? {}, plan, by?.by)
+                    result = typeof v.land === 'function' && !got?.error ? unwrap(await enter('land', got)) : got
+                } else {
+                    result = unwrap(await enter('run'))
+                }
+            } catch (err: any) {
+                result = { error: String(err?.message ?? err) }
+            }
             return { ok: !result?.error, result }
+        },
+        // e_Verb — the arrival's landing (see Verb_run): one phase of a verb, in Atime
+        async e_Verb(A: TheC, w: TheC, e: TheC) {
+            const H = this as any
+            e.c.started = 1
+            const v = H.Verb_find(e.sc.verb)
+            const done = e.c.done as ((r: any) => void) | undefined
+            try {
+                const f = e.sc.phase === 'prepare' ? v?.prepare : e.sc.phase === 'land' ? v?.land : v?.run
+                if (!f) throw new Error(`verb '${e.sc.verb}' has no ${e.sc.phase} here`)
+                done?.({ value: await f(w, e.c.ask ?? {}, e.c.got, e.c.by) })
+            } catch (err: any) {
+                done?.({ error: String(err?.message ?? err) })
+            }
         },
         // the tab's own verbs — the registry describing itself (Verbs_todo §2: self-documenting)
         verbs_Lies(): any[] {
@@ -2669,7 +2707,9 @@ await M.eatfunc({
                 } else if ((vdef = (H as any).Verb_find(op))) {
                     // A REGISTERED VERB WINS over the chain below (Verbs_todo §2) — the chain is the fallback while
                     //  families move out to the ghosts that own them.  The gate is Verb_run's, shared with the hole.
-                    const r = await (H as any).Verb_run(w, op, ask)
+                    // the relay stamps `by` (the asking socket's flock-proven prepub) on a runner_ask it let through — never the asker
+                    const proven_by = typeof frame?.by === 'string' ? frame.by : undefined
+                    const r = await (H as any).Verb_run(w, op, ask, proven_by ? { by: proven_by, proven: 1 } : undefined)
                     ok = r.ok
                     result = r.result
                 } else if (op === 'ping') {
@@ -3595,7 +3635,12 @@ await M.eatfunc({
                             //   world off the particle they are handed.
                             const srun: any = (H as any)?.top_House?.()?.c?.sounditron_run
                             const host: any = (kind === 'Radio' || !verb.startsWith('Sounditron_')) ? H : (srun ?? H)
-                            await H.UItime(async () => { await host[verb](kind === 'Radio' ? radio : rw) })   // music state is ticked — poke it inside Atime
+                            // music state is ticked — the press ENTERS Atime, but only its sync part is held: a verb that then waits on the
+                            //  network (a wiki roll, a skip's fetch) finishes outside, as a human's press of the same button does
+                            //   (Actions.svelte).  Holding the mutex across that wait stalled every House for its length (2026-10-28)
+                            let tail: any
+                            await H.UItime(() => { tail = host[verb](kind === 'Radio' ? radio : rw) })
+                            await tail
                             const after = rw.o({ Radio: 1 })[0]?.sc
                             result = { poked: verb, was: before, now: snapshot(),
                                 title: kind === 'Radio' ? (after?.title ?? null) : null,

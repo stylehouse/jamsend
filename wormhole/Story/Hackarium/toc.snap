@@ -4,26 +4,26 @@ story:Hackarium
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=3.792
-      sample=12.847,at=1792999694
-      sample=10.407,at=1792999879
-      sample=1.738,at=1793002107
-      sample=0.676,at=1793064274
-      sample=2.506,at=1793064425
-      sample=0.983,at=1793064495
-      sample=0.804,at=1793074512
-      sample=0.873,at=1793152569
-      sample=6.281,at=1793156069
-      sample=0.801,at=1793174877
-    TimeTotal:step,avg=3.792
-      sample=12.847,at=1792999694
-      sample=10.407,at=1792999879
-      sample=1.738,at=1793002107
-      sample=0.676,at=1793064274
-      sample=2.506,at=1793064425
-      sample=0.983,at=1793064495
-      sample=0.804,at=1793074512
-      sample=0.873,at=1793152569
-      sample=6.281,at=1793156069
-      sample=0.801,at=1793174877
+    TimeTotal:beliefs,avg=15.529
+      sample=6.654,at=1793180845
+      sample=6.036,at=1793180951
+      sample=2.905,at=1793186676
+      sample=97.792,at=1793188264
+      sample=5.381,at=1793189343
+      sample=8.183,at=1793189686
+      sample=19.586,at=1793189747
+      sample=6.145,at=1793190055
+      sample=2.355,at=1793190548
+      sample=0.25,at=1793190804
+    TimeTotal:step,avg=15.529
+      sample=6.654,at=1793180845
+      sample=6.036,at=1793180951
+      sample=2.905,at=1793186676
+      sample=97.792,at=1793188264
+      sample=5.381,at=1793189343
+      sample=8.183,at=1793189686
+      sample=19.586,at=1793189747
+      sample=6.145,at=1793190055
+      sample=2.355,at=1793190548
+      sample=0.25,at=1793190804
   step,dige:29c7975b74f8b5f9

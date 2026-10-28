@@ -204,7 +204,7 @@
                 {/if}
 
                 <div class="house-actions">
-                    {#if hasActions}<Actions N={house.actions.ob({ action: 1 })} />{/if}
+                    {#if hasActions}<Actions N={house.actions.ob({ action: 1 })} H={house} />{/if}
                     {#if house.stashed}
                         <button class="cstar" class:on={house.stashed.showC}
                             title="show this House's C** (Stuffing) tree"

@@ -24,7 +24,7 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1789565406087,kind:cold,resolved
+          want=1793184801647,kind:cold,resolved
         o_elvis:dock_askies
         req:Langoer,eternal,focus:Story/HohoSurprise/Interestily,ok	{"ref":{"w":"%w:Lies"}}
         Waft:Story/HohoSurprise/Interestily,active
@@ -54,11 +54,11 @@ Snap:H
             Text,dige:69f9fd8539393ad7,disk_dige:69f9fd8539393ad7,disk_rev
             Compile
               Map
-                def,method:Peeroleum,line=2,rel_from,rel_to=11
-                def,method:transport,line=5,rel_from=65,rel_to=75
-                def,method:PeerJS,line=7,rel_from=108,rel_to=115
-                def,method:Socket,line=9,rel_from=145,rel_to=152
-              time,compile=0.023,all=0.067
+                def,method:Peeroleum,line=2,kind:w,rel_from,rel_to=11
+                def,method:transport,line=5,kind:w,rel_from=65,rel_to=75
+                def,method:PeerJS,line=7,kind:w,rel_from=108,rel_to=115
+                def,method:Socket,line=9,kind:w,rel_from=145,rel_to=152
+              time,compile=0.01,all=0.062
               Output,gen_path:gen/test/Story/Hoho/HohoAntecedents.go,dige:dcdcf6db23509a88,source_dige:69f9fd8539393ad7,ghost_dige:69f9fd8539393ad7~g1
                source: |
                  <script lang="ts">
@@ -114,7 +114,7 @@ Snap:H
           Change
             backend,dige:69f9f
             storage,dige:69f9f
-            compile,dige:69f9f,secs=0.023,dim,pending
+            compile,dige:69f9f,secs=0.01,dim,pending
         req:workon	{"ref":{"w":"%w:Lang"}}
           req:understanding,maz=3,permanent,sig:1:13:1:0,what:landing,finished
           req:ingredients,maz=2,permanent,sig:Ghost/test/Story/Hoho/HohoAntecedents.g,finished

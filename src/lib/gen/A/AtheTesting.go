@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheTesting(): string { return 'eaa643307bc2c15a~g1' },
+    Ghostmeta_Ghost_A_AtheTesting(): string { return '4ea65039e57bb511~g1' },
 
 // AtheTesting.g — Atheory's proof (Ghost/A/Theory.g; spec/Atheory_todo.md §0.2 "The first Atheory tests").
 //
@@ -2879,6 +2879,125 @@ AtheStoryCode_witness(w) {
     }
     if (came.length === 6 && came.every(c => c.sc.from === 'Ghostmeta_Ghost_O_Story') && typeof this.story_matching === 'function') {
         this.story_swear(w, 'this House runs Story from its .g — every method asked about came from Ghost/O/Story.g')
+    }
+},
+//#endregion
+
+//#region the test routine — Book AthePondGuards
+// the guards (Theory.g GUARDS + SPILL; Atheory_design §3 "The guards, made right", IOexpr_todo §5).  A move is one sync batch, so
+//  each way a wake handler can break it is a counting row, not a crash.  Step 2 stands four bare guards, each with a poke waiting.
+//   Step 3 runs G_Async with an async wake: it is never called (its first line would write %Said).  Step 4 runs G_Throw with a
+//    wake that throws, then pokes it again and runs a plain wake — the run after a throw still runs.  Step 5 runs G_Nest with a
+//     wake that asks for a run inside the move: refused.  Step 6 runs G_Hole, which sends on a synapse nobody hears: it spills
+AthePondGuards(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.AthePondGuards_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async AthePondGuards_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 6
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.AthePondGuards_stand(w)
+        if (n === 3) this.AthePondGuards_async(w)
+        if (n === 4) this.AthePondGuards_throw(w)
+        if (n === 5) this.AthePondGuards_nest(w)
+        if (n === 6) this.AthePondGuards_hole(w)
+    }
+    this.AthePondGuards_witness(w)
+
+},
+AthePondGuards_names() {
+    return ['G_Async', 'G_Throw', 'G_Nest', 'G_Hole']
+
+},
+AthePondGuards_of(name) {
+    return this.TheA_all(this).find(A => A.sc.A === name)?.o({ w: 'Athe_Guard' })[0]
+
+},
+AthePondGuards_poke(name) {
+    this.AthePondGuards_of(name)?.o({ TheASynapse: 'poke' })[0]?.i({ TheAPulse: 1 })
+
+},
+AthePondGuards_stand(w) {
+    w.i({desc: 'stand four bare guards — each with a poke waiting'})
+    if (typeof this.TheA_fault !== 'function') {
+        w.i({ log: 'Theory.g has no guards — ghost_load the new Theory.g beside AtheTesting.g' })
+        return
+    }
+    for (const name of this.AthePondGuards_names()) {
+        let old = this.o({ A: name })[0]
+        if (old) this.drop(old)
+        let A = this.TheA_stand(this, name, [], null, 'Athe_Guard')
+        A.i({ w: 'Athe_Guard' }).i({ TheASynapse: 'poke' })
+        this.AthePondGuards_poke(name)
+    }
+
+},
+AthePondGuards_async(w) {
+    w.i({desc: 'run G_Async with an async wake — refused, never called'})
+    let guard_async = async (v) => { v.i({ Said: 'async' }) }
+    this.TheA_run(w, guard_async, ['G_Async'])
+
+},
+AthePondGuards_throw(w) {
+    w.i({desc: 'run G_Throw with a wake that throws — then poke it and run a plain wake'})
+    let guard_throw = (v) => { throw new Error('the guard throws on purpose') }
+    this.TheA_run(w, guard_throw, ['G_Throw'])
+    this.AthePondGuards_poke('G_Throw')
+    let guard_plain = (v) => { v.i({ Said: 'after' }) }
+    this.TheA_run(w, guard_plain, ['G_Throw'])
+    w.oai({ Saw: 'throw' }, { clear: this.c.run_t0 == null ? 'yes' : 'no' })
+
+},
+AthePondGuards_nest(w) {
+    w.i({desc: 'run G_Nest with a wake that asks for a run inside the move — refused'})
+    let guard_nest = (v) => {
+        let inner = this.TheA_run(w, (u) => {}, ['G_Hole'])
+        v.i({ Said: inner ? 'ran' : 'refused' })
+    }
+    this.TheA_run(w, guard_nest, ['G_Nest'])
+
+},
+AthePondGuards_hole(w) {
+    w.i({desc: 'run G_Hole — it sends on a synapse nobody hears'})
+    let guard_hole = (v) => { this.TheA_send(v, 'nowhere', { says: 'hello' }) }
+    this.TheA_run(w, guard_hole, ['G_Hole'])
+
+},
+AthePondGuards_witness(w) {
+    let n = this.c.run?.c.step_n ?? 0
+    let run = w.o({ TheARun: 1 })[0]
+    let g = (name) => this.AthePondGuards_of(name)
+    if (n === 3) {
+        let a = g('G_Async')
+        let f = a?.o({ TheAFault: 'async_wake' })[0]
+        if (f?.sc.wake === 'guard_async' && f.sc.n === 1 && !a.o({ Said: 1 }).length && run?.sc.quiet) {
+            this.story_swear(w, 'an async wake handler is refused — never called — and a fault row on the compartment says so')
+        }
+    }
+    if (n === 4) {
+        let t = g('G_Throw')
+        let f = t?.o({ TheAFault: 'threw' })[0]
+        if (f?.sc.err === 'the guard throws on purpose' && t.o({ Said: 'after' }).length && run?.sc.quiet && w.o({ Saw: 'throw' })[0]?.sc.clear === 'yes') {
+            this.story_swear(w, 'a wake handler that throws is a fault row not a crash — and the next run still runs')
+        }
+    }
+    if (n === 5) {
+        let s = g('G_Nest')
+        if (s?.o({ Said: 'refused' }).length && w.o({ TheAFault: 'nested_run' })[0]?.sc.n === 1 && run?.sc.quiet && run.sc.rounds === 1) {
+            this.story_swear(w, 'a run asked for inside a move is refused — the outer run goes on and finishes')
+        }
+    }
+    if (n === 6) {
+        let h = g('G_Hole')
+        if (h?.o({ TheASpilled: 'nowhere' })[0]?.sc.n === 1 && run?.sc.quiet && !run.sc.landed) {
+            this.story_swear(w, 'a pulse nobody hears spills — counted on its sender, not dropped silently')
+        }
     }
 },
 //#endregion

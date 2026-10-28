@@ -305,7 +305,7 @@
 <div class="bw">
     <!-- the top bar: room name · the H** toc · Lies summon · the searchbar -->
     <div class="bw-top">
-        <span class="bw-name" title="BigWordland — {editor_book ? '?E=' + editor_book + ' (editor: takes the editor slot)' : '?H=' + hacker_book + ' (hacker: docks without the duties)'}">BigWordland{#if !editor_book}<span class="bw-hack">hacker</span>{/if}</span>{#if seat?.unproven}<span class="bw-seat unproven" title="the relay gives seat:editor only to a socket a cluster flock key vouches for — open the repo as this tab's folder (it reads .env.cluster-editor once), or paste a flock key in the 🪪 Id hatch">unproven — sign in 🪪</span>{:else if seat?.held}<span class="bw-seat held" title="this tab holds seat:editor — its Waft and .g saves land">✍ writes</span>{:else if seat?.by}<button class="bw-seat" title="seat:editor is held by {seat.by} — this tab reads; saves wait for the seat. Click to take it." onclick={wrest_seat}>reads</button>{/if}
+        <span class="bw-name" title="BigWordland — {editor_book ? '?E=' + editor_book + ' (editor: takes the editor slot)' : '?H=' + hacker_book + ' (hacker: docks without the duties)'}">BigWordland{#if !editor_book}<span class="bw-hack">hacker</span>{/if}</span>{#if seat?.unproven}<span class="bw-seat unproven" title="the relay gives seat:editor only to a socket a cluster flock key vouches for — open the repo as this tab's folder; it reads .env.cluster-flock (else -editor, -claude) once and keeps it">unproven — open the repo 📂</span>{:else if seat?.held}<span class="bw-seat held" title="this tab holds seat:editor — its Waft and .g saves land">✍ writes</span>{:else if seat?.by}<button class="bw-seat" title="seat:editor is held by {seat.by} — this tab reads; saves wait for the seat. Click to take it." onclick={wrest_seat}>reads</button>{/if}
         <div class="bw-toc">
             {#each houses as house (house.c.ip)}
                 <button class="bw-h" style="--d: {depth_of(house)}"
@@ -344,7 +344,7 @@
     {#if show_actions && active}
         <div class="bw-panel">
             <span class="bw-panel-name">{active.name}{#if !active.started}<span class="bw-off">off</span>{/if}</span>
-            <Actions N={active.actions.ob({ action: 1 })} />
+            <Actions N={active.actions.ob({ action: 1 })} H={active} />
             {#if active.stashed}
                 <button class="bw-cstar" class:on={active.stashed.showC}
                         title="show this House's C** (Stuffing) tree in the room"

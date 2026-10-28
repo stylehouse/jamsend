@@ -474,7 +474,7 @@ export const LANG_COMPILE = {
         //  elvisto: {method, target?} — the DEFERRED cross-ghost call; target only when literal.
         //  mint:    {mainkey} — where a particle's mainkey is FIRST minted (.i/.oai({Mainkey:…})).
         //  proves:  {sentence, desc?} — a %see (the sworn claim) or, with desc:1, a %desc (the beat).
-        const words: Array<{ def?: 1, call?: 1, region?: 1, controlflow?: 1, elvisto?: 1, mint?: 1, proves?: 1,
+        const words: Array<{ def?: 1, call?: 1, region?: 1, controlflow?: 1, elvisto?: 1, mint?: 1, proves?: 1, probe?: 1, o_elvis?: string, kind?: string, sugar?: 1,
                              method?: string, label?: string, keyword?: string, title?: string,
                              via?: string, class?: string, magic?: 1, target?: string, mainkey?: string,
                              sentence?: string, desc?: 1,
@@ -704,6 +704,13 @@ export const LANG_COMPILE = {
         const MINT_RE    = /\.(?:i|oai)\(\{\s*([A-Z][A-Za-z]*)\s*:/g
         const SEE_RE     = /%see:'([^']*)'/g
         const DESC_RE    = /%desc:'([^']*)'/g
+        // m16 (IOexpr_todo §0 items 1–2, 2026-10-28): the .g SUGAR mints and probes too — `i %X`, `oai %X`, `roai %X` mint,
+        //  `oa %X` probes (lowercase mainkeys included: %req, %see, %desc are real ones) — and MINT_RE alone saw none of it.
+        //   Only in a stho doc (sthoParser), where the sugar is the language and not a comment's prose.  Raw `.oa({X` probes
+        //    too.  An `o_elvis`/`o_elvis_req` site is the handler a w method OPENS for an elvis type: %o_elvis:<type>,via.
+        const SUGAR_RE   = /(?:^|[\s(;{!&|])(roai|oai|oa|i)\s+%([A-Za-z_]\w*)/g
+        const PROBE_RE   = /\.oa\(\{\s*([A-Za-z_]\w*)\s*:/g
+        const O_ELVIS_RE = /\bo_elvis(?:_req)?\s*\(\s*\w+\s*,\s*['"]([^'"]+)['"]/g
         // CALL_GAP — the stho per-line CALL_RE sweep (in _collect_line) sits AFTER branches that
         //  `return n`, so a call on a ControlFlow line — `if (n === 2) this.Beat_two(w)`, the Book
         //  drive idiom — was never recorded, and the Atlas orphan lint (2026-09-06) listed every Book
@@ -742,6 +749,20 @@ export const LANG_COMPILE = {
                 words.push({ mint: 1, mainkey: m[1], from: dline.from + m.index!,
                             to: dline.from + m.index! + m[0].length, line: ln } as any)
             }
+            if (sthoParser) for (const m of text.matchAll(SUGAR_RE)) {
+                if (m[2] === 'A' || m[2] === 'H') continue
+                const at = dline.from + m.index! + m[0].indexOf(m[1])
+                words.push({ ...(m[1] === 'oa' ? { probe: 1 } : { mint: 1, sugar: 1 }), mainkey: m[2], from: at,
+                            to: dline.from + m.index! + m[0].length, line: ln } as any)
+            }
+            for (const m of text.matchAll(PROBE_RE)) {
+                words.push({ probe: 1, mainkey: m[1], from: dline.from + m.index!,
+                            to: dline.from + m.index! + m[0].length, line: ln } as any)
+            }
+            for (const m of text.matchAll(O_ELVIS_RE)) {
+                words.push({ o_elvis: m[1], from: dline.from + m.index!,
+                            to: dline.from + m.index! + m[0].length, line: ln } as any)
+            }
             // dedupe SEE_RE within the line: the "once-noticed" idiom writes the SAME sentence twice
             //  on one line (`oa %see:'X'` guard, `i %see:'X'` mint) — one assertion, not two.
             const seen_here = new Set<string>()
@@ -769,7 +790,7 @@ export const LANG_COMPILE = {
         if (def_lines.length) {
             for (const word of words) {
                 const gap_call = word.call && (word as any).gap
-                if (!(word.elvisto || word.mint || word.proves || gap_call) || typeof word.line !== 'number') continue
+                if (!(word.elvisto || word.mint || word.proves || word.probe || word.o_elvis || gap_call) || typeof word.line !== 'number') continue
                 let via: string | undefined
                 let rp:  string[] | undefined
                 for (const d of def_lines) { if (d.line <= word.line) { via = d.method; rp = d.region_path } else break }
@@ -780,6 +801,21 @@ export const LANG_COMPILE = {
             }
         }
         for (const word of words) if ((word as any).gap) { word.region_path = []; delete (word as any).gap }
+
+        // kind: on every %def (m16; LiesLang_todo §11 "every function knows its kind — first by stamp") — the shapes the House
+        //  dispatches, read off the name and its header line: e (an elvis handler e_X), verbs (a verbs_X table), req (req_X),
+        //   recipe (Run_A_X), w (a w method, X(A, w)), else helper.  IMPORT|RENDER stay magic, unkinded.
+        for (const word of words) {
+            if (!word.def || word.magic || !word.method) continue
+            const m = word.method as string
+            const head = typeof word.line === 'number' && word.line <= doc.lines ? doc.line(word.line).text : ''
+            word.kind = m.startsWith('e_') ? 'e'
+                : m.startsWith('verbs_') ? 'verbs'
+                : m.startsWith('req_') ? 'req'
+                : m.startsWith('Run_A_') ? 'recipe'
+                : new RegExp('\\b' + m + '\\s*\\(\\s*A\\b[^,()]*,\\s*w\\b[^,()]*\\)').test(head) ? 'w'
+                : 'helper'
+        }
 
         // flush word index into Stuff — job%Compile/Map/ entries:
         //   {def:1, method, class?, magic?, …}   class present → method inside that class

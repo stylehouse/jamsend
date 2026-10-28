@@ -13,29 +13,29 @@ story:HohoRetake
       w:Lies
         dontSnapGhostList
   TimeSpool
-    TimeTotal:beliefs,avg=0.265
-      sample=0.136,at=1789861431
-      sample=0.153,at=1789861440
-      sample=0.146,at=1789861450
-      sample=0.235,at=1789861460
-      sample=0.22,at=1789861470
+    TimeTotal:beliefs,avg=0.262
       sample=0.145,at=1789861480
       sample=0.224,at=1789861489
       sample=0.17,at=1789861499
       sample=0.825,at=1792491384
       sample=0.397,at=1792546111
-    TimeTotal:step,avg=0.265
-      sample=0.136,at=1789861431
-      sample=0.153,at=1789861440
-      sample=0.146,at=1789861450
-      sample=0.235,at=1789861460
-      sample=0.22,at=1789861470
+      sample=0.178,at=1793184673
+      sample=0.178,at=1793184683
+      sample=0.178,at=1793184683
+      sample=0.15,at=1793184696
+      sample=0.172,at=1793184736
+    TimeTotal:step,avg=0.262
       sample=0.145,at=1789861480
       sample=0.224,at=1789861489
       sample=0.17,at=1789861499
       sample=0.825,at=1792491384
       sample=0.397,at=1792546111
+      sample=0.178,at=1793184673
+      sample=0.178,at=1793184683
+      sample=0.178,at=1793184683
+      sample=0.15,at=1793184696
+      sample=0.172,at=1793184736
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
-  step,dige:4564fe1cc90a15ed
+  step,dige:0e0504209ffb1115
     Assertion:a-waft-that-moves,sentence:a Waft that moves on disk under a live tab takes disk — the fresh tree swaps in through one place so the roster never gaps
     Assertion:a-retake-never-disturbs,sentence:a retake never disturbs the Interest or the armed LE watching the Waft it just replaced

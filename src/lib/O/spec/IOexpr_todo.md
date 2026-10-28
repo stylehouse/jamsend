@@ -18,6 +18,12 @@ What falls on the floor, an unheard pulse, is an Atheory row that lives here bec
 
 ## 0. What to get on with next (smallest first)
 
+**Landed 2026-10-28 (late), Atlas mapper m16:** items 1 and 3 below, and most of 2.  `.g` sugar `i|oai|roai %k` → `%mint,sugar,mainkey`;
+ `oa %k` and raw `.oa({k` → `%probe,mainkey`; `o_elvis|o_elvis_req(w,'t')` → `%o_elvis:t`; every `%def` carries
+  `kind:e|verbs|req|recipe|w|helper`; all with `via`.  Line regexes in the independent sweep (compile.ts), not tree reads yet.
+   **Not done:** renaming `%elvisto` rows to `%i_elvis` (Lagoon/Electrode read `elvisto`; rename with them).  HohoFlush, Nets, Retake, Surfer, Surprise
+    re-recorded for the new rows; HohoTiles re-recorded 2026-10-29 (owner-approved: new rows + stale pre-09-17 import paths) — on a WARM runner: a cold first run bakes in `log:source_write`, see `Story_hygiene_todo.md` §0 "cold entropy profile".
+
 1. **`%mint` must see the sugar.**  `compile.ts` finds mints with a line regex over raw JS: `MINT_RE = /\.(?:i|oai)\(\{\s*([A-Z]…/`
     (`src/lib/O/lang/compile.ts` ~704).  So the `.g` sugar is invisible to Atlas: 491 `i %X` and 158 `oai %X` sites (Ghost/*.g,
      by grep), and every lowercase mainkey with them.  The stho branch already parses each IOing into legs (`Lang_compile_Leg` →

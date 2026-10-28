@@ -1920,7 +1920,7 @@
     {#if dock}
     <div class="lte-bar">
         <!-- doc-picker dropdown + any other Lang actions (compo/compi toggles etc) -->
-        <Actions N={lang_actions} />
+        <Actions N={lang_actions} {H} />
         <span class="lte-doc" title={active_path}>{active_name}</span>
         {#if _backend?.sc.dige}
         <span class="lte-change"

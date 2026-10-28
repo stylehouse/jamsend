@@ -499,7 +499,8 @@
                 }
                 if (!w.c.lies_hello_hooked) {
                     w.c.lies_hello_hooked = 1
-                    ;((w.c as any).on_hello_list ??= []).push(() => {
+                    ;((w.c as any).on_hello_list ??= []).push((frame: any) => {
+                        if (frame?.nonce) w.c.relay_nonce = String(frame.nonce)   // the relay's challenge — our flock proof signs it
                         if (w.c.hello_tries) H.tlog(`🪪 hello_ok — identity bind recovered after ${w.c.hello_tries} retr${w.c.hello_tries === 1 ? 'y' : 'ies'}`)
                         w.c.hello_ok_at = Date.now()
                         delete w.c.hello_tries
@@ -585,7 +586,7 @@
                     }
                 }
                 ;(w.c as any).lies_send_hello = send_hello
-                port.on_open(async () => { delete w.c.hello_ok_at; delete w.c.hello_tries; delete w.c.hello_want; delete w.c.flock_tries; await send_hello() })
+                port.on_open(async () => { delete w.c.hello_ok_at; delete w.c.hello_tries; delete w.c.hello_want; delete w.c.flock_tries; delete w.c.relay_nonce; await send_hello() })
                 // THE WRITE SEAT (2026-10-27, LiesLang_todo §11) — a room with docks asks the relay for `seat:editor` on every
                 //  (re)open.  The ask is the w's own %Seat particle, planted here from the role for now; a Ground could plant it
                 //   instead (the room as advice, not a recipe that stamps a role).  See Lies_seat_heard.
@@ -790,7 +791,7 @@
             if (frame.seat && frame.seat !== 'editor') return
             if (frame.control === 'seat_error') {
                 if (/hello first/.test(frame.reason)) return   // the ask beat our hello — the hello_ok hook asks again
-                if (/not in the flock/.test(frame.reason)) {   // no flock key proven — the badge says "sign in 🪪" until one is
+                if (/not in the flock/.test(frame.reason)) {   // no flock key proven — the badge says so until one is
                     H.post_do(async () => { const seat = H.Lies_seat_of(w); if (seat && !seat.sc.unproven) { seat.sc.unproven = 1; delete seat.sc.held; seat.bump() } }, { see: 'seat_unproven' })
                 }
                 console.warn(`✍ seat ask refused by the relay — ${frame.reason}`); return
@@ -817,9 +818,9 @@
         },
         // THE FLOCK PROOF (2026-10-28) — the seat answers only to a socket a CLUSTER_TRUSTED_PUBS key vouches for (relay
         //  handleFlock).  The tab keeps its own identity (its hello stays its face); the flock key is held BESIDE it and only
-        //   ever signs one `flock` frame per socket life.  The relay has the pubs, never the private keys, so the tab must hold
+        //   ever signs one `flock` frame per hello — over the relay's challenge nonce (hello_ok), so it is good once, there.  The relay has the pubs, never the private keys, so the tab must hold
         //    one: read ONCE off the repo share (`.env.cluster-editor|claude`, beside the code) and kept in the top House's stash, so a
-        //     later life without the share still proves.  A pasted 🪪 key that IS a flock key proves by its hello alone.
+        //     later life without the share still proves.  A tab whose own identity IS a flock key (the trusted editor) proves by its hello alone.
         // Lies_flock_key — the flock key {pub, key}: re-read off the repo share when there is one (setup may have re-minted),
         //  else the stashed copy.  undefined ⇒ this tab can't prove (no repo share ever, or no key on disk is trusted).
         async Lies_flock_key(_w?: TheC): Promise<{ pub: string; key: string } | undefined> {
@@ -829,29 +830,38 @@
             const DL0 = top.o({ A: 'Wormhole' })[0]?.c.DL as any
             if (DL0 && H.Wormhole_is_repo() === undefined && !DL0.expanded) { try { await DL0.expand() } catch {} }   // hello can beat the first listing
             if (H.Wormhole_is_repo()) {
-                // the first TRUSTED key on disk: the editor's role key if setup put the live one there, else claude's —
-                //  any flock key will do, since a tab holding the repo can already write the code it would push
+                // the tabs' own key (.env.cluster-flock, minted by cluster setup) — and ONLY it once it exists, so claude's CLI key
+                //  stops being lent to browsers.  A checkout from before that setup falls back to the editor's role key, then claude's.
                 const DL = top.o({ A: 'Wormhole' })[0]?.c.DL as any
-                for (const role of ['editor', 'claude']) {
+                let has_flock = false
+                for (const role of ['flock', 'editor', 'claude']) {
+                    if (has_flock && role !== 'flock') break
                     let text = ''
                     try { text = await (await (await DL.handle.getFileHandle(`.env.cluster-${role}`)).getFile()).text() } catch { continue }
+                    if (role === 'flock') { has_flock = true; top.c.flock_on_disk = text.match(/CLUSTER_IDENTO_FLOCK_PUB\s*=\s*([0-9a-f]{64})/)?.[1] ?? '' }
                     const env: Record<string, string> = {}
                     for (const ln of text.split('\n')) { const m = ln.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/); if (m) env[m[1]] = m[2] }
                     const R = role.toUpperCase(), pub = env[`CLUSTER_IDENTO_${R}_PUB`], key = env[`CLUSTER_IDENTO_${R}_KEY`]
-                    if (!pub || !key || !trusted.includes(pub)) continue
+                    if (!pub || !key || !trusted.includes(pub)) {
+                        if (role === 'flock' && pub && !top.c.flock_untrusted_said) { top.c.flock_untrusted_said = 1; console.warn(`🐑 .env.cluster-flock's pub ${prepubOf(pub)} is not in this page's baked trusted set — reload once the dev server has restarted`) }
+                        continue
+                    }
                     if (top.stashed && top.stashed.flock_idento?.pub !== pub) { top.stashed.flock_idento = { pub, key }; H.tlog(`🐑 flock key read off the repo share (.env.cluster-${role}, ${prepubOf(pub)}) — kept`) }
                     break
                 }
             }
             const kept = top.stashed?.flock_idento
+            // a stash kept from before .env.cluster-flock existed (claude's) is retired the moment the checkout has its own
+            if (H.Wormhole_is_repo() && kept && top.c.flock_on_disk && kept.pub !== top.c.flock_on_disk) { delete top.stashed.flock_idento; return undefined }
             return kept?.pub && kept?.key && trusted.includes(kept.pub) ? { pub: kept.pub, key: kept.key } : undefined
         },
         // Lies_flock_prove — after hello_ok: vouch for this socket with the flock key, then ask the seat (on flock_ok).
+        //  EVERY dev tab does it (a runner too: its socket is then a flock member for whatever the relay gates next); a tab
+        //   whose share isn't the checkout and that never kept a key simply has nothing to prove with.
         //  Skipped where it can't matter: no trust configured, or our hello key is itself a flock key.
         async Lies_flock_prove(w: TheC) {
             const H = this as House
-            if (!H.Lies_seat_of(w)) return   // only a seat-asking tab proves, for now (Verbs_todo §0: sign in every dev tab)
-            const ask_seat = () => { if (!H.Lies_holds_seat(w)) H.Lies_seat_ask(w) }
+            const ask_seat = () => { if (H.Lies_seat_of(w) && !H.Lies_holds_seat(w)) H.Lies_seat_ask(w) }
             const trusted = browserTrustedPubs()
             const idento = H.Lies_cluster_idento(w)
             if (!trusted.length || !idento?.pub || trusted.includes(idento.pub)) return ask_seat()
@@ -859,12 +869,15 @@
             if (!fk) {
                 // the relay refuses with "not in the flock" → %Seat,unproven → the badge.  The share may simply not be open
                 //  yet at hello time (it restores async) — look again a few times before settling for the badge.
-                if (Number(w.c.flock_tries ?? 0) < 5) { w.c.flock_tries = Number(w.c.flock_tries ?? 0) + 1; setTimeout(() => void H.Lies_flock_prove(w), 4000) }
+                const may_yet = H.Lies_seat_of(w) || H.Wormhole_is_repo() === undefined   // a music share will never grow a key
+                if (may_yet && Number(w.c.flock_tries ?? 0) < 5) { w.c.flock_tries = Number(w.c.flock_tries ?? 0) + 1; setTimeout(() => void H.Lies_flock_prove(w), 4000) }
                 return ask_seat()
             }
             const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
             if ((port?.ws as any)?.readyState !== 1) return
-            const header = { control: 'flock', from: prepubOf(fk.pub), pub: fk.pub, of: prepubOf(idento.pub), ts: Date.now() }
+            const nonce = w.c.relay_nonce as string | undefined
+            if (!nonce) return ask_seat()   // a relay older than the challenge — nothing to sign; the seat ask says where we stand
+            const header = { control: 'flock', from: prepubOf(fk.pub), pub: fk.pub, of: prepubOf(idento.pub), nonce }
             try { port.ws.send(JSON.stringify({ ...header, sign: await signHeader(header, fk.key) })) } catch { return }
             H.tlog(`🐑 ws SEND control:flock ${header.of} vouched by ${header.from}`)
         },
@@ -1181,10 +1194,11 @@
         // Lies_cluster_setup — the one-click cluster-trust bootstrap (IdHatch button).  Writes, via the
         //  editor's OWN Wormhole/FSA (the user's file access — NOT the relay gen_write gate, so an untrusted
         //   editor can still bootstrap itself), the two files the new model needs:
-        //    • .env.cluster-pubs   — CLUSTER_TRUSTED_PUBS rebuilt to exactly {this editor, claude} (the code-push
+        //    • .env.cluster-pubs   — CLUSTER_TRUSTED_PUBS rebuilt to exactly {this editor, claude, tabs} (the code-push
         //       allowlist; runner/worker pubs are NOT here — %Grant governs their disk access).  EDITOR_URL kept.
         //    • .env.cluster-claude — the claude CLI's signing key, minted here if absent (reused if present, so a
         //       running CLI isn't rotated out).
+        //    • .env.cluster-flock  — the dev tabs' flock key, likewise (Lies_flock_key reads it first).
         //   Reports the new set + any dropped stale pubs.  Ends by telling the human to RESTART the dev server
         //    (the relay reads CLUSTER_TRUSTED_PUBS at attach; Vite BAKES VITE_CLUSTER_TRUSTED_PUBS at build).
         async Lies_cluster_setup(): Promise<string> {
@@ -1209,14 +1223,27 @@
                         + `CLUSTER_IDENTO_CLAUDE_KEY=${k.key}\nCLUSTER_IDENTO_CLAUDE_PUB=${k.pub}\n`)
                     claudeMsg = `claude ${prepubOf(k.pub)} (minted → .env.cluster-claude)`
                 }
-                // the code-push allowlist: exactly {this editor, claude}.  Report stale pubs dropped (the old
+                // the TABS' flock key (2026-10-28): what a dev tab reads off the repo share to vouch for its socket (Lies_flock_key),
+                //  so claude's CLI key stops being lent to browsers.  Reused if present, like claude's.
+                const flockText = (await nav.read_file('', '.env.cluster-flock')) ?? ''
+                let flockPub = flockText.match(/CLUSTER_IDENTO_FLOCK_PUB\s*=\s*([0-9a-f]{64})/)?.[1]
+                let flockMsg = `tabs ${flockPub ? prepubOf(flockPub) + ' (kept)' : ''}`
+                if (!flockPub) {
+                    const k = await mintClusterKey()
+                    flockPub = k.pub
+                    await nav.write_file('', '.env.cluster-flock',
+                        `# GENERATED by the editor cluster-setup — SECRET: the dev tabs' flock key (addr ${prepubOf(k.pub)}). A tab whose share IS this repo reads it once to prove its socket to the relay. Never env_file it into a container.\n`
+                        + `CLUSTER_IDENTO_FLOCK_KEY=${k.key}\nCLUSTER_IDENTO_FLOCK_PUB=${k.pub}\n`)
+                    flockMsg = `tabs ${prepubOf(k.pub)} (minted → .env.cluster-flock)`
+                }
+                // the code-push allowlist: exactly {this editor, claude, the tabs' flock}.  Report stale pubs dropped (the old
                 //  per-role editor/runner keys) so a curated set (a second signer) can be re-added on purpose.
-                const keep = [id.pub, claudePub]
+                const keep = [id.pub, claudePub, flockPub]
                 const dropped = had.filter(p => !keep.includes(p)).map(prepubOf)
                 await nav.write_file('', '.env.cluster-pubs',
                     `# GENERATED by the editor cluster-setup — PUBLIC: the code-push trust flock + editor URL. Distribute everywhere.\n`
                     + `CLUSTER_TRUSTED_PUBS=${keep.join(',')}\nEDITOR_URL=${editorUrl}\n`)
-                return `✓ trusted set = this editor ${prepubOf(id.pub)} + ${claudeMsg}.`
+                return `✓ trusted set = this editor ${prepubOf(id.pub)} + ${claudeMsg} + ${flockMsg}.`
                     + (dropped.length ? ` Dropped stale: ${dropped.join(', ')}.` : '')
                     + ` RESTART the dev server (relay reload + Vite re-bake) to load it.`
             } catch (e) {

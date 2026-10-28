@@ -84,7 +84,7 @@ import { DEAD_MS, SLUGGISH_MS, liveness } from '../src/lib/O/runner_liveness.mjs
 //  below for why this is safe (the tab, not the CLI, is the authority on what it will do).
 const UNKNOWN_OK = process.argv.includes('--unknown-ok')
 let PLAYER_PUB = ''   // set by --player=: the one music page a slot-addressed ask is for (sendAsk stamps it into ask.pub)
-const OPS = ['ping', 'probe', 'world', 'minisnap', 'pick', 'stemdex', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain', 'console', 'crew', 'tidy', 'ghost_load', 'atlas_callers', 'atlas_refresh', 'atlas_lint', 'electrode', 'lagoon', 'census', 'verbs']
+const OPS = ['ping', 'probe', 'world', 'minisnap', 'pick', 'stemdex', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain', 'console', 'crew', 'tidy', 'ghost_load', 'atlas_callers', 'atlas_refresh', 'atlas_lint', 'electrode', 'lagoon', 'census', 'verbs', 'everything_check']
 
 // ── court a runner via Waft:Cluster ──────────────────────────────────────────────────────────
 //  deLines the registry snap (wormhole/Cluster/toc.snap — the durable HostedIdentity directory the editor
@@ -215,7 +215,7 @@ const live  = flags.has('--live') || !localHost
 // READ-ONLY verbs — the only ones that may target a role:'player' tab (someone's actual music page).
 //  Module-scope because it now gates TWO doors: explicit --player= targeting (below), and the
 //   auto-court's humdinger veto (a player can answer a to:'runner' broadcast — see the veto).
-const PLAYER_OPS = ['ping', 'probe', 'world', 'minisnap', 'supervisor', 'state', 'rungos', 'runners', 'socklog', 'dump', 'poke', 'reload', 'snap', 'steps', 'assertions', 'console', 'crew', 'tidy', 'atlas_callers', 'atlas_refresh', 'atlas_lint', 'lagoon', 'census', 'verbs']
+const PLAYER_OPS = ['ping', 'probe', 'world', 'minisnap', 'supervisor', 'state', 'rungos', 'runners', 'socklog', 'dump', 'poke', 'reload', 'snap', 'steps', 'assertions', 'console', 'crew', 'tidy', 'atlas_callers', 'atlas_refresh', 'atlas_lint', 'lagoon', 'census', 'verbs', 'everything_check']
 
 // ── liveCensus — learn who is on THIS relay, FROM the relay ─────────────────────────────────
 //  clusterRunners() above reads a LOCAL FILE.  Point RUNNER_URL at another host and that file is

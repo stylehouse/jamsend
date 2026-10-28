@@ -534,7 +534,7 @@
     {#if sprawl && show_actions && active}
         <div class="scape-panel">
             <span class="scape-panel-name">{active.name}{#if !active.started}<span class="scape-off">off</span>{/if}</span>
-            <Actions N={active.actions.ob({ action: 1 })} />
+            <Actions N={active.actions.ob({ action: 1 })} H={active} />
         </div>
     {/if}
 
@@ -555,7 +555,7 @@
                         <span class="scape-house-name" class:off={!house.started}>{house.name}</span>
                         <TodoSpool {house} {H} />
                         {#if house.actions.ob({ action: 1 }).length}
-                            <div class="scape-house-acts"><Actions N={house.actions.ob({ action: 1 })} /></div>
+                            <div class="scape-house-acts"><Actions N={house.actions.ob({ action: 1 })} H={house} /></div>
                         {/if}
                     </div>
                     {#each uis as ui (keyser(ui.sc))}

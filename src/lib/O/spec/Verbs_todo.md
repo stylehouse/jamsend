@@ -15,6 +15,22 @@ A **working `_todo`**, opened 2026-10-09.  Homethink §4 already named the disea
 
 ## 0. What to get on with next
 
+**Landed 2026-10-28 (late) — the guards, the door for clicks, split verbs, who asked.**
+- **Theory guards** (`Ghost/A/Theory.g`): an async wake handler is never called (`%TheAFault:async_wake`), a throwing one is caught
+   (`%TheAFault:threw,err:`), a run inside a move is refused (`%TheAFault:nested_run` on its `at`), `TheA_run` clears its run state
+    in a `finally`, and a pulse no synapse hears counts as `%TheASpilled:<synapse>,n:` on the sender (and its Turn).  Book
+     `AthePondGuards` (6 steps, 4 oaths) green 3×; the other 28 Athe Books green.  AthePondGround needs `Ghost/A/Ground.g` loaded
+      too; AtheStoryCode red on Story.g's digests in that runner session — both setup gaps, not the guards.
+- **ActionButtons enter Atime** (`Actions.svelte`, given `H`): a click runs its fn's sync part inside `H.UItime`; a promise tail runs
+   outside (never awaited inside — a tail waiting on the mutex would wedge).  `role:pause` and `sc.instant` stay instant.
+- **A verb is an arrival**: `Verb_run` sends an `e:Verb` elvis to its w; `e_Verb` (LiesFunk) runs it in Atime.  Who asked rides
+   `e.c.by`; `e.sc` says `proven:1` (the relay stamped `by` — relay.ts forwardText overwrites|strips any `by` the asker wrote) or
+    `hand:1` (the hole).  **Split verbs**: a verb with `read:` runs `prepare` (Atime) → `read` (outside, no particles) → `land`
+     (Atime).  `everything`/`everything_check` are split (Lagoon_everything_prepare|_read); `poke` holds only its sync part.
+      Verified: `verbs` on da06, `everything_check` on the code room (problems: 0).  `by` reaching a verb is not yet observed live.
+- **Still holding Atime across disk:** `atlas_refresh` (index-served: one read + up to ATLAS_REFRESH_MAP maps) — splitting it means
+   splitting Atlas_refresh itself (a prefetching nav is the likely shape).
+
 **Landed 2026-10-28 — verbs enter in Atime, and only flock members may ask.**
 - `Verb_run` runs a verb's body inside `H.UItime` (the beliefs mutex): both callers — the relay's `runner_ask` and BigWordland's
    hole — forked off the inbound drain (`void`) or a keypress, so past their first await they read and wrote particles mid-tick.  `runner_ask run` (lease check, stamp,
@@ -40,11 +56,32 @@ A **working `_todo`**, opened 2026-10-09.  Homethink §4 already named the disea
       share — only once `Wormhole_is_repo()` says the share IS the checkout (wormhole+Ghost+src at the root; the gate anything
        repo-probing should ask first) — and keeps it in `top.stashed.flock_idento`.  Refused ⇒ `%Seat,unproven` ⇒ BigWordland's
         badge "unproven — sign in 🪪".  The owner's editor identity is itself in CLUSTER_TRUSTED_PUBS, so it proves by hello alone.
-         ⚠ `.env.cluster-editor` on disk is a stale June key (not trusted), so tabs vouch with claude's today.  Probe-verified at the
-          relay (stranger refused · wrong `of` · own key · claude proof → seat_ok); the tab half awaits a live room.
-- **TODO — sign in EVERY dev tab**, not just seat-asking ones (`Lies_flock_prove` returns early without a %Seat): runners
-   then ask census/who as flock members, and census/who can require `trustedPub` too.  Then: a relay nonce instead of the ts
-    window; setup writing a dedicated tab flock key rather than lending claude's; the r2r bridge ask hole.
+         ⚠ `.env.cluster-editor` on disk is a stale June key (not trusted), so tabs vouch with claude's today.  Verified: relay
+          probes (stranger refused · wrong `of` · own key · claude proof → seat_ok), and live — the owner's room logged
+           `🐑 flock key read off the repo share (.env.cluster-claude…)` and its w:Lies holds `%Seat:editor,held` after a restart.
+- **Every dev tab proves** (2026-10-28): `Lies_flock_prove` runs on every hello_ok, seat or not; a tab whose share isn't the
+   checkout and that never kept a key has nothing to prove with, and stops looking.
+- **Census answers flock members only** (2026-10-28): any stranger could mint a key, hello, and read the bound list — every
+   listener on the box.  Only runner_ask reads it (claude hello).  `who` stays open: it is music presence between friends.
+- **The r2r bridge was an open door** (found + first-hacked 2026-10-28): `?r2r=1` made ANY dialler the peer relay, whose frames
+   (runner_ask included) reach local tabs ungated — and djamsend's Caddy puts /relay on the internet.  An r2r upgrade must now
+   arrive direct (no X-Forwarded-For|Forwarded|X-Real-IP) from loopback|private; probe-verified (proxied dial refused).
+- **The challenge** (2026-10-28): every hello_ok carries a fresh `nonce` (the last 3 per socket stay redeemable); a `flock`
+   proof must sign one and spends it.  Replay on the same socket, another socket's nonce, or the old ts form → refused (probed).
+- **The tabs' own key** (2026-10-28): the editor's "Set up cluster trust" also mints `.env.cluster-flock` and adds its pub to
+   CLUSTER_TRUSTED_PUBS (now {editor, claude, flock}); `Lies_flock_key` reads flock → editor → claude, first trusted wins.
+    ⚠ Whichever tab clicks setup BECOMES the trusted editor — click it from the editor.
+- **The bridge proves itself** (2026-10-28): the passive end sends `r2r_challenge {nonce}`; the dialler signs `r2r_hello` with
+   `.env.cluster-flock` read off ITS OWN checkout (the dev server mounts the repo; it holds no other private key).
+    `RELAY_R2R_CHECK=log` (default while the key rolls out) | `enforce` | `off`.  Proven by a two-relay vite-node test
+     (proven bridge carries frames; no key ⇒ dropped under enforce; stranger + forged hello refused); relay-test.ts PASS.
+- **Rolled out** (2026-10-28, after the owner's setup): the relay and the vite bake read `.env.cluster-pubs` OFF DISK (env as
+   fallback) — a dev-server restart after setup used to keep the OLD set, since env_file refreshes only on a container
+    recreate.  RELAY_R2R_CHECK now defaults to `enforce`; staging (same checkout) runs it, and a 9091→9092 frame crossed the
+     proven bridge.  Tabs use ONLY `.env.cluster-flock` once it exists (a kept claude key is retired); the code room re-held
+      the seat after reload.
+- **TODO** — mask `.env.cluster-flock` from containers that neither dial nor serve (compose); prod reads env only (no file) —
+   check its CLUSTER_TRUSTED_PUBS carries the flock pub before prod ever bridges.
 - **TODO — ActionButtons through Atime, forward-escaping** (no instance changes): `Actions.svelte`'s `fire()` runs `a.sc.fn` inside
    `H.UItime`; an action MAY carry `method:` + args instead of a closure, and `fire()` elvises it — old `fn` buttons keep working.
     Watch: Pause/Stop must stay instant while a long step holds Atime (set the flag, then elvis).  Buttons, verbs and Points stay

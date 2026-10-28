@@ -1,12 +1,12 @@
 Snap:H
   H:HohoNets,Run
     A:Lies
-      self,round=14	{"mung":["age"]}
+      self,round=15	{"mung":["age"]}
       w:Lies
         Opt
           nowriting
           dontSnapGhostList
-        self,round=14	{"mung":["age"]}
+        self,round=15	{"mung":["age"]}
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/HohoNets/Waftily/toc.snap,waft_path:Story/HohoNets/Waftily
             known,dige:a2cea91e2a0dadd0,kind:read	{"mung":["at"]}
@@ -49,7 +49,7 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1789565055928,kind:cold,resolved
+          want=1793184295361,kind:cold,resolved
         o_elvis:dock_askies
         req:Langoer,eternal,focus:Story/HohoNets/Waftily,ok	{"ref":{"w":"%w:Lies"}}
         see:lies,docs:1,wafts:1
@@ -72,8 +72,8 @@ Snap:H
             Text,dige:3c3d7da714b8b09b,disk_dige:3c3d7da714b8b09b,disk_rev
             Compile
               Map
-                def,method:HohoNetherland,line=2,rel_from,rel_to=16
-              time,compile=0.074,all=0.109
+                def,method:HohoNetherland,line=2,kind:w,rel_from,rel_to=16
+              time,compile=0.023,all=0.092
               Output,gen_path:gen/test/Story/Hoho/HohoAmeliorations.go,dige:00cecd6fe3b17128,source_dige:3c3d7da714b8b09b,ghost_dige:3c3d7da714b8b09b~g1
                source: |
                  <script lang="ts">
@@ -117,7 +117,7 @@ Snap:H
           Change
             backend,dige:3c3d7
             storage,dige:3c3d7
-            compile,dige:3c3d7,secs=0.074,dim,pending
+            compile,dige:3c3d7,secs=0.023,dim,pending
         req:workon	{"ref":{"w":"%w:Lang"}}
           req:understanding,maz=3,permanent,sig:1:13:2:0,what:story,finished
           req:ingredients,maz=2,permanent,sig:Ghost/test/Story/Hoho/HohoAmeliorations.g,finished

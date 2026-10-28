@@ -335,7 +335,7 @@
         <div class="ls-nokey" role="alert"
              title="this editor has no cluster signing key — gen_write is rejected unsigned. Load one →">
             <span class="ls-nokey-hd">⚠ no cluster identity</span>
-            <Actions N={id_action} />
+            <Actions N={id_action} {H} />
         </div>
     {/if}
 

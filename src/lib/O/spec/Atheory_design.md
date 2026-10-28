@@ -696,6 +696,31 @@ No Atheory adjustments yet.
        for the trickle think too.  A bare Atheory House (Pondland) runs `TheA_run` off any mutex; inside Mundo it must enter
         through the door.
 - **Spill is just a row** — `%TheASpilled:<synapse>,n:` on the sender.  Thread moved to `IOexpr_todo.md` §5.
+
+**Stuffica, the shape** (drafted 2026-10-29 for the owner — scraped together from Theory, UItime, `reactivity_docs.md` "the
+ frontier"; nothing built yet).  Stuffica's top-level UI is the door's reference implementation.  Three movements, each in its time:
+- **In: C\*\* from the backend is unpacked in UItime, into a pile nobody mutates.**  What the screen shows is mostly held elsewhere
+   — a runner's step snap, Atlas's `%Map`, a remote's `/Crew`.  It arrives as text (a frame, a `runner_ask` reply, a fetch) and
+    comes through the door as one arrival: `decode_wh_lines` it into a **fresh** C\*\* (the `AthePondReseat` ground), then
+     `Stuffica_from(w, view, pile)` + `Stuffica_refresh` in the same UItime.  The old pile is swapped whole, never emptied and
+      refilled, so `replace()`'s empty middle never exists for a reader.  The pile is tracing paper: a re-seat pairs points by
+       resolve(), names (Dips) hold still, what fitted glows.  A pile can be big and partial — the view's kinds/`says` pick what
+        is walked; the rest stays text until a deeper view opens on it (unpack on demand, per view, not per arrival).
+- **Show: the screen reads points, never Atime's particles.**  A view commits after the run/refresh, every changed view in one
+   flush; the template reads `Stuffica_points` (one counter tracked, the tree untracked).  That retires "the conflict" in
+    reactivity_docs: no `$effect` needs the read-then-re-read-inside-UItime dance, because the points are rewritten only by a walk
+     and a walk is done before its commit.  A `$effect` that wants a live particle is the smell — make it a view.
+- **Out: an event puts its context together sync, then arrives — at once — through the door.**  The handler reads only its own
+   points (already settled), builds `{what, …}` and makes ONE arrival: a `TheA_io` pulse on the screen compartment's `%TheAIO`
+    (or `e:Verb` when it is a verb), taped and replayable.  The door owns the UI qualities — coalesce a burst, a quiet window
+     (20ms after a change, at most 300ms), "whenever" — so no caller debounces.  A long answer (a backend fetch) is a hold
+      (`%TheAWait`), answered later by the next arrival — never an await in a Turn.
+- **The ring is its instrument.**  The Atime hold ring (open item 3) is how this UI proves it never waits long: each door entry
+   is a ring record (label, wait, held), so "the click took 300ms" names the holder.
+- **First subject.**  Something we are doing anyway, with a backend pile: a Book explorer — pick a Book, its steps' snaps
+   unpacked as piles, one deep view re-seated step to step (Storica's snap panel, grown up), clicks as arrivals.  Book-provable
+    on a pond: a pile arriving swaps whole (no empty read), a re-seat keeps names, a burst of clicks is one arrival.
+- **Landed 2026-10-28 (late):** (1) the guards, (2) the long verbs split (`everything`; `poke` sync-only), (4) a verb is an `e:Verb` arrival with `by` on `e.c`, (5) m16 — and ActionButtons enter through UItime.  Ledger: `Verbs_todo.md` §0, `IOexpr_todo.md` §0.  Open: (3) the Atime ring, (6) Stuffica.
 - **Next moves, small first:** (1) Theory guards — refuse an async wake handler, refuse a nested run, spill rows — Book-provable
    on the toy; (2) split the long verbs (read outside, apply in UItime); (3) the Atime ring + board share; (4) `%Verb` as an arrival
     with `by:`; (5) the `%Map` m9 — `kind:` on `%def`, `%i_elvis`/`%o_elvis` rows; (6) the Stuffica top-level UI as the door's

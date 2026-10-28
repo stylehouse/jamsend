@@ -1,0 +1,30 @@
+story:AthePondGuards
+  Styles
+  Plan
+  Opt
+    For
+  EntropyArrest
+    Entcase:Self_round
+      lematch,self,round
+        means,drop
+  TimeSpool
+    TimeTotal:beliefs,avg=0.03
+      sample=0.037,at=1793182940
+      sample=0.037,at=1793182950
+      sample=0.025,at=1793182957
+      sample=0.021,at=1793182966
+    TimeTotal:step,avg=0.005
+      sample=0.006,at=1793182940
+      sample=0.006,at=1793182950
+      sample=0.004,at=1793182957
+      sample=0.004,at=1793182966
+  step,dige:ca8acbfe6b4550ab
+  step=2,desc:stand four bare guards — each with a poke waiting,dige:485a0fbe09c0bda6
+  {"step":3,"desc":"run G_Async with an async wake — refused, never called","dige":"27f2b180c2de2b09"}
+    Assertion:an-async-wake-handler,sentence:an async wake handler is refused — never called — and a fault row on the compartment says so
+  step=4,desc:run G_Throw with a wake that throws — then poke it and run a plain wake,dige:5766418304a37b3f
+    Assertion:a-wake-handler-that,sentence:a wake handler that throws is a fault row not a crash — and the next run still runs
+  step=5,desc:run G_Nest with a wake that asks for a run inside the move — refused,dige:35d1a425a5eeebeb
+    Assertion:a-run-asked-for,sentence:a run asked for inside a move is refused — the outer run goes on and finishes
+  step=6,desc:run G_Hole — it sends on a synapse nobody hears,dige:01ffe8be563ccb8c
+    {"Assertion":"a-pulse-nobody-hears","sentence":"a pulse nobody hears spills — counted on its sender, not dropped silently"}

@@ -1,16 +1,29 @@
 <script lang="ts">
     import type { TheC } from "$lib/Stuff.svelte"
 
-    let { N }: { N: TheC[] } = $props()
+    // H: the House whose button rack this is — given, a click ENTERS ATIME through H.UItime (the beliefs mutex), like a verb
+    //  or a socket frame, so a button never reads or writes particles mid-tick (Verbs_todo §0, 2026-10-28).  Only the sync part
+    //   of fn is held: a promise it returns runs its tail outside, never awaited inside the mutex (a tail that waits for the
+    //    mutex itself would wedge).  role:pause (Story's ⏸) and anything marked instant stay instant — a pause must land while
+    //     a long hold is running, which is exactly when it is wanted.  No H (a caller that hasn't passed one) = the old instant click.
+    let { N, H }: { N: TheC[], H?: any } = $props()
 
     let actions = $derived(N)
 
-    function fire(a: TheC) {
-        try {
-            a.sc.fn?.()
-        } catch (err) {
-            console.warn(`Action "${a.sc.label}" failed:`, err)
+    function call(a: TheC, f: (() => any) | undefined) {
+        const go = () => {
+            try {
+                const back = f?.()
+                if (back && typeof back.then === 'function') back.then(() => {}, (err: any) => console.warn(`Action "${a.sc.label}" failed:`, err))
+            } catch (err) {
+                console.warn(`Action "${a.sc.label}" failed:`, err)
+            }
         }
+        if (!H?.UItime || a.sc.role === 'pause' || a.sc.instant) return go()
+        H.UItime(() => { go() }).catch((err: any) => console.warn(`Action "${a.sc.label}" could not enter:`, err))
+    }
+    function fire(a: TheC) {
+        call(a, a.sc.fn)
     }
 </script>
 
@@ -24,7 +37,7 @@
             <select
                 class="dd-select btn btn-{cls}"
                 value={(a.vers, a.sc.value) ?? ''}
-                onchange={(e) => { try { a.sc.on_pick?.((e.target as HTMLSelectElement).value) } catch (err) { console.warn(`Dropdown "${a.sc.label}" failed:`, err) } }}
+                onchange={(e) => { const v = (e.target as HTMLSelectElement).value; call(a, () => a.sc.on_pick?.(v)) }}
                 disabled={(a.vers, a.sc.disabled) ?? false}
             >
                 {#each (a.sc.options ?? []) as opt}

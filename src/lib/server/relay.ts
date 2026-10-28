@@ -24,10 +24,28 @@
 
 import { WebSocketServer, WebSocket } from 'ws'
 import type { Server } from 'node:http'
-import { writeFile, mkdir } from 'node:fs/promises'
+import { writeFile, mkdir, readFile } from 'node:fs/promises'
 import { resolve, dirname, sep } from 'node:path'
-import { createHash } from 'node:crypto'
-import { loadTrustedPubs, verifyHeader, prepubOf } from '../cluster_trust'
+import { createHash, randomBytes } from 'node:crypto'
+import { loadTrustedPubs as loadEnvTrustedPubs, verifyHeader, prepubOf, signHeader } from '../cluster_trust'
+import { readFileSync } from 'node:fs'
+
+// The trusted flock, read off DISK (.env.cluster-pubs at the checkout root), process.env as the fallback (2026-10-28).  The
+//  env_file only refreshes on a container RECREATE, so "Set up cluster trust" + a dev-server restart left the relay trusting
+//   the old set — the editor's setup wrote a file nobody re-read.  Now the file is the truth, re-read at most every 2s; a
+//    box with no file (prod's env_file-only deploy) keeps the env.  Staging mounts the same checkout, so both ends agree.
+let trustedCache = { at: 0, pubs: [] as string[] }
+function loadTrustedPubs(): string[] {
+	const now = Date.now()
+	if (now - trustedCache.at < 2000) return trustedCache.pubs
+	let pubs: string[]
+	try {
+		const m = readFileSync(resolve(process.cwd(), '.env.cluster-pubs'), 'utf8').match(/^\s*CLUSTER_TRUSTED_PUBS\s*=\s*(.*?)\s*$/m)
+		pubs = m ? m[1].split(',').map(s => s.trim()).filter(Boolean) : loadEnvTrustedPubs()
+	} catch { pubs = loadEnvTrustedPubs() }
+	trustedCache = { at: now, pubs }
+	return pubs
+}
 import { makeWatchDesk } from './watch'
 
 // gen_write lands here: the editor compiles a ghost and, rather than pay the browser's
@@ -217,13 +235,12 @@ export function attachRelay(
 		;((ws as any).seatsHeld ??= new Set<string>()).add(name)
 		reply({ control: 'seat_ok', holder: who })
 	}
-	// flock (tab → relay): {from, pub, of, ts, sign} — a CLUSTER_TRUSTED_PUBS key vouches for THIS socket without becoming its
+	// flock (tab → relay): {from, pub, of, nonce, sign} — a CLUSTER_TRUSTED_PUBS key vouches for THIS socket without becoming its
 	//  identity.  The tab keeps its own hello-bound face (`of`, which must be an addr this socket hello-bound, so a proof lifted
 	//   off one socket says nothing on another) and the flock key only marks the socket `trustedPub` — the bar for the seat and
 	//    for runner_ask.  A hello BY a flock key (relay_hello.mjs, a 🪪-pasted key) marks it the same way, with no flock frame.
-	//  FIRST HACK (2026-10-28): no relay nonce, so a replay inside the 30s window on a socket already bound as the same `of`
-	//   would pass — the window plus the bind keep that narrow.  The tab reads its flock key once off the repo share
-	//    (.env.cluster-editor, Lies_flock_key) — the relay holds only the pubs.
+	//  `nonce` is one this socket's hello_ok handed out, spent on use — so a proof is good once, on this socket only.
+	//   The tab reads its flock key once off the repo share (Lies_flock_key) — the relay holds only the pubs.
 	async function handleFlock(ws: WebSocket, msg: any) {
 		const reply = (o: any) => { try { ws.send(JSON.stringify(o)) } catch {} }
 		const trusted = loadTrustedPubs()
@@ -231,10 +248,17 @@ export function attachRelay(
 		const of = typeof msg.of === 'string' ? msg.of : ''
 		if (!of || !((ws as any).bound as Set<string> | undefined)?.has(of)) return reply({ control: 'flock_error', reason: 'not hello-bound as that `of` — hello first' })
 		const pub = typeof msg.pub === 'string' ? msg.pub : ''
-		const fresh = typeof msg.ts === 'number' && Math.abs(Date.now() - msg.ts) < 30_000
-		const signer = await verifyHeader({ control: 'flock', from: msg.from, pub, of, ts: msg.ts, sign: msg.sign }, trusted)
-		if (!fresh || !pub || signer !== pub) {
-			relayLog(`✗ flock proof REFUSED for ${of}${fresh ? '' : ' (stale ts)'} — not signed by a flock key`)
+		const nonces: string[] = (ws as any).nonces ?? []
+		const nonce = typeof msg.nonce === 'string' ? msg.nonce : ''
+		const at = nonce ? nonces.indexOf(nonce) : -1
+		if (at < 0) {
+			relayLog(`✗ flock proof REFUSED for ${of} — no live challenge (${nonce ? 'spent or foreign nonce' : 'no nonce'})`)
+			return reply({ control: 'flock_error', reason: 'flock proof must sign a nonce this socket\'s hello_ok gave — hello again' })
+		}
+		nonces.splice(at, 1)   // spent, verified or not: a guess costs the guesser the challenge
+		const signer = await verifyHeader({ control: 'flock', from: msg.from, pub, of, nonce, sign: msg.sign }, trusted)
+		if (!pub || signer !== pub) {
+			relayLog(`✗ flock proof REFUSED for ${of} — not signed by a flock key`)
 			return reply({ control: 'flock_error', reason: 'flock proof did not verify — not a cluster flock key' })
 		}
 		;(ws as any).trustedPub = pub
@@ -466,7 +490,10 @@ export function attachRelay(
 			broadcastControl({ control: 'peer-relay', up: true, target: editorRelayUrl })
 		})
 		link.on('pong', () => { (link as any).isAlive = true })        // re-proven each round — unmasks a half-open outbound bridge
-		link.on('message', (data: any, isBinary: boolean) => routeFromPeer(isBinary ? asBuffer(data) : asText(data)))
+		link.on('message', (data: any, isBinary: boolean) => {
+			if (!isBinary) { const t = asText(data); if (t.startsWith('{"control":"r2r_challenge"')) { void r2rAnswerChallenge(link, t); return } }
+			routeFromPeer(isBinary ? asBuffer(data) : asText(data))
+		})
 		link.on('close', (code: number) => {
 			clearTimeout(watchdog)
 			if (peerLink === link) peerLink = null
@@ -550,6 +577,37 @@ export function attachRelay(
 	//   after a queued one queues too, so a seq-ordered inbox never sees them overtake each other.
 	const FROM_CHECK = (process.env.RELAY_FROM_CHECK || 'enforce') as 'enforce' | 'log' | 'off'
 	const ASK_CHECK = (process.env.RELAY_ASK_CHECK || 'enforce') as 'enforce' | 'log' | 'off'
+	// THE BRIDGE PROVES ITSELF (2026-10-28).  The passive end challenges every inbound r2r link (r2r_challenge {nonce}); the
+	//  dialler answers r2r_hello {from, pub, nonce, sign} with this checkout's flock key, read off disk (.env.cluster-flock,
+	//   minted by the editor's cluster setup — the relay process holds no other private key).  Until proven, peer frames are
+	//    dropped (`enforce`, the default since the key rolled out) or only logged (`log`).  RELAY_R2R_CHECK=enforce | log | off.
+	//     The locality check on the upgrade stays as the first bar either way.
+	const R2R_CHECK = (process.env.RELAY_R2R_CHECK || 'enforce') as 'enforce' | 'log' | 'off'
+	async function flockKeyOnDisk(): Promise<{ pub: string, key: string } | undefined> {
+		try {
+			const env: Record<string, string> = {}
+			for (const ln of (await readFile(resolve(process.cwd(), '.env.cluster-flock'), 'utf8')).split('\n')) {
+				const m = ln.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/); if (m) env[m[1]] = m[2]
+			}
+			const pub = env.CLUSTER_IDENTO_FLOCK_PUB, key = env.CLUSTER_IDENTO_FLOCK_KEY
+			return pub && key ? { pub, key } : undefined
+		} catch { return undefined }
+	}
+	async function r2rAnswerChallenge(link: WebSocket, text: string) {
+		let m: any; try { m = JSON.parse(text) } catch { return }
+		const fk = await flockKeyOnDisk()
+		if (!fk) { relayLog(`🌉 r2r challenged but this checkout has no .env.cluster-flock — the bridge stays unproven (set up cluster trust in the editor)`); return }
+		const header = { control: 'r2r_hello', from: prepubOf(fk.pub), pub: fk.pub, nonce: String(m.nonce ?? '') }
+		try { link.send(JSON.stringify({ ...header, sign: await signHeader(header, fk.key) })) } catch {}
+	}
+	async function r2rHelloHeard(ws: WebSocket, text: string) {
+		let m: any; try { m = JSON.parse(text) } catch { return }
+		const want = (ws as any).r2rNonce
+		const signer = want && m.nonce === want ? await verifyHeader({ control: 'r2r_hello', from: m.from, pub: m.pub, nonce: m.nonce, sign: m.sign }, loadTrustedPubs()) : null
+		delete (ws as any).r2rNonce
+		if (signer && signer === m.pub) { (ws as any).peerProven = m.pub; relayLog(`🌉🐑 peer relay PROVEN by ${prepubOf(m.pub)}`) }
+		else relayLog(`🌉✗ peer relay hello REFUSED — ${want && m.nonce === want ? 'not signed by a flock key' : 'wrong or spent challenge'}`)
+	}
 	const ID_ADDR = /^[0-9a-f]{16}(_[1-9]\d*)?$/
 	const fromRefused = new Map<string, number>()
 	function claimedFrom(payload: string | Buffer): string {
@@ -766,6 +824,13 @@ export function attachRelay(
 				if (!asker || !asker.size) {
 					try { ws.send(JSON.stringify({ control: 'census_error', reason: 'not hello-bound — the bound list is presence, and presence answers only to verified identities', corr: msg.corr ?? null })) } catch {}
 					if (!(ws as any).censusRefused) { (ws as any).censusRefused = 1; relayLog(`✗ census REFUSED — asking socket has no verified hello bind`) }
+					return
+				}
+				// …and since 2026-10-28, a FLOCK member where trust is configured: any stranger can mint a key and hello, and the
+				//  bound list names every listener on the box.  Only runner_ask reads it, and it hellos with the claude key.
+				if (loadTrustedPubs().length && !(ws as any).trustedPub) {
+					try { ws.send(JSON.stringify({ control: 'census_error', reason: 'not in the flock — the census answers cluster flock keys only', corr: msg.corr ?? null })) } catch {}
+					if (!(ws as any).censusRefused) { (ws as any).censusRefused = 1; relayLog(`✗ census REFUSED — ${[...asker].join(',')} is not in the flock`) }
 					return
 				}
 			}
@@ -1050,7 +1115,13 @@ export function attachRelay(
 			// a hello by a FLOCK key (CLUSTER_TRUSTED_PUBS) — not just any self-signed one — is what may drive a
 			//  runner (the runner_ask gate in forwardText); a tab's own identity proves a key but is no flock member
 			if (loadTrustedPubs().includes(pub)) (ws as any).trustedPub = pub
-			try { ws.send(JSON.stringify(taken ? { control: 'hello_ok', addr: grant, taken } : { control: 'hello_ok', addr: grant })) } catch {}
+			// the CHALLENGE (2026-10-28): a fresh nonce per hello_ok, which a `flock` proof on this socket must sign — so a proof
+			//  is good once, here, and a captured one is worth nothing elsewhere or later.  The last few stay redeemable: a
+			//   hello retry can land between a tab reading one nonce and its proof arriving.
+			const nonce = randomBytes(16).toString('hex')
+			const nonces: string[] = ((ws as any).nonces ??= [])
+			nonces.push(nonce); if (nonces.length > 3) nonces.shift()
+			try { ws.send(JSON.stringify({ control: 'hello_ok', addr: grant, ...(taken ? { taken } : {}), nonce })) } catch {}
 			relayLog(`🪪 hello bound ${addr}${want ? ` want=${want} → seat ${grant}${taken ? ` (taken: ${taken.join(',')} — suffixed)` : ''}` : ''}${qaddr && qaddr !== addr ? ` (role channel ${qaddr} — delivery prefers the station socket)` : ''} (verified self-sig)`)
 		} else {
 			const reason = !pub ? 'no pub' : !fresh ? 'stale (ts skew)' : 'bad self-signature'
@@ -1141,7 +1212,17 @@ export function attachRelay(
 			peerLink = ws
 			relayLog(`✓ peer relay LINKED (inbound r2r) — editor end`)
 			broadcastControl({ control: 'peer-relay', up: true })
-			ws.on('message', (data: any, isBinary: boolean) => routeFromPeer(isBinary ? asBuffer(data) : asText(data)))
+			const r2rNonce = randomBytes(16).toString('hex')
+			;(ws as any).r2rNonce = r2rNonce
+			try { ws.send(JSON.stringify({ control: 'r2r_challenge', nonce: r2rNonce })) } catch {}
+			ws.on('message', (data: any, isBinary: boolean) => {
+				if (!isBinary) { const t = asText(data); if (t.startsWith('{"control":"r2r_hello"')) { void r2rHelloHeard(ws, t); return } }
+				if (!(ws as any).peerProven && R2R_CHECK !== 'off' && loadTrustedPubs().length) {
+					if (!(ws as any).r2rUnprovenSaid) { (ws as any).r2rUnprovenSaid = 1; relayLog(`🌉⚠ frames from an UNPROVEN peer relay — ${R2R_CHECK === 'enforce' ? 'dropped' : 'forwarded anyway (log mode)'}`) }
+					if (R2R_CHECK === 'enforce') return
+				}
+				routeFromPeer(isBinary ? asBuffer(data) : asText(data))
+			})
 			ws.on('close', (code: number) => {
 				if (peerLink === ws) peerLink = null
 				relayLog(`✗ peer relay CLOSED code=${code} (inbound r2r)`)
@@ -1198,6 +1279,18 @@ export function attachRelay(
 				}
 			}
 			if (askCorr) ackBack.set(String(askCorr), ws)
+			// WHO ASKED (2026-10-28, Atheory_design §3 "a %Verb elvis carrying by"): a runner_ask the gate let through carries `by` —
+			//  the asking socket's flock-proven prepub — stamped HERE, never trusted from the asker (one it wrote itself is replaced
+			//   or stripped).  The tab hands it to the verb as a proven arrival.
+			if (askType === 'runner_ask') {
+				const tp = (ws as any).trustedPub as string | undefined
+				const by = tp ? prepubOf(tp) : undefined
+				if (msg.by !== by) {
+					if (by) msg.by = by
+					else delete msg.by
+					text = JSON.stringify(msg)
+				}
+			}
 			const outcome = routeFromBrowser(text)
 			// #1 — undeliverable: a request that reached no browser (no local socket, no bridge) is
 			//  dropped, and the asking CLI must HEAR that rather than wait its full timeout blind.
@@ -1293,6 +1386,23 @@ export function attachRelay(
 		try { socket.setNoDelay(true) } catch {}
 		selfHost = selfHost || req.headers?.host || '' // learn our own host:port for the self-dial guard
 		const meta: Meta = { addr: u.searchParams.get('addr'), r2r: u.searchParams.get('r2r') === '1' }
+		// THE BRIDGE IS A SIBLING ON THIS BOX (2026-10-28).  An r2r socket becomes peerLink, and routeFromPeer hands its
+		//  frames — runner_ask included — to local tabs with no gate of their own: the dialling relay was trusted to have
+		//   gated them.  But `?r2r=1` is just a query param, and djamsend's Caddy puts /relay on the internet, so anyone
+		//    could have dialled in as the peer and driven every tab.  First hack: an r2r upgrade must arrive DIRECT (no proxy
+		//     headers) from a loopback|private address — where the sibling relay (172.17.0.1:9092) always dials from.
+		//      Next: a flock-signed r2r hello, so a bridge between boxes can be proven rather than located.
+		if (meta.r2r) {
+			const h = req.headers ?? {}
+			const proxied = !!(h['x-forwarded-for'] || h['forwarded'] || h['x-real-ip'])
+			const ra = String(socket.remoteAddress ?? '').replace(/^::ffff:/, '')
+			const priv = ra === '::1' || /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(ra)
+			if (proxied || !priv) {
+				relayLog(`⛔ r2r upgrade REFUSED from ${ra || '?'}${proxied ? ' (via a proxy)' : ''} — the bridge is a sibling relay on this box`)
+				try { socket.destroy() } catch {}
+				return
+			}
+		}
 		wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, meta))
 	}
 	httpServer.on('upgrade', onUpgrade)

@@ -71,8 +71,8 @@
         ;(H as any).post_do(() => (H as any).Clustation_clear?.(H), { see: 'clear_identity' })
         msg = 'identity cleared (switched away — the saved key stays, re-selectable by ?I=<addr>).'
     }
-    // Write .env.cluster-pubs (trust THIS editor + claude) + mint .env.cluster-claude if absent, via the
-    //  editor's own FSA.  Rebuilds the trusted set to the two-entry model; runner pubs stay out (%Grant).
+    // Write .env.cluster-pubs (trust THIS editor + claude + the tabs' flock key) + mint .env.cluster-claude and
+    //  .env.cluster-flock if absent, via the editor's own FSA.  Rebuilds the trusted set to those three; runner pubs stay out (%Grant).
     async function setup() {
         msg = '⏳ writing cluster-trust files via the Wormhole…'
         msg = (await (H as any).Lies_cluster_setup?.()) ?? '✗ cluster-setup unavailable'
@@ -147,7 +147,7 @@
                 </button>
             </div>
             <div class="row">
-                <button onclick={setup} disabled={!current} title="write .env.cluster-pubs (trust this editor + claude) + mint the claude key">Set up cluster trust</button>
+                <button onclick={setup} disabled={!current} title="write .env.cluster-pubs (trust THIS tab's identity + claude + the tabs' flock key) + mint the claude and flock keys if absent — click it from the editor: whichever tab clicks becomes the trusted editor">Set up cluster trust</button>
                 <button onclick={copyId} disabled={!current}>Copy my public id</button>
                 <button onclick={clear} disabled={!current}>Clear</button>
                 <button onclick={close}

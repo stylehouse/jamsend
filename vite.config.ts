@@ -2,6 +2,18 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig, loadEnv, type PluginOption } from 'vite';
 import { attachRelay } from './src/lib/server/relay';
 import { serve_diges, write_status_waft } from './src/lib/server/dige';
+import { readFileSync } from 'node:fs';
+
+// The trusted flock for the browser bake — off DISK first (.env.cluster-pubs, what the editor's "Set up cluster trust" writes),
+//  process.env (compose env_file) as the fallback.  The env_file only refreshes on a container recreate, so a dev-server
+//   restart after setup used to bake the OLD set (2026-10-28).  The relay reads the same file the same way.
+function trusted_pubs_now(): string {
+	try {
+		const m = readFileSync('.env.cluster-pubs', 'utf8').match(/^\s*CLUSTER_TRUSTED_PUBS\s*=\s*(.*?)\s*$/m);
+		if (m) return m[1];
+	} catch {}
+	return process.env.CLUSTER_TRUSTED_PUBS ?? '';
+}
 
 // Root .env/.env.local, merged under process.env (env_file injection wins).  This is how
 //  site-specific names/creds stay OUT of tracked files: PROD_DOMAIN &c. live in the
@@ -164,7 +176,7 @@ export default defineConfig({
 	//     they cannot leak into client code. The browser editor's own signing key comes from
 	//      localStorage (per-profile, out-of-band), not from any baked env.
 	define: {
-		'import.meta.env.VITE_CLUSTER_TRUSTED_PUBS': JSON.stringify(process.env.CLUSTER_TRUSTED_PUBS ?? ''),
+		'import.meta.env.VITE_CLUSTER_TRUSTED_PUBS': JSON.stringify(trusted_pubs_now()),
 		'import.meta.env.VITE_CLUSTER_ROLE':         JSON.stringify(process.env.CLUSTER_ROLE ?? ''),
 		// This site's public name + TURN credentials, baked for the client's ICE config
 		//  (Peerily's Peer_OPTIONS + the /ice probe page).  From the gitignored .env — no

@@ -13,29 +13,29 @@ story:HohoSurfer
         wantPantheate
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=0.562
-      sample=0.927,at=1785995567
-      sample=0.124,at=1789110634
-      sample=0.208,at=1789548709
-      sample=0.143,at=1789563558
-      sample=0.765,at=1789565609
+    TimeTotal:beliefs,avg=0.449
       sample=1.027,at=1789565718
       sample=0.592,at=1789565840
       sample=0.546,at=1789565857
       sample=0.405,at=1789565869
       sample=0.879,at=1792491411
-    TimeTotal:step,avg=0.281
-      sample=0.463,at=1785995567
-      sample=0.062,at=1789110634
-      sample=0.104,at=1789548709
-      sample=0.072,at=1789563558
-      sample=0.382,at=1789565609
+      sample=0.225,at=1793184761
+      sample=0.225,at=1793184773
+      sample=0.225,at=1793184773
+      sample=0.225,at=1793184773
+      sample=0.138,at=1793184779
+    TimeTotal:step,avg=0.225
       sample=0.514,at=1789565718
       sample=0.296,at=1789565840
       sample=0.273,at=1789565857
       sample=0.203,at=1789565869
       sample=0.439,at=1792491411
+      sample=0.113,at=1793184761
+      sample=0.113,at=1793184773
+      sample=0.113,at=1793184773
+      sample=0.113,at=1793184773
+      sample=0.069,at=1793184779
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
-  step,dige:1a8ef1000c113322
-  step=2,dige:61c7a2e702c5d3d8
+  step,dige:eb3a792f1e78f331
+  step=2,dige:36d2fdbf3284cb08

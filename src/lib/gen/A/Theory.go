@@ -11,7 +11,7 @@ import { Selection } from "$lib/Selection.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_Theory(): string { return 'c6f72308fb6adf34~g1' },
+    Ghostmeta_Ghost_A_Theory(): string { return '8516c053e4377583~g1' },
 
 // Theory.g — Atheory's first organ: an A says which code it runs (spec/Atheory_todo.md §0.1 and §0.2).
 //
@@ -388,11 +388,23 @@ TheA_move(w, wake) {
         let t0 = performance.now()
         if (tendrils) w.c.sending_from = this.TheA_addr(w) + (was ? '/Turn' + ((was.sc.made || 0) + 1) : '')
         for (const pulse of pulses) synapse.drop(pulse)
+        let fn = typeof wake === 'string' ? me?.[wake]?.bind(me) : wake
+        let wake_name = typeof wake === 'string' ? wake : (wake?.name || 'fn')
         for (const pulse of runs) {
-            if (typeof wake === 'string') {
-                me[wake](w, synapse, pulse)
+            if (!fn) {
+                this.TheA_fault(w, 'no_wake', wake_name)
+            } else if (fn.constructor?.name === 'AsyncFunction' || (typeof wake === 'string' && me[wake]?.constructor?.name === 'AsyncFunction')) {
+                this.TheA_fault(w, 'async_wake', wake_name)
             } else {
-                wake(w, synapse, pulse)
+                try {
+                    let back = fn(w, synapse, pulse)
+                    if (back && typeof back.then === 'function') {
+                        back.then(() => {}, () => {})
+                        this.TheA_fault(w, 'async_wake', wake_name)
+                    }
+                } catch (e) {
+                    this.TheA_fault(w, 'threw', wake_name, String(e?.message || e).split('\n')[0].slice(0, 120))
+                }
             }
         }
         delete w.c.sending_from
@@ -406,6 +418,17 @@ TheA_move(w, wake) {
         synapse.oai({ TheAWoke: 1 }, { count: (woke?.sc.count || 0) + runs.length, pulses: (woke?.sc.pulses || 0) + pulses.length })
         if (was) this.TheA_turn_commit(w, was, synapse, pulses.length, before, sent_before, ate, { t0, t1 })
     }
+
+},
+// GUARDS (Atheory_design §3 "The guards, made right") — a move is one sync batch, so a wake handler that is async, returns a
+//  promise, or throws is a fault, not a crash.  An async one is never called: its sends would land after the boundary with no
+//   from:, silently.  A promise returned anyway is ignored (its tail is outside the run) and faulted; a throw is caught and
+//    faulted, and the move goes on.  Each is a row on the compartment, counting — %TheAFault:<why>,wake:<name>,n: (+err: for a
+//     throw) — so a Book sees it and the board can draw it, and once on the console
+TheA_fault(w, why, wake, err) {
+    let had = w.o({ TheAFault: why, wake })[0]
+    w.oai({ TheAFault: why, wake }, { n: (had?.sc.n || 0) + 1, ...(err ? { err } : {}) })
+    if (!had) console.warn('🛑 TheA ' + why + ': ' + this.TheA_addr(w) + ' ' + wake + (err ? ' — ' + err : ''))
 
 },
 // TheA_send — a compartment sends on one of its synapses: into its own outbox, carrying whatever it says (a fish's name and age).
@@ -546,6 +569,7 @@ TheA_boundary(names, ready) {
         let box = w.o({ TheAOutbox: 1 })[0]
         for (const pulse of box.o({ TheAPulse: 1 })) {
             let { TheAPulse, synapse: name, ...rest } = pulse.sc
+            let heard = 0
             for (const B of this.TheA_all(this)) {
                 for (const v of B.o({ w: 1 })) {
                     for (const synapse of v.o({ TheASynapse: name })) {
@@ -553,14 +577,28 @@ TheA_boundary(names, ready) {
                         if (!hears) continue
                         synapse.i({ TheAPulse: 1, ...rest }).c.sent_at = pulse.c.sent_at
                         landed++
+                        heard++
                         if (ready) ready.add(B.sc.A)
                     }
                 }
             }
+            if (!heard) this.TheA_spill(w, name, pulse.c.turn)
         }
         w.drop(box)
     }
     return landed
+
+},
+// SPILL (IOexpr_todo §5) — a pulse no synapse heard.  A synapse nobody hears is a plug-hole, fine to leave open; a pulse sent INTO
+//  one is news nobody took, so it is counted, not dropped silently: %TheASpilled:<synapse>,n: on the sender, and on the Turn that
+//   sent it when the sender keeps Turns.  Unconditional — a fact about delivery, not tracing
+TheA_spill(w, name, turn) {
+    let had = w.o({ TheASpilled: name })[0]
+    w.oai({ TheASpilled: name }, { n: (had?.sc.n || 0) + 1 })
+    if (turn) {
+        let on = turn.o({ TheASpilled: name })[0]
+        turn.oai({ TheASpilled: name }, { n: (on?.sc.n || 0) + 1 })
+    }
 
 },
 // TheA_run — the scheduler, by hand (Atheory_todo §0.0 "From the top", item 1): rounds of pulses, nothing ambient.  It holds
@@ -575,6 +613,13 @@ TheA_boundary(names, ready) {
 //   moves in round one, with nothing asked if nothing else readied it.  So the code an A runs changes only between runs,
 //    and a run is all one era
 TheA_run(at, wake, ready, most) {
+    // NO NESTED RUNS: a run inside a move would break the batch and clobber run_t0/run_round.  Refused, as a counting row on at
+    if (this.c.run_t0 != null) {
+        let had = at.o({ TheAFault: 'nested_run' })[0]
+        at.oai({ TheAFault: 'nested_run' }, { n: (had?.sc.n || 0) + 1 })
+        if (!had) console.warn('🛑 TheA nested_run refused — a run was asked for inside a move')
+        return null
+    }
     let todo = new Set(ready || [])
     for (const old of at.o({ TheARun: 1 })) at.drop(old)
     let run = at.i({ TheARun: 1 })
@@ -587,27 +632,30 @@ TheA_run(at, wake, ready, most) {
     // TIMING (Theory.g TENDRILS): every run and round keeps when it began and ended on .c, never snapped; a move reads the run's
     //  start (to say its Turn's offset) and its round (to say which round it moved in)
     run.c.t0 = this.c.run_t0 = performance.now()
-    while (todo.size && n < (most || 50)) {
-        n++
-        let names = [...todo].sort()
-        todo = new Set()
-        let t_round = performance.now()
-        this.c.run_round = n
-        for (const name of names) {
-            let A = this.TheA_all(this).find(A => A.sc.A === name)
-            for (const w of A ? A.o({ w: 1 }) : []) this.TheA_move(w, wake || w.sc.w + '_woken')
+    try {
+        while (todo.size && n < (most || 50)) {
+            n++
+            let names = [...todo].sort()
+            todo = new Set()
+            let t_round = performance.now()
+            this.c.run_round = n
+            for (const name of names) {
+                let A = this.TheA_all(this).find(A => A.sc.A === name)
+                for (const w of A ? A.o({ w: 1 }) : []) this.TheA_move(w, wake || w.sc.w + '_woken')
+            }
+            let landed = this.TheA_boundary(names, todo)
+            let round = run.i({ TheARound: String(n), ...(landed ? { landed } : {}) })
+            for (const name of names) round.i({ TheAWent: name })
+            round.c.t0 = t_round
+            round.c.t1 = performance.now()
+            this.TheA_time(round, round.c.t0, round.c.t1)
         }
-        let landed = this.TheA_boundary(names, todo)
-        let round = run.i({ TheARound: String(n), ...(landed ? { landed } : {}) })
-        for (const name of names) round.i({ TheAWent: name })
-        round.c.t0 = t_round
-        round.c.t1 = performance.now()
-        this.TheA_time(round, round.c.t0, round.c.t1)
+    } finally {
+        run.c.t1 = performance.now()
+        this.TheA_time(run, run.c.t0, run.c.t1)
+        delete this.c.run_round
+        delete this.c.run_t0
     }
-    run.c.t1 = performance.now()
-    this.TheA_time(run, run.c.t0, run.c.t1)
-    delete this.c.run_round
-    delete this.c.run_t0
     let waits = this.TheA_waits()
     at.oai({ TheARun: 1 }, { rounds: n, ...(todo.size ? { cut: 1 } : { quiet: 1 }), ...(waits ? { waiting: waits } : {}) })
     return run
@@ -756,7 +804,9 @@ TheA_turn_commit(w, was, synapse, pulses, before_all, sent_before, ate, when) {
         if (!after.includes(row)) turn.i({ TheAGoner: label(row), of: row.sc[label(row)] })
     }
     for (const pulse of this.TheA_outbox(w)) {
-        if (!sent_before.includes(pulse)) turn.i({ TheASent: pulse.sc.synapse, ...(pulse.sc.swims ? { of: pulse.sc.swims } : {}) })
+        if (sent_before.includes(pulse)) continue
+        turn.i({ TheASent: pulse.sc.synapse, ...(pulse.sc.swims ? { of: pulse.sc.swims } : {}) })
+        pulse.c.turn = turn
     }
     this.TheA_was_trim(was)
 

@@ -29,7 +29,7 @@ const OATH_LINE_RE      = /^\s*Assertion:([a-z0-9-]+),/gm
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Lagoon(): string { return '54e8fef75b4624a1~g1' },
+    Ghostmeta_Ghost_L_Lagoon(): string { return 'b7f9fb85f28690bf~g1' },
 
 // Lagoon.g — the READER LAYER over the censuses.  The third ghost in Ghost/L/ (the land); spec home:
 //  src/lib/O/spec/Lagoon_todo.md.  `Lagoon` is the owner's working title (2026-09-08) and the image is
@@ -1578,7 +1578,7 @@ async Lagoon_cave_command(w, v) {
     let SH = w.c.face_on
     let lies = (SH ? SH.o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] : null) || this.Lagoon_lies()
     let r = typeof this.Verb_run === 'function'
-        ? await this.Verb_run(lies, name, ask)
+        ? await this.Verb_run(lies, name, ask, { hand: 1 })
         : { ok: false, result: { error: 'no verb registry on this tab' } }
     delete w.c.cave_sig
     // THE WORKSHOP'S WATCH (Ghost/L/Workshop.g) — a creation now stands in this room; the cave becomes its window
@@ -2345,10 +2345,12 @@ verbs_Lagoon() {
           run: (w, a) => H.Lagoon_verb_callers(w, a) },
         { name: 'everything_check', where: 'terminal', writes: 0, args: '',
           desc: 'the program map checked against the tree — coverage and every stale name — writes nothing',
-          run: (w, a) => H.Lagoon_everything(w, a, false) },
+          run: (w, a) => H.Lagoon_everything(w, a, false),
+          prepare: (w, a) => H.Lagoon_everything_prepare(w, a), read: (w, a, plan) => H.Lagoon_everything_read(w, a, plan, false) },
         { name: 'everything', where: 'editor', writes: 1, args: '',
           desc: 'rebuild the program map — every area Waft and Everything — validated first — written through the repo nav',
-          run: (w, a) => H.Lagoon_everything(w, a, true) },
+          run: (w, a) => H.Lagoon_everything(w, a, true),
+          prepare: (w, a) => H.Lagoon_everything_prepare(w, a), read: (w, a, plan) => H.Lagoon_everything_read(w, a, plan, true) },
         { name: 'atlas_lint', where: 'terminal', writes: 0, args: '[--sees] [--stale]',
           desc: 'missing and beyond-EOF file:line links and orphan defs — --sees adds the unproven %see sentences',
           run: (w, a) => H.Lagoon_verb_lint(w, a) },
@@ -2359,13 +2361,27 @@ verbs_Lagoon() {
 //  This host reads the tree the way the land already does: the FILE LIST is Atlas's census (refreshed first, so a file made a
 //   minute ago counts), every TEXT and every Book comes through the repo nav.  `write` only when asked and only on the editor
 //    terminal (the verb's `writes` makes Verb_run refuse it elsewhere); a problem anywhere writes nothing at all.
+// THE SPLIT (Verbs_todo §0, 2026-10-28): the verb's two halves.  prepare runs in Atime — refresh Atlas, take the roster as plain
+//  strings; read runs OUTSIDE — every toc read, the build, every write — touching no particle, so the tab's mutex isn't held
+//   across the disk.  Verb_run calls them in turn; Lagoon_everything is both in one, for a caller with no split
 async Lagoon_everything(w, a, write) {
+    let plan = await this.Lagoon_everything_prepare(w, a)
+    if (plan.error) return plan
+    return await this.Lagoon_everything_read(w, a, plan, write)
+
+},
+async Lagoon_everything_prepare(w, a) {
     let c = this.Lagoon_verb_census()
     let nav = this.Atlas_nav ? this.Atlas_nav() : null
     if (!c.atlas) return { error: 'no A:Atlas standing — the map lists the tree off its census' }
     if (!nav) return { error: 'no repo nav on this tab' }
     await this.Atlas_refresh(c.atlas, nav)
-    let rostered = new Set(c.atlas.o({ Doc: 1 }).map(d => String(d.sc.Doc)))
+    return { rostered: c.atlas.o({ Doc: 1 }).map(d => String(d.sc.Doc)), nav }
+
+},
+async Lagoon_everything_read(w, a, plan, write) {
+    let nav = plan.nav
+    let rostered = new Set(plan.rostered)
     let split = (p) => {
         let cut = p.lastIndexOf('/')
         return [p.slice(0, cut), p.slice(cut + 1)]
