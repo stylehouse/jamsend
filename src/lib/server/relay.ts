@@ -147,6 +147,71 @@ export function attachRelay(
 	//        now, so a topic delivers LOCAL-only; cross-relay topic fan-out (forward to the bridge too) is the
 	//         two-instance follow-up — penciled, not built.
 	const claims = new Map<string, WebSocket>() // @channel → the socket that claimed the name
+	// THE WRITE SEATS (2026-10-27, Editron.md §8.2 A, LiesLang_todo §11) — one holder per name per box: `editor` is who
+	//  WRITES (Waft saves, typed .g saves); `compiler` is reserved for the compile authority (§8.2 B).  Held on a SOCKET, so
+	//   liveness is the keepalive round below: a closed or half-open holder is dropped and its seat frees, and every socket
+	//    that was refused hears `seat_free` and may ask again.  A seat is NOT an address — nothing routes by it.
+	const SEAT_NAMES = new Set(['editor', 'compiler'])
+	const seats = new Map<string, { ws: WebSocket, who: string, since: number }>()
+	const seatWaiters = new Map<string, Set<WebSocket>>()
+	function seatWho(ws: WebSocket, said: string): string {
+		const b = (ws as any).bound as Set<string> | undefined
+		const id = b?.size ? [...b][0] : ''
+		return [said.slice(0, 48), id && `(${id})`].filter(Boolean).join(' ') || String((ws as any).declaredRole || 'anon')
+	}
+	function seatHeld(name: string): { ws: WebSocket, who: string, since: number } | undefined {
+		const h = seats.get(name)
+		if (h && h.ws.readyState !== WebSocket.OPEN) { seats.delete(name); return undefined }
+		return h
+	}
+	function seatFree(name: string, why: string) {
+		seats.delete(name)
+		const waiting = seatWaiters.get(name)
+		seatWaiters.delete(name)
+		relayLog(`✍ seat:${name} FREE (${why})${waiting?.size ? ` — telling ${waiting.size} waiting` : ''}`)
+		if (waiting) for (const s of waiting) if (s.readyState === WebSocket.OPEN) { try { s.send(JSON.stringify({ control: 'seat_free', seat: name })) } catch {} }
+	}
+	// seat (tab → relay): {want, take?, who?, why?} asks; {release} gives back; {ask:'who'} reads.  A free seat, or one
+	//  this socket already holds, is granted (seat_ok).  A live holder keeps it (seat_taken) unless the ask carries
+	//   `take` — a deliberate act in the asking tab — and then the old holder hears seat_lost and the asker gets seat_ok.
+	//  Who may ask: a hello-verified socket when the cluster is configured (the seat gates writes, so it is gen_write's
+	//   posture), anyone otherwise, said once in the log.
+	function handleSeat(ws: WebSocket, msg: any) {
+		const name = String(msg.want ?? msg.release ?? msg.seat ?? '')
+		const reply = (o: any) => { try { ws.send(JSON.stringify({ seat: name, ...o })) } catch {} }
+		if (!SEAT_NAMES.has(name)) return reply({ control: 'seat_error', reason: `no such seat '${name.slice(0, 24)}'` })
+		if (msg.ask === 'who') {
+			const h = seatHeld(name)
+			const verified = !!((ws as any).bound as Set<string> | undefined)?.size
+			return reply({ control: 'seat_who', held: h ? 1 : 0, ...(h ? { who: verified ? h.who : h.who.replace(/\s*\(.*\)$/, ''), since: h.since } : {}) })
+		}
+		const verified = !!((ws as any).bound as Set<string> | undefined)?.size
+		if (!verified) {
+			if (loadTrustedPubs().length) return reply({ control: 'seat_error', reason: 'not hello-bound — a seat gates writes; hello first' })
+			if (!(ws as any).seatUnverifiedSaid) { (ws as any).seatUnverifiedSaid = 1; relayLog(`✍ seat ask from an unverified socket allowed — no cluster trust configured`) }
+		}
+		if (msg.release !== undefined) {
+			if (seatHeld(name)?.ws === ws) seatFree(name, 'released')
+			return reply({ control: 'seat_released' })
+		}
+		const who = seatWho(ws, typeof msg.who === 'string' ? msg.who : '')
+		const why = typeof msg.why === 'string' ? msg.why.slice(0, 120) : ''
+		const h = seatHeld(name)
+		if (h && h.ws !== ws && !msg.take) {
+			;(seatWaiters.get(name) ?? seatWaiters.set(name, new Set()).get(name)!).add(ws)
+			relayLog(`✍ seat:${name} asked by ${who} — held by ${h.who}, refused (waits)`)
+			return reply({ control: 'seat_taken', holder: h.who, since: h.since })
+		}
+		if (h && h.ws !== ws) {
+			try { h.ws.send(JSON.stringify({ control: 'seat_lost', seat: name, to: who, ...(why ? { why } : {}) })) } catch {}
+			;(seatWaiters.get(name) ?? seatWaiters.set(name, new Set()).get(name)!).add(h.ws)
+			relayLog(`✍ seat:${name} WRESTED by ${who} from ${h.who}${why ? ' — ' + why : ''}`)
+		} else if (!h) relayLog(`✍ seat:${name} → ${who}`)
+		seats.set(name, { ws, who, since: h?.ws === ws ? h.since : Date.now() })
+		seatWaiters.get(name)?.delete(ws)
+		;((ws as any).seatsHeld ??= new Set<string>()).add(name)
+		reply({ control: 'seat_ok', holder: who })
+	}
 	let role: Role | null = null
 	let peerLink: WebSocket | null = null // the single relay↔relay socket (either end)
 	let selfHost = '' // our own host:port, learned from the first upgrade's Host header
@@ -623,6 +688,7 @@ export function attachRelay(
 			return
 		}
 		if (msg.control === 'gen_write') { void handleGenWrite(ws, msg); return }
+		if (msg.control === 'seat') { handleSeat(ws, msg); return }
 		if (msg.control === 'hello') {
 			// FROM-CHECK (2026-10-13): frames this socket sends while its hello is still verifying wait for it (see
 			//  fromGate), so the async verify can't race a frame that follows the hello on the same socket.
@@ -1111,6 +1177,8 @@ export function attachRelay(
 			const roleBound = (ws as any).roleBound as Set<string> | undefined  // release the role addr(s) bound via `become`
 			if (roleBound) for (const a of roleBound) unbind(a, ws)
 			watchDesk.drop(ws)                                                 // its file fixations; the dir watches linger for GC
+			for (const n of ((ws as any).seatsHeld as Set<string> | undefined) ?? []) if (seats.get(n)?.ws === ws) seatFree(n, 'holder closed')
+			for (const set of seatWaiters.values()) set.delete(ws)
 		}
 		ws.on('close', (code: number) => {
 			drop()

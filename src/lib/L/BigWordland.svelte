@@ -78,6 +78,13 @@
     )
     let active = $derived(houses.find(h => h.c.ip === active_ip))
 
+    // THE WRITE SEAT (LiesLang_todo §11) — the room's w:Lies says whether this tab writes: %Seat:editor,held, or by:<who>.
+    //  No answer yet (or no relay) → no badge.  Clicking "reads" wrests it — a deliberate act, which is what may wrest.
+    let run_house = $derived(houses.find(h => h.name === the_book))
+    let lies_w = $derived.by(() => { void run_house?.version; return (run_house as any)?.o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] as any })
+    let seat = $derived.by(() => { void lies_w?.version; const st = lies_w?.o({ Seat: 'editor' })[0] as any; void st?.version; return st ? { held: !!st.sc.held, by: st.sc.by as string | undefined } : undefined })
+    function wrest_seat() { if (lies_w && run_house) (run_house as any).Lies_seat_ask(lies_w, true, 'the seat badge, clicked') }
+
     // sprawl — the escape hatch back to the ORIGINAL view: every House's UIs dumped in
     //  order down one gutsy page, no switcher filter.  A workspace choice, so it lives in
     //   the stash (reactive $state on the House, like showC) and survives a reload; the ▦
@@ -298,7 +305,7 @@
 <div class="bw">
     <!-- the top bar: room name · the H** toc · Lies summon · the searchbar -->
     <div class="bw-top">
-        <span class="bw-name" title="BigWordland — {editor_book ? '?E=' + editor_book + ' (editor: takes the editor slot)' : '?H=' + hacker_book + ' (hacker: docks without the duties)'}">BigWordland{#if !editor_book}<span class="bw-hack">hacker</span>{/if}</span>
+        <span class="bw-name" title="BigWordland — {editor_book ? '?E=' + editor_book + ' (editor: takes the editor slot)' : '?H=' + hacker_book + ' (hacker: docks without the duties)'}">BigWordland{#if !editor_book}<span class="bw-hack">hacker</span>{/if}</span>{#if seat?.held}<span class="bw-seat held" title="this tab holds seat:editor — its Waft and .g saves land">✍ writes</span>{:else if seat?.by}<button class="bw-seat" title="seat:editor is held by {seat.by} — this tab reads; saves wait for the seat. Click to take it." onclick={wrest_seat}>reads</button>{/if}
         <div class="bw-toc">
             {#each houses as house (house.c.ip)}
                 <button class="bw-h" style="--d: {depth_of(house)}"
@@ -450,6 +457,12 @@
         color: #8fd3c8; border: 1px solid rgba(143, 211, 200, 0.4);
         border-radius: 5px; padding: 0.02rem 0.3rem; vertical-align: 0.1em;
     }
+    .bw-seat {
+        font: inherit; font-size: 0.62rem; letter-spacing: 0.1em; margin-left: -0.5rem; cursor: pointer;
+        color: #c8b48f; background: none; border: 1px dashed rgba(200, 180, 143, 0.45);
+        border-radius: 5px; padding: 0.02rem 0.3rem;
+    }
+    .bw-seat.held { color: #b8e08f; border: 1px solid rgba(184, 224, 143, 0.5); cursor: default; }
     .bw-name {
         font-size: 0.85rem; letter-spacing: 0.14em; text-transform: uppercase;
         color: #8fa2c8; text-shadow: 0 0 12px rgba(140, 170, 230, 0.35);

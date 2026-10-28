@@ -540,6 +540,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             console.warn(`🗂 Lies_source_write: no Good for ${path} — ignoring`)
             return
         }
+        // THE WRITE SEAT: typing is the deliberate act that wrests it (Editron.md §8.2 A).  Held back, not lost — paid on seat_ok.
+        if (H.Lies_holds_seat(w) === false) { H.Lies_seat_owe(w, 'source', path, text, true); return }
 
         // Park the save inside req:Store.  Keyed by path: a re-save while one is
         // still in flight mutates the in-flight req's text rather than racing a
@@ -1030,7 +1032,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             //      out of every recorded fixture.  (Decorated registries like Cluster mutate on
             //       decorate anyway, so this only matters for an opened-but-untouched Waft.)
             //  Never on a retake: a file that VANISHED under us is not ours to re-create.
-            if (content === null && !retake && H.Lies_role(w) === 'editor' && !H.Lies_nowriting(w, path)) H.Lies_waft_save(w, waft)
+            if (content === null && !retake && H.Lies_writer(w) && !H.Lies_nowriting(w, path)) H.Lies_waft_save(w, waft)
 
             w.bump_version()
             if (retake) {

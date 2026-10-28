@@ -639,6 +639,52 @@ The music app rests; these come first.  **Built: `AthePondCode`** (§0.2 above):
 
 Each test is a sentence a person would say, and each can be sabotaged once to prove it bites (Homethink §3).
 
+### Tendrils — consistent eventing (BUILT 2026-10-28 — Theory.g TENDRILS, Book `AthePondTendril`, the board on /Pondland)
+
+**What landed.**  Opt-in per House by `%TheATendrils`.  `TheA_io` gives its pulse `from:<A>/<w>/Heard<n>`; `TheA_move` notes every
+ pulse's `from:` before the run and sets the address it sends from (`<A>/<w>/Turn<next>`, or bare `<A>/<w>` with no `%TheAWas`);
+  `TheA_send` stamps it (after the sender's own sc, so a woken pulse's `from:` can't pass through); the boundary copies it;
+   `TheA_turn_commit` writes one `%TheAAte,from:` per pulse eaten.  Readers: `TheA_at(addr)`, `TheA_came_from(turn)`,
+    `TheA_led_to(addr)`.  **The board** (Pondland, above the tanks) is a `%TheAReader:board` on every compartment: each run it
+     reads the new Turns, flashes each compartment by how much it ate, and flies a dot per (sender Turn → eater) along the wires,
+      ordered by depth along the tendrils — "who woke, how much, and who woke them", never guessed from the wiring.
+ Book `AthePondTendril` (AtheTesting.g) swears forward, back, the latest-Turn's four Ates, the clock's fan-out of two, and a
+  trimmed Turn's dangling `from:` — recorded by a Sonnet agent on a runner.
+
+**The design, as first written:**
+
+The owner: *"event after event can be traced back or forward … it's a major Housing concern, getting consistent eventing."*
+ What Theory.g does today, hop by hop — **the identity of an event is lost at every one**:
+- `TheA_io` writes a `%TheAHeard:<n>` (the tape) and puts a NEW `%TheAPulse` (sc copied) on the synapse.
+- `TheA_move` drops the pulses, hands each run its pulse — under `sum:latest` only the newest of N runs, so causes go many:1.
+- `TheA_send` puts a NEW pulse in the outbox, naming nothing of the pulse being handled.
+- `TheA_boundary` copies its sc into a NEW pulse on each hearing synapse (a fan-out: one cause, many landings).
+- `TheA_turn_commit` is the nearest thing to an event record: one `%TheATurn:<n>` per synapse woken — the synapse, how many
+   pulses, the code digest, what changed across the move (`%TheANeu`, `%TheAGoner`) and what it sent (`%TheASent`).  But a
+    Sent names only a synapse, and a Turn doesn't say which pulses it ate.
+
+**So the unit of event is the Turn, and a tendril is two particles on it:**
+```
+%TheATurn:7,synapse:fish,pulses:3
+  %TheAAte,from:A:Host/w:Athe_Host/TheAHeard:12     one per pulse eaten — ALL of them, even when sum:latest ran one
+  %TheAAte,from:A:Pond/w:Athe_Pond/TheATurn:4
+  %TheANeu:fish,of:Wanda
+  %TheASent:heron,to:A:Heron/w:Athe_Heron            and the landing pulse carries from: this Turn's address
+```
+- **A pulse carries `from:`** — the address of the Turn that sent it, or the Heard that brought it in from outside; `TheA_boundary`
+   copies it to every landing.  **A Turn keeps an `%TheAAte` per pulse.**  Back = follow `from:`; forward = find the Ates naming you.
+- **The address is the position, stringified** — `A:<name>/w:<name>/TheATurn:<n>` — the durable-id question answered where
+   Atheory already stands: hierarchical, and only as durable as the Turn is kept.
+- **Kept only where read** — Turns already trim unless a `%TheAReader` is behind them (`TheA_was_trim`).  So a tendril lasts
+   as long as someone follows it, and **Story is a reader**: what a Book records of a run is the Turns of the compartments it
+    reads.  That gathers "Story records" and "consistent eventing" into one thing.
+- **To prove first, by Book** (beside AthePondTurns / AthePondTurnReaders / AthePondTape): IO → a count synapse → a latest
+   synapse → a fan-out of two; swear the chain from one Heard forward to the last Neu, and back from it; swear a sum:latest
+    Turn names all N of its Ates; swear a trimmed Turn leaves a dangling `from:` that says so rather than breaking.
+- **Still open:** the old Housing's elvis (`i_elvisto`, Housing.svelte.ts:740) carries no sender either; an elvis from outside
+   an Atheory House enters as a Heard, so the tendril starts there — inside the old belief loop, a `.c.cause` stamp is the
+    cheap stopgap, not the theory.
+
 ### What the sketch still doesn't say
 
 - **Where Turns and pulses sit relative to the existing belief walk.**  The first build may run the scheduler *inside*

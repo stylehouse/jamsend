@@ -1,0 +1,102 @@
+Snap:H
+  H:AthePondTendril,Run
+    A:AthePondTendril
+      self,round=2	{"mung":["age"]}
+      w:AthePondTendril
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        TheARun,rounds=3,quiet
+          TheARound:1,landed=4
+            TheAWent:Host
+          TheARound:2,landed=8
+            TheAWent:Clock_A
+          TheARound:3
+            TheAWent:K_P
+            TheAWent:K_Q
+        Chain:forward,path:Host/Athe_Host/Heard1 → Host/Athe_Host/Turn1 → Clock_A/Athe_Clock/Turn1 → K_P/Athe_Tank/Turn1 · K_Q/Athe_Tank/Turn1
+        Chain:back,path:K_Q/Athe_Tank/Turn1 ← Clock_A/Athe_Clock/Turn1 ← Host/Athe_Host/Turn1 ← Host/Athe_Host/Heard1
+    TheATendrils
+    A:Host
+      TheACode:Athe_Host,variant:plain,dige:bf8156c1dd2b8a94
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:426ea8a90ecf1e85~g1
+      w:Athe_Host
+        Beat,ms=500
+        TheAIO:outside,heard,takes
+          TheAHeard:1,take,ms=2300
+        TheASynapse:outside,wake:hear,sum:count
+          TheAWoke,count,pulses
+        TheAAxon:beat
+        TheAWas,keep=2,made
+          TheATurn:1,synapse:outside,pulses,code_dige:bf8156c1dd2b8a94
+            TheAAte,from:Host/Athe_Host/Heard1
+            TheANeu:Spare,of
+            TheANeu:Beats,of
+            TheASent:beat
+            TheASent:beat
+            TheASent:beat
+            TheASent:beat
+        Spare,ms=300
+        Beats,count=4
+    A:Clock_A
+      TheACode:Athe_Clock,variant:plain,dige:bf8156c1dd2b8a94
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:426ea8a90ecf1e85~g1
+      w:Athe_Clock
+        TheASynapse:beat,from:Host,wake:tick,sum:count
+          TheAWoke,count=4,pulses=4
+        TheAAxon:clock
+        TheAWas,keep=2,made
+          TheATurn:1,synapse:beat,pulses=4,code_dige:bf8156c1dd2b8a94
+            TheAAte,from:Host/Athe_Host/Turn1
+            TheAAte,from:Host/Athe_Host/Turn1
+            TheAAte,from:Host/Athe_Host/Turn1
+            TheAAte,from:Host/Athe_Host/Turn1
+            TheANeu:Ticks,of
+            TheASent:clock
+            TheASent:clock
+            TheASent:clock
+            TheASent:clock
+        Ticks,count=4
+    A:K_P
+      TheACode:Athe_Tank,variant:plain,dige:bf8156c1dd2b8a94
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:426ea8a90ecf1e85~g1
+      w:Athe_Tank
+        TheASynapse:clock,from:Clock_A,wake:turn,sum:count
+          TheAWoke,count=4,pulses=4
+        TheAWas,keep=9,made
+          TheATurn:1,synapse:clock,pulses=4,code_dige:bf8156c1dd2b8a94
+            TheAAte,from:Clock_A/Athe_Clock/Turn1
+            TheAAte,from:Clock_A/Athe_Clock/Turn1
+            TheAAte,from:Clock_A/Athe_Clock/Turn1
+            TheAAte,from:Clock_A/Athe_Clock/Turn1
+            TheANeu:Fish,of:minnow 1
+            TheANeu:Fish,of:perch 2
+        Turns,count=4
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+          TheAPass:Heron
+        EggsNamed,count=2
+        Fish:minnow 1,born=4
+        Fish:perch 2,born=4
+    A:K_Q
+      TheACode:Athe_Tank,variant:plain,dige:bf8156c1dd2b8a94
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:426ea8a90ecf1e85~g1
+      w:Athe_Tank
+        TheASynapse:clock,from:Clock_A,wake:turn,sum:latest
+          TheAWoke,count,pulses=4
+        TheAWas,keep=9,made
+          TheATurn:1,synapse:clock,pulses=4,code_dige:bf8156c1dd2b8a94
+            TheAAte,from:Clock_A/Athe_Clock/Turn1
+            TheAAte,from:Clock_A/Athe_Clock/Turn1
+            TheAAte,from:Clock_A/Athe_Clock/Turn1
+            TheAAte,from:Clock_A/Athe_Clock/Turn1
+            TheANeu:Egg,of:minnow 1
+            TheANeu:Egg,of:perch 2
+        Turns,count
+        TheASunpit:turn
+          TheAPass:Egg
+          TheAPass:Fish
+          TheAPass:Heron
+        EggsNamed,count=2
+        Egg:minnow 1,born
+        Egg:perch 2,born

@@ -70,6 +70,9 @@
     function stand() {
         // this House runs in eras: code that hot-reloads waits on the As that hold it until the next run takes it (Theory.g TheA_run)
         H.i({ TheAEras: 1 })
+        // this House traces its events (Theory.g TENDRILS): pulses say where they came from, Turns say what they ate.  The board
+        //  below is a reader on every compartment's history, so the Turns it hasn't drawn yet stay until it has
+        H.i({ TheATendrils: 1 })
         H.i({ A: 'Pondland' }).i({ w: 'Pondland' })
         // time's compartment: the only one the outside may speak to, and it keeps the tape of what it heard (the newest 12)
         const host = H.TheA_stand(H, 'Host', [TOY], null, 'Athe_Host').i({ w: 'Athe_Host' })
@@ -98,6 +101,7 @@
         for (const [name, w] of [['P', P], ['Q', Q], ['R', R]] as const) H.Stuffica_view(w, 'fig', ['Turns', 'Egg', 'Fish', 'Heron'], figs[name])
         H.Stuffica_view(host, 'fig', ['Beats', 'Spare', 'TheAIO'], figs.Host)
         for (const name of CLOCKS) H.Stuffica_view(world(name), 'fig', ['Ticks'], figs[name])
+        for (const name of ['Host', ...CLOCKS, ...TANKS]) world(name)?.i({ TheAWas: 1, keep: 1 }).i({ TheAReader: 'board' })
         // P starts nine turns ahead, so its first fish grow old while Q's are young
         const pc = P.o({ TheASynapse: 'clock' })[0]
         for (let k = 0; k < 9; k++) pc.i({ TheAPulse: 1 })
@@ -112,6 +116,7 @@
             for (const went of round.o({ TheAWent: 1 })) visits[went.sc.TheAWent] = (visits[went.sc.TheAWent] || 0) + 1
         }
         last_r = r
+        board_read()
         // the run's tail: walk the views of what moved, commit the ones that changed (R's is never walked — R isn't)
         committing = committing.then(() => H.Stuffica_commit(r))
     }
@@ -203,6 +208,69 @@
         return { beats: shown('Host', 'Beats')?.sc.count || 0, spare: shown('Host', 'Spare')?.sc.ms || 0 }
     }
     function ticks(name: string) { return shown(name, 'Ticks')?.sc.count || 0 }
+    //#region the board — who woke, how much, and who woke them (the tendrils)
+    // Every compartment where it sits, and the outside beside Host.  A wire is a synapse's from: (or Host's IO); a dot is the
+    //  pulses one Turn sent that another ate, leaving after the dots that woke its sender (depth along the tendrils)
+    const SPOTS: Record<string, { x: number, y: number }> = {
+        outside: { x: 40, y: 110 }, Host: { x: 150, y: 110 }, Clock: { x: 290, y: 70 }, Clock_B: { x: 290, y: 175 },
+        P: { x: 450, y: 45 }, Q: { x: 560, y: 110 }, R: { x: 450, y: 175 },
+    }
+    type Dot = { key: string, from: string, to: string, n: number, depth: number }
+    type Node = { name: string, woke: number, ate: number, total: number, depth: number }
+    let board: { dots: Dot[], nodes: Record<string, Node>, lines: string[], run: number, totals: Record<string, number> } = $state.raw({ dots: [], nodes: {}, lines: [], run: 0, totals: {} })
+    const woke_total: Record<string, number> = {}
+    let board_runs = 0
+    function wires() {
+        const out: { from: string, to: string }[] = [{ from: 'outside', to: 'Host' }]
+        for (const name of Object.keys(SPOTS)) {
+            for (const syn of world(name)?.o({ TheASynapse: 1 }) || []) if (syn.sc.from && SPOTS[syn.sc.from]) out.push({ from: syn.sc.from, to: name })
+        }
+        return out
+    }
+    // read every Turn the board hasn't yet, from every compartment, and lay out what the run did
+    function board_read() {
+        board_runs++
+        const turns: { addr: string, name: string, turn: any }[] = []
+        for (const name of Object.keys(SPOTS)) {
+            const w = world(name)
+            if (!w) continue
+            for (const turn of H.TheA_read(w, 'board')) turns.push({ addr: H.TheA_addr(w) + '/Turn' + turn.sc.TheATurn, name, turn })
+        }
+        // depth along the tendrils: a Turn fed from outside is 1, otherwise one past the deepest Turn it ate from this run; the
+        //  dots that woke it leave at depth - 1, so the outside's leave first
+        const depth: Record<string, number> = {}
+        const sender = (from: string) => from.includes('/Heard') ? 'outside' : from.split('/')[0]
+        for (let pass = 0; pass < 8; pass++) {
+            for (const t of turns) {
+                const froms = H.TheA_came_from(t.turn) as string[]
+                depth[t.addr] = Math.max(1, ...froms.map(f => !f || f.includes('/Heard') ? 1 : (depth[f] ?? 0) + 1))
+            }
+        }
+        const nodes: Record<string, Node> = {}
+        const dots = new Map<string, Dot>()
+        for (const t of turns) {
+            const froms = H.TheA_came_from(t.turn) as string[]
+            woke_total[t.name] = (woke_total[t.name] || 0) + 1
+            const nd = nodes[t.name] ??= { name: t.name, woke: 0, ate: 0, total: 0, depth: 0 }
+            nd.depth = Math.max(nd.depth, depth[t.addr] ?? 0)
+            nd.woke++; nd.ate += froms.length; nd.total = woke_total[t.name]
+            for (const f of froms) {
+                const from = f ? sender(f) : 'outside'
+                if (!SPOTS[from]) continue
+                const key = board_runs + ':' + from + '>' + t.name
+                const d = dots.get(key) ?? { key, from, to: t.name, n: 0, depth: Math.max(0, (depth[t.addr] ?? 1) - 1) }
+                d.n++
+                dots.set(key, d)
+            }
+        }
+        // the run in words, by depth: who ate how many from whom
+        const lines: string[] = []
+        for (const d of [...dots.values()].sort((a, b) => a.depth - b.depth || a.to.localeCompare(b.to))) {
+            lines.push(`${d.from} → ${d.to}${d.n > 1 ? ' ×' + d.n : ''}`)
+        }
+        board = { dots: [...dots.values()], nodes, lines, run: board_runs, totals: { ...woke_total } }
+    }
+    //#endregion
     function colour(r: Row) {
         if (r.came) return 'var(--came)'
         const t = Math.min(r.age / 18, 1)
@@ -232,6 +300,33 @@
     {#if !ready}
         <p class="wait">Loading Theory and the toy…</p>
     {:else}
+        <section class="board" aria-label="the board — who woke whom">
+            <h2>The board — who woke, how much, and who woke them</h2>
+            <svg viewBox="0 0 620 220" role="img" aria-label="compartments and the pulses between them">
+                {#each wires() as wr (wr.from + '>' + wr.to)}
+                    <line x1={SPOTS[wr.from].x} y1={SPOTS[wr.from].y} x2={SPOTS[wr.to].x} y2={SPOTS[wr.to].y} class="wire" />
+                {/each}
+                {#each Object.entries(SPOTS) as [name, p] (name)}
+                    {@const nd = board.nodes[name]}
+                    <g transform="translate({p.x} {p.y})" class="node" class:outside={name === 'outside'} class:quiet={name !== 'outside' && !board.totals[name]}>
+                        {#key nd ? board.run : 0}
+                            {#if nd}<circle r={14 + Math.min(nd.ate, 8) * 2} class="flash" style="animation-delay:{nd.depth * 150 + 260}ms" />{/if}
+                        {/key}
+                        <circle r="14" class="disc" />
+                        <text y="4" class="name">{name === 'outside' ? '⌁' : name}</text>
+                        <text y="30" class="count">{name === 'outside' ? 'outside' : nd ? `woke${nd.woke > 1 ? ' ' + nd.woke + '×' : ''} · ate ${nd.ate}` : `${board.totals[name] || 0}×`}</text>
+                    </g>
+                {/each}
+                {#each board.dots as d (d.key)}
+                    {@const a = SPOTS[d.from]}{@const b = SPOTS[d.to]}
+                    <g class="dot" style="--x0:{a.x}px;--y0:{a.y}px;--x1:{b.x}px;--y1:{b.y}px;animation-delay:{d.depth * 150}ms">
+                        <circle r={d.n > 1 ? 5 : 3.5} />
+                        {#if d.n > 1}<text y="-7">×{d.n}</text>{/if}
+                    </g>
+                {/each}
+            </svg>
+            <p class="note">The last run: {board.lines.join(' · ') || 'nothing yet'}. Each dot is the pulses one Turn sent and another ate — followed by the tendrils (a pulse's from:, a Turn's Ates), never guessed from the wiring. A grey node has never woken.</p>
+        </section>
         <div class="ponds">
             {#each TANKS as name (name)}
                 {@const t = tank(name, era_at)}
@@ -338,6 +433,21 @@
     figcaption { display: grid; gap: 2px; justify-items: center; font-family: var(--mono); font-size: 12px; color: var(--ink-soft); text-align: center; }
     figcaption b { color: var(--ink); font-size: 14px; }
     .visits { color: var(--ink); }
+    .board { max-width: 980px; display: grid; gap: 6px; }
+    .board h2 { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); margin: 0; }
+    .board svg { width: 100%; height: auto; background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; }
+    .wire { stroke: var(--rule); stroke-width: 1.5; }
+    .node .disc { fill: var(--water); stroke: var(--water-edge); stroke-width: 1.2; }
+    .node.outside .disc { fill: var(--sheet); stroke-dasharray: 3 2; }
+    .node.quiet .disc { fill: var(--sheet); stroke-dasharray: 4 3; }
+    .node .flash { fill: var(--came); opacity: 0; animation: flash 700ms ease-out both; }
+    .node .name { font-family: var(--mono); font-size: 10px; text-anchor: middle; fill: var(--ink); }
+    .node .count { font-family: var(--mono); font-size: 9px; text-anchor: middle; fill: var(--ink-soft); }
+    .dot { opacity: 0; animation: zoom 320ms ease-in-out both; }
+    .dot circle { fill: var(--came); }
+    .dot text { font-family: var(--mono); font-size: 9px; text-anchor: middle; fill: var(--came); }
+    @keyframes zoom { 0% { transform: translate(var(--x0), var(--y0)); opacity: 1 } 90% { opacity: 1 } 100% { transform: translate(var(--x1), var(--y1)); opacity: 0 } }
+    @keyframes flash { 0% { opacity: .55 } 100% { opacity: 0 } }
     .rounds { max-width: 720px; font-family: var(--mono); font-size: 13px; }
     .rounds h2 { font-family: inherit; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 6px; }
     .rounds ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 3px; }

@@ -1,0 +1,20 @@
+story:AthePondTendril
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.019
+      sample=0.02,at=1793152778
+      sample=0.018,at=1793152795
+    TimeTotal:step,avg=0.007
+      sample=0.007,at=1793152778
+      sample=0.006,at=1793152795
+  step,dige:f0e1a5380adb7704
+  step=2,desc:stand Host beating Clock_A which ticks K_P by count and K_Q by latest — tendrils on — the outside says 2300 ms,dige:41babebeb938237d
+    Assertion:a-pulse-from-outside,sentence:a pulse from outside is followed forward from its Heard — through the host and the clock — to a Turn in each tank
+    Assertion:back-from-a-tank,sentence:back from a tank the tendrils reach the Heard that started it — what the outside said
+    Assertion:a-sum-latest-turn,sentence:a sum:latest Turn names every pulse it ate — four Ates though the tank turned once
+    Assertion:one-turn-of-the,sentence:one Turn of the clock led to two Turns — one in each tank it ticks
+  step=3,desc:the outside says 500 ms four times — a run each — Host and the clock keep only two Turns,dige:c849cbde4f7f3fd1
+    Assertion:a-trimmed-turn-leaves,sentence:a trimmed Turn leaves the from: that named it as text — following it says gone rather than breaking

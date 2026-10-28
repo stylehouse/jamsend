@@ -1581,8 +1581,14 @@ await M.eatfunc({
 
             // the roster: every Doc in every loaded Waft + the whole GhostList
             const paths = new Set<string>()
-            for (const waft of w.o({ Waft: 1 }) as TheC[])
+            //  …except Waft:Everything: it is the MAP, citing ~200 docs across every area, and the hacker room opens it at
+            //   boot (2026-10-26) — feeding it here read the whole corpus off a slow disk and flooded "read STUCK".  The
+            //    corpus-wide census is Atlas's (dige/size/defs, Dexie-cached; no text) — a Stemdex over it is §9 of
+            //     spec/LiesLang_todo.md, not a blanket read here.
+            for (const waft of w.o({ Waft: 1 }) as TheC[]) {
+                if (waft.sc.Waft === 'Ghost/Everything') continue
                 H.Lies_walk_docs(waft, (d: TheC) => { if (d.sc.Doc) paths.add(d.sc.Doc as string); return false })
+            }
             const gl = w.o({ Waft: 'GhostList' })[0] as TheC | undefined
             for (const g of (gl?.o({ group: 1 }) ?? []) as TheC[])
                 for (const d of g.o({ Doc: 1 }) as TheC[]) if (d.sc.Doc) paths.add(d.sc.Doc as string)

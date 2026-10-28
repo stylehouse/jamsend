@@ -11,6 +11,7 @@ Waft:Ghost/Atheory/Theory,desc:Atheory — an A says which code it runs — the 
     Funkcion:Storying,of_Book:AthePondEra
     Funkcion:Storying,of_Book:AthePondTurns
     Funkcion:Storying,of_Book:AthePondTurnReaders
+    Funkcion:Storying,of_Book:AthePondTendril
     Funkcion:Storying,of_Book:AthePondRounds
     Funkcion:Storying,of_Book:AthePondMoves
     Funkcion:Storying,of_Book:AthePondWakeOrder
@@ -45,6 +46,8 @@ Waft:Ghost/Atheory/Theory,desc:Atheory — an A says which code it runs — the 
     Point,method:TheA_replay,desc:play a tape back
     Point,method:TheA_waits,desc:the holds
     Point,method:TheA_turn_commit,desc:commit a turn
+    Point,method:TheA_led_to,desc:tendrils — forward from an event to the Turns it led to
+    Point,method:TheA_came_from,desc:tendrils — back from a Turn to what it ate
   What:the Seem,desc:a view of a world as points — named by Dip — fit shift neu — re-seated when the source moves
     Doc:Ghost/A/Theory.g
     Point,method:TheA_seem,desc:a Seem

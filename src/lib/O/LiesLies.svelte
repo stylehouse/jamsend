@@ -492,6 +492,7 @@
                     ;((w.c as any).on_control_list ??= []).push((frame: any) => {
                         if (frame?.control === 'docindex') H.Lies_docindex_heard(w, frame)
                         else if (frame?.control === 'changed') H.Lies_changed_heard(w, frame)
+                        else if (typeof frame?.control === 'string' && frame.control.startsWith('seat_')) H.Lies_seat_heard(w, frame)
                         else if (frame?.control === 'watch_ok' && frame.refused?.length) console.warn(`👁 relay refused ${frame.refused.length} watch path(s):`, frame.refused.slice(0, 5).map((r: any) => `${r.path} (${r.why})`).join(', '))
                     })
                 }
@@ -501,6 +502,8 @@
                         if (w.c.hello_tries) H.tlog(`🪪 hello_ok — identity bind recovered after ${w.c.hello_tries} retr${w.c.hello_tries === 1 ? 'y' : 'ies'}`)
                         w.c.hello_ok_at = Date.now()
                         delete w.c.hello_tries
+                        // a seat ask that beat the hello is refused where the cluster is configured — ask again now, unless held
+                        if (H.Lies_seat_of(w) && !H.Lies_holds_seat(w)) H.Lies_seat_ask(w)
                     })
                 }
                 const send_hello = async (retry = false) => {
@@ -582,6 +585,13 @@
                 }
                 ;(w.c as any).lies_send_hello = send_hello
                 port.on_open(async () => { delete w.c.hello_ok_at; delete w.c.hello_tries; delete w.c.hello_want; await send_hello() })
+                // THE WRITE SEAT (2026-10-27, LiesLang_todo §11) — a room with docks asks the relay for `seat:editor` on every
+                //  (re)open.  The ask is the w's own %Seat particle, planted here from the role for now; a Ground could plant it
+                //   instead (the room as advice, not a recipe that stamps a role).  See Lies_seat_heard.
+                if (H.Lies_has_docks(w)) {
+                    if (!w.o({ Seat: 'editor' })[0]) w.i({ Seat: 'editor', want: role === 'editor' ? 'take' : 'free' })
+                    port.on_open(() => H.Lies_seat_ask(w))
+                }
                 // The moment the socket OPENS — first connect AND every reconnect — fire an immediate
                 //  ping + (runner) advertise so the peer clears its "dialing ◌" face within one RTT
                 //   instead of waiting out the 5s keepalive tick (ping) or the 15s beacon (advertise).
@@ -732,6 +742,95 @@
         //       unedited, raises the surprise_read popover when it is, writes nothing otherwise.
         //  Nothing here touches a doc the tab has not opened: the roster (Atlas/Stemdex) reads the index
         //   Waft itself on its next refresh, and a push about a closed doc is not news.
+        //#region seat — who WRITES, said once at the relay (LiesLang_todo §11 step 1, Editron.md §8.2 A)
+        // The role says what a tab CAN be; the seat says what it IS right now.  One `seat:editor` per box, held at the relay
+        //  (relay.ts handleSeat), on a socket — so a closed or half-open tab frees it with no timer of ours (the relay's
+        //   ping round terminates a dead socket).  The state is the %Seat:editor particle on w:Lies:
+        //    want:take|free  — the ask: `take` wrests it from a live holder (booting ?E= is a deliberate act), `free` waits
+        //    held            — the relay granted it to us
+        //    by:<who>        — someone else holds it (we asked and were refused, or it was wrested from us)
+        //  A %Seat with neither held nor by is an ask the relay has not answered.  NO %Seat at all (a Book's inner Lies, a
+        //   runner, a relay-less tab) means the relay never spoke: every gate then behaves exactly as it did before seats.
+        Lies_seat_of(w: TheC): TheC | undefined {
+            return w?.o?.({ Seat: 'editor' })[0] as TheC | undefined
+        },
+        // Lies_holds_seat — true|false once the relay has answered, undefined until it has (or if it never will).
+        Lies_holds_seat(w: TheC): boolean | undefined {
+            const seat = (this as House).Lies_seat_of(w)
+            if (!seat) return undefined
+            if (seat.sc.held) return true
+            if (seat.sc.by) return false
+            return undefined
+        },
+        // Lies_writer — the write gate.  The seat's answer when there is one, the old role equality when there is not.
+        Lies_writer(w: TheC): boolean {
+            const H = this as House
+            return H.Lies_holds_seat(w) ?? H.Lies_role(w) === 'editor'
+        },
+        // Lies_seat_ask — send the %Seat's ask down the Lies socket.  `take` overrides the particle's own want (a typed
+        //  save wrests).  Quiet no-op with no open socket: the next on_open asks again.
+        Lies_seat_ask(w: TheC, take?: boolean, why?: string) {
+            const H = this as House
+            const seat = H.Lies_seat_of(w)
+            if (!seat) return
+            const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
+            if ((port?.ws as any)?.readyState !== 1) return
+            // `want:take` wrests ONCE, on the first ask of this life (the boot is the deliberate act) — a reconnect asks plain, or a
+            //  socket blip would silently take the seat back from whoever typed since.
+            const wrest = take ?? (seat.sc.want === 'take' && !w.c.seat_asked)
+            w.c.seat_asked = 1
+            const who = `${(typeof location !== 'undefined' && location.pathname.slice(1)) || H.name} ${H.Lies_role(w)}`   // 'BigWordland hacker', 'Otro editor'
+            try { port.ws.send(JSON.stringify({ control: 'seat', want: 'editor', ...(wrest ? { take: 1 } : {}), who, ...(why ? { why } : {}) })) } catch { return }
+            H.tlog(`✍ ws SEND control:seat want=editor${wrest ? ' take' : ''}${why ? ' — ' + why : ''}`)
+        },
+        // Lies_seat_heard — the relay's answer (seat_ok | seat_taken | seat_lost | seat_free), off Atime: posted into the tick.
+        Lies_seat_heard(w: TheC, frame: any) {
+            const H = this as House
+            if (frame.seat && frame.seat !== 'editor') return
+            if (frame.control === 'seat_error') { if (/hello first/.test(frame.reason)) return;   /* the ask beat our hello — the hello_ok hook asks again */ console.warn(`✍ seat ask refused by the relay — ${frame.reason}`); return }
+            H.post_do(async () => {
+                const seat = H.Lies_seat_of(w)
+                if (!seat) return
+                const was = H.Lies_holds_seat(w)
+                if (frame.control === 'seat_ok') {
+                    seat.sc.held = 1; delete seat.sc.by
+                } else if (frame.control === 'seat_taken' || frame.control === 'seat_lost') {
+                    delete seat.sc.held; seat.sc.by = String(frame.holder ?? frame.to ?? '?')
+                } else if (frame.control === 'seat_free') {
+                    H.Lies_seat_ask(w)
+                    return
+                } else return
+                seat.bump()
+                const now = H.Lies_holds_seat(w)
+                if (now !== was) console.log(`✍ seat:editor ${now ? 'HELD — this tab writes' : `held by ${seat.sc.by} — this tab reads${frame.control === 'seat_lost' ? ' (wrested' + (frame.why ? ': ' + frame.why : '') + ')' : ''}`}`)
+                H.Lies_relay_note(w, `✍ ${frame.control}${seat.sc.by ? ' → ' + seat.sc.by : ''}`, true)
+                if (now) H.Lies_seat_pay_owed(w)
+                H.i_elvisto(w, 'think')
+            }, { see: 'seat_heard' })
+        },
+        // Lies_seat_owe — a write refused for want of the seat: remember it, and (for a typed save) wrest the seat.
+        //  Paid by Lies_seat_pay_owed the moment the seat is held, so nothing a reader did is lost — only delayed.
+        Lies_seat_owe(w: TheC, kind: 'waft' | 'source', path: string, it: any, take: boolean) {
+            const H = this as House
+            const owed = (w.c.seat_owed ??= new Map<string, any>()) as Map<string, any>
+            const fresh = !owed.has(kind + ':' + path)
+            owed.set(kind + ':' + path, { kind, path, it })
+            if (fresh) console.log(`✍ ${kind} ${path} held back — seat:editor is ${H.Lies_seat_of(w)?.sc.by}'s${take ? '; wresting it' : ' (it saves when the seat comes here)'}`)
+            if (take) H.Lies_seat_ask(w, true, `${kind} ${path}`)
+        },
+        Lies_seat_pay_owed(w: TheC) {
+            const H = this as House
+            const owed = w.c.seat_owed as Map<string, any> | undefined
+            if (!owed?.size) return
+            w.c.seat_owed = new Map()
+            for (const { kind, path, it } of owed.values()) {
+                if (kind === 'waft') H.Lies_waft_save(w, it)
+                else H.i_elvisto(w, 'Lies_source_write', { path, text: it })
+            }
+            console.log(`✍ seat held — paid ${owed.size} held-back write(s)`)
+        },
+        //#endregion
+
         Lies_docindex_heard(w: TheC, frame: any) {
             const H = this as House
             const heard_at = Date.now()

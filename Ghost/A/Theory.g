@@ -349,6 +349,11 @@ TheA_move(w, wake):
         let before = was ? w.o() : null
         let sent_before = was ? this.TheA_outbox(w) : null
         let runs = synapse.sc.sum === 'latest' ? [pulses[pulses.length - 1]] : pulses
+        // TENDRILS (a House holding %TheATendrils): what each pulse came from, ALL of them — sum:latest runs one but ate N — and
+        //  the address this move sends from, the Turn it is about to commit (or the bare compartment, keeping no Turns)
+        let tendrils = this.TheA_tendrils()
+        let ate = tendrils ? pulses.map(pulse => pulse.sc.from || '') : null
+        if (tendrils) w.c.sending_from = this.TheA_addr(w) + (was ? '/Turn' + ((was.sc.made || 0) + 1) : '')
         for (const pulse of pulses) synapse.drop(pulse)
         for (const pulse of runs) {
             if (typeof wake === 'string') {
@@ -357,6 +362,7 @@ TheA_move(w, wake):
                 wake(w, synapse, pulse)
             }
         }
+        delete w.c.sending_from
         for (const pulse of pulses) {
             if (pulse.sc.wait) for (const held of w.o({ TheAWait: pulse.sc.wait })) w.drop(held)
         }
@@ -364,13 +370,65 @@ TheA_move(w, wake):
         if (io) w.oai({ TheAIO: io.sc.TheAIO }, { takes: (io.sc.takes || 0) + 1 })
         let woke = synapse.o({ TheAWoke: 1 })[0]
         synapse.oai({ TheAWoke: 1 }, { count: (woke?.sc.count || 0) + runs.length, pulses: (woke?.sc.pulses || 0) + pulses.length })
-        if (was) this.TheA_turn_commit(w, was, synapse, pulses.length, before, sent_before)
+        if (was) this.TheA_turn_commit(w, was, synapse, pulses.length, before, sent_before, ate)
     }
 
 // TheA_send — a compartment sends on one of its synapses: into its own outbox, carrying whatever it says (a fish's name and age).
-//  Nobody hears it until the boundary
+//  Nobody hears it until the boundary.  In a House with tendrils it also carries from: — the move it was sent in — which the
+//   boundary copies to every landing, after whatever the sender said, so a pulse can't pass on the from: it was woken by
 TheA_send(w, synapse, sc):
-    w.oai({ TheAOutbox: 1 }).i({ TheAPulse: 1, synapse, ...sc })
+    let from = w.c.sending_from
+    w.oai({ TheAOutbox: 1 }).i({ TheAPulse: 1, synapse, ...sc, ...(from ? { from } : {}) })
+
+// TENDRILS — consistent eventing (Atheory_todo "Tendrils").  The unit of event is the Turn; a tendril is a pulse's from: (the Turn
+//  that sent it, or the Heard that brought it in from outside) and a Turn's %TheAAte,from: per pulse it ate.  Back is following
+//   from:, forward is finding the Ates that name you.  Opt-in per House by a particle, so the choice is legible and a House without
+//    it moves exactly as before:
+//
+//      %TheATurn:7,synapse:clock,pulses:4
+//        %TheAAte,from:Clock_A/Athe_Clock/Turn3      one per pulse, even when sum:latest ran one
+//        %TheANeu:Fish,of:minnow 1
+//
+//  An address is the position stringified — <A>/<w>, then /Turn<n> or /Heard<n> — slashes and no colons, so it sits in a snap
+//   value as plain text.  It lasts as long as what it names is kept: Turns trim unless a reader is behind them, and a from: that
+//    outlived its Turn still says where it came from (TheA_at answers nothing)
+TheA_tendrils():
+    return this.o({ TheATendrils: 1 }).length > 0
+
+// a compartment's address: <A>/<w>
+TheA_addr(w):
+    return (this.TheA_A(w)?.sc.A ?? '?') + '/' + w.sc.w
+
+// TheA_at — what an address names: the compartment, its Turn, or its Heard — or nothing, once trimmed
+TheA_at(addr):
+    let [a, wn, last] = String(addr).split('/')
+    let A = this.TheA_all(this).find(A => A.sc.A === a)
+    let w = A?.o({ w: wn })[0]
+    if (!w || !last) return w || null
+    let m = /^(Turn|Heard)(\d+)$/.exec(last)
+    if (!m) return null
+    if (m[1] === 'Turn') return w.o({ TheAWas: 1 })[0]?.o({ TheATurn: m[2] })[0] || null
+    for (const io of w.o({ TheAIO: 1 })) {
+        let heard = io.o({ TheAHeard: m[2] })[0]
+        if (heard) return heard
+    }
+    return null
+
+// TheA_came_from — back along a tendril: the addresses a Turn ate from (an untraced pulse, poked by hand, says '')
+TheA_came_from(turn):
+    return turn ? turn.o({ TheAAte: 1 }).map(ate => ate.sc.from || '') : []
+
+// TheA_led_to — forward along the tendrils: every kept Turn that ate a pulse sent from addr, as addresses, by compartment name
+TheA_led_to(addr):
+    let out = []
+    for (const A of this.TheA_all(this)) {
+        for (const w of A.o({ w: 1 })) {
+            for (const turn of w.o({ TheAWas: 1 })[0]?.o({ TheATurn: 1 }) || []) {
+                if (turn.o({ TheAAte: 1 }).some(ate => ate.sc.from === addr)) out.push(this.TheA_addr(w) + '/Turn' + turn.sc.TheATurn)
+            }
+        }
+    }
+    return out.sort()
 
 // what waits in a compartment's outbox
 TheA_outbox(w):
@@ -470,7 +528,7 @@ TheA_io(name, io, sc):
     let n = (w.o({ TheAIO: io })[0].sc.heard || 0) + 1
     let tape = w.oai({ TheAIO: io }, { heard: n })
     let heard = tape.i({ TheAHeard: String(n), take: (tape.sc.takes || 0) + 1, ...sc })
-    synapse.i({ TheAPulse: 1, ...sc })
+    synapse.i({ TheAPulse: 1, ...sc, ...(this.TheA_tendrils() ? { from: this.TheA_addr(w) + '/Heard' + n } : {}) })
     let all = tape.o({ TheAHeard: 1 })
     while (tape.sc.keep && all.length > tape.sc.keep) tape.drop(all.shift())
     return heard
@@ -555,13 +613,14 @@ TheA_rows(w, rows):
 // TheA_turn_commit — one %TheATurn: which synapse woke the compartment, how many pulses it ate, the code it ran under (its A's
 //  %TheACode digest), and what changed ACROSS the move — %TheANeu (a row that wasn't there before), %TheAGoner (one that's
 //   gone), %TheASent (a pulse it sent).  A Turn is not a counter: three clock pulses are three pond turns and one Turn
-TheA_turn_commit(w, was, synapse, pulses, before_all, sent_before):
+TheA_turn_commit(w, was, synapse, pulses, before_all, sent_before, ate):
     let before = this.TheA_rows(w, before_all)
     let after = this.TheA_rows(w, w.o())
     let made = (was.sc.made || 0) + 1
     w.oai({ TheAWas: 1 }, { made })
     let code = this.TheA_A(w)?.o({ TheACode: 1 })[0]?.sc.dige
     let turn = was.i({ TheATurn: String(made), synapse: synapse.sc.TheASynapse, pulses, ...(code ? { code_dige: code } : {}) })
+    for (const from of ate || []) turn.i(from ? { TheAAte: 1, from } : { TheAAte: 1 })
     let label = (row) => Object.keys(row.sc)[0]
     for (const row of after) {
         if (!before.includes(row)) turn.i({ TheANeu: label(row), of: row.sc[label(row)] })

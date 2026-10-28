@@ -12,7 +12,7 @@ Credulate,of_Book:AthePondView
   GhostInclude:Ghost_M_Heist,dige:bc0e16cd7ce42bc8~g1
   GhostInclude:Ghost_M_Heard,dige:aef7406c8d1a9ac3~g1
   GhostInclude:Ghost_M_Orig,dige:a8cd03dd83707cd5~g1
-  GhostInclude:Ghost_M_Radio,dige:27dfeaa633edba4e~g1
+  GhostInclude:Ghost_M_Radio,dige:8f1cf53f6171e839~g1
   GhostInclude:Ghost_Story_MusuTesting,dige:cc6c2069f7d38332~g1
   GhostInclude:Ghost_Story_RaTesting,dige:a1659c401247b460~g1
   GhostInclude:Ghost_Story_HeistTesting,dige:e54f69bd22718ee6~g1
@@ -29,13 +29,11 @@ Credulate,of_Book:AthePondView
   GhostInclude:Ghost_Story_VoroTesting,dige:ba7f8d826ff81866~g1
   GhostInclude:Ghost_Story_Sounditron,dige:0de272b54e59b42d~g1
   GhostInclude:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
-  GhostInclude:Ghost_A_Theory,dige:60c84e79b3486551~g1
+  GhostInclude:Ghost_A_Theory,dige:0c16af99562edd45~g1
   GhostInclude:Ghost_A_AtheFishTesting,dige:426ea8a90ecf1e85~g1
+  GhostInclude:Ghost_A_AtheTesting,dige:0e03927de9725f3b~g1
   GhostInclude:Ghost_A_Stuffica,dige:840830d9ace7b31f~g1
-  GhostInclude:Ghost_A_Ground,dige:260f0531c6779267~g1
-  GhostInclude:Ghost_A_AtheTesting,dige:273e5bbb71ef41b8~g1
-  GhostInclude:Ghost_O_Story,dige:ad3112f61124f293~g1
-  last_ok,at=1792898495.911,ok_pct
+  last_ok,at=1793152773.549,ok_pct
     uses:Ghost_N_Peeroleum,dige:ee39d52bb1441684~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:a3d82cb8e0a8910f~g1
@@ -49,7 +47,7 @@ Credulate,of_Book:AthePondView
     uses:Ghost_M_Heist,dige:bc0e16cd7ce42bc8~g1
     uses:Ghost_M_Heard,dige:aef7406c8d1a9ac3~g1
     uses:Ghost_M_Orig,dige:a8cd03dd83707cd5~g1
-    uses:Ghost_M_Radio,dige:27dfeaa633edba4e~g1
+    uses:Ghost_M_Radio,dige:8f1cf53f6171e839~g1
     uses:Ghost_Story_MusuTesting,dige:cc6c2069f7d38332~g1
     uses:Ghost_Story_RaTesting,dige:a1659c401247b460~g1
     uses:Ghost_Story_HeistTesting,dige:e54f69bd22718ee6~g1
@@ -66,9 +64,7 @@ Credulate,of_Book:AthePondView
     uses:Ghost_Story_VoroTesting,dige:ba7f8d826ff81866~g1
     uses:Ghost_Story_Sounditron,dige:0de272b54e59b42d~g1
     uses:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
-    uses:Ghost_A_Theory,dige:60c84e79b3486551~g1
+    uses:Ghost_A_Theory,dige:0c16af99562edd45~g1
     uses:Ghost_A_AtheFishTesting,dige:426ea8a90ecf1e85~g1
+    uses:Ghost_A_AtheTesting,dige:0e03927de9725f3b~g1
     uses:Ghost_A_Stuffica,dige:840830d9ace7b31f~g1
-    uses:Ghost_A_Ground,dige:260f0531c6779267~g1
-    uses:Ghost_A_AtheTesting,dige:273e5bbb71ef41b8~g1
-    uses:Ghost_O_Story,dige:ad3112f61124f293~g1

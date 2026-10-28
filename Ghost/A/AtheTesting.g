@@ -921,6 +921,121 @@ AthePondTurnReaders_witness(w):
         this.story_swear(w, 'the slowest reader holds the history — when it catches up it reads all three and all but the last two drop')
     }
 //#endregion
+//#region the test routine — Book AthePondTendril
+
+// tendrils — consistent eventing (Theory.g TENDRILS, Atheory_todo "Tendrils").  A House holding %TheATendrils traces its events:
+//  every pulse carries from: (the Turn that sent it, or the Heard that brought it in) and every Turn keeps an %TheAAte per pulse
+//   it ate.  The pond: Host hears the outside (IO) and beats Clock_A, which ticks K_P (sum:count) and K_Q (sum:latest) — a
+//    fan-out of two.  Every compartment keeps Turns; Host and the clock keep only two.
+//  Step 2 the outside says 2300 ms — four beats — and runs from Host: the chain is followed forward from the Heard and back from
+//   K_Q.  Step 3 the outside says 500 ms four times, a run each, so Host's and the clock's first Turns trim — and the tanks'
+//    first Turns still say where they came from
+AthePondTendril(A,w):
+    w oai %req:wrangle,eternal
+        await &AthePondTendril_drive,w,req
+        req%ok = 1
+
+async AthePondTendril_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 3
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.AthePondTendril_stand(w)
+        if (n === 3) this.AthePondTendril_trim(w)
+    }
+    this.AthePondTendril_witness(w)
+
+AthePondTendril_stand(w):
+    w.i({ desc: 'stand Host beating Clock_A which ticks K_P by count and K_Q by latest — tendrils on — the outside says 2300 ms' })
+    if (typeof this.TheA_led_to !== 'function' || typeof this.Athe_Host_woken !== 'function') {
+        w.i({ log: 'Theory.g (with tendrils) or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
+        return
+    }
+    for (const name of ['Host', 'Clock_A', 'K_P', 'K_Q']) {
+        let old = this.o({ A: name })[0]
+        if (old) this.drop(old)
+    }
+    this.oai({ TheATendrils: 1 })
+    let h = this.TheA_stand(this, 'Host', ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Host').i({ w: 'Athe_Host' })
+    h.i({ Beat: 1, ms: 500 })
+    h.i({ TheAIO: 'outside' })
+    h.i({ TheASynapse: 'outside', wake: 'hear', sum: 'count' })
+    h.i({ TheAAxon: 'beat' })
+    h.i({ TheAWas: 1, keep: 2 })
+    let c = this.TheA_stand(this, 'Clock_A', ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Clock').i({ w: 'Athe_Clock' })
+    c.i({ TheASynapse: 'beat', from: 'Host', wake: 'tick', sum: 'count' })
+    c.i({ TheAAxon: 'clock' })
+    c.i({ TheAWas: 1, keep: 2 })
+    for (const [name, sum] of [['K_P', 'count'], ['K_Q', 'latest']]) {
+        let t = this.TheA_stand(this, name, ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
+        t.i({ TheASynapse: 'clock', from: 'Clock_A', wake: 'turn', sum })
+        t.i({ TheAWas: 1, keep: 9 })
+    }
+    this.TheA_io('Host', 'outside', { ms: 2300 })
+    this.TheA_run(w, null, ['Host'])
+    w.oai({ Chain: 'forward' }, { path: this.AthePondTendril_forward('Host/Athe_Host/Heard1') })
+    w.oai({ Chain: 'back' }, { path: this.AthePondTendril_back('K_Q/Athe_Tank/Turn1') })
+
+AthePondTendril_trim(w):
+    w.i({ desc: 'the outside says 500 ms four times — a run each — Host and the clock keep only two Turns' })
+    for (let k = 0; k < 4; k++) {
+        this.TheA_io('Host', 'outside', { ms: 500 })
+        this.TheA_run(w, null, ['Host'])
+    }
+    w.oai({ Chain: 'back' }, { path: this.AthePondTendril_back('K_Q/Athe_Tank/Turn1') })
+
+// forward from an address: each step every Turn it led to, a step per line segment
+AthePondTendril_forward(addr):
+    let steps = [addr]
+    let at = [addr]
+    for (let k = 0; k < 6 && at.length; k++) {
+        at = [...new Set(at.flatMap(a => this.TheA_led_to(a)))]
+        if (at.length) steps.push(at.join(' · '))
+    }
+    return steps.join(' → ')
+
+// back from a Turn: the first thing it ate from, and so on, until the trail leaves the House or runs out
+AthePondTendril_back(addr):
+    let steps = [addr]
+    let here = addr
+    for (let k = 0; k < 6; k++) {
+        let thing = this.TheA_at(here)
+        if (!thing) {
+            steps.push('(gone)')
+            break
+        }
+        let from = this.TheA_came_from(thing)[0]
+        if (!from) break
+        steps.push(from)
+        here = from
+    }
+    return steps.join(' ← ')
+
+AthePondTendril_witness(w):
+    let n = this.c.run?.c.step_n ?? 0
+    let turn = (addr) => this.TheA_at(addr)
+    let forward = w.o({ Chain: 'forward' })[0]?.sc.path
+    let back = w.o({ Chain: 'back' })[0]?.sc.path
+    if (n === 2 && forward === 'Host/Athe_Host/Heard1 → Host/Athe_Host/Turn1 → Clock_A/Athe_Clock/Turn1 → K_P/Athe_Tank/Turn1 · K_Q/Athe_Tank/Turn1') {
+        this.story_swear(w, 'a pulse from outside is followed forward from its Heard — through the host and the clock — to a Turn in each tank')
+    }
+    if (n === 2 && back === 'K_Q/Athe_Tank/Turn1 ← Clock_A/Athe_Clock/Turn1 ← Host/Athe_Host/Turn1 ← Host/Athe_Host/Heard1' && turn('Host/Athe_Host/Heard1')?.sc.ms === 2300) {
+        this.story_swear(w, 'back from a tank the tendrils reach the Heard that started it — what the outside said')
+    }
+    let kq = turn('K_Q/Athe_Tank/Turn1')
+    let kq_turns = this.Athe_Tank_of('K_Q')?.o({ Turns: 1 })[0]?.sc.count
+    let kp_turns = this.Athe_Tank_of('K_P')?.o({ Turns: 1 })[0]?.sc.count
+    if (n === 2 && kq?.sc.pulses === 4 && this.TheA_came_from(kq).length === 4 && kq_turns === 1 && kp_turns === 4) {
+        this.story_swear(w, 'a sum:latest Turn names every pulse it ate — four Ates though the tank turned once')
+    }
+    if (n === 2 && this.TheA_led_to('Clock_A/Athe_Clock/Turn1').length === 2) {
+        this.story_swear(w, 'one Turn of the clock led to two Turns — one in each tank it ticks')
+    }
+    if (n === 3 && kq && !turn('Clock_A/Athe_Clock/Turn1') && this.TheA_came_from(kq)[0] === 'Clock_A/Athe_Clock/Turn1' && back === 'K_Q/Athe_Tank/Turn1 ← Clock_A/Athe_Clock/Turn1 ← (gone)') {
+        this.story_swear(w, 'a trimmed Turn leaves the from: that named it as text — following it says gone rather than breaking')
+    }
+//#endregion
 //#region A** helpers — a second version of the toy, and turning a tank as its own A
 
 // the twins version of the toy: the loaded AtheFishTesting.g with one method swapped, kept by its own dige beside the loaded

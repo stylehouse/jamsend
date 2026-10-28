@@ -369,6 +369,9 @@
         //  likewise session-only — it has no disk home until it settles and grafts back.
         if (waft.sc.takes || waft.sc.tentative) return
         const path = waft.sc.Waft as string
+        // THE WRITE SEAT: another tab holds seat:editor, so this one reads.  Gated at ENTRY, so a save already throttled
+        //  when the seat was lost still fires — that is the loser's flush.  Held back and paid when the seat comes here.
+        if (H.Lies_holds_seat(w) === false) { H.Lies_seat_owe(w, 'waft', path, waft, false); return }
 
         const throttle_key = `waft_save_throttle_${path}`
         if (!w.c[throttle_key]) {
@@ -380,7 +383,7 @@
             //      editor writes after the burst, not at its head.  Runners (and any nowriting path) keep
             //       the leading edge: under a Book the save becomes a snapped %log:waft_save want, and moving
             //        it 3s later would move it into another step and red every fixture that sees it.
-            const trailing = H.Lies_role(w) === 'editor' && !H.Lies_nowriting(w, path)
+            const trailing = H.Lies_writer(w) && !H.Lies_nowriting(w, path)
             w.c[throttle_key] = throttle(() => {
                 H.post_do(async () => {
                     delete w.c[`waft_save_pending_${path}`]   // the burst is being written now (see below)
@@ -404,7 +407,7 @@
                     //     day (git showed it).  The runner keeps its Aside in memory; only the editor's
                     //      is the trail.  After the nowriting branch on purpose: under a Book the snapped
                     //       %log:waft_save want is unchanged, so no fixture moves.
-                    if (waft.sc.aside && H.Lies_role(w) !== 'editor') return
+                    if (waft.sc.aside && !H.Lies_writer(w)) return
                     const snap_path = H.Lies_waft_snap_path(path)
                     await H.LiesStore_write(w, snap_path, snap)
                 }, { see: `waft_save_${path}` })

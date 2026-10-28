@@ -14,12 +14,14 @@ story:AthePondView
       sample=0.03,at=1792659825
       sample=0.035,at=1792666043
       sample=0.026,at=1792898495
+      sample=0.039,at=1793152773
     TimeTotal:step,avg=0.007
       sample=0.008,at=1792649261
       sample=0.01,at=1792650292
       sample=0.006,at=1792659825
       sample=0.007,at=1792666043
       sample=0.005,at=1792898495
+      sample=0.008,at=1793152773
   step,dige:8f15a3f712445cf7
   step=2,desc:stand Clock_A ticking K_P and K_Q — K_R hearing Clock_B which nobody pokes — a view on each tank — poke once,dige:ad2a3284841a0827
     Assertion:a-view-is-walked,sentence:a view is walked only when what it shows moved — it commits once at the end of the run — K_R is never read
