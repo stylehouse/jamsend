@@ -8,8 +8,7 @@ story:AthePondTendril
       lematch,TheATime
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.025
-      sample=0.02,at=1793152778
+    TimeTotal:beliefs,avg=0.026
       sample=0.018,at=1793152795
       sample=0.024,at=1793155973
       sample=0.024,at=1793156005
@@ -18,8 +17,9 @@ story:AthePondTendril
       sample=0.024,at=1793156007
       sample=0.044,at=1793156011
       sample=0.022,at=1793156017
+      sample=0.005,at=1793167972
+      sample=0.05,at=1793168060
     TimeTotal:step,avg=0.007
-      sample=0.007,at=1793152778
       sample=0.006,at=1793152795
       sample=0.006,at=1793155973
       sample=0.006,at=1793156005
@@ -28,6 +28,8 @@ story:AthePondTendril
       sample=0.006,at=1793156007
       sample=0.011,at=1793156011
       sample=0.006,at=1793156017
+      sample=0.001,at=1793167972
+      sample=0.013,at=1793168060
   step,dige:f0e1a5380adb7704
   step=2,desc:stand Host beating Clock_A which ticks K_P by count and K_Q by latest — tendrils on — the outside says 2300 ms,dige:9fb88f6e82670297
     Assertion:a-pulse-from-outside,sentence:a pulse from outside is followed forward from its Heard — through the host and the clock — to a Turn in each tank

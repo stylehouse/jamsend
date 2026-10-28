@@ -520,6 +520,7 @@ export function attachRelay(
 	//  ORDER IS KEPT: frames that arrive while the socket's hello is still verifying queue behind it, and every frame
 	//   after a queued one queues too, so a seq-ordered inbox never sees them overtake each other.
 	const FROM_CHECK = (process.env.RELAY_FROM_CHECK || 'enforce') as 'enforce' | 'log' | 'off'
+	const ASK_CHECK = (process.env.RELAY_ASK_CHECK || 'enforce') as 'enforce' | 'log' | 'off'
 	const ID_ADDR = /^[0-9a-f]{16}(_[1-9]\d*)?$/
 	const fromRefused = new Map<string, number>()
 	function claimedFrom(payload: string | Buffer): string {
@@ -888,7 +889,8 @@ export function attachRelay(
 			const cli = ackBack.get(String(msg.corr))
 			if (cli && cli.readyState === WebSocket.OPEN) { cli.send(JSON.stringify(msg)); relayLog(`→ cli runner_ack ${msg.op ?? '?'} corr=${msg.corr}`) }
 			else relayLog(`runner_ack ${msg.op ?? '?'} corr=${msg.corr} — no asking socket (gone)`)
-			ackBack.delete(String(msg.corr))
+			// phase:'received' is the tab saying "landed, waiting for Atime" — the answer is still to come on this corr
+			if (msg.phase !== 'received') ackBack.delete(String(msg.corr))
 			return
 		}
 	}
@@ -1015,6 +1017,9 @@ export function attachRelay(
 			//  one addr this socket occupies against other bodies.  heldByAnother consults it so the
 			//   courtesy prepub bind above never squats the bare name on a suffixed body's behalf.
 			;((ws as any).seats ??= new Set<string>()).add(grant)
+			// a hello by a FLOCK key (CLUSTER_TRUSTED_PUBS) — not just any self-signed one — is what may drive a
+			//  runner (the runner_ask gate in forwardText); a tab's own identity proves a key but is no flock member
+			if (loadTrustedPubs().includes(pub)) (ws as any).trustedPub = pub
 			try { ws.send(JSON.stringify(taken ? { control: 'hello_ok', addr: grant, taken } : { control: 'hello_ok', addr: grant })) } catch {}
 			relayLog(`🪪 hello bound ${addr}${want ? ` want=${want} → seat ${grant}${taken ? ` (taken: ${taken.join(',')} — suffixed)` : ''}` : ''}${qaddr && qaddr !== addr ? ` (role channel ${qaddr} — delivery prefers the station socket)` : ''} (verified self-sig)`)
 		} else {
@@ -1150,6 +1155,18 @@ export function attachRelay(
 			//   (→ runner) are the two addr-less-CLI request frames; both reply by corr, not by addr.
 			const askType = msg?.header?.type
 			const askCorr = (askType === 'ghost_compile' || askType === 'runner_ask') && (msg.corr ?? msg.header?.corr)
+			// THE ASK GATE (2026-10-28): a runner_ask drives a tab — run, accept, reload, poke, writing verbs — and the
+			//  only bar used to be reaching /relay, which djamsend's Caddy puts on the internet.  While cluster trust is
+			//   configured, the asking socket must have hello'd with a FLOCK key first (scripts/relay_hello.mjs).  The
+			//    refusal rides runner_ack so every CLI already prints it.  RELAY_ASK_CHECK=enforce (default) | log | off.
+			if (askType === 'runner_ask' && ASK_CHECK !== 'off' && loadTrustedPubs().length && !(ws as any).trustedPub) {
+				const op = msg.ask?.op ?? '?'
+				if (!(ws as any).askRefusedSaid) { (ws as any).askRefusedSaid = 1; relayLog(`⛔ runner_ask ${op} ${ASK_CHECK === 'log' ? 'UNPROVEN (log mode — forwarded anyway)' : 'REFUSED'} — asking socket never hello'd with a flock key`) }
+				if (ASK_CHECK === 'enforce') {
+					try { ws.send(JSON.stringify({ control: 'runner_ack', corr: String(askCorr || ''), op, ok: false, result: { refused: 'runner_ask needs a hello signed by a cluster flock key first (scripts/relay_hello.mjs)' } })) } catch {}
+					return
+				}
+			}
 			if (askCorr) ackBack.set(String(askCorr), ws)
 			const outcome = routeFromBrowser(text)
 			// #1 — undeliverable: a request that reached no browser (no local socket, no bridge) is

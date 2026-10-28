@@ -32,6 +32,7 @@
 //   on the same tab you just ran a Book on.  RUNNER_URL overrides the relay origin (default the dev server
 //    as seen from this container).  Exit 1 on error/no-reply, so it scripts.
 import { WebSocket } from 'ws'
+import { relayHello } from './relay_hello.mjs'
 import { readFileSync, writeFileSync } from 'node:fs'
 
 const argv  = process.argv.slice(2)
@@ -171,6 +172,7 @@ const ws = new WebSocket(`${WS_URL}?addr=${encodeURIComponent(addr)}`)
 ws.on('error', (e) => { console.error(`✗ relay ${WS_URL}: ${String(e?.code ?? e?.message ?? e)}`); process.exit(1) })
 const opened = await new Promise((r) => { const wd = setTimeout(() => r(false), 5000); ws.on('open', () => { clearTimeout(wd); r(true) }) })
 if (!opened) { console.error(`✗ relay ${WS_URL}: connect timeout (5s) — is the dev server up and ?B= a runner booted?`); process.exit(1) }
+await relayHello(ws)
 
 const reply = await new Promise((resolve) => {
     const timer = setTimeout(() => resolve({ ok: false, error: 'no reply in 12s — is a runner tab open (and reloaded since the shot handler landed)?' }), 12000)

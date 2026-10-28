@@ -1,12 +1,14 @@
 # Atheory — the design
 
 *Started 2026-10-20 (owner: "start an Atheory_design, to flesh out later, and carefully collect all the changes we make to
- Housing or Stuff there").  Two jobs:*
+ Housing or Stuff there").  Three jobs:*
 
 1. *§1 — **the design as it stands**: what Atheory IS, one section per organ that has been built and proven by a Book.
     A skeleton for now, to flesh out later.*
 2. *§2 — **the foundation ledger**: every change Atheory makes to `Stuff` or `Housing` (and what sits right beside them),
     collected carefully, so the foundation's drift is always readable in one place and every change can be taken back out.*
+3. *§3 — **where it's heading**: the future-thought gathered from the work, kept short, each line pointing at the doc that
+    holds its detail.*
 
 *The working doc stays `Atheory_todo.md`: the owner's rulings (§0.1), the loop queue and how each slice was built (§0.2),
  the antipatterns (§0.4), and the case studies.  When this doc and the todo disagree about what is BUILT, this one is
@@ -42,6 +44,9 @@
 | **Seem** | a controller over a compartment: it walks the rows of the kinds it holds and keeps a point for each | `%TheASeem:<name>` with `%TheAKind` rows; `TheA_seem_walk` |
 | **point** (Trace) | the Seem's reading of one row, paired walk to walk by what holds still (its name), so it survives a change of kind | `%TheATrace:<kind>,of:<name>` |
 | **Regard** | another organ's opinion of a point, kept ON the point, so it lives and dies with it | `%TheARegard:<sphere>` under a point; `%TheASphere:<name>,tense:Regard` declares it |
+| **tendril** | the thread between two events: a pulse's `from:` back to what sent it, an Ate forward to what ate it | `from:` on `%TheAPulse`; `%TheAAte` |
+| **Ate** | one sender's pulses a Turn ate, counted | `%TheAAte,from:<address>,n:<N>` under `%TheATurn` |
+| **address** | a position stringified, `<A>/<w>`, then `/Turn<n>` or `/Heard<n>`; lasts as long as what it names is kept | `TheA_addr`, `TheA_at` |
 | **mark**, **rollback** | a kept copy of the points; rolling back mints the rows again from it, and the points re-pair | `%TheAMark:<label>,dontSnap`; `TheA_seem_rollback` |
 
 **Why synapse and axon (2026-10-21, renamed from wire and outlet).**  "The wire" already means the network — the relay,
@@ -483,7 +488,40 @@ A:Feeder
    top, item 3): real time as a compartment whose pulses come from the host, the same shape as audio or a socket; (b) req
    machinery woken by pulse instead of by sweep — *the toy done above (`%TheAWait`)*; the real one is the first step that touches Hovercraft (todo §0.0).
 
-### 1.14 Still to design
+### 1.14 Tendrils and timing — `AthePondTendril`, the board on /Pondland
+
+**Owner, 2026-10-28:** *"event after event can be traced back or forward … it's a major Housing concern, getting consistent
+ eventing"* — and then *"a game board where the elvises can be seen zooming … telling concisely what part of the system woke up
+  and how much."*  Before this, every hop minted a fresh pulse with only the sc copied (`TheA_io`, `TheA_send`, the boundary)
+   and a Turn didn't say what it ate, so an event's identity was lost at each one.
+
+**The unit of event is the Turn; a tendril is two particles on it.**  Opt-in per House (`%TheATendrils`) so a House without it
+ moves exactly as before:
+```
+%TheATurn:1,synapse:clock,pulses=4,round=3          K_Q, sum:latest — ran once, ate four
+  %TheAAte,from:Clock_A/Athe_Clock/Turn1,n=4         one row per sender, counted
+  %TheATime,at=0.41,ms=0.05                          only under %TheATiming — relative to the run's start
+```
+- **Back** is a pulse's `from:` (stamped by `TheA_send` from the move it was sent in, after the sender's own sc so it can't pass
+   through; `TheA_io` stamps `/Heard<n>`; the boundary copies it).  **Forward** is finding the Ates that name you
+    (`TheA_led_to`).  `TheA_at(addr)` answers what an address names, or nothing once trimmed — the address stays as text and
+     a walk back says `(gone)` instead of breaking.
+- **Kept only where read**: Turns trim unless a `%TheAReader` is behind them, so a tendril lasts as long as someone follows it.
+   Story is meant to be that reader.
+- **Time** always rides `.c` (run, round, Turn `t0|t1`; each pulse's `sent_at`; an Ate group's first|last) and lands in the
+   snap only under `%TheATiming`, as `%TheATime` children — a layer a Book drops with one Entcase (`lematch,TheATime` /
+    `means,drop`) until Story quantises it.  The nesting holds: Ate ⊂ the sender's Turn; Turn ⊂ its round ⊂ its run.
+- **The board** (Pondland, above the tanks) is a reader on every compartment: each run it reads the new Turns, flashes each
+   compartment by how much it ate, and flies a dot per sender→eater along the wires, leaving in order of depth along the
+    tendrils.  It shows what the tendrils say, never what the wiring implies.  Ad-hoc Svelte for now (§3).
+- Book `AthePondTendril` (4 steps, green ×3): the chain from a Heard forward to both tanks and back; a latest Turn's `n:4`; the
+   clock's fan-out of two; a trimmed Turn's `(gone)`; the timing nesting from the `.c` times.
+
+**What's still ugly** (from the owner's "is anything ugly"): the board's places are hand-set; `w.c.sending_from` is a side channel
+ with no try/finally; the Turn address is predicted (`made + 1`); with no `%TheAWas` the address degrades silently to the bare
+  compartment; the switch is the whole House.  §3 has the better shapes.
+
+### 1.15 Still to design
 
 *From the todo's sketch, not yet built:* `%TheATurf` (a leased
  region), the spheres beyond Trace and Regard (a Was that outlives a reload, §1.12), the scheduler beyond the toy (§1.13 has it by hand, a clock, and a page), a synapse whose pulses go
@@ -525,6 +563,8 @@ No Atheory adjustments yet.
 
 | date | where | what | why |
 |---|---|---|---|
+| 2026-10-28 | `Ghost/A/Theory.g` TENDRILS (`TheA_tendrils`, `TheA_addr`, `TheA_at`, `TheA_came_from`, `TheA_ate`, `TheA_ate_groups`, `TheA_led_to`, `TheA_timing`, `TheA_time`; edits in `TheA_move`, `TheA_send`, `TheA_boundary`, `TheA_io`, `TheA_run`, `TheA_turn_commit`) | pulses carry `from:`; Turns keep `%TheAAte,from:,n:` and `round:`; times on `.c` always, `%TheATime` under `%TheATiming` | §1.14.  Opt-in by particle; the six Turn/tape/view/round/clock Books stayed green unchanged.  To undo: drop the methods and the edits; nothing outside Theory reads them but Pondland and AthePondTendril |
+| 2026-10-28 | `src/lib/A/Pondland.svelte` (the board) | `%TheATendrils` on the House, a `%TheAWas,keep:1` + `%TheAReader:board` on every compartment; `board_read` after each run | §1.14's board.  Page only |
 | 2026-10-21 | `src/routes/Pondland/+page.svelte` + `src/lib/A/Pondland.svelte` (new) | a route whose page is a bare House driven by `TheA_run` (§1.13) — imports `gen/A/Theory.go` and `gen/A/AtheFishTesting.go` directly as components (`@ts-ignore`d: a .go has no type declarations); exposes `window.__pond()` for headless probes | the owner's "a replacement of Otro.svelte or something — minimal changes to Housing.svelte until we've got a lot of experience": nothing in Housing changed.  The first page to mount ghosts without GhostList |
 | 2026-10-21 | `src/lib/A/Pondland.svelte` (time as IO; tracing paper) | the timer no longer pokes `Clock`: it tells `Host` the real ms since it last spoke (`TheA_io`, tape `keep:12`), Host beats `Clock` every 500 ms; a pause stops the pond’s time; "One beat" says 500 ms.  Each tank wears a Seem (`eye`, Egg+Fish) with a Regard sphere; after a run only the tanks that moved are walked (queued — walks are async), the eye regards each point `seen:n`, and the page draws the sheet: rings, regard dots, a red ring for `TheABecame`, crosses for `TheAGoner` | design §1.13 "Time is IO"; todo §0.0 overnight plan item 3 (art school).  Page only — nothing in Housing |
 | 2026-10-22 | `src/lib/O/Hovercraft.svelte` `story_matching_rules()` (new) + its 4 readers; `src/lib/O/Storui.svelte` 1 reader | Story's default matching rules read through one helper that takes either shape — Story.svelte's data property or Ghost/O/Story.g's method (a .g has no data properties) | Aprac_todo §0 — Story ported onto TheACode; the port is per tab until the spine moves.  Behaviour unchanged with Story.svelte (helper returns the array) |
@@ -549,3 +589,86 @@ No Atheory adjustments yet.
 | 2026-10-19 | `src/service-worker.js` | a `.go` module the worker re-fetches asks with `?import`; cache bumped to `jamsend-shell-v2` | a worker's re-fetch arrives `Sec-Fetch-Dest: empty`, Vite then served raw `.go` source, the browser sniffed it as HTML, and every Creduler ghost failed on the music page |
 | 2026-10-18 | `src/lib/app_data_dir.ts` (new) | `APP_DATA_DIR = '.jamsend'`, dependency-free | read by Housing, NodeWormholeNav, the daemon, and ghosts via `IMPORT()` |
 
+## 3. Where it's heading — gathered 2026-10-28, before the next code surfing
+
+*Future-thought from one long session (the write seat, the recipe, the tendrils).  Candidates, none built unless it says so;
+ the working detail is in the docs named.  The thread through all of it: **say once, as particles, what is meant to be true,
+  who may write it, and what happened — then derive the rest, and let the picture be a projection of that.***
+
+**Events.**
+- **The Turn number is the compartment's version.**  `Clock_A/Athe_Clock@3` = "the clock's third Turn" = "the clock as it stood
+   after it".  `from:` points at a version; the predicted address and the side channel go; Turns and §0.1's data versions merge.
+- **Tracing apart from history.**  Every move appends a small record (version, ate, sent, times) to a House ring the board reads;
+   a compartment's Was stays opt-in for those that want their past.  Tracing then costs no row diff and every compartment shows.
+- **Per-A switches**, not only per House — trace one corner of a big House.
+- **Story is a reader.**  What a Book records of a run is the Turns of the compartments it reads; "Story records" and
+   "consistent eventing" are one thing.  Record the LANDED change (the Turn's Neu/Goner/Sent), with the elvis as provenance —
+    a UI elvis is a low-level manipulation, and replaying landed changes needs no UI at all.  (Housing's `i_elvisto` keeps no
+     sender either; an elvis from outside enters an Atheory House as a Heard, which is where its tendril starts.)
+- **Receivers**: a Waft that persists a channel it takes (`Waft:<path>,receives:<channel>` — the taker vocabulary minus
+   "transient"); where it lives decides what loops through it.
+
+**Seeing it.**
+- **The board as a Seem** — a Stuffica view over the compartments, points named by A, so places persist and new compartments
+   appear; dots are transient points.  Then **Story projects it** from any step's snap (Story_future §15).
+- **Time quantised by Story** — rank within the parent, share of the parent's span, buckets, drift past a band — so `%TheATime`
+   can stay in the snap; later a separate `Snap:time` layer joined by address.
+- **The crawl** — step a run by round (`TheA_run`'s `most`), Turn or Ate; the call Electrodes nested inside each Turn's span so
+   a Turn opens into the calls it made, then (as a Variant-slot build) into its lines; scrub back along the tendrils.
+- **"The Waterworks"** — one pond with every shape: fan-in from two clocks, latest beside count, a P⇄Q loop, a held Feeder,
+   a slow compartment whose Turn swallows its round, a code push mid-run, Turns trimmed under a slow reader.
+
+**Ids, merging, qualities.**
+- **The position is the id** (the minisnap pointer, `mainkey:value` per level); an ordinal only on collision; a content dige
+   as the second handle; a lost mark keeping its neighbours.  Atheory already pairs by observed identity (`TheA_pair`) and
+    refuses a two-sided change as `%TheARefused` (`TheA_seem_merge`) — the native "merge wanted".  The live hole: two siblings
+     with one `mainkey:value`, where `o(sc)[0]` picks silently.  Wants a Book that hammers it.
+- **Qualities of a quality reuse `lematch`**: a Ground holds `%lematch` rows whose `means` say `%seen` (skip, dontSnap, spay —
+   existing), `%kept` (Dexie, disk via Wormhole, both, none; when — App_todo §7 says what is durable, nothing yet says
+    where|when) and `%known`.  The match is the indirection; nothing is written on the matched particle.
+
+**Authority and the room.**
+- **Turfs are seats.**  §1.15's `%TheATurf` "lease at the relay" exists now for one name: `seat:editor` in `relay.ts` (want, take,
+   lost, free; liveness by the relay's ping round), asked for by a `%Seat` particle and gating writes (LiesLang_todo §11).  The
+    general turf is `seat:<path>` — a small flock of editors splitting work.
+- **Ground becomes advice and control.**  A Ground names the Grounds it stands on and plants what its As should hold — the
+   `%Seat` to want, the Wafts to open, the elvises to send (as a Book's `Plan/Prep` does), the `%lematch` qualities — replacing
+    the `Run_A_<Book>` recipe that stamps a role.  A room, and most of a test, becomes Grounds you can walk around in.
+- **The Believer.**  One `%Belief` per thing meant to be true, holding only the `want`; whether it holds is read from where the
+   answering event is stored.  Today's `.c` latches are what it would hold; `%Seat` is the first.  A big hidden want becomes
+    one visible belief with a cost.  The req machine stays the doer (a req is an interface to continuation; only `sc.ok` is
+     per pass); a `%ttlilt` that runs out should alarm, not only expire.
+
+**The editor this serves** (LiesLang_todo §11–12): one search-first editor (Wordland) holding the write seat; compiles asked of
+ a headless compile authority (`seat:compiler`); several viewports; a few editors looking around together, aiming by (doc path,
+  the Atlas `%Map` method, line offset) and splitting work by turf.  Next: a new top-level UI on Stuffica for it.
+
+**Entering from outside — Atime and UItime** (gathered 2026-10-28, after the verb fork).
+- **Two times, named.**  *Atime* is a drain: the one `beliefs` mutex on the top House, held by a tick.  *UItime* is the door
+   from outside — `H.UItime(fn)` waits for Atime to clear and runs `fn` holding it.  Anything that arrives (a socket frame, a key,
+    a verb) waits at that door; nothing reads or writes particles off it.  Verbs, `runner_ask run` and `poke` were found entering
+     off it (LiesFunk) and now go through it.  `replace()` is not reader sanity — it is for quick complete exchanges; know what
+      you are doing with data instead of leaning on it.
+- **A run is atomic by synchrony.**  `TheA_run`/`TheA_move`/`TheA_boundary`/`TheA_io` hold no `await`, so a whole run is one JS
+   task: it is Atime by construction, and an arrival at the door becomes `TheA_io` then `TheA_run` inside one UItime.  Long work
+    is a hold — `%TheAWait`, answered later through `TheA_io` — never an await in a Turn.
+- **Guard the async handler.**  The `.g` compiler makes any handler holding an `await` async, and `TheA_move` doesn't await it, so
+   its sends land after the boundary with no `from:` — silently.  `TheA_move` should refuse a wake handler that returns a promise.
+- **No nested runs.**  `TheA_run` inside a move breaks the batch and clobbers `run_t0`/`run_round`; refuse it, or queue the inner
+   ready set for the next round.
+- **UItime has qualities a UI wants** (the owner): "give me this whenever" plus debounce, knowing it is in a loop, a quiet window
+   (hold off 20ms after a change, at most 300ms).  Those belong to the door — the arrival queue — not to each caller.
+- **The reference implementation is a modern Stuffica UI** built for something we're doing anyway: the event puts its context
+   together, then elvises — at once — into the door.  Stuffica's views must know Atime intimately: they read particles in
+    `$effect`s, which take no mutex.
+- **The old tick is the trickle think** — the legacy `think` elvises and the req machine.  Atheory still has to say which
+   compartments a trickle think may touch while both run.
+- **A synapse with no hearer: a plug-hole, not an error** — a declared socket to plug into later.  But a pulse sent into one is
+   dropped with its outbox today (`TheA_boundary`); it should spill somewhere you can see — a count on the synapse, a dangling
+    wire on the board — and an **egress** outlet is how something answers outside the House, carrying the asker's `corr`.
+- **Verbs are arrivals.**  A verb is a signed arrival at its owner's compartment — `by:<prepub>` on the `%TheAHeard` — so it is
+   serialised, taped, replayable, and on the board.  The relay now refuses `runner_ask` from a socket without a flock-key hello
+    (relay.ts THE ASK GATE; `scripts/relay_hello.mjs`) — per-command signatures come with the arrival.
+- **Is `TheA_io` the right name?**  It is the moment news from outside enters a compartment and is taped — `TheA_hear` (pairs with
+   `%TheAHeard`) would say it at a glance.  If every IOexpr site pumps news, each is a synapse end; the A is the method or w that
+    hosts them.

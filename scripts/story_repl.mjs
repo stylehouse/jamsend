@@ -29,6 +29,7 @@
 //    book <Book>         — set the current Book (for diff/snap fixture lookup) without running
 //    help (h, ?) · quit (q, exit)
 import { WebSocket } from 'ws'
+import { relayHello } from './relay_hello.mjs'
 import readline from 'node:readline'
 import { readFileSync, readdirSync } from 'node:fs'
 
@@ -266,6 +267,7 @@ async function main() {
 	ws.on('error', (e) => { console.error(C.red(`✗ relay ${WS_URL}: ${String(e?.code ?? e?.message ?? e)}`)); process.exit(1) })
 	const opened = await new Promise((resolve) => { const wd = setTimeout(() => resolve(false), 5000); ws.on('open', () => { clearTimeout(wd); resolve(true) }) })
 	if (!opened) { console.error(C.red(`✗ relay ${WS_URL}: connect timeout (5s) — is the dev server up and a ?B= runner booted?`)); process.exit(1) }
+	await relayHello(ws)
 
 	console.log(C.bold(`Story REPL`) + C.dim(` → ${WS_URL}  (type help)`))
 	const acks = await court()

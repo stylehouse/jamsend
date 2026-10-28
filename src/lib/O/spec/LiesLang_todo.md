@@ -240,6 +240,43 @@ The editor is the one writer (Waft saves, the compile `dock_source`, Keep cursor
      instead of a named method.  The seat is built for that: what asks is the `%Seat` particle, not the role, so when a Ground
       plants it the role stamp has one fewer reader.  Next readers to move the same way: `hacker:1`/`editor:1` on w:Lies, the Keep.
 
+**Step 2 re-aimed — a node editor, and code that knows what it is** (the owner, 2026-10-28; nothing built).
+- **No seat to compile.**  A `.go` is content-addressed (Ghostmeta = the `.g` dige): two compilers from the same bytes make
+   the same file.  The seat guards the TEXT.  LocalGen already compiles in node (it is what Claude compiles with); the
+    ticket-to-Editron road in `ghost_compile.ts` is the fragile one.
+- **A node editor** — LocalGen + fs — asks for `seat:editor` take-if-free (never a wrest) when no Chrome editor holds it, and
+   asks the relay|disk every time: Dexie is a browser luxury.  When Chrome comes back it asks `want:take`; node flushes and
+    yields.  Chrome then **reconciles by tree, like git**: a Ground's dige chains its layers (`TheACode:Ground/<Name>` has one;
+     `AthePondGround_whole` checks it), Grounds standing on Grounds make the tree, and Chrome compares roots against its
+      last-known one, descending only mismatched branches to the `.g` — each a three-way (`%Good` | disk | unsaved buffer),
+       a clash a `%TheARefused`-shaped row the merge popover shows (`TheA_seem_merge`'s shape).  The CLI compile becomes one
+        of its verbs, and `runner_ask stand <Ground>` (closure in order, then the Ground's plants and elvises) replaces
+         per-file `ghost_load --stand=`.  Claude's own disk writes are the unseated case: ask `seat_who` first, `seat:<path>` later.
+- **Every function knows its kind — first by stamp, eventually by genesis.**  The House dispatches a few shapes
+   (`Housing.svelte.ts` ~1582: `w.sc.w`|`w.sc.method` → method): **w method** `Foo(A,w)` (on `%w:Foo` under its `%A`), **e
+    handler** `e_Foo` (reached by an `%elvisto` or an `o_elvis` its w method opens), **req** do_fn, **verbs** table, **recipe**
+     `Run_A_<Book>` (going), **helper** `Foo_drive` (its w by prefix — the grouping that already exists).  The links are
+      already kept: Atlas's `%Map` has `%def`/`%mint`/`%elvisto` with `via` (the enclosing method — so per call site, filed
+       under a method); Ground maps `.g` → Ground.  Missing: `kind:` and `of:` on each `%def`, stamped by the one generator
+        (`Lang_map_into`) so Atlas carries it — an m9 bump; what won't classify shows as an orphan.  **Name the rows by the
+         prefix, not the argument form:** a call is `%i_elvis:<target>,via:<method>` (that `i_elvisto` takes one argument form is
+          incidental — it may become plain `i_elvis`), a handler it opens is `%o_elvis:<type>,via:<method>` — today not
+           collected at all (28 `o_elvis` + 3 `o_elvis_req` sites, by grep).  One row per site; the method's set is its `via`s.  **Eventually (spicy):** genesis in the editor — you want a `%w`, hang it on an `%A`, and
+         the stub is written already classified, grouped and linked.
+- **Everything kept by the editor, not by hand** (the owner, 2026-10-28).  `src/lib/L/everything.js` hand-authors every area,
+   Point and Ground tag, and something has to keep it up to date — today that is an AI re-running `wafts_everything.mjs`.
+    Aim: the editor keeps the `.g`s, their Grounds and Waft:Everything in sync as it saves — a new method merges in on its own,
+     a renamed one moves — so Everything becomes where any extra culture hangs (descs, kinds, the verb and ActionButton
+      alignments) rather than a list someone maintains.  No mass verification on save; a sweep can check it all some day.
+- **Sphere means a Seem layer** (the owner's correction): how a Seem lays several Spheres — of `n**`, `D**`, `K**` — together
+   where they coincide on meaning (Atheory_design §1.12; still in development).  The `.g` ↔ Ground link would be one:
+    perhaps `%TheASphere:Grounding` (key and arrangement unruled) — and the Sphere's name could be how we find the code that
+     knows the process of having one.  Data plus the code that knows about it: what OOP really is, housed by name.
+- **Later: the shape census.**  Every IOing path is a Lezer parse, so one `%Shape:X` per mainkey can be derived (keys, the leg
+   it sits under, makers vs readers), with cardinality read off the consuming form (`[0]` at most one, iterated many, `oai`
+    exactly one, `[0].sc` unguarded = null fatal).  The yield is contradictions: two makers' key sets under one mainkey, a
+     read key no maker writes, a null-fatal read with no maker first.  Authored parameters only as corrections (§12's `%lematch`).
+
 
 ## 12. The guts, reimagined (dwelling, 2026-10-28 — nothing here is built; Story_future grows from it next)
 

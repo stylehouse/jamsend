@@ -17,6 +17,7 @@
 //  RUNNER_URL overrides the relay origin (default http://172.17.0.1:9091 — the dev server as seen
 //   from this container; http://localhost:9091 on the host).  Exit 1 on error/no-reply, so it scripts.
 import { WebSocket } from 'ws'
+import { relayHello } from './relay_hello.mjs'
 
 const argv   = process.argv.slice(2)
 const flags  = new Set(argv.filter(a => a.startsWith('--')))
@@ -37,6 +38,7 @@ const ws = new WebSocket(`${WS_URL}?addr=${encodeURIComponent(addr)}`)
 ws.on('error', (e) => { console.error(`✗ relay ${WS_URL}: ${String(e?.code ?? e?.message ?? e)}`); process.exit(1) })
 const opened = await new Promise((resolve) => { const wd = setTimeout(() => resolve(false), 5000); ws.on('open', () => { clearTimeout(wd); resolve(true) }) })
 if (!opened) { console.error(`✗ relay ${WS_URL}: connect timeout (5s) — is the dev server up?`); process.exit(1) }
+await relayHello(ws)
 
 const reply = await new Promise((resolve) => {
 	// the window runs REMOTELY before the ack, so the wait is ms + slack (a tab mid-think can lag the arm)

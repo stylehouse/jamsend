@@ -70,6 +70,7 @@
 //      instead (see liveCensus below) and never opens the file.  It is also the honest way to ask
 //       about our own relay — the registry is durable and remembers the long-dead; the wire cannot.
 import { WebSocket } from 'ws'
+import { relayHello } from './relay_hello.mjs'
 import { readFileSync, writeFileSync } from 'node:fs'
 // the SHARED liveness thresholds + verdict — the same numbers the ghost (LiesLies.svelte) reads,
 //  so the CLI can no longer drift to a worse death criterion than the layer it's questioning.
@@ -198,6 +199,8 @@ const WS_URL     = HTTP.replace(/^http/, 'ws').replace(/\/$/, '') + '/relay'
 const TIMEOUT_MS = Number(process.env.RUNNER_ASK_TIMEOUT_MS || (SLUGGISH_MS + 3000))
 const WATCH_MS   = Number(process.env.RUNNER_WATCH_MS || 120000)
 const stamp      = Date.now()
+// how long an op may work once the tab said it received it (it waits for Atime, then runs)
+const WORK_MS    = Number(process.env.RUNNER_ASK_WORK_MS || 600000)
 const cliAddr    = `runcli-${stamp}`   // ephemeral addr — relay LOGS the connect/disconnect; reply is corr-routed
 
 // --live — discover from the RELAY, never from wormhole/Cluster/toc.snap.
@@ -262,6 +265,7 @@ async function liveCensus({ classify = true,
 		w2.on('error', () => { clearTimeout(t); res(false) })
 	})
 	if (!up) { try { w2.close() } catch {}; return null }   // relay unreachable — the caller words it
+	await relayHello(w2)
 	const askOne = (to, theAsk, ms) => new Promise((res) => {
 		const corr = `ra-cs-${Date.now()}-${censusSeq++}`
 		const onMsg = (d) => {
@@ -356,6 +360,7 @@ if (op === 'runners') {
 		const addr = `runcli-${Date.now()}-ls`
 		const w2   = new WebSocket(`${WS_URL}?addr=${encodeURIComponent(addr)}`)
 		const up   = await new Promise((res) => { const t = setTimeout(() => res(false), 3000); w2.on('open', () => { clearTimeout(t); res(true) }); w2.on('error', () => { clearTimeout(t); res(false) }) })
+		if (up) await relayHello(w2)
 		if (up) {
 			// ADDRESSED pings, one per registry row, in parallel — NOT a role broadcast: the court's own
 			//  comment has the receipt ("the role broadcast reaches whichever single socket the relay
@@ -427,6 +432,7 @@ async function probeLive(id, want) {
 		w2.on('error', () => { clearTimeout(t); res(false) })
 	})
 	if (!up) { try { w2.close() } catch {}; return null }   // relay unreachable — the census path words it
+	await relayHello(w2)
 	const askOne = (to, theAsk, ms) => new Promise((res) => {
 		const corr = `ra-pb-${Date.now()}-${censusSeq++}`
 		const onMsg = (d) => {
@@ -560,7 +566,8 @@ function clientId() {
 }
 const CLIENT = clientId()
 
-const ask = { op, client: CLIENT }
+// once: the same logical ask across insisting re-sends — a tab still working on it joins rather than runs twice
+const ask = { op, client: CLIENT, once: `${stamp}-${op}` }
 if (op === 'run')  { ask.book = arg; if (bookNeedsAC(arg)) ask.needAC = 1; if (bookNeedsFSA(arg)) ask.needsFSA = 1 }   // Credence-read → runner secures AC / routes to an FSA runner pre-run
 if (op === 'snap' || op === 'trace') ask.n = Number(arg)
 if (op === 'declare') ask.sentence = arg   // the explorer button's CLI twin (e_story_declare)
@@ -676,11 +683,17 @@ function sendAsk(ws, theAsk, to = undefined, timeoutMs = TIMEOUT_MS) {
 			let m; try { m = JSON.parse(String(data)) } catch { return }
 			if (m.corr !== corr) return                                  // relay control:log + other corrs — ignore
 			if (m.control === 'undeliverable') settle({ ok: false, error: 'no runner connected to the relay (frame dropped)' })
+			else if (m.control === 'runner_ack' && m.phase === 'received') {
+				// the tab has it and is waiting for Atime — stop counting silence, give the work its own budget
+				clearTimeout(timer)
+				timer = setTimeout(() => settle({ ok: false, error: `received, but no answer in ${Math.round(WORK_MS / 1000)}s (the op is still running, or the tab wedged)` }), WORK_MS)
+			}
 			else if (m.control === 'runner_ack') settle(m)
 		}
-		const timer = setTimeout(() => settle({ ok: false, error: `no reply in ${Math.round(timeoutMs / 1000)}s (runner not connected or half-open?)` }), timeoutMs)
+		let timer = setTimeout(() => settle({ ok: false, error: `no reply in ${Math.round(timeoutMs / 1000)}s (runner not connected or half-open?)` }), timeoutMs)
 		ws.on('message', onMsg)
-		ws.send(JSON.stringify({ header: { type: 'runner_ask', from: cliAddr, to: to ?? TARGET, seq: Date.now(), corr }, ask: PLAYER_PUB ? { ...theAsk, pub: PLAYER_PUB } : theAsk, corr }))
+		const a = { ...theAsk, acks: 1, ...(PLAYER_PUB ? { pub: PLAYER_PUB } : {}) }
+		ws.send(JSON.stringify({ header: { type: 'runner_ask', from: cliAddr, to: to ?? TARGET, seq: Date.now(), corr }, ask: a, corr }))
 	})
 }
 // collectAcks — the courting probe: ONE role-broadcast ping, but instead of settling on the first ack it
@@ -748,6 +761,7 @@ const ws = new WebSocket(`${WS_URL}?addr=${encodeURIComponent(cliAddr)}`)
 ws.on('error', (e) => { console.error(`✗ relay ${WS_URL}: ${String(e?.code ?? e?.message ?? e)}`); process.exit(1) })
 const opened = await new Promise((resolve) => { const wd = setTimeout(() => resolve(false), 5000); ws.on('open', () => { clearTimeout(wd); resolve(true) }) })
 if (!opened) { console.error(`✗ relay ${WS_URL}: connect timeout (5s) — is the dev server up and ?B= a runner booted?`); process.exit(1) }
+await relayHello(ws)   // the relay refuses runner_ask from a socket that never proved a flock key
 
 // COURT — no --runner given ⇒ pick ONE runner before the real ask ever leaves.  The old default addressed
 //  to:'runner' for everything, and the relay FANS a role frame to every runner tab — so with two tabs up a

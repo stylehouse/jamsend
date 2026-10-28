@@ -2591,7 +2591,10 @@ await M.eatfunc({
             const role = H.Lies_role?.(w)
             if (v.writes && (ro_only || role === 'hacker'))
                 return { ok: false, result: { refused: `verb '${name}' writes — this tab is ${role === 'hacker' ? 'a hacker room' : 'a music-page listener'} (read-only); run it on the editor terminal` } }
-            const result = await v.run(w, ask ?? {})
+            // INSIDE Atime: a verb is a socket event or a keypress, and its body reads and writes particles —
+            //  so it waits for the beliefs mutex like any UI transaction, never landing mid-tick (2026-10-28)
+            let result: any
+            await H.UItime(async () => { result = await v.run(w, ask ?? {}) })
             return { ok: !result?.error, result }
         },
         // the tab's own verbs — the registry describing itself (Verbs_todo §2: self-documenting)
@@ -2628,6 +2631,25 @@ await M.eatfunc({
             // reactap — the reactivity census, forwarded to the shared handler: NO lease touch (a
             //  census only READS the tree; everything below is run-driving and stays engagement-gated).
             if (op === 'reactap') return (H as any).Lies_reactap_recv(w, frame)
+            const reply = (m: any) => {
+                const ws = ((w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any)?.ws
+                if (ws && ws.readyState === 1 /* OPEN */) { try { ws.send(JSON.stringify(m)) } catch { /* CLI falls back to timeout */ } }
+            }
+            // RECEIVED, then the answer (2026-10-28): an op now waits for Atime, so a CLI that says it understands
+            //  (ask.acks) hears at once that the ask landed and stops counting silence; the relay keeps the corr
+            //   open for the real reply.  ONCE: a CLI that insists re-sends the same logical ask (ask.once) under a
+            //    fresh corr — while the first is still working, the re-send JOINS it and gets the same answer, so a
+            //     slow op never runs twice.  Settled asks leave the map, so a retry after a refusal runs fresh.
+            if ((ask as any).acks) reply({ control: 'runner_ack', corr, op, phase: 'received' })
+            const once = (ask as any).once ? String((ask as any).once) : ''
+            const onces: Map<string, Promise<any>> = ((H.top_House() as any).c.ask_onces ??= new Map())
+            if (once && onces.has(once)) {
+                const was = await onces.get(once)
+                reply({ control: 'runner_ack', corr, op, ok: was.ok, result: was.result, joined: 1 })
+                return true
+            }
+            let settle_once: ((v: any) => void) | null = null
+            if (once) onces.set(once, new Promise((res) => { settle_once = res }))
             // who's asking — the client's stable cluster id (ask.client, from .env.cluster-claude) when it
             //  identifies itself, else the relay `from` addr.  Drives the engagement lease (don't-steal).
             const client = String(ask.client ?? frame?.header?.from ?? 'anon')
@@ -2954,13 +2976,18 @@ await M.eatfunc({
                     //    CLI keeps for snap/diff/trace once it lands (the record opens now, the run is async).
                     if (!ask.book) { ok = false; result = { error: 'run needs a Book' } }
                     else {
-                        const chk = H.Lies_engage_check(w, client)
-                        if (!chk.ok) { ok = false; result = { error: chk.reason, engagement: H.Lies_engagement(w) ?? null } }
-                        else {
-                            H.Lies_engage(w, client, ask.book)
-                            H.Lies_become_book_drive(w, ask.book, !!ask.needAC, !!ask.needsFSA)   // CLI-carried caps → secure AC / gate FSA pre-run (it read Credence for us)
-                            result = { accepted: true, book: ask.book, uid: H.Lies_rungo_record(w)?.sc.uid ?? null, engaged: client, needAC: !!ask.needAC, needsFSA: !!ask.needsFSA }
-                        }
+                        // the lease check, the stamp and the drive's first synchronous stretch run INSIDE Atime (the
+                        //  begun-wedge of 2026-07-30 was this entry racing a tick); the drive itself is not awaited,
+                        //   so its later awaits queue behind us like anyone's
+                        await H.UItime(async () => {
+                            const chk = H.Lies_engage_check(w, client)
+                            if (!chk.ok) { ok = false; result = { error: chk.reason, engagement: H.Lies_engagement(w) ?? null } }
+                            else {
+                                H.Lies_engage(w, client, ask.book)
+                                H.Lies_become_book_drive(w, ask.book, !!ask.needAC, !!ask.needsFSA)   // CLI-carried caps → secure AC / gate FSA pre-run (it read Credence for us)
+                                result = { accepted: true, book: ask.book, uid: H.Lies_rungo_record(w)?.sc.uid ?? null, engaged: client, needAC: !!ask.needAC, needsFSA: !!ask.needsFSA }
+                            }
+                        })
                     }
                 } else if (op === 'release') {
                     // a clean hang-up: mark the lease released (kept, so "was it you?" still answers), GC the
@@ -3568,7 +3595,7 @@ await M.eatfunc({
                             //   world off the particle they are handed.
                             const srun: any = (H as any)?.top_House?.()?.c?.sounditron_run
                             const host: any = (kind === 'Radio' || !verb.startsWith('Sounditron_')) ? H : (srun ?? H)
-                            await host[verb](kind === 'Radio' ? radio : rw)
+                            await H.UItime(async () => { await host[verb](kind === 'Radio' ? radio : rw) })   // music state is ticked — poke it inside Atime
                             const after = rw.o({ Radio: 1 })[0]?.sc
                             result = { poked: verb, was: before, now: snapshot(),
                                 title: kind === 'Radio' ? (after?.title ?? null) : null,
@@ -3583,11 +3610,8 @@ await M.eatfunc({
                 const st = String((e as Error).stack || '').split('\n').slice(1, 3).map((l) => l.trim()).join(' < ')
                 ok = false; result = { error: String((e as Error).message) + (st ? ` @ ${st}` : '') }
             }
-            const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
-            const ws   = port?.ws as any
-            if (ws && ws.readyState === 1 /* OPEN */) {
-                try { ws.send(JSON.stringify({ control: 'runner_ack', corr, op, ok, result })) } catch { /* CLI falls back to timeout */ }
-            }
+            if (once) { onces.delete(once); (settle_once as any)?.({ ok, result }) }
+            reply({ control: 'runner_ack', corr, op, ok, result })
             H.tlog(`📥 runner_ask ${op}${ask.book ? ` ${ask.book}` : ''} → ${ok ? 'ok' : 'err'}`)
             return true
         },

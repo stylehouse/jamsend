@@ -15,6 +15,23 @@ A **working `_todo`**, opened 2026-10-09.  Homethink §4 already named the disea
 
 ## 0. What to get on with next
 
+**Landed 2026-10-28 — verbs enter in Atime, and only flock members may ask.**
+- `Verb_run` runs a verb's body inside `H.UItime` (the beliefs mutex): both callers — the relay's `runner_ask` and BigWordland's
+   hole — are a socket event or a keypress, and used to read and write particles mid-tick.  `runner_ask run` (lease check, stamp,
+    the drive's first stretch) and `poke` enter the same way.  Cost: a long verb (`atlas_refresh`, `everything`) now holds the tab
+     for its disk walk — **next, split them**: read the disk outside, then `UItime` only to apply.
+- **Received, then the answer.**  A CLI that sends `ask.acks` hears `runner_ack,phase:received` at once; the relay keeps the corr
+   open; `runner_ask.mjs` then waits `RUNNER_ASK_WORK_MS` (10 min) instead of reading silence as dead and re-sending.  `ask.once`
+    (stable across insisting re-sends) makes a re-send JOIN the in-flight one.  Live: received+final on da060 (the join path is
+     not yet exercised by a slow op).  A tab on older code just doesn't send `received` — the CLI falls back.
+- **The ask gate** (`relay.ts`): with cluster trust configured, `runner_ask` from a socket that never hello'd with a key in
+   `CLUSTER_TRUSTED_PUBS` is refused (as a `runner_ack,ok:false,refused`).  `scripts/relay_hello.mjs` signs that hello with the
+    claude key; runner_ask · reactap · story_repl · runner_shot call it.  `RELAY_ASK_CHECK=enforce|log|off`.  Note: a tab's own
+     hello is self-signed by its identity, not a flock key — so the seat (`seat:editor`) still admits any hello'd socket.
+- **Owed:** a verb arrives as a named `%Verb` elvis carrying `by:<prepub>` (proven per command, not just per socket), so the
+   board and tendrils see it; writing verbs gated on proof + the seat instead of `role === 'hacker'`; the rest of the op chain
+    (`release`, `ghost_load --stand`, `tidy`, `crew`) entering through UItime as it moves into verbs.
+
 **The arc**, each slice compiled, Book-gated where it can be, and left in the tree for the owner:
 1. ✅ this doc + the inventory (§3).
 2. ✅ **The registry** — `verbs_<Ghost>()` (§2), LiesFunk tries it before its chain; `verbs` lists them (`runner_ask verbs`).
