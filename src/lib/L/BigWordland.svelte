@@ -82,7 +82,7 @@
     //  No answer yet (or no relay) → no badge.  Clicking "reads" wrests it — a deliberate act, which is what may wrest.
     let run_house = $derived(houses.find(h => h.name === the_book))
     let lies_w = $derived.by(() => { void run_house?.version; return (run_house as any)?.o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] as any })
-    let seat = $derived.by(() => { void lies_w?.version; const st = lies_w?.o({ Seat: 'editor' })[0] as any; void st?.version; return st ? { held: !!st.sc.held, by: st.sc.by as string | undefined } : undefined })
+    let seat = $derived.by(() => { void lies_w?.version; const st = lies_w?.o({ Seat: 'editor' })[0] as any; void st?.version; return st ? { held: !!st.sc.held, by: st.sc.by as string | undefined, unproven: !!st.sc.unproven } : undefined })
     function wrest_seat() { if (lies_w && run_house) (run_house as any).Lies_seat_ask(lies_w, true, 'the seat badge, clicked') }
 
     // sprawl — the escape hatch back to the ORIGINAL view: every House's UIs dumped in
@@ -305,7 +305,7 @@
 <div class="bw">
     <!-- the top bar: room name · the H** toc · Lies summon · the searchbar -->
     <div class="bw-top">
-        <span class="bw-name" title="BigWordland — {editor_book ? '?E=' + editor_book + ' (editor: takes the editor slot)' : '?H=' + hacker_book + ' (hacker: docks without the duties)'}">BigWordland{#if !editor_book}<span class="bw-hack">hacker</span>{/if}</span>{#if seat?.held}<span class="bw-seat held" title="this tab holds seat:editor — its Waft and .g saves land">✍ writes</span>{:else if seat?.by}<button class="bw-seat" title="seat:editor is held by {seat.by} — this tab reads; saves wait for the seat. Click to take it." onclick={wrest_seat}>reads</button>{/if}
+        <span class="bw-name" title="BigWordland — {editor_book ? '?E=' + editor_book + ' (editor: takes the editor slot)' : '?H=' + hacker_book + ' (hacker: docks without the duties)'}">BigWordland{#if !editor_book}<span class="bw-hack">hacker</span>{/if}</span>{#if seat?.unproven}<span class="bw-seat unproven" title="the relay gives seat:editor only to a socket a cluster flock key vouches for — open the repo as this tab's folder (it reads .env.cluster-editor once), or paste a flock key in the 🪪 Id hatch">unproven — sign in 🪪</span>{:else if seat?.held}<span class="bw-seat held" title="this tab holds seat:editor — its Waft and .g saves land">✍ writes</span>{:else if seat?.by}<button class="bw-seat" title="seat:editor is held by {seat.by} — this tab reads; saves wait for the seat. Click to take it." onclick={wrest_seat}>reads</button>{/if}
         <div class="bw-toc">
             {#each houses as house (house.c.ip)}
                 <button class="bw-h" style="--d: {depth_of(house)}"
@@ -462,6 +462,7 @@
         color: #c8b48f; background: none; border: 1px dashed rgba(200, 180, 143, 0.45);
         border-radius: 5px; padding: 0.02rem 0.3rem;
     }
+    .bw-seat.unproven { color: #e0b88f; border: 1px solid rgba(224, 184, 143, 0.5); cursor: default; }
     .bw-seat.held { color: #b8e08f; border: 1px solid rgba(184, 224, 143, 0.5); cursor: default; }
     .bw-name {
         font-size: 0.85rem; letter-spacing: 0.14em; text-transform: uppercase;

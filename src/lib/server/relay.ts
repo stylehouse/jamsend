@@ -174,8 +174,10 @@ export function attachRelay(
 	// seat (tab → relay): {want, take?, who?, why?} asks; {release} gives back; {ask:'who'} reads.  A free seat, or one
 	//  this socket already holds, is granted (seat_ok).  A live holder keeps it (seat_taken) unless the ask carries
 	//   `take` — a deliberate act in the asking tab — and then the old holder hears seat_lost and the asker gets seat_ok.
-	//  Who may ask: a hello-verified socket when the cluster is configured (the seat gates writes, so it is gen_write's
-	//   posture), anyone otherwise, said once in the log.
+	//  Who may ask: a FLOCK-proven socket when the cluster is configured (the seat gates writes, so it is gen_write's
+	//   posture) — a hello by a CLUSTER_TRUSTED_PUBS key, or a `flock` proof beside the tab's own hello (handleFlock).
+	//    Any self-signed hello used to do: a stranger who minted a key could wrest the seat (2026-10-28).  Anyone may ask
+	//     where no trust is configured, said once in the log.
 	function handleSeat(ws: WebSocket, msg: any) {
 		const name = String(msg.want ?? msg.release ?? msg.seat ?? '')
 		const reply = (o: any) => { try { ws.send(JSON.stringify({ seat: name, ...o })) } catch {} }
@@ -186,10 +188,13 @@ export function attachRelay(
 			return reply({ control: 'seat_who', held: h ? 1 : 0, ...(h ? { who: verified ? h.who : h.who.replace(/\s*\(.*\)$/, ''), since: h.since } : {}) })
 		}
 		const verified = !!((ws as any).bound as Set<string> | undefined)?.size
-		if (!verified) {
-			if (loadTrustedPubs().length) return reply({ control: 'seat_error', reason: 'not hello-bound — a seat gates writes; hello first' })
-			if (!(ws as any).seatUnverifiedSaid) { (ws as any).seatUnverifiedSaid = 1; relayLog(`✍ seat ask from an unverified socket allowed — no cluster trust configured`) }
-		}
+		if (loadTrustedPubs().length) {
+			if (!verified) return reply({ control: 'seat_error', reason: 'not hello-bound — a seat gates writes; hello first' })
+			if (!(ws as any).trustedPub && msg.release === undefined) {
+				if (!(ws as any).seatUnflockSaid) { (ws as any).seatUnflockSaid = 1; relayLog(`✍ seat ask REFUSED — ${[...((ws as any).bound as Set<string>)].join(',')} is not in the flock`) }
+				return reply({ control: 'seat_error', reason: 'not in the flock — a seat gates writes; prove a cluster flock key (🪪)' })
+			}
+		} else if (!verified && !(ws as any).seatUnverifiedSaid) { (ws as any).seatUnverifiedSaid = 1; relayLog(`✍ seat ask from an unverified socket allowed — no cluster trust configured`) }
 		if (msg.release !== undefined) {
 			if (seatHeld(name)?.ws === ws) seatFree(name, 'released')
 			return reply({ control: 'seat_released' })
@@ -211,6 +216,30 @@ export function attachRelay(
 		seatWaiters.get(name)?.delete(ws)
 		;((ws as any).seatsHeld ??= new Set<string>()).add(name)
 		reply({ control: 'seat_ok', holder: who })
+	}
+	// flock (tab → relay): {from, pub, of, ts, sign} — a CLUSTER_TRUSTED_PUBS key vouches for THIS socket without becoming its
+	//  identity.  The tab keeps its own hello-bound face (`of`, which must be an addr this socket hello-bound, so a proof lifted
+	//   off one socket says nothing on another) and the flock key only marks the socket `trustedPub` — the bar for the seat and
+	//    for runner_ask.  A hello BY a flock key (relay_hello.mjs, a 🪪-pasted key) marks it the same way, with no flock frame.
+	//  FIRST HACK (2026-10-28): no relay nonce, so a replay inside the 30s window on a socket already bound as the same `of`
+	//   would pass — the window plus the bind keep that narrow.  The tab reads its flock key once off the repo share
+	//    (.env.cluster-editor, Lies_flock_key) — the relay holds only the pubs.
+	async function handleFlock(ws: WebSocket, msg: any) {
+		const reply = (o: any) => { try { ws.send(JSON.stringify(o)) } catch {} }
+		const trusted = loadTrustedPubs()
+		if (!trusted.length) return reply({ control: 'flock_error', reason: 'no cluster trust configured on this relay' })
+		const of = typeof msg.of === 'string' ? msg.of : ''
+		if (!of || !((ws as any).bound as Set<string> | undefined)?.has(of)) return reply({ control: 'flock_error', reason: 'not hello-bound as that `of` — hello first' })
+		const pub = typeof msg.pub === 'string' ? msg.pub : ''
+		const fresh = typeof msg.ts === 'number' && Math.abs(Date.now() - msg.ts) < 30_000
+		const signer = await verifyHeader({ control: 'flock', from: msg.from, pub, of, ts: msg.ts, sign: msg.sign }, trusted)
+		if (!fresh || !pub || signer !== pub) {
+			relayLog(`✗ flock proof REFUSED for ${of}${fresh ? '' : ' (stale ts)'} — not signed by a flock key`)
+			return reply({ control: 'flock_error', reason: 'flock proof did not verify — not a cluster flock key' })
+		}
+		;(ws as any).trustedPub = pub
+		relayLog(`🐑 flock proven: ${of} vouched by ${prepubOf(pub)}`)
+		reply({ control: 'flock_ok', of, by: prepubOf(pub) })
 	}
 	let role: Role | null = null
 	let peerLink: WebSocket | null = null // the single relay↔relay socket (either end)
@@ -690,6 +719,7 @@ export function attachRelay(
 		}
 		if (msg.control === 'gen_write') { void handleGenWrite(ws, msg); return }
 		if (msg.control === 'seat') { handleSeat(ws, msg); return }
+		if (msg.control === 'flock') { void handleFlock(ws, msg); return }
 		if (msg.control === 'hello') {
 			// FROM-CHECK (2026-10-13): frames this socket sends while its hello is still verifying wait for it (see
 			//  fromGate), so the async verify can't race a frame that follows the hello on the same socket.

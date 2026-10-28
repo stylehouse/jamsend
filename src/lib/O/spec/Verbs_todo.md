@@ -33,10 +33,18 @@ A **working `_todo`**, opened 2026-10-09.  Homethink §4 already named the disea
     any self-signed hello, so a stranger can take a free `seat:editor` and hold the editor's saves back (owed, not lost) — gate
      `take` on something stronger than a tab key (a crew row, or refuse seat asks arriving through Caddy); **ActionButton clicks**
       (`Actions.svelte` → `a.sc.fn?.()`) run off Atime too.
-- **TODO — really sign in the dev Chrome tabs.**  A tab's hello is self-signed by its own identity, so the relay can't tell your
-   tabs from a stranger's.  A dev tab could read the flock key (`.env.cluster-editor`) through its FSA grant on the repo and hello
-    with it — then it IS trusted, seat and asks alike.  Cost: the key sits in that browser's memory; fine for a dev box.  Until then:
-     the seat allowlist (below in LiesLang §11).
+- **The seat answers only to the flock (landed 2026-10-28, first hack).**  relay `handleSeat` refuses a socket without `trustedPub`
+   ("not in the flock") wherever trust is configured.  A tab proves membership WITHOUT changing identity: after hello_ok it sends
+    `{control:'flock', from, pub, of:<its hello prepub>, ts, sign}` signed by a flock key (`handleFlock`; `of` must be bound on that
+     socket, ts within 30s, no nonce yet).  The key: `Lies_flock_key` reads the first TRUSTED `.env.cluster-{editor,claude}` off the
+      share — only once `Wormhole_is_repo()` says the share IS the checkout (wormhole+Ghost+src at the root; the gate anything
+       repo-probing should ask first) — and keeps it in `top.stashed.flock_idento`.  Refused ⇒ `%Seat,unproven` ⇒ BigWordland's
+        badge "unproven — sign in 🪪".  The owner's editor identity is itself in CLUSTER_TRUSTED_PUBS, so it proves by hello alone.
+         ⚠ `.env.cluster-editor` on disk is a stale June key (not trusted), so tabs vouch with claude's today.  Probe-verified at the
+          relay (stranger refused · wrong `of` · own key · claude proof → seat_ok); the tab half awaits a live room.
+- **TODO — sign in EVERY dev tab**, not just seat-asking ones (`Lies_flock_prove` returns early without a %Seat): runners
+   then ask census/who as flock members, and census/who can require `trustedPub` too.  Then: a relay nonce instead of the ts
+    window; setup writing a dedicated tab flock key rather than lending claude's; the r2r bridge ask hole.
 - **TODO — ActionButtons through Atime, forward-escaping** (no instance changes): `Actions.svelte`'s `fire()` runs `a.sc.fn` inside
    `H.UItime`; an action MAY carry `method:` + args instead of a closure, and `fire()` elvises it — old `fn` buttons keep working.
     Watch: Pause/Stop must stay instant while a long step holds Atime (set the flag, then elvis).  Buttons, verbs and Points stay

@@ -2627,6 +2627,22 @@ export class House extends StorableHousing {
     //     also why installing this is safe ahead of anyone testing it on a music-only folder.
     //  The seed is fire-and-forget OFF the tick mutex for the same reason the no-share cloud mount is
     //   (hundreds of github fetches would freeze ticks); progress rides A.c.*, which are runtime refs.
+    // Wormhole_is_repo — is this tab's FSA share the jamsend CHECKOUT itself (the developer's ./), not a music folder?
+    //  Asked FIRST by anything that would otherwise probe the share for repo-only files (.env.cluster-*, src/, Ghost/),
+    //   so a listener's share is never walked for files that cannot be there.  true|false off the expanded root's
+    //    directory names (wormhole + Ghost + src), undefined until the root has been listed.  Latched per handle on A.c.
+    Wormhole_is_repo(): boolean | undefined {
+        const A = this.top_House().o({ A: 'Wormhole' })[0] as TheC | undefined
+        const DL = A?.c.DL as DirectoryListing | undefined
+        if (!A || !DL) return undefined
+        if (A.c.repo_of === DL) return !!A.c.repo
+        if (!DL.expanded || !DL.directories?.length) return undefined
+        const names = new Set(DL.directories.map(d => d.name))
+        A.c.repo = ['wormhole', 'Ghost', 'src'].every(n => names.has(n)) ? 1 : 0
+        A.c.repo_of = DL
+        return !!A.c.repo
+    }
+
     Wormhole_compose_app_tree(A: TheC, DL: DirectoryListing) {
         const H = this as House
         if (A.c.app_tree_checked) return

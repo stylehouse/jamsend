@@ -493,6 +493,7 @@
                         if (frame?.control === 'docindex') H.Lies_docindex_heard(w, frame)
                         else if (frame?.control === 'changed') H.Lies_changed_heard(w, frame)
                         else if (typeof frame?.control === 'string' && frame.control.startsWith('seat_')) H.Lies_seat_heard(w, frame)
+                        else if (frame?.control === 'flock_ok' || frame?.control === 'flock_error') H.Lies_flock_heard(w, frame)
                         else if (frame?.control === 'watch_ok' && frame.refused?.length) console.warn(`👁 relay refused ${frame.refused.length} watch path(s):`, frame.refused.slice(0, 5).map((r: any) => `${r.path} (${r.why})`).join(', '))
                     })
                 }
@@ -503,7 +504,7 @@
                         w.c.hello_ok_at = Date.now()
                         delete w.c.hello_tries
                         // a seat ask that beat the hello is refused where the cluster is configured — ask again now, unless held
-                        if (H.Lies_seat_of(w) && !H.Lies_holds_seat(w)) H.Lies_seat_ask(w)
+                        void H.Lies_flock_prove(w)   // vouch for this socket, then ask the seat (the relay gates it on the flock)
                     })
                 }
                 const send_hello = async (retry = false) => {
@@ -584,7 +585,7 @@
                     }
                 }
                 ;(w.c as any).lies_send_hello = send_hello
-                port.on_open(async () => { delete w.c.hello_ok_at; delete w.c.hello_tries; delete w.c.hello_want; await send_hello() })
+                port.on_open(async () => { delete w.c.hello_ok_at; delete w.c.hello_tries; delete w.c.hello_want; delete w.c.flock_tries; await send_hello() })
                 // THE WRITE SEAT (2026-10-27, LiesLang_todo §11) — a room with docks asks the relay for `seat:editor` on every
                 //  (re)open.  The ask is the w's own %Seat particle, planted here from the role for now; a Ground could plant it
                 //   instead (the room as advice, not a recipe that stamps a role).  See Lies_seat_heard.
@@ -759,7 +760,7 @@
             const seat = (this as House).Lies_seat_of(w)
             if (!seat) return undefined
             if (seat.sc.held) return true
-            if (seat.sc.by) return false
+            if (seat.sc.by || seat.sc.unproven) return false
             return undefined
         },
         // Lies_writer — the write gate.  The seat's answer when there is one, the old role equality when there is not.
@@ -787,13 +788,19 @@
         Lies_seat_heard(w: TheC, frame: any) {
             const H = this as House
             if (frame.seat && frame.seat !== 'editor') return
-            if (frame.control === 'seat_error') { if (/hello first/.test(frame.reason)) return;   /* the ask beat our hello — the hello_ok hook asks again */ console.warn(`✍ seat ask refused by the relay — ${frame.reason}`); return }
+            if (frame.control === 'seat_error') {
+                if (/hello first/.test(frame.reason)) return   // the ask beat our hello — the hello_ok hook asks again
+                if (/not in the flock/.test(frame.reason)) {   // no flock key proven — the badge says "sign in 🪪" until one is
+                    H.post_do(async () => { const seat = H.Lies_seat_of(w); if (seat && !seat.sc.unproven) { seat.sc.unproven = 1; delete seat.sc.held; seat.bump() } }, { see: 'seat_unproven' })
+                }
+                console.warn(`✍ seat ask refused by the relay — ${frame.reason}`); return
+            }
             H.post_do(async () => {
                 const seat = H.Lies_seat_of(w)
                 if (!seat) return
                 const was = H.Lies_holds_seat(w)
                 if (frame.control === 'seat_ok') {
-                    seat.sc.held = 1; delete seat.sc.by
+                    seat.sc.held = 1; delete seat.sc.by; delete seat.sc.unproven
                 } else if (frame.control === 'seat_taken' || frame.control === 'seat_lost') {
                     delete seat.sc.held; seat.sc.by = String(frame.holder ?? frame.to ?? '?')
                 } else if (frame.control === 'seat_free') {
@@ -807,6 +814,66 @@
                 if (now) H.Lies_seat_pay_owed(w)
                 H.i_elvisto(w, 'think')
             }, { see: 'seat_heard' })
+        },
+        // THE FLOCK PROOF (2026-10-28) — the seat answers only to a socket a CLUSTER_TRUSTED_PUBS key vouches for (relay
+        //  handleFlock).  The tab keeps its own identity (its hello stays its face); the flock key is held BESIDE it and only
+        //   ever signs one `flock` frame per socket life.  The relay has the pubs, never the private keys, so the tab must hold
+        //    one: read ONCE off the repo share (`.env.cluster-editor|claude`, beside the code) and kept in the top House's stash, so a
+        //     later life without the share still proves.  A pasted 🪪 key that IS a flock key proves by its hello alone.
+        // Lies_flock_key — the flock key {pub, key}: re-read off the repo share when there is one (setup may have re-minted),
+        //  else the stashed copy.  undefined ⇒ this tab can't prove (no repo share ever, or no key on disk is trusted).
+        async Lies_flock_key(_w?: TheC): Promise<{ pub: string; key: string } | undefined> {
+            const H = this as House
+            const top = H.top_House()
+            const trusted = browserTrustedPubs()
+            const DL0 = top.o({ A: 'Wormhole' })[0]?.c.DL as any
+            if (DL0 && H.Wormhole_is_repo() === undefined && !DL0.expanded) { try { await DL0.expand() } catch {} }   // hello can beat the first listing
+            if (H.Wormhole_is_repo()) {
+                // the first TRUSTED key on disk: the editor's role key if setup put the live one there, else claude's —
+                //  any flock key will do, since a tab holding the repo can already write the code it would push
+                const DL = top.o({ A: 'Wormhole' })[0]?.c.DL as any
+                for (const role of ['editor', 'claude']) {
+                    let text = ''
+                    try { text = await (await (await DL.handle.getFileHandle(`.env.cluster-${role}`)).getFile()).text() } catch { continue }
+                    const env: Record<string, string> = {}
+                    for (const ln of text.split('\n')) { const m = ln.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/); if (m) env[m[1]] = m[2] }
+                    const R = role.toUpperCase(), pub = env[`CLUSTER_IDENTO_${R}_PUB`], key = env[`CLUSTER_IDENTO_${R}_KEY`]
+                    if (!pub || !key || !trusted.includes(pub)) continue
+                    if (top.stashed && top.stashed.flock_idento?.pub !== pub) { top.stashed.flock_idento = { pub, key }; H.tlog(`🐑 flock key read off the repo share (.env.cluster-${role}, ${prepubOf(pub)}) — kept`) }
+                    break
+                }
+            }
+            const kept = top.stashed?.flock_idento
+            return kept?.pub && kept?.key && trusted.includes(kept.pub) ? { pub: kept.pub, key: kept.key } : undefined
+        },
+        // Lies_flock_prove — after hello_ok: vouch for this socket with the flock key, then ask the seat (on flock_ok).
+        //  Skipped where it can't matter: no trust configured, or our hello key is itself a flock key.
+        async Lies_flock_prove(w: TheC) {
+            const H = this as House
+            if (!H.Lies_seat_of(w)) return   // only a seat-asking tab proves, for now (Verbs_todo §0: sign in every dev tab)
+            const ask_seat = () => { if (!H.Lies_holds_seat(w)) H.Lies_seat_ask(w) }
+            const trusted = browserTrustedPubs()
+            const idento = H.Lies_cluster_idento(w)
+            if (!trusted.length || !idento?.pub || trusted.includes(idento.pub)) return ask_seat()
+            const fk = await H.Lies_flock_key(w)
+            if (!fk) {
+                // the relay refuses with "not in the flock" → %Seat,unproven → the badge.  The share may simply not be open
+                //  yet at hello time (it restores async) — look again a few times before settling for the badge.
+                if (Number(w.c.flock_tries ?? 0) < 5) { w.c.flock_tries = Number(w.c.flock_tries ?? 0) + 1; setTimeout(() => void H.Lies_flock_prove(w), 4000) }
+                return ask_seat()
+            }
+            const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
+            if ((port?.ws as any)?.readyState !== 1) return
+            const header = { control: 'flock', from: prepubOf(fk.pub), pub: fk.pub, of: prepubOf(idento.pub), ts: Date.now() }
+            try { port.ws.send(JSON.stringify({ ...header, sign: await signHeader(header, fk.key) })) } catch { return }
+            H.tlog(`🐑 ws SEND control:flock ${header.of} vouched by ${header.from}`)
+        },
+        // Lies_flock_heard — the relay's answer, off Atime.  flock_ok ⇒ ask the seat now; flock_error ⇒ say why (the seat
+        //  ask that follows is refused and marks %Seat,unproven).
+        Lies_flock_heard(w: TheC, frame: any) {
+            const H = this as House
+            if (frame.control === 'flock_ok') { delete w.c.flock_tries; H.tlog(`🐑 flock proven — vouched by ${frame.by}`); if (H.Lies_seat_of(w) && !H.Lies_holds_seat(w)) H.Lies_seat_ask(w) }
+            else { console.warn(`🐑 flock proof refused — ${frame.reason}`); if (H.Lies_seat_of(w)) H.Lies_seat_ask(w) }
         },
         // Lies_seat_owe — a write refused for want of the seat: remember it, and (for a typed save) wrest the seat.
         //  Paid by Lies_seat_pay_owed the moment the seat is held, so nothing a reader did is lost — only delayed.
