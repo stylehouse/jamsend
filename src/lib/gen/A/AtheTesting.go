@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheTesting(): string { return 'aed7d9592ff30e0b~g1' },
+    Ghostmeta_Ghost_A_AtheTesting(): string { return '6c2cf0b4af2ce00c~g1' },
 
 // AtheTesting.g — Atheory's proof (Ghost/A/Theory.g; spec/Atheory_todo.md §0.2 "The first Atheory tests").
 //
@@ -2925,6 +2925,96 @@ AthePondAside_witness(w) {
     let asked = tw?.o({ AsideAsked: 1 })[0]
     if (n === 7 && asked?.sc.by === 'its A' && typeof this.req_Athe_Aside_ask !== 'function') {
         this.story_swear(w, 'the House pumps the toy’s req by name through its A — req_Athe_Aside_ask is on no House')
+    }
+},
+//#endregion
+//#region the test routine — Book AtheStoryInStory
+// a Story in a Story (spec/AtheoryStory_todo.md): this Book — run by the page's Story (Story.svelte) — stands a Desk holding the
+//  new Story (Ground/Story, StoryFu kept aside, Ground.g Desk_story) and gives it a Book to run, AthePondRounds; then looks at
+//   the inner Story from outside.  The Desk is its own House (H:Desk, its own clock).  Step 2 stands the Desk, gives it the Book
+//    and HOLDS until the inner Story says it finished (a gate req with a ttlilt — the only hold Story's step poll reads; the first
+//     probe showed the outer Book done ~4s before the inner one began) — all in one step, so no snap catches the Desk's code half
+//      landed (cold, warm and fresh tabs each caught it differently when standing was a step of its own); step 3 looks.  Green only on a runner that ghost_loaded Theory, Stuffica, Ground,
+//      AtheFishTesting and AtheTesting (AthePondRounds runs on them), and never loaded StoryFu.g flat
+AtheStoryInStory(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.AtheStoryInStory_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async AtheStoryInStory_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 3
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) w.i({ desc: 'stand a Desk holding the new Story — kept aside — give it a Book — AthePondRounds — and wait for it to finish' })
+        if (n === 3) w.i({ desc: 'look at what the inner Story did' })
+    }
+    if (n === 2 && typeof this.Desk_story === 'function') {
+        this.Desk_story(this, 'AthePondRounds')
+        this.AtheStoryInStory_hold(w)
+    }
+    this.AtheStoryInStory_witness(w)
+
+},
+// the Desk's House, and the inner Story's w on it
+AtheStoryInStory_desk() { const H = this;
+    return this.o({ H: 'Desk' })[0] ?? null
+
+},
+AtheStoryInStory_inner(w) {
+    return this.AtheStoryInStory_desk()?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] ?? null
+
+},
+// hold step 3 until the inner Story says it finished: a one-shot gate, its ttlilt the hold (90s a bound, never a wait).  Pumped
+//  each pass, it lets descent go on (ok) until the inner %StoryFinished lands, then finishes and drops itself — no footprint
+AtheStoryInStory_hold(w) {
+    let gate = w.o({ req: 'inner_run' })[0]
+    if (gate && gate.sc.finished) return
+    w.doai({ req: 'inner_run' })?.((req) => {
+        if (this.AtheStoryInStory_inner(w)?.o({ StoryFinished: 1 })[0]) {
+            w.finish(req)
+            w.drop(req)
+            return
+        }
+        req.sc.ok = 1
+    })
+    let held = w.o({ req: 'inner_run' })[0]
+    if (held && !held.sc.finished && !held.c.held) {
+        held.c.held = 1
+        this.i_req_ttlilt(held, 90)
+    }
+
+},
+// the inner Story's insides stay out of this Book's snap — its toc tree, its timing records (they grow every run), its run's House
+//  — folded (%dontSnap: the node's line stays, its subtree goes); what this Book keeps of it is one summary line on its own w
+AtheStoryInStory_fold(w, sw, fin, steps) { const H = this;
+    if (!sw) return
+    if (!sw.sc.dontSnap) sw.sc.dontSnap = 1
+    let inner = this.AtheStoryInStory_desk()?.o({ H: 'AthePondRounds' })[0]
+    if (inner && !inner.sc.dontSnap) inner.sc.dontSnap = 1
+    if (fin) w.oai({ InnerRun: 'AthePondRounds' }, { steps: steps.length, ok: steps.filter(s => s.sc.ok && !s.sc.caveat).length })
+
+},
+AtheStoryInStory_witness(w) {
+    let n = this.c.run?.c.step_n ?? 0
+    let A = this.AtheStoryInStory_desk()?.o({ A: 'Story' })[0]
+    if (!A) return
+    let code = A.o({ TheACode: 'Ground/Story' })[0]
+    if (n >= 2 && code?.sc.dige && A.o({ GroundAside: 1 }).length && !this.Ghostmeta_Ghost_O_StoryFu && this.TheA_dispatches(A)) {
+        this.story_swear(w, 'a Desk stands the new Story kept aside — its code on the A — on no House')
+    }
+    let sw = this.AtheStoryInStory_inner(w)
+    if (n >= 2 && sw?.o({ run: 'AthePondRounds' })[0]) {
+        this.story_swear(w, 'the inner Story planned its run — the House thought it through the A')
+    }
+    let fin = sw?.o({ StoryFinished: 'AthePondRounds' })[0]
+    let steps = sw?.c.This?.o({ Step: 1 }) ?? []
+    this.AtheStoryInStory_fold(w, sw, fin, steps)
+    if (n >= 3 && fin && steps.length && steps.every(s => s.sc.ok && !s.sc.caveat)) {
+        this.story_swear(w, 'the inner Story ran its Book green — and told its own w it finished — not the page')
     }
 },
 //#endregion

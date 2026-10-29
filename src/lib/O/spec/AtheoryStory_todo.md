@@ -7,9 +7,28 @@
 ## 0. What to get on with next
 
 0. **One tab, both Storys** (§1, "One tab"): load kept aside, then dispatch through the A (both BUILT 2026-10-29, Book `AthePondAside`).
-1. **Desk slice 3, in two forms** (`Aprac_todo.md` §0.5): the page (`/Desk?G=…`) and a Desk **House standing inside a run**,
+**2026-10-29 — a Story ran inside a Story, green.**  Book `AtheStoryInStory` (3 steps; green warm ×3 and cold): the page's Story
+ runs it; step 2 stands a Desk (`H:Desk`, Ground.g) holding Ground/Story with StoryFu kept aside, gives it AthePondRounds, and
+  holds until the inner Story finishes (~0.2s after it does); the inner run is folded out of the snap to one line,
+   `InnerRun:AthePondRounds,steps=4,ok=4`.  What each probe taught (all fixed):
+   - the inner Story on the OUTER run's House never thought during a held step (a run owns that House's clock, `no_ambient`)
+      → the Desk is a House of its own;
+   - a new House thinks only once something lands on its todo → the Desk wakes itself (`main()`);
+   - an A with no w is given a default w named after it on its first think (Housing `procure_ways`), so an early `A:Story` grew a
+      Book-less `w:Story` → the Desk has its own think (`A:Desk/w:Desk`, rows `%DeskGround`, `%DeskAside`, `%DeskBook`) that
+       stands `A:Story` with its code and `w:Story,Book` in one tick;
+   - a held step only sees news when something thinks → a nested Story that finishes wakes the House holding its Desk
+      (StoryFu `Story_finished`, `main(true)`), and writes `%StoryFinished` on its own w instead of telling the page's Auto;
+   - snaps must not catch code landing (cold, warm and fresh tabs land it at different moments) → stand + give + hold in one step;
+      a plain push the Desk's own standing covered is dropped (`Desk_pushes_covered`);
+   - a `means,drop` Entcase must be in the toc BEFORE the fixtures are recorded (it strips lines from the live snap).
+  Read the console's `🔍 n=… ok=false` lines as "before forgiveness" — the Step's own ok/caveat is the verdict.
+  Still owed: the Desk's clock is its own, not pulsed by the outer drive; StoryFu's other 21 `top_House()` reaches (the inner
+   run met none that broke it); the page form of the Desk; nesting deeper than one.
+
+1. **Desk slice 3, in two forms** *(the in-a-run form BUILT 2026-10-29, above; the page form waits on Lies being standable)* (`Aprac_todo.md` §0.5): the page (`/Desk?G=…`) and a Desk **House standing inside a run**,
     so an old-Story Book can hold one.  Import Core, stand Wormhole, read the recipe, stand Grounds via `%TheACode`, wait for Firm.
-2. **Book `AtheStoryInStory`.**  The old Story (the spine's) runs a Book that stands a Desk, which stands `Ghost/O/StoryFu.g`
+2. **Book `AtheStoryInStory`.** *(BUILT and green 2026-10-29, above)*  The old Story (the spine's) runs a Book that stands a Desk, which stands `Ghost/O/StoryFu.g`
     (`Ground/Story`); the inner Story runs one small AthePond Book; the outer snaps the inner — its steps, its verdicts, its
      Turns.  It will go red in instructive places first: every place the inner Story assumes it is alone (§1).
 3. **The step explorer** (Storica grown, §3), fed two ways: recorded snaps, and the inner Story's live run.
@@ -43,6 +62,15 @@ A Story nested in a Story is an A in an A, and A\*\* already has the two lookups
    - `demand_time_to_think` ×2 — the clock.  One run owns the clock today (`Run.c.no_ambient`); nested, the inner's clock is
       a compartment the outer's drive pulses.
   These sites are the work list: `AtheStoryInStory` reds on them, one at a time.
+  **Audited 2026-10-29** (after the first green nested run, which tripped none): `Story_nested()` (the House holding the A, or
+   null at the top) now guards the four that would let an inner Story disturb the outer one —
+   - `storyFinished` → `Story_finished` (own w + wake the holder); the error ring → `Story_err_home()` (an inner set-off cleared
+      the OUTER ring; both drained one ring) — a throw Housing catches still lands on the top ring, so the outer sees inner throws;
+   - `runner_phase` → skipped nested (inner phases reached the runner's Lies, i.e. `runner_ask state` and the editor);
+   - `story_reset` → refused nested (it asks Auto to rebuild the PAGE's Story).
+  Fine shared, left as they are — the tab really has one of each: the audio gate (`musu_gat`), `demand_time_to_think`, the
+   inherited `boot_role` / `is_runner`, Radio_trace telemetry, the EntropyProfile opens (aimed outward on purpose, cached across
+    runs), `Story_replaying` (asks about the page's H:Story).
 
 ### One tab, both Storys — what A\*\* gives and what it doesn't (read 2026-10-29)
 
@@ -116,3 +144,4 @@ One window on a step, and everything else is a protrusion from it showing a chan
 | 2026-10-29 | Housing `ghost_aside`, LiesLies include `{aside}`, Theory `TheA_loaded`, Ground `{aside}`; toy `Ghost/A/AtheAside.g`; Book `AthePondAside` | code kept aside: kept as a version, run only through its A, on no House | §1 "One tab", step 1 — foundation ledger row in `Atheory_design.md` §2 |
 | 2026-10-29 | Housing `do_fn_for` `opt.A`; Theory `TheA_dispatches`; toy gets `Athe_Aside(A,w)`; Book step 6 | the House thinks an aside A's w through the A | §1 "One tab", step 2 |
 | 2026-10-29 | Stuff `_req_do_one` passes the req's A; Housing `_req_named`; toy `req_Athe_Aside_ask`; Book step 6 second oath | a named req of aside code is pumped through its A | §1 "One tab", the req leg |
+| 2026-10-29 | Ground.g the Desk (`Desk_house`, `Desk_stand`, `Desk_story`, `Desk`, `Desk_pushes_covered`); StoryFu `Story_finished` (nested: own w + wake the holder); Book `AtheStoryInStory` | a Story inside a Story, green | §0 items 1–2 |

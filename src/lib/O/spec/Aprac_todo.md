@@ -319,6 +319,7 @@ Because each .g has exactly one home Ground, the Grounds partition the code, so 
 2. ✅ *built + Book AthePondGround green 2026-10-25* **`Ghost/A/Ground.g`**: `Ground_read`, `Ground_stand(A, names)` on `TheA_code_stand`, `%GroundUsed`; Book `AthePondGround`
     proves it on a toy Ground (stands, goes Firm, a missing one refuses by name, a recompile waits for the seam).
 3. **Desk's first slice**: `/Desk?G=…` — import Core, stand Wormhole, read, stand, Firm, mount.  The simple level, seen.
+    *2026-10-29: the in-a-House form is built first (Ground.g Desk_*; Book AtheStoryInStory — `AtheoryStory_todo.md`); the page form waits on Lies being standable by a Ground.*
 4. **Story**: `Ground:` lines in Book tocs (extras only), the Firm gate, `%GroundRefused`, Credulate's `%GroundUsed`; the Pond
     Books (and AtheStoryCode) off their hand guards; `CREDULER_GHOSTS` becomes `Ground/Runner`.
 5. **Badges**: in the Waft view and as the Book explorer's Ground aspect.

@@ -89,7 +89,7 @@ const FRONTIER_COLOR = '#c55'
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_O_StoryFu(): string { return 'c76d9a005b4814e4~g1' },
+    Ghostmeta_Ghost_O_StoryFu(): string { return 'cd6ba6c792cfd093~g1' },
 
 // Ghost: StoryFu — the Atheory fork of Story (working title; renamed from Story.g 2026-10-29, spec/AtheoryStory_todo.md).
 //  Ported from src/lib/O/Story.svelte, which the spine still mounts; a Story fix lands in both until the old one retires.
@@ -1504,6 +1504,36 @@ Story_release_clock(Run: House) {
         console.log(`⏱ Story: run complete on ${(Run as any).name ?? '?'} — ambient heartbeat released`)
 
 },
+// Story_nested — the House a NESTED Story stands in (it runs through an A holding StoryFu kept aside — TheA_base: "this" is
+//  that A's proxy over it), or null at the top.  Where a Story reaches for the tab's top House, a nested one must reach for its
+//   own instead, or it disturbs the Story holding it (spec/AtheoryStory_todo.md §1 — the top_House() reaches)
+Story_nested(): any {
+        return (this as any).TheA_base ?? null
+
+},
+// Story_err_home — the House holding this Story's error ring: its own when nested (an inner run mustn't clear or drain the
+//  outer's), the top House otherwise.  NB a throw Housing catches still goes to the top ring (Housing calls the flat
+//   Story_error, Story.svelte's) — so the outer sees an inner throw; the inner's own Story_error calls stay its own
+Story_err_home(): any {
+        return this.Story_nested() ?? (this.top_House ? this.top_House() : null)
+
+},
+// Story_finished — a Story says it finished.  At the top it tells the page's Auto, which spools Credulate and, on a runner,
+//  reports the verdict to the editor.  NESTED — run through an A holding StoryFu kept aside (TheA_base: "this" is that A's
+//   proxy; spec/AtheoryStory_todo.md §1) — it says so on its own w instead, for whoever holds it: an inner run must never
+//    reach the runner's verdict channel as if it were the runner's own Book (the first of StoryFu's top_House() reaches)
+//  …and wakes the House that holds its Desk (main(true) — past its no_ambient: a Story holding a step for this is not
+//   thinking, so its gate would only see the news when its 90s bound ran out; probe 4 of AtheStoryInStory)
+Story_finished(w: TheC, mode: string) {
+        const base = (this as any).TheA_base
+        if (base) {
+            w.oai({ StoryFinished: w.sc.Book }, { mode })
+            base.up?.main?.(true)
+            return
+        }
+        this.top_House().i_elvisto('Auto/Auto', 'storyFinished', { Book: w.sc.Book, mode })
+
+},
 Story_subHouse(A: TheC, w: TheC) {
         // Get-or-create the Run sub-House for this Book and wire its actors.
         // Called every tick from Story() — cheap when the House and actors already exist.
@@ -1642,7 +1672,7 @@ Story_settingoff(w: TheC, Run: House, run: TheC) {
         //  any %Err carried over on a re-run's Errlog.  err_run names the active run for any external capturer
         //   that wants to scope (Story_error itself is world-agnostic — it just fills the ring).
         {
-            const M: any = this.top_House ? this.top_House() : null
+            const M: any = this.Story_err_home()
             if (M) { M.c.err_ring = []; M.c.err_run = run }
             const fw = (this as any).Story_errlog_world(Run) as TheC | undefined
             const log = fw?.o({ Errlog: 1 })[0] as TheC | undefined
@@ -1732,7 +1762,7 @@ Story_settingoff(w: TheC, Run: House, run: TheC) {
 //     lives on the TOP House (like supply_trace), reachable from any ghost's catch via this.top_House().
 Story_error(kind: string, where: string, msg: any) {
         try {
-            const M: any = this.top_House ? this.top_House() : null
+            const M: any = this.Story_err_home()
             if (!M) return
             const k  = String(kind || 'error')
             const wh = String(where || '?').slice(0, 40)
@@ -1769,7 +1799,7 @@ Story_errlog_world(Run: House): TheC | undefined {
 Story_errlog_drain(w: TheC, run: TheC, Run: House, n: number): any {
         let errors = 0, warns = 0
         try {
-            const M: any = this.top_House ? this.top_House() : null
+            const M: any = this.Story_err_home()
             const ring: any[] = (M && M.c.err_ring) || []
             const fw = (this as any).Story_errlog_world(Run) as TheC | undefined
             if (!fw) return { errors, warns }
@@ -2141,7 +2171,7 @@ async Story(A: TheC, w: TheC) {
                     .sort((a, b) => b.sc.Step - a.sc.Step)[0]
                 run.sc.open_at = last_bad ? last_bad.sc.Step : null
                 console.log(`✓ Story: check complete (sweep done)`)
-                H.top_House().i_elvisto('Auto/Auto', 'storyFinished', { Book: w.sc.Book, mode: 'check' })
+                H.Story_finished(w, 'check')
             }
             H.story_analysis(w)
             ;(wh.o({ req: 1, finished: 1 }) as TheC[]).forEach(nn => wh.drop(nn))
@@ -2318,6 +2348,8 @@ async story_drive(Run: House, w: TheC, run: TheC) {
         const story_total = () => (run.sc.total as number | undefined)
             ?? ((w.c.The as TheC | undefined)?.o({ step: 1 }) ?? []).length
         const runner_phase = (phase: string, extra?: any) => {
+            // a NESTED Story is not the runner's run: its phases must not reach the runner's Lies (runner_ask state, the editor)
+            if (H.Story_nested()) return
             const Mundo = H.top_House()
             const liesW = Mundo.o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] as TheC | undefined
             // Invoke ON Mundo, not on this Run House: Lies_role's inside-story guard returns
@@ -2407,7 +2439,7 @@ async story_drive(Run: House, w: TheC, run: TheC) {
                 H.story_save()
                 await update_status('recorded ✓', 'start')
                 console.log(`✓ Story: complete (${run.sc.total} steps)`)
-                H.top_House().i_elvisto('Auto/Auto', 'storyFinished', { Book: w.sc.Book, mode: 'new' })
+                H.Story_finished(w, 'new')
                 return
             }
             if (run.sc.mode === 'check' && !H.The_step_dige(w, n)) {
@@ -2438,7 +2470,7 @@ async story_drive(Run: House, w: TheC, run: TheC) {
                 H.story_analysis(w)
                 await update_status('done ✓', 'start')
                 console.log(`✓ Story: check complete at n=${n}`)
-                H.top_House().i_elvisto('Auto/Auto', 'storyFinished', { Book: w.sc.Book, mode: 'check' })
+                H.Story_finished(w, 'check')
                 return
             }
 
@@ -3149,6 +3181,8 @@ story_reset(this: House) {
         // H:Story is a child of H:Mundo — Auto owns the lifecycle.
         // Delegate via elvis so Auto's picks_a_book() runs (tears down and
         // rebuilds H:Story cleanly rather than trying to reset in place).
+        // a NESTED Story is not Auto's to rebuild — asking would tear down the page's Story.  Its holder resets it
+        if ((this as any).Story_nested?.()) { console.log('story_reset: a nested Story — left to whoever holds it'); return }
         const topH = this.top_House()
         // find our book name from the Story worker so Auto knows what to restart
         const bname = (this.o({ A: 'Story' })[0] as TheC | undefined)

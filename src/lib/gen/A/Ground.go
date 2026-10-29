@@ -11,7 +11,7 @@ import { ground_closure, ground_loads, GROUND_CORE } from "$lib/A/ground"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_Ground(): string { return 'bfd445d6257977a8~g1' },
+    Ghostmeta_Ghost_A_Ground(): string { return 'a3fd45e57dcdf482~g1' },
 
 // Ground.g — what a tab stands on, said as particles on the A that stands on it (spec/Aprac_todo.md §0.5).
 //
@@ -105,6 +105,66 @@ Ground_names() {
 // Ground_loads — one Ground's .g, in the order it loads them
 Ground_loads(name) {
     return ground_loads(name)
+
+},
+// ── the Desk (spec/Aprac_todo.md §0.5 "Desk"; spec/AtheoryStory_todo.md) ─────────────────────────────────────────────────────
+//  What stands on Grounds.  First slice: a Desk inside a House — so an old-Story Book can hold the new Story.  The page form
+//   (/Desk?G=…) comes once Lies can be stood by a Ground; until then a Desk borrows the runner tab it stands in.
+
+// Desk_house — the Desk is a House of its own under H (H:Desk), so it keeps its OWN clock: a Story run owns its Run House's
+//  clock (no_ambient), and the first probe of AtheStoryInStory had the inner Story's replies sit uncollected for the whole of a
+//   held outer step.  A sub-House doesn't inherit no_ambient; it thinks on every elvis it is sent and on its own interval
+//  A new House thinks only once something lands on its todo — its interval is armed by its first think — so the Desk wakes
+//   itself every time it is asked for (main() is throttled: many asks, one think).  Probe 3 found the bare sub-House never
+//    thought once
+Desk_house(H) {
+    let D = H.subHouse('Desk')
+    D.main()
+    return D
+
+},
+// Desk_stand — the Desk itself: A:Desk/w:Desk on its House, asked to stand these Grounds (%DeskGround rows; aside when
+//  opts.aside — its code must reach no House).  The standing is the Desk's OWN think (Desk below), on its own clock.  Returns w:Desk
+Desk_stand(H, grounds, opts) {
+    let w = this.Desk_house(H).oai({ A: 'Desk' }).oai({ w: 'Desk' })
+    for (const name of grounds) w.oai({ DeskGround: name })
+    if (opts?.aside) w.oai({ DeskAside: 1 })
+    return w
+
+},
+// Desk_story — ask the Desk to run a Book in a new Story: a %DeskBook row on w:Desk; the Desk's think stands it once Firm
+Desk_story(H, book) {
+    let w = this.Desk_stand(H, ['Story'], { aside: 1 })
+    w.oai({ DeskBook: book })
+    return w
+
+},
+// Desk — the Desk's think: stand the Grounds asked for on A:Desk; once Firm, a Story for the Book asked for — A:Story holding
+//  Ground/Story and its w:Story,Book stood in the SAME tick.  (Probe 5: an A with no w gets a default w named after it on its
+//   first think — Housing procure_ways — so an A:Story stood early grew a Book-less w:Story, and the Book, given from outside,
+//    never landed.)  An aside load landing pushes to the A (TheA_code_push), which thinks it again
+Desk(A, w) {
+    let H = A.c.up
+    let aside = w.o({ DeskAside: 1 }).length ? { aside: 1 } : undefined
+    let grounds = w.o({ DeskGround: 1 }).map(g => g.sc.DeskGround)
+    if (!grounds.length || !this.Ground_stand(A, grounds, aside)) return
+    this.Desk_pushes_covered(A)
+    let book = w.o({ DeskBook: 1 })[0]?.sc.DeskBook
+    if (!book || !H) return
+    let S = H.oai({ A: 'Story' })
+    if (!this.Ground_stand(S, ['Story'], aside)) return
+    this.Desk_pushes_covered(S)
+    S.oai({ w: 'Story' }, { Book: book })
+
+},
+// Desk_pushes_covered — a Desk standing its Grounds has just stood each A's code from what is loaded now, which is all a plain
+//  push would do; so a push that arrived while it was standing (the aside load landing) is covered, and is dropped rather than
+//   held to the enclosing run's next step seam (TheA_code_waits — a Desk inside a Story run holds pushes).  Taking it through
+//    TheA_code_take would leave a %TheACodeTaken count only a cold tab has.  A push naming a dige or a variant is not plain: kept
+Desk_pushes_covered(A) {
+    for (const push of A.o({ TheACodePush: 1 })) {
+        if (!push.sc.dige && !push.sc.variant) A.drop(push)
+    }
 
 },
 

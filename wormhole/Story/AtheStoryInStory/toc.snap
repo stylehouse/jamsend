@@ -1,0 +1,38 @@
+story:AtheStoryInStory
+  Styles
+  Plan
+  Opt
+    For
+  EntropyArrest
+    Entcase:Self_round
+      lematch,self,round
+        means,drop
+  TimeSpool
+    TimeTotal:beliefs,avg=0.016
+      sample=0.018,at=1793245601
+      sample=0.013,at=1793245610
+      sample=0.014,at=1793245621
+      sample=0.018,at=1793245694
+      sample=0.016,at=1793245822
+      sample=0.016,at=1793245836
+      sample=0.014,at=1793245854
+      sample=0.014,at=1793245863
+      sample=0.018,at=1793245872
+      sample=0.015,at=1793245914
+    TimeTotal:step,avg=0.005
+      sample=0.006,at=1793245601
+      sample=0.005,at=1793245610
+      sample=0.005,at=1793245621
+      sample=0.006,at=1793245694
+      sample=0.005,at=1793245822
+      sample=0.005,at=1793245836
+      sample=0.005,at=1793245854
+      sample=0.005,at=1793245863
+      sample=0.006,at=1793245872
+      sample=0.005,at=1793245914
+  step,dige:5baf55d7ac1a2524
+  step=2,desc:stand a Desk holding the new Story — kept aside — give it a Book — AthePondRounds — and wait for it to finish,dige:121fbc6d9630fe50
+    Assertion:a-desk-stands-the,sentence:a Desk stands the new Story kept aside — its code on the A — on no House
+    Assertion:the-inner-story-planned,sentence:the inner Story planned its run — the House thought it through the A
+  step=3,desc:look at what the inner Story did,dige:121fbc6d9630fe50
+    Assertion:the-inner-story-ran,sentence:the inner Story ran its Book green — and told its own w it finished — not the page
