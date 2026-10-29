@@ -1321,6 +1321,7 @@
         Se_at.c.snap_Se ??= new Selection()
         const Se: Selection = Se_at.c.snap_Se
 
+        let at_root = true   // the walk's first node is the snap's root (Run may be an A's proxy — never compare by identity)
         await Se.process({
             n:                  Run,
             process_sc:         { snap_root: 1 },
@@ -1329,6 +1330,8 @@
             loop_but_no_further: true,   // loopy C reaches each_fn with T.sc.loopy set
 
             each_fn: async (D: TheD, n: TheC, T: Travel) => {
+                const is_root = at_root
+                at_root = false
                 if (T.sc.loopy) {
                     // subsequent appearance of a C seen earlier in this walk
                     loopy_Cs.add(n)
@@ -1352,7 +1355,10 @@
                 //  Snap-only — the node keeps pumping; orthogonal to inclusion. Used
                 //  to retire compile scaffolding (w:Lies/w:Lang) from a runner snap
                 //  once the apparatus is ready, leaving the run state legible.
-                if (n.sc.dontSnap || T.sc.dontSnap) T.sc.more = []
+                //  Never the snap's own root: a Story nested in a Story snaps its Run House, which the holder folds out of
+                //   ITS snap — folding the root hollowed every inner step (the leash, 2026-10-30).  A holder folding a House
+                //    it doesn't own marks .c.dontSnap: the same fold, but never printed on that House's own line
+                if (((n.sc.dontSnap || (n.c as any).dontSnap) && !is_root) || T.sc.dontSnap) T.sc.more = []
                 lines.push(D)
             },
 

@@ -12,6 +12,33 @@ A capture doc, not yet a plan — the owner has reached for this three times in 
 
 ## 0.0 START HERE — where it stands and what's next (2026-10-21)
 
+**THE MAP (2026-10-30, owner: "plan a whole bunch more Atheory work... we keep drifting off into details").**  What we want over and
+ above House, but within it schematically.  The rest of this doc is the record; this is the order.
+*Main works, already said:*
+1. **The Desk is the page** — `/Desk?B=<Book>` runners the relay addresses as runners; the spine becomes `Ground/Runner` (then the
+    spine Books wear `Stands:`); everything.js sublated; Story.svelte, Otro, Auto retire once the new generation has the old one's
+     greens.  One swap, and it ends the twin-fix tax (every Story fix in both Storys).
+2. **Story is an A** — StoryFu nested and leashed (rung 1 BUILT 2026-10-30, `AtheoryStory_todo.md` §5); rung 2 the outer giving the
+    inner its time, which is also a Ground in front of a Ground.  Each step StoryFu gets more flexible earns an outer-Book oath.
+3. **The door** (`Atheory_design.md` §3 "The patch") — every arrival (frame, key, verb, timer, runner_ask) one shape
+    `{what, by, from, corr, at}`, through the inbound batcher, a taped `TheA_io` pulse.  Replay, audit, security and Story read one tape.
+     Wire_spec's one-elvis thesis starts coming true here.
+4. **The scheduler for real** — `TheA_run` inside `beliefs()`, unwatched work costs nothing; reqs woken by pulse (`%TheAWait`); every
+    call through its A.  The first Housing change — ledger row first.
+5. **IO as compartments** — audio, WebRTC, disk, relay as `%TheAIO`; a replay mocks them; a Desk with no page in node (parallel
+    testing, `AtheoryStory_todo.md` §0 item 6).
+6. **One real organ ported**, byte-identical Books — proves the fabric carries the app, not only ponds.
+7. **Hackarium within our walls** — the editor seat writing StoryFu's own .g, compiled centrally, landing at an era seam; the reader
+    watched (Regard on Atlas's Points).  And **the Book explorer** (Storica grown: a Book is a Was; a live run Seems into place).
+*Reactivity, owed beside all of it:* Stuffica's draw-per-commit was measured once by hand (Pondland's ledger) and never gated —
+ a Book should swear renders against commits (unmoved view draws 0, a burst draws 1).  `reactivity_docs.md` predates Stuffica,
+  Atime/UItime and the door: rewrite it for the Stuffica era.
+*Vaguer, imagined as we get near:* spheres (Was\*\*, Trace\*\*, versions of data — waits on Seem); merge on the wire (fractures,
+ signed — Repli's successor); synapses across Houses then bodies; turfs as seats, Grounds as advice + control, the Believer
+  (`%Belief`); the manifest check (Electrode ⊆ Atlas ⊆ declared); one event particle; the woven view; Emotion (the will drives the work).
+*Working method (owner, 2026-10-30):* foundation code is not throwaway — written serially, by the strongest hand; Sonnet runs the
+ Books.  Parallel lanes only once dev servers are isolated (a second vite rewrites the shared `node_modules/.vite/deps`).
+
 **Newest (2026-10-29): two generations, and the old one tests the new.**
 - **The new generation** is the Atheory fabric with its own top: **Desk** (`Aprac_todo.md` §0.5 — import Core, stand Wormhole,
    read the recipe, stand its Grounds via `%TheACode`, wait for Firm, execute), Theory's compartments, Stuffica views, and

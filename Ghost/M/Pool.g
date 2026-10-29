@@ -1517,7 +1517,7 @@ async Ra_pool_fill_land(w, ident):
                     if (typeof this.Heist_keep_cancel === 'function') {
                         try { await this.Heist_keep_cancel(homes.mw, stuck) } catch (er) {}
                     } else {
-                        try { (stuck.c.up || shop).rm({ Heist: 1, seed: stuck.sc.seed }) } catch (er) {}
+                        try { await (stuck.c.up || shop).rm({ Heist: 1, seed: stuck.sc.seed }) } catch (er) {}
                     }
                     if (permanent && stuckSeed) {
                         let deadReach = peering.o({ Reach: 1, of: stuckSeed, for: 'serve' }).filter((r) => String(r.sc.state || '') !== 'refused')[0]

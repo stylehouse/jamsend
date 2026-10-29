@@ -10,7 +10,7 @@ import { sha256_hex } from "$lib/Common"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Pool(): string { return 'af0ad4d50b17bbfc~g1' },
+    Ghostmeta_Ghost_M_Pool(): string { return '0cfe2b7f257ea400~g1' },
 
 // Pool.g — SOUNDPOOLING's home (split out of Ra.g 2026-09-17, SoundPooling_todo.md §0.2a — the owner:
 //  "yes to Pool.g, definitely looks big enough"). Three regions, in the order a reader should meet them:
@@ -1599,7 +1599,7 @@ async Ra_pool_fill_land(w, ident) {
                     if (typeof this.Heist_keep_cancel === 'function') {
                         try { await this.Heist_keep_cancel(homes.mw, stuck) } catch (er) {}
                     } else {
-                        try { (stuck.c.up || shop).rm({ Heist: 1, seed: stuck.sc.seed }) } catch (er) {}
+                        try { await (stuck.c.up || shop).rm({ Heist: 1, seed: stuck.sc.seed }) } catch (er) {}
                     }
                     if (permanent && stuckSeed) {
                         let deadReach = peering.o({ Reach: 1, of: stuckSeed, for: 'serve' }).filter((r) => String(r.sc.state || '') !== 'refused')[0]

@@ -4,26 +4,26 @@ story:Hackarium
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=3.494
-      sample=6.145,at=1793190055
-      sample=2.355,at=1793190548
-      sample=0.25,at=1793190804
-      sample=4.007,at=1793219624
+    TimeTotal:beliefs,avg=2.934
       sample=1.906,at=1793220031
       sample=6.324,at=1793221660
       sample=11.089,at=1793236261
       sample=0.865,at=1793236411
       sample=0.946,at=1793241877
       sample=1.056,at=1793260309
-    TimeTotal:step,avg=3.494
-      sample=6.145,at=1793190055
-      sample=2.355,at=1793190548
-      sample=0.25,at=1793190804
-      sample=4.007,at=1793219624
+      sample=0.592,at=1793308149
+      sample=1.995,at=1793311238
+      sample=2.352,at=1793311906
+      sample=2.212,at=1793311995
+    TimeTotal:step,avg=2.934
       sample=1.906,at=1793220031
       sample=6.324,at=1793221660
       sample=11.089,at=1793236261
       sample=0.865,at=1793236411
       sample=0.946,at=1793241877
       sample=1.056,at=1793260309
+      sample=0.592,at=1793308149
+      sample=1.995,at=1793311238
+      sample=2.352,at=1793311906
+      sample=2.212,at=1793311995
   step,dige:29c7975b74f8b5f9

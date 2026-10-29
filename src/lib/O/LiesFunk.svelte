@@ -1601,7 +1601,7 @@ await M.eatfunc({
             //  Reads are AWAITED — a floating promise mutates the store outside Atime
             //   (reactivity_docs: keep your limbs within Atime), which is exactly the
             //    vanish-for-an-instant class of bug.
-            const READ_BUDGET = 24, SCAN_BUDGET = 8
+            const READ_BUDGET = 24, SCAN_BUDGET = 8, ASK_TRIES = 3
             const store = await H.LiesStore_req(w)
             let asked = 0, scanned = 0, done = 0, missing = 0
             const fresh: any[] = []                                      // this pass's rows → the cache
@@ -1609,7 +1609,11 @@ await M.eatfunc({
                 const good    = store.o({ Good: 1, type: 'text/Doc', path })[0] as TheC | undefined
                 const content = good?.c.content as string | null | undefined
                 if (content === undefined) {                             // not landed — maybe ask
-                    if (asked < READ_BUDGET) { asked++; await H.LiesStore_read_good(w, 'text/Doc', path) }
+                    //  …but not for ever: a path asked ASK_TRIES times that still never landed is given up (it
+                    //   counts as missing), or every pass would ask again and the pass would never settle
+                    const tries = (dex.asks ??= new Map()).get(path) ?? 0
+                    if (tries >= ASK_TRIES) { missing++; continue }
+                    if (asked < READ_BUDGET) { asked++; dex.asks.set(path, tries + 1); await H.LiesStore_read_good(w, 'text/Doc', path) }
                     continue
                 }
                 if (content === null || content.length > 400_000) { missing++; continue }
@@ -1623,13 +1627,20 @@ await M.eatfunc({
                 done++
             }
             dex.total = paths.size; dex.done = done; dex.missing = missing; dex.pass++
+            //  SETTLED — this pass asked for nothing and scanned nothing: the index is as complete as it will get until
+            //   something moves.  `done >= total` is not that (see the SELF-TRICKLE note below) — BigWordland's clock
+            //    read it as "not converged" on any corpus holding one unreadable doc and nudged a pass every 1.5s for the
+            //     life of the tab (2026-10-30, ~90% CPU on a hacker room)
+            dex.settled = !asked && !scanned
 
             // persist this pass's work; prune cache rows whose doc left the corpus — but
             //  only against a REAL roster (a half-booted GhostList must not empty the cache)
+            let gone_n = 0
             if (db) try {
                 if (fresh.length) await db.doc.bulkPut(fresh)
                 if (paths.size > 50) {
                     const gone = [...dex.docs.keys()].filter(p => !paths.has(p))
+                    gone_n = gone.length
                     for (const p of gone) H.Lies_stemdex_drop(dex, p)
                     if (gone.length) await db.doc.bulkDelete(gone)
                 }
@@ -1642,7 +1653,10 @@ await M.eatfunc({
             //     can DIVERGE from a naive roster delta (cache-warm/budget-lag).  Gated on the
             //      SAME size>50 real-roster guard the prune uses (a half-booted GhostList must
             //       not read as a mass departure).  Fully guarded — it can never throw the scan.
-            if (paths.size > 50)
+            //  Only when the index moved this pass (or the mirror has never walked): it re-syncs every indexed doc and
+            //   walks a Seem over them all, so a pass that changed nothing paid ~600 oai + a full walk to learn nothing.
+            //    (The warm adopt happens on a pass's first lines, so its first mirror walk is the never-walked one.)
+            if (paths.size > 50 && (fresh.length || gone_n || !(w.c as any).stemdex_seem))
                 try { await H.Stemdex_seem_mirror(w, dex) }
                 catch (err) { console.warn('🐝 stemdex seem mirror failed', err) }
             // ── SELF-TRICKLE: converge ONCE, without needing to be watched ────────────────────────

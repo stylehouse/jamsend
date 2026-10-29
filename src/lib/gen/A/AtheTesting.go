@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheTesting(): string { return '7b31ac0a2f95c918~g1' },
+    Ghostmeta_Ghost_A_AtheTesting(): string { return '4202dd6fc845ee8d~g1' },
 
 // AtheTesting.g — Atheory's proof (Ghost/A/Theory.g; spec/Atheory_todo.md §0.2 "The first Atheory tests").
 //
@@ -2815,7 +2815,10 @@ AthePondAside_witness(w) {
 //    and HOLDS until the inner Story says it finished (a gate req with a ttlilt — the only hold Story's step poll reads; the first
 //     probe showed the outer Book done ~4s before the inner one began) — all in one step, so no snap catches the Desk's code half
 //      landed (cold, warm and fresh tabs each caught it differently when standing was a step of its own); step 3 looks.  Green only on a runner that ghost_loaded Theory, Stuffica, Ground,
-//      AtheFishTesting and AtheTesting (AthePondRounds runs on them), and never loaded StoryFu.g flat
+//      AtheFishTesting and AtheTesting (AthePondRounds runs on them), and never loaded StoryFu.g flat.
+//  THE LEASH (spec/AtheoryStory_todo.md §5): the inner Story is walked stop by stop — step 2 stands it leashed at ready, steps
+//   3–6 let it through one of its 4 steps each, step 7 unleashes it to finish.  Each outer step moves the leash and holds until
+//    the inner says it stands there (%StoryAt), so each snap catches the inner standing still, never mid-step
 AtheStoryInStory(A,w) {
     w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
         await this.AtheStoryInStory_drive(w,req)
@@ -2825,16 +2828,30 @@ AtheStoryInStory(A,w) {
 },
 async AtheStoryInStory_drive(w, req) {
     let run = this.c.run
-    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 3
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 7
     let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
-        if (n === 2) w.i({ desc: 'stand a Desk holding the new Story — kept aside — give it a Book — AthePondRounds — and wait for it to finish' })
-        if (n === 3) w.i({ desc: 'look at what the inner Story did' })
+        if (n === 2) w.i({ desc: 'stand a Desk holding the new Story — kept aside — give it a Book — AthePondRounds — leashed — and wait till it stands ready' })
+        if (n >= 3 && n <= 6) w.i({ desc: `let the inner Story through its step ${n - 2} — and wait till it stands there` })
+        if (n === 7) w.i({ desc: 'unleash it — and wait for it to finish' })
+        let stale = w.o({ req: 'inner_run' })[0]
+        if (stale) w.drop(stale)
     }
-    if (n === 2 && typeof this.Desk_story === 'function') {
-        this.Desk_story(this, 'AthePondRounds')
-        this.AtheStoryInStory_hold(w)
+    if (n >= 2 && n <= 7 && typeof this.Desk_leash === 'function') {
+        if (n === 2) {
+            this.Desk_leash(this, 'ready')
+        }
+        else if (n <= 6) {
+            this.Desk_leash(this, 'step', n - 2)
+        }
+        else {
+            this.Desk_leash(this)
+        }
+        if (n === 2) this.Desk_story(this, 'AthePondRounds')
+        let want = n === 2 ? 'ready' : n <= 6 ? 'step' : 'finished'
+        let k = n >= 3 && n <= 6 ? n - 2 : undefined
+        this.AtheStoryInStory_hold(w, (sw) => this.AtheStoryInStory_stands(sw, want, k))
     }
     this.AtheStoryInStory_witness(w)
 
@@ -2848,24 +2865,39 @@ AtheStoryInStory_inner(w) {
     return this.AtheStoryInStory_desk()?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] ?? null
 
 },
-// hold step 3 until the inner Story says it finished: a one-shot gate, its ttlilt the hold (90s a bound, never a wait).  Pumped
-//  each pass, it lets descent go on (ok) until the inner %StoryFinished lands, then finishes and drops itself — no footprint
-AtheStoryInStory_hold(w) {
-    let gate = w.o({ req: 'inner_run' })[0]
-    if (gate && gate.sc.finished) return
+// does the inner Story stand at this stop?  (%StoryAt — StoryFu's Story_at)
+AtheStoryInStory_stands(sw, at, n) {
+    let row = sw?.o({ StoryAt: 1 })[0]
+    return !!row && row.sc.StoryAt === at && (n == null || row.sc.n === n)
+
+},
+// hold a step until the inner Story says it finished (or, given done, until done(inner w)): a one-shot gate, its ttlilt the hold
+//  (90s a bound, never a wait).  Checked only by the gate's own body: a pass pumps wrangle (this drive) before it, so the body
+//   sees the drive's latest; finishing it from the drive instead threw "do req%finished" (the pump had already listed it).
+//    The body reads the current done off the gate (req.c.done): doai wires a body once, so a done closed over by it was the
+//     FIRST step's done for ever (probe 2 of the leash).  Once done the gate finishes and drops — no footprint
+AtheStoryInStory_hold(w, done) {
+    done = done || ((sw) => !!sw?.o({ StoryFinished: 1 })[0])
     w.doai({ req: 'inner_run' })?.((req) => {
-        if (this.AtheStoryInStory_inner(w)?.o({ StoryFinished: 1 })[0]) {
-            w.finish(req)
-            w.drop(req)
-            return
-        }
+        if (this.AtheStoryInStory_gate(w, req)) return
         req.sc.ok = 1
     })
     let held = w.o({ req: 'inner_run' })[0]
-    if (held && !held.sc.finished && !held.c.held) {
+    if (!held || held.sc.finished) return
+    held.c.done = done
+    if (!held.c.held) {
         held.c.held = 1
         this.i_req_ttlilt(held, 90)
     }
+
+},
+// the gate's check: when its done holds, finish and drop it (true)
+AtheStoryInStory_gate(w, gate) {
+    if (!gate || gate.sc.finished || !gate.c.done) return false
+    if (!gate.c.done(this.AtheStoryInStory_inner(w))) return false
+    w.finish(gate)
+    w.drop(gate)
+    return true
 
 },
 // the inner Story's insides stay out of this Book's snap — its toc tree, its timing records (they grow every run), its run's House
@@ -2874,8 +2906,17 @@ AtheStoryInStory_fold(w, sw, fin, steps, book) { const H = this;
     if (!sw) return
     book = book || 'AthePondRounds'
     if (!sw.sc.dontSnap) sw.sc.dontSnap = 1
-    let inner = this.AtheStoryInStory_desk()?.o({ H: book })[0]
-    if (inner && !inner.sc.dontSnap) inner.sc.dontSnap = 1
+    // the inner's Run House: folded by .c (the inner snaps it as its own root, so a mark on its line would show there)
+    let desk = this.AtheStoryInStory_desk()
+    let inner = desk?.o({ H: book })[0]
+    if (inner && !inner.c.dontSnap) inner.c.dontSnap = 1
+    // …and the inner Story's channels on the Desk's House (its ave: This with every step's got_snap, its analysis, its oaths;
+    //  its action buttons and their status label) — the inner's own bookkeeping, timed by its disk checks, not the outer's
+    //   (they leaked into a leashed run's snaps and reddened replays).  Folded the same way: the line stays, the rest goes
+    for (const ch of ['ave', 'actions']) {
+        let wc = desk?.o({ watched: ch })[0]
+        if (wc && !wc.c.dontSnap) wc.c.dontSnap = 1
+    }
     if (fin) w.oai({ InnerRun: book }, { steps: steps.length, ok: steps.filter(s => s.sc.ok && !s.sc.caveat).length })
 
 },
@@ -2893,10 +2934,58 @@ AtheStoryInStory_witness(w) {
     }
     let fin = sw?.o({ StoryFinished: 'AthePondRounds' })[0]
     let steps = sw?.c.This?.o({ Step: 1 }) ?? []
-    this.AtheStoryInStory_fold(w, sw, fin, steps)
-    if (n >= 3 && fin && steps.length && steps.every(s => s.sc.ok && !s.sc.caveat)) {
+    let green = steps.filter(s => s.sc.ok && !s.sc.caveat).length
+    this.AtheStoryInStory_fold(w, sw, null, steps)
+    this.AtheStoryInStory_where(w, sw, green)
+    if (n === 2 && this.AtheStoryInStory_stands(sw, 'ready') && !steps.some(s => s.sc.ok) && (sw?.c.The?.o({ step: 1 }).length ?? 0) === 4) {
+        this.story_swear(w, 'the inner Story stands ready — its 4 steps known — none run — held by the leash')
+    }
+    if (n >= 3 && n <= 6 && this.AtheStoryInStory_stands(sw, 'step', n - 2) && green === n - 2 && !steps.some(s => s.sc.Step > n - 2 && s.sc.ok)) {
+        this.story_swear(w, `the inner Story stands after its step ${n - 2} — green so far — and goes no further`)
+    }
+    if (n >= 7 && fin && steps.length && steps.every(s => s.sc.ok && !s.sc.caveat)) {
         this.story_swear(w, 'the inner Story ran its Book green — and told its own w it finished — not the page')
     }
+
+},
+// where the inner Story stands, on this Book's w: one %InnerRun row (replaced as it moves) — so each snap says the stop it caught,
+//  and the leash beside it (both halves of the handshake)
+AtheStoryInStory_where(w, sw, green) {
+    let at = sw?.o({ StoryAt: 1 })[0]
+    if (!at) return
+    let want = { InnerRun: 'AthePondRounds', at: at.sc.StoryAt }
+    if (at.sc.n != null) want.n = at.sc.n
+    let leash = sw.o({ StoryLeash: 1 })[0]
+    want.leash = leash ? (leash.sc.n != null ? `${leash.sc.StoryLeash} ${leash.sc.n}` : leash.sc.StoryLeash) : 'none'
+    let steps = sw.c.This?.o({ Step: 1 }) ?? []
+    want.steps = steps.length
+    want.ok = green
+    let caveat = steps.filter(s => s.sc.ok && s.sc.caveat).length
+    let red = steps.filter(s => s.sc.dige && !s.sc.ok).length
+    if (caveat) want.caveat = caveat
+    if (red) want.red = red
+    this.AtheStoryInStory_says_why(sw, steps)
+    let row = w.o({ InnerRun: 1 })[0]
+    if (row && JSON.stringify(row.sc) === JSON.stringify(want)) return
+    if (row) w.drop(row)
+    w.i(want)
+
+},
+// an inner step that isn't green says why on the console, once: its lines that differ from its fixture (INNERDIFF) — the
+//  outer snap holds only the count, and the inner's own snaps are folded out of it
+AtheStoryInStory_says_why(sw, steps) {
+    sw.c.said_why = sw.c.said_why || {}
+    for (const s of steps) {
+        let n = s.sc.Step
+        if (!s.sc.dige || (s.sc.ok && !s.sc.caveat) || sw.c.said_why[n]) continue
+        sw.c.said_why[n] = 1
+        let got = String(s.sc.got_snap ?? '').split('\n')
+        let exp = String(sw.c.exp_snaps?.[n] ?? s.sc.exp_snap ?? '').split('\n')
+        let gs = new Set(got), es = new Set(exp)
+        let lines = [...exp.filter(l => !gs.has(l)).map(l => '- ' + l), ...got.filter(l => !es.has(l)).map(l => '+ ' + l)]
+        console.log(`INNERDIFF step=${n} ok=${s.sc.ok ? 1 : 0} caveat=${s.sc.caveat ? 1 : 0} got=${got.length} exp=${exp.length}\n` + lines.slice(0, 40).map(l => l.slice(0, 240)).join('\n'))
+    }
+
 },
 //#endregion
 //#region the test routine — Book AthePondFocus

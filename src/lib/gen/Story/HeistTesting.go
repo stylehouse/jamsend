@@ -12,7 +12,7 @@ import { mint_grant } from "$lib/O/Funk/Grant.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_HeistTesting(): string { return 'e54f69bd22718ee6~g1' },
+    Ghostmeta_Ghost_Story_HeistTesting(): string { return '1f756586dbe9de34~g1' },
 
 // HeistTesting.g — né Heistation.g (the `<Name>Testing.g` convention, owner ruling 2026-09-09;
 //  src/lib/L/testing.ts is the one predicate).  Book NAMES did not move with the file — `MusuHeist`,
@@ -5784,7 +5784,7 @@ async MusuPoolRandom_sediment(w) {
     // A THIN SESSION: Fay's mirror has only rebuilt f1 so far (its heard state is a fresh session, not a
     //  fresh Fay — f2/f3/f4 are real, held, unchanged tracks that simply have not been re-mirrored yet).
     let fstock = this.Ra_home_them(w, String(fay.sc.prepub))
-    for (const rec of this.Ra_recs(fstock).slice()) { if (String(rec.sc.id) !== 'f1') { fstock.rm({ Record: 1, id: rec.sc.id }) } }
+    for (const rec of this.Ra_recs(fstock).slice()) { if (String(rec.sc.id) !== 'f1') { await fstock.rm({ Record: 1, id: rec.sc.id }) } }
     let thin = this.Ra_pool_sources(w)
     this.Ra_quarter(w, lib, pool, lib, 3, thin)
     let out = this.Ra_pool_provisions(w)

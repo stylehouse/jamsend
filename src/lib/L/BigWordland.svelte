@@ -254,7 +254,9 @@
             }
             if (beat % 3) return
             const dex = (lies?.w as any)?.c?.stemdex
-            const converged = !!(dex && dex.total > 0 && dex.done >= dex.total)
+            //  converged = complete, OR settled (a pass that asked for and scanned nothing): an unreadable doc keeps done < total
+            //   for ever, and this clock then nudged a whole pass every 1.5s for the life of the tab (2026-10-30, ~90% CPU)
+            const converged = !!(dex && dex.total > 0 && (dex.done >= dex.total || dex.settled))
             if (!converged && !dex?.scanning) lies?.house.i_elvisto('Lies/Lies', 'Lies_stemdex_scan', {})
             const fresh = !converged && dex && dex.done !== seen_done
             if (fresh) seen_done = dex.done

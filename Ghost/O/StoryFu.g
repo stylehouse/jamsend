@@ -1269,6 +1269,7 @@ async snap_H(Run: House, w?: TheC, Se_home?: House | TheC): Promise<string>:
         Se_at.c.snap_Se ??= new Selection()
         const Se: Selection = Se_at.c.snap_Se
 
+        let at_root = true   // the walk's first node is the snap's root (Run may be an A's proxy — never compare by identity)
         await Se.process({
             n:                  Run,
             process_sc:         { snap_root: 1 },
@@ -1277,6 +1278,8 @@ async snap_H(Run: House, w?: TheC, Se_home?: House | TheC): Promise<string>:
             loop_but_no_further: true,   // loopy C reaches each_fn with T.sc.loopy set
 
             each_fn: async (D: TheD, n: TheC, T: Travel) => {
+                const is_root = at_root
+                at_root = false
                 if (T.sc.loopy) {
                     // subsequent appearance of a C seen earlier in this walk
                     loopy_Cs.add(n)
@@ -1300,7 +1303,10 @@ async snap_H(Run: House, w?: TheC, Se_home?: House | TheC): Promise<string>:
                 //  Snap-only — the node keeps pumping; orthogonal to inclusion. Used
                 //  to retire compile scaffolding (w:Lies/w:Lang) from a runner snap
                 //  once the apparatus is ready, leaving the run state legible.
-                if (n.sc.dontSnap || T.sc.dontSnap) T.sc.more = []
+                //  Never the snap's own root: a Story nested in a Story snaps its Run House, which the holder folds out of
+                //   ITS snap — folding the root hollowed every inner step (the leash, 2026-10-30).  A holder folding a House
+                //    it doesn't own marks .c.dontSnap: the same fold, but never printed on that House's own line
+                if (((n.sc.dontSnap || (n.c as any).dontSnap) && !is_root) || T.sc.dontSnap) T.sc.more = []
                 lines.push(D)
             },
 
@@ -1469,10 +1475,31 @@ Story_finished(w: TheC, mode: string):
         const base = (this as any).TheA_base
         if (base) {
             w.oai({ StoryFinished: w.sc.Book }, { mode })
+            this.Story_at(w, 'finished')
             base.up?.main?.(true)
             return
         }
         this.top_House().i_elvisto('Auto/Auto', 'storyFinished', { Book: w.sc.Book, mode })
+
+// the leash (spec/AtheoryStory_todo.md §5) — an outer Story walks a nested one stop by stop.  %StoryLeash on the inner w (written
+//  by whoever holds it — the Desk) says how far it may go: ready (nothing driven) or step,n (step n done, n+1 not begun).
+//   Story_at — the inner says where it stands: one %StoryAt row, replaced as it moves, and the holder woken.  Only when nested:
+//    a page's Story has no holder and its w must not change
+Story_at(w: TheC, at: string, n?: number):
+        const base = (this as any).TheA_base
+        if (!base) return
+        const row = w.o({ StoryAt: 1 })[0]
+        if (row && row.sc.StoryAt === at && row.sc.n === n) return
+        if (row) w.drop(row)
+        w.i(n != null ? { StoryAt: at, n } : { StoryAt: at })
+        base.up?.main?.(true)
+
+// Story_leashed — true when the leash forbids beginning step n
+Story_leashed(w: TheC, n: number):
+        const leash = w.o({ StoryLeash: 1 })[0]
+        if (!leash) return false
+        if (leash.sc.StoryLeash === 'ready') return true
+        return n > Number(leash.sc.n ?? 0)
 
 Story_subHouse(A: TheC, w: TheC):
         // Get-or-create the Run sub-House for this Book and wire its actors.
@@ -2376,6 +2403,17 @@ story_drive(Run: House, w: TheC, run: TheC):
                     }
                 } catch (er) {}
                 run.c.adv_t0 = undefined
+            }
+            // the leash (Story_leashed): a nested Story held here stands at ready or step,n-1 — before even finishing, so the
+            //  last step is a stop too — and asks again next tick
+            if (H.Story_leashed(w, n)) {
+                if (n === 1) {
+                    H.Story_at(w, 'ready')
+                }
+                else {
+                    H.Story_at(w, 'step', n - 1)
+                }
+                schedule(); return
             }
             ;V.Story && console.log(`▷ do_step n=${n} mode=${run.sc.mode}`)
             ;V.Story && console.log(`The at n=${n}:`, (w.c.The)?.o({step:1}).map((s:any)=>s.sc.step+'→'+(s.sc.dige?s.sc.dige.slice(0,6):'no-dige')).join(', '))

@@ -3,64 +3,41 @@ Snap:H
     A:AtheStoryInStory
       w:AtheStoryInStory
         req:wrangle,eternal,ok
-        InnerRun:AthePondRounds,steps=4,ok=4
+        InnerRun:AthePondRounds,at:step,n,leash:step 1,steps,ok
     H:Desk	{"loopy":1}
       A:Desk
         GroundUsed:Core,via:Story
-        TheACode:Ground/Core,variant:plain,dige:7d658b2a20124e2c
-          TheALayer:Ghost/A/Theory.g,dige:91aaa012553f4014~g1
-          TheALayer:Ghost/A/Stuffica.g,dige:840830d9ace7b31f~g1
-          TheALayer:Ghost/A/Ground.g,dige:a3fd45e57dcdf482~g1
+        TheACode:Ground/Core,variant:plain,dige:285efa8800805946
+          TheALayer:Ghost/A/Theory.g,dige:a6e881cb3b26ad22~g1
+          TheALayer:Ghost/A/Stuffica.g,dige:1f0ec09474696daa~g1
+          TheALayer:Ghost/A/Ground.g,dige:5a3d0081b4f8d0d0~g1
         GroundUsed:Story
-        TheACode:Ground/Story,variant:plain,dige:315f216bc6afd5c1
-          TheALayer:Ghost/O/StoryFu.g,dige:1837e1d4be72160d~g1
+        TheACode:Ground/Story,variant:plain,dige:1fabdfa0556100a5
+          TheALayer:Ghost/O/StoryFu.g,dige:73bff1f2c8cd28ce~g1
           TheALayer:Ghost/O/Supervisor.g,dige:4efe70cdd7ae19ac~g1
         GroundAside
         w:Desk
           DeskGround:Story
           DeskAside
           DeskBook:AthePondRounds
+          DeskLeash:step,n
       A:Story
         GroundUsed:Core,via:Story
-        TheACode:Ground/Core,variant:plain,dige:7d658b2a20124e2c
-          TheALayer:Ghost/A/Theory.g,dige:91aaa012553f4014~g1
-          TheALayer:Ghost/A/Stuffica.g,dige:840830d9ace7b31f~g1
-          TheALayer:Ghost/A/Ground.g,dige:a3fd45e57dcdf482~g1
+        TheACode:Ground/Core,variant:plain,dige:285efa8800805946
+          TheALayer:Ghost/A/Theory.g,dige:a6e881cb3b26ad22~g1
+          TheALayer:Ghost/A/Stuffica.g,dige:1f0ec09474696daa~g1
+          TheALayer:Ghost/A/Ground.g,dige:5a3d0081b4f8d0d0~g1
         GroundUsed:Story
-        TheACode:Ground/Story,variant:plain,dige:315f216bc6afd5c1
-          TheALayer:Ghost/O/StoryFu.g,dige:1837e1d4be72160d~g1
+        TheACode:Ground/Story,variant:plain,dige:1fabdfa0556100a5
+          TheALayer:Ghost/O/StoryFu.g,dige:73bff1f2c8cd28ce~g1
           TheALayer:Ghost/O/Supervisor.g,dige:4efe70cdd7ae19ac~g1
         GroundAside
         w:Story,Book:AthePondRounds,dontSnap
-      H:AthePondRounds,Run,dontSnap	{"loopy":0}
+      H:AthePondRounds,Run	{"loopy":0}
       watched:subHouses
-        H,Run,dontSnap	{"loopy":0,"hid":1}
+        H,Run	{"loopy":0,"hid":1}
       watched:ave
-        This,Story:AthePondRounds
-          {"Step":1,"got_snap":"Snap:H\n  H:AthePondRounds,Run\n    A:AthePondRounds\n      w:AthePondRounds\n        req:wrangle,eternal,ok\n","dige":"acc822a82c0f14d0","ok":true}	{"ref":{"Run_trace":"[Object(),Object(),Object(),Object(),Object(),Object(),Object(),Object()]"}}
-          {"Step":2,"got_snap":"Snap:H\n  H:AthePondRounds,Run\n    A:AthePondRounds\n      w:AthePondRounds\n        req:wrangle,eternal,ok\n    A:RP_P\n      TheACode:Athe_Tank,variant:plain,dige:bf8156c1dd2b8a94\n        TheALayer:Ghost/A/AtheFishTesting.g,dige:426ea8a90ecf1e85~g1\n      w:Athe_Tank\n        TheASynapse:clock,wake:turn,sum:count\n          TheAWoke,count=9,pulses=9\n        TheAAxon:stream\n        NamesAs:P\n        Turns,count=9\n        TheASunpit:turn\n          TheAPass:Egg\n          TheAPass:Fish\n          TheAPass:Heron\n        EggsNamed,count=2\n        Fish:P minnow 1,born=4\n        Fish:P perch 2,born=4\n    A:RP_Q\n      TheACode:Athe_Tank,variant:plain,dige:bf8156c1dd2b8a94\n        TheALayer:Ghost/A/AtheFishTesting.g,dige:426ea8a90ecf1e85~g1\n      w:Athe_Tank\n        TheASynapse:clock,wake:turn,sum:count\n        TheASynapse:stream,from:RP_P,wake:arrive,sum:count\n        NamesAs:Q\n    A:RP_R\n      TheACode:Athe_Tank,variant:plain,dige:bf8156c1dd2b8a94\n        TheALayer:Ghost/A/AtheFishTesting.g,dige:426ea8a90ecf1e85~g1\n      w:Athe_Tank\n        TheASynapse:clock,wake:turn,sum:count\n          TheAWoke,count,pulses\n        Turns,count\n        TheASunpit:turn\n          TheAPass:Egg\n          TheAPass:Fish\n          TheAPass:Heron\n        EggsNamed,count=2\n        Egg:minnow 1,born\n        Egg:perch 2,born\n","dige":"cb39e98c10004571","ok":true}	{"ref":{"Run_trace":"[Object(),Object(),Object(),Object(),Object(),Object(),Object(),Object()]"}}
-          {"Step":3,"got_snap":"Snap:H\n  H:AthePondRounds,Run\n    A:AthePondRounds\n      w:AthePondRounds\n        req:wrangle,eternal,ok\n        TheARun,rounds=2,quiet\n          TheARound:1,landed=2\n            TheAWent:RP_P\n          TheARound:2\n            TheAWent:RP_Q\n        Saw:R,turns\n    A:RP_P\n      TheACode:Athe_Tank,variant:plain,dige:bf8156c1dd2b8a94\n        TheALayer:Ghost/A/AtheFishTesting.g,dige:426ea8a90ecf1e85~g1\n      w:Athe_Tank\n        TheASynapse:clock,wake:turn,sum:count\n          TheAWoke,count=22,pulses=22\n        TheAAxon:stream\n        NamesAs:P\n        Turns,count=22\n        TheASunpit:turn\n          TheAPass:Egg\n          TheAPass:Fish\n          TheAPass:Heron\n        EggsNamed,count=16\n        Fish:P carp 3,born=13\n        Fish:P trout 4,born=13\n        Fish:P roach 5,born=16\n        Fish:P bream 6,born=16\n        Fish:P tench 7,born=19\n        Fish:P dace 8,born=19\n        Fish:P chub 9,born=22\n        Fish:P rudd 10,born=22\n        Fish:P minnow 11,born=22\n        Fish:P perch 12,born=22\n        Egg:P carp 13,born=22\n        Egg:P trout 14,born=22\n        Egg:P roach 15,born=22\n        Egg:P bream 16,born=22\n        Heron:grey\n    A:RP_Q\n      TheACode:Athe_Tank,variant:plain,dige:bf8156c1dd2b8a94\n        TheALayer:Ghost/A/AtheFishTesting.g,dige:426ea8a90ecf1e85~g1\n      w:Athe_Tank\n        TheASynapse:clock,wake:turn,sum:count\n        TheASynapse:stream,from:RP_P,wake:arrive,sum:count\n          TheAWoke,count=2,pulses=2\n        NamesAs:Q\n        Fish:P minnow 1,born=-18,came:RP_P\n        Fish:P perch 2,born=-18,came:RP_P\n    A:RP_R\n      TheACode:Athe_Tank,variant:plain,dige:bf8156c1dd2b8a94\n        TheALayer:Ghost/A/AtheFishTesting.g,dige:426ea8a90ecf1e85~g1\n      w:Athe_Tank\n        TheASynapse:clock,wake:turn,sum:count\n          TheAWoke,count,pulses\n        Turns,count\n        TheASunpit:turn\n          TheAPass:Egg\n          TheAPass:Fish\n          TheAPass:Heron\n        EggsNamed,count=2\n        Egg:minnow 1,born\n        Egg:perch 2,born\n","dige":"828549d59f24ced7","ok":true}	{"ref":{"Run_trace":"[Object(),Object(),Object(),Object(),Object(),Object(),Object(),Object(),Object(),Object(),Object()]"}}
-          {"Step":4,"got_snap":"Snap:H\n  H:AthePondRounds,Run\n    A:AthePondRounds\n      w:AthePondRounds\n        req:wrangle,eternal,ok\n        Saw:R,turns\n        TheARun,rounds=0,quiet\n    A:RP_P\n      TheACode:Athe_Tank,variant:plain,dige:bf8156c1dd2b8a94\n        TheALayer:Ghost/A/AtheFishTesting.g,dige:426ea8a90ecf1e85~g1\n      w:Athe_Tank\n        TheASynapse:clock,wake:turn,sum:count\n          TheAWoke,count=22,pulses=22\n        TheAAxon:stream\n        NamesAs:P\n        Turns,count=22\n        TheASunpit:turn\n          TheAPass:Egg\n          TheAPass:Fish\n          TheAPass:Heron\n        EggsNamed,count=16\n        Fish:P carp 3,born=13\n        Fish:P trout 4,born=13\n        Fish:P roach 5,born=16\n        Fish:P bream 6,born=16\n        Fish:P tench 7,born=19\n        Fish:P dace 8,born=19\n        Fish:P chub 9,born=22\n        Fish:P rudd 10,born=22\n        Fish:P minnow 11,born=22\n        Fish:P perch 12,born=22\n        Egg:P carp 13,born=22\n        Egg:P trout 14,born=22\n        Egg:P roach 15,born=22\n        Egg:P bream 16,born=22\n        Heron:grey\n    A:RP_Q\n      TheACode:Athe_Tank,variant:plain,dige:bf8156c1dd2b8a94\n        TheALayer:Ghost/A/AtheFishTesting.g,dige:426ea8a90ecf1e85~g1\n      w:Athe_Tank\n        TheASynapse:clock,wake:turn,sum:count\n        TheASynapse:stream,from:RP_P,wake:arrive,sum:count\n          TheAWoke,count=2,pulses=2\n        NamesAs:Q\n        Fish:P minnow 1,born=-18,came:RP_P\n        Fish:P perch 2,born=-18,came:RP_P\n    A:RP_R\n      TheACode:Athe_Tank,variant:plain,dige:bf8156c1dd2b8a94\n        TheALayer:Ghost/A/AtheFishTesting.g,dige:426ea8a90ecf1e85~g1\n      w:Athe_Tank\n        TheASynapse:clock,wake:turn,sum:count\n          TheAWoke,count,pulses\n        Turns,count\n        TheASunpit:turn\n          TheAPass:Egg\n          TheAPass:Fish\n          TheAPass:Heron\n        EggsNamed,count=2\n        Egg:minnow 1,born\n        Egg:perch 2,born\n","dige":"ca60cf7300b7f416","ok":true}	{"ref":{"Run_trace":"[Object(),Object(),Object(),Object(),Object(),Object(),Object(),Object(),Object(),Object(),Object()]"}}
-        swatches
-        live_poll
-        Styles
-        {"story_analysis":1,"frontier":0,"open_at":null,"bad_count":0,"avg_step":0.004}	{"ref":{"run_sc":"Object()","steps":"[Object(),Object(),Object(),Object()]","notes":"Object()"}}
-        Assertioning,Story:AthePondRounds
-          sworn:only what has a pulse waiting moves — R with a clock and nothing on it is never visited,n=3
-          sworn:a pulse sent in one round readies its receiver for the next — P moves then Q and the two old fish land,n=3
-          sworn:with nothing waiting the run goes quiet by itself — two rounds of the fifty it was allowed,n=3
-          sworn:a run with nothing poked takes no rounds at all,n=4
       watched:actions
-        action,role:save,label:Save,icon:💾,cls:save	{"ref":{"fn":"Function()"}}
-        action,role:reset,label:Reset,icon:🔄,cls:remove	{"ref":{"fn":"Function()"}}
-        action,role:lenient,label:lenient,icon:lenient,cls:toggle-off	{"ref":{"fn":"Function()"}}
-        action,role:snap_checking,label:verify snaps,icon:verify snaps,cls:toggle-off	{"ref":{"fn":"Function()"}}
-        action,role:keep_snaps,label:keep snaps,icon:keep snaps,cls:toggle-off	{"ref":{"fn":"Function()"}}
-        action,role:useCyto,label:useCyto,icon:useCyto,cls:toggle-off	{"ref":{"fn":"Function()"}}
-        action,role:trickle,label:trickle,icon:trickle,cls:toggle-off	{"ref":{"fn":"Function()"}}
-        action,role:resnap,label:Resnap,icon:📸,cls:save	{"ref":{"fn":"Function()"}}
-        action,role:pause,label:Resume,icon:▶,cls:start	{"ref":{"fn":"Function()"}}
-        action,role:status,label:check 004,cls:default,disabled:true
       watched:UIs
         UI:Story	{"ref":{"component":"Function()"}}
         UI:Storica	{"ref":{"component":"Function()"}}

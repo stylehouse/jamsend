@@ -13,7 +13,7 @@ Snap:H
           reached:step_4
           crudded,resized_to_one,two_listed_in_order,dropped_pool_wants_gone,falls_back_to_anonymous,drop_missing_is_zero
           reached:step_5
-          thinned,sources_n=4,no_evict_wants,pool_still_holds_three,worst_ranked_sediment_yields,better_candidate_enters
+          thinned,sources_n=5,no_evict_wants,pool_still_holds_three,worst_ranked_sediment_yields,better_candidate_enters
         Account,of:Alice
           Identity:aad21c616df0ea57,prepub:aad21c616df0ea57,friendly:Cap
             Peering,name:aad21c616df0ea57,friendly:Cap
@@ -59,8 +59,6 @@ Snap:H
         Theirs,pub:ed6acbbcd1435dad
           stock,pub:ed6acbbcd1435dad
             Record,id:f1,title:Fay One
-            Record,id:f3,title:Fay Three
-            Record,id:f4,title:Fay Four
             Record,id:f1,title:Fay One
             Record,id:f2,title:Fay Two
             Record,id:f3,title:Fay Three

@@ -11,7 +11,7 @@ import { ground_closure, ground_loads, GROUND_CORE } from "$lib/A/ground"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_Ground(): string { return 'a3fd45e57dcdf482~g1' },
+    Ghostmeta_Ghost_A_Ground(): string { return '5a3d0081b4f8d0d0~g1' },
 
 // Ground.g — what a tab stands on, said as particles on the A that stands on it (spec/Aprac_todo.md §0.5).
 //
@@ -139,6 +139,32 @@ Desk_story(H, book) {
     return w
 
 },
+// Desk_leash — how far the Desk's Story may go (spec/AtheoryStory_todo.md §5): 'ready', 'step' with n, or nothing to unleash.
+//  One %DeskLeash row on w:Desk; the Desk's think carries it onto the Story's w as %StoryLeash, so the inner w is born leashed —
+//   and here it is carried at once onto a Story already standing (the Desk, Firm, is not thought again: probe 1 of the leash
+//    moved %DeskLeash every step and the inner sat at ready)
+Desk_leash(H, at, n) {
+    let D = this.Desk_house(H)
+    let w = D.oai({ A: 'Desk' }).oai({ w: 'Desk' })
+    let row = w.o({ DeskLeash: 1 })[0]
+    if (!(row && row.sc.DeskLeash === at && row.sc.n === n)) {
+        if (row) w.drop(row)
+        if (at) w.i(n != null ? { DeskLeash: at, n } : { DeskLeash: at })
+    }
+    let sw = D.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0]
+    if (sw) this.Desk_leash_carry(w, sw)
+    return w
+
+},
+// Desk_leash_carry — the inner w's %StoryLeash made to say what w:Desk's %DeskLeash says (absent ⇒ absent)
+Desk_leash_carry(w, sw) {
+    let want = w.o({ DeskLeash: 1 })[0]
+    let have = sw.o({ StoryLeash: 1 })[0]
+    if (want && have && have.sc.StoryLeash === want.sc.DeskLeash && have.sc.n === want.sc.n) return
+    if (have) sw.drop(have)
+    if (want) sw.i(want.sc.n != null ? { StoryLeash: want.sc.DeskLeash, n: want.sc.n } : { StoryLeash: want.sc.DeskLeash })
+
+},
 // Desk — the Desk's think: stand the Grounds asked for on A:Desk; once Firm, a Story for the Book asked for — A:Story holding
 //  Ground/Story and its w:Story,Book stood in the SAME tick.  (Probe 5: an A with no w gets a default w named after it on its
 //   first think — Housing procure_ways — so an A:Story stood early grew a Book-less w:Story, and the Book, given from outside,
@@ -154,7 +180,8 @@ Desk(A, w) {
     let S = H.oai({ A: 'Story' })
     if (!this.Ground_stand(S, ['Story'], aside)) return
     this.Desk_pushes_covered(S)
-    S.oai({ w: 'Story' }, { Book: book })
+    let sw = S.oai({ w: 'Story' }, { Book: book })
+    this.Desk_leash_carry(w, sw)
 
 },
 // Desk_pushes_covered — a Desk standing its Grounds has just stood each A's code from what is loaded now, which is all a plain

@@ -1,5 +1,8 @@
 # Reactivity, H.ave, and the Stuff/Housing system — working notes
 
+> **⚠ Pre-Stuffica (last real edit 2026-08-05).**  Owed a rewrite for the Stuffica era: views committing once per run (`Stuffica_points` read untracked),
+> Atime/UItime and the door (`Atheory_design.md` §3), and a Book that gates renders-per-commit.  `Atheory_todo.md` §0.0 THE MAP.
+
 Check out `Langui` for layered `$effect()` and `Lies` for void ex.ob() ... food for thought.
 
 ## The hold — reading a container that is mid-transaction (ROOT-CAUSED 2026-08-05)

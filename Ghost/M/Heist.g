@@ -2031,7 +2031,7 @@ Heist_keep_first(keep):
 Heist_blag_drop(seed):
     let M = this.top_House ? this.top_House() : null
     if (!M || !seed) return
-    try { M.rm({ BlagLib: String(seed) }) } catch (er) {}
+    try { await M.rm({ BlagLib: String(seed) }) } catch (er) {}   // awaited, or the catch catches nothing (rm is an async replace)
 
 // Heist_dir_of — the directory part of a crate-relative path ('' for a file at the root).  Its own verb
 //  because the blag compares dirnames twice per card and a mismatched split is a silently empty folder.
@@ -2435,8 +2435,8 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
             try { await this.Heist_keep_forget(keep) } catch (er) {}
         }
         if (Date.now() - keep.c.done_ts > 8000) {
-            try { (keep.c.up || shop).rm({ Heist: 1, seed: keep.sc.seed }) } catch (er) {}
-            this.Heist_blag_drop(keep.sc.seed)
+            try { await (keep.c.up || shop).rm({ Heist: 1, seed: keep.sc.seed }) } catch (er) {}
+            await this.Heist_blag_drop(keep.sc.seed)
         }
         return
     }
@@ -3365,7 +3365,7 @@ async Heist_keep_persist(keep):
     //         last persist must actually disappear here too, or a stale entry outlives the live intent.
     let livePicks = keep.o({ Pick: 1 })
     let liveRefs = new Set(livePicks.map((p) => String(p.sc.ref || p.sc.id || '')).filter(Boolean))
-    for (const pe of entry.o({ Pick: 1 })) { if (!liveRefs.has(String(pe.sc.ref || ''))) entry.rm({ Pick: 1, ref: pe.sc.ref }) }
+    for (const pe of entry.o({ Pick: 1 })) { if (!liveRefs.has(String(pe.sc.ref || ''))) await entry.rm({ Pick: 1, ref: pe.sc.ref }) }
     for (const p of livePicks) {
         let ref = String(p.sc.ref || p.sc.id || '')
         if (!ref) continue
@@ -3428,7 +3428,7 @@ async Heist_keep_forget(keep):
     if (!ident || !nav) return
     let waft = await this.Berth_open(nav, '', String(ident.sc.prepub), 'Heists')
     if (!waft.o({ HeistSeed: 1, seed: String(keep.sc.seed) })[0]) return   // nothing persisted — no-op save
-    waft.rm({ HeistSeed: 1, seed: String(keep.sc.seed) })
+    await waft.rm({ HeistSeed: 1, seed: String(keep.sc.seed) })
     await this.Berth_save(nav, waft)
 
 // Heist_keep_rehydrate — on boot|reload, resurrect any Berth-persisted heist with no LIVE %Heist standing
@@ -4105,8 +4105,8 @@ async Heist_keep_cancel(w, keep):
     //  Safe to reorder: `rm` detaches the particle from the shop but `keep` is still a live JS reference
     //   here, so the forget below still reads `keep.sc.seed` exactly as it did.  And the forget is keyed
     //    on that seed in the Berth, not on the %Heist standing — dropping first cannot orphan it.
-    shop.rm({ Heist: 1, seed: keep.sc.seed })
-    this.Heist_blag_drop(keep.sc.seed)
+    await shop.rm({ Heist: 1, seed: keep.sc.seed })
+    await this.Heist_blag_drop(keep.sc.seed)
     // A ♥ KEEP'S ✕ RETIRES THE HEART TOO, or the haul beat mints it straight back next pass and the
     //  button reads as broken by doing exactly what it was told.  This is the ONE road by which a take
     //   ever ends (Heard_untake, §C: "you can't lose a heart — only you retire one"): the machine never

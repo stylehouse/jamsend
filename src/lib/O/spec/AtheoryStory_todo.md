@@ -20,9 +20,9 @@
       Smallest, used every day.
 2. **The explorer's protrusion** (§3): the change window beside the strip, not replacing the snap panel; oaths drawn on the points
     they swore about; present mode (recorded snaps, no run); the inner Story as a second strip.
-3. **The leash — the outer Story walks the inner one stop by stop** (designed 2026-10-30, §5).  Owner: "the outer Story should be
-    able to observe the inner Story being all ready to begin, then let it begin, and observe again at any step the inner can stop at."
-     Grows AtheStoryInStory (not a new Book).  Later rungs go below a step: a round, a Turn — Story_future's 10-28 "crawl".
+3. **The leash — BUILT 2026-10-30, rung 1** (§5).  AtheStoryInStory is 7 steps: ready, each of the inner's 4 steps, finished — each
+    outer snap catches the inner standing still (`%InnerRun,at,leash,steps,ok`), 8 oaths, records green and replays green ×3.  Next
+     rung goes below a step: a round, a Turn — the outer giving the inner its time (Story_future's 10-28 "crawl"; §5 Rung 2).
 4. **The Desk as a page** (`/Desk?G=…`, `/Desk?B=`) — waits on Lies (the relay seat) being standable by a Ground.
 5. **A Ground in front of a Ground** (owner, 2026-10-29: "a Ground might get in front of another Ground and inject some moment").
     Today `Stands:` only orders loads; flat eatfunc is last-wins.  The parts exist: code kept aside on an A + the House reaching a
@@ -51,6 +51,15 @@
 - Never edit `src/lib/L/everything.js` while a tab you care about is up — the save reloads tabs (owner: sublate it, next code-side
    session).  `wormhole/Credence/toc.snap` is hand-edited.
 - The console's `🔍 n=… ok=false` lines are BEFORE noise forgiveness; the Step's ok/caveat is the verdict.
+- *(found building the leash, 2026-10-30 — seven recordings)*  **`doai` wires a req's body ONCE**: anything the body closes over is
+   the first call's for ever — keep per-step state on `req.c`.  **Never finish a req from another req's body in the same pass**: the
+    pump listed it already and throws `do req%finished` (it lands in every snap as an `Err`).  **Folding a House you don't own**: mark
+     `.c.dontSnap` (folds the same, never printed on its line); and `dontSnap` never folds a snap's own root (the inner Story snaps its
+      Run House — folding it hollowed every inner step; the old unleashed Book was green only because the inner finished first).
+       **The inner Story's `watched:ave` and `watched:actions` hang on the Desk's House**, outside `w:Story` — the fold covers them.
+- A nested StoryFu running a Book in check mode SAVES that Book's toc (TimeSpool, the `Stands:` line moved) — revert the churn.
+- **AtheStoryCode and AtheStoryInStory can't both be green on one tab**: Code wants StoryFu.g loaded flat, InStory wants it only
+   aside.  A fresh reload greens InStory and reds Code.  Owed: give Code its own Ground (or have it load flat itself) and say so in its toc.
 
 ### Done 2026-10-29 (detail)
 
@@ -192,7 +201,7 @@ One window on a step, and everything else is a protrusion from it showing a chan
    points they swore about; present mode (recorded snaps without a run — Storica already falls back to them); the inner Story of
     AtheStoryInStory as a second strip.
 
-## 5. The leash — an outer Story walking an inner one (design, 2026-10-30)
+## 5. The leash — an outer Story walking an inner one (design 2026-10-30; rung 1 BUILT the same day — bombs in §0)
 
 **Why.**  Today AtheStoryInStory lets the inner run loose and holds until `%StoryFinished`: one look, at the end, and every look
  before that races the inner clock (the bomb: never snap code — or anything — *landing*).  If the inner run STOPS where the outer
@@ -254,3 +263,4 @@ One window on a step, and everything else is a protrusion from it showing a chan
 | 2026-10-29 | Stuff `_req_do_one` passes the req's A; Housing `_req_named`; toy `req_Athe_Aside_ask`; Book step 6 second oath | a named req of aside code is pumped through its A | §1 "One tab", the req leg |
 | 2026-10-29 | Ground.g the Desk (`Desk_house`, `Desk_stand`, `Desk_story`, `Desk`, `Desk_pushes_covered`); StoryFu `Story_finished` (nested: own w + wake the holder); Book `AtheStoryInStory` | a Story inside a Story, green | §0 items 1–2 |
 | 2026-10-29 | Theory deep walk keeps `seem.c.gone`; Stuffica `Stuffica_focus`, `Stuffica_moved_point`, `Stuffica_focus_said`; Storica focus/since/pin; Book `AthePondFocus` | the step explorer's lens | §3 |
+| 2026-10-30 | StoryFu `Story_at`/`Story_leashed` (seam in do_step, before the finish branches, so the last step is a stop; `finished` in `Story_finished`); Ground `Desk_leash`/`Desk_leash_carry` (`%DeskLeash` on w:Desk → `%StoryLeash` on the inner w); Book `AtheStoryInStory` 3 → 7 steps, `%InnerRun,at` | the leash, rung 1 | §5 |

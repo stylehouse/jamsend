@@ -147,7 +147,9 @@
             {@const log_window = push_log_snap.filter(p => { const a = Date.now() - p.t; return a >= 1500 && a < 3000 })}
             {#if log_window.length}
                 <div class="push-log-hd">push log 1.5–3s window</div>
-                {#each [...log_window].reverse() as p (p.t + p.tag)}
+                <!-- keyed by position, not t+tag: two pushes of one elvis in the same ms collided (each_key_duplicate,
+                     then a 'prev' crash on the broken block — 2026-10-30, the Stemdex trickle) -->
+                {#each [...log_window].reverse() as p, pi (pi)}
                     <div class="push-log-row">
                         <span class="push-log-age">{age_s(p.t)}</span>
                         <span class="push-log-tag" class:push-reqturn={p.reqturn}>{p.tag}</span>

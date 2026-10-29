@@ -966,6 +966,11 @@ export class Stuff extends TimeOffice {
     //  insert nothing, so the matches are cleared.  Reads less cryptically than
     //  the r(c,{}) idiom it wraps.  See also drop(), which hides a C from o()
     //  without removing it.
+    //  `return this.r(…)` from an async fn is enough: when an async function returns a promise, its own
+    //   promise ADOPTS that promise's outcome (resolves when it resolves, rejects with its rejection) — so
+    //    `await x.rm(…)` waits for the whole replace.  (`return await` differs only inside a try/catch here.)
+    //     What bites is a CALLER that doesn't await: the replace then runs past it, and a second r() on the
+    //      same C while the first is in flight throws "nested replace() transactions" (Heist/Pool, 2026-10-30).
     async rm(pattern_sc:TheUniversal) {
         return this.r(pattern_sc, {})
     }
