@@ -42,11 +42,17 @@
     //  The LIVE count in the badge always shows truth; the rows show the last snap.  `untrack`
     //   breaks reactivity on house.todo so only the timer drives the rows.
     let todo_snap: any[] = $state([])
+    // THE ATIME STRIP (Atheory_design open item 3): the top House's hold ring over the last 10s, on the same 2s
+    //  snapshot — how much of the time Atime was held, and what it went to.  Parts are the w a think visited
+    //   (House/A/w) or a watched-C handler; holders are whole holds, a long unnamed UItime named by its caller.
+    const ATIME_WINDOW_MS = 10_000
+    let atime: any = $state(null)
     let snap_at: number  = $state(0)
     $effect(() => {
         if (!open) { todo_snap = []; snap_at = 0; return }
         const refresh = () => {
             todo_snap = untrack(() => (house as any).todo.slice())
+            atime = (H?.top_House?.() as any)?.atime_reduce?.(ATIME_WINDOW_MS, 6) ?? null
             snap_at = Date.now()
         }
         refresh()
@@ -92,6 +98,26 @@
             <div class="todo-wedge" role="alert">⚠ beliefs mutex held {Math.round(wedge.ms / 1000)}s by <b>{wedge.who}</b> — no House can drain until it settles</div>
         {:else if house.todo.length && house.c.drain_why}
             <div class="todo-why">◍ not draining: {house.c.drain_why}</div>
+        {/if}
+        <!-- what Atime went to, last 10s: one bar per part, its width that part's share of the wall clock -->
+        {#if atime?.n}
+            <div class="atime">
+                <div class="atime-hd" title="the beliefs mutex — every House drains under it; busy = held / wall time">
+                    Atime {Math.round(atime.span_ms / 1000)}s · <b>{atime.busy_pct}%</b> held · {atime.n} holds
+                </div>
+                {#each atime.parts as g (g.of)}
+                    <div class="atime-row" title="{g.n}× · longest {g.held_max}ms">
+                        <span class="atime-bar"><span style="width:{Math.min(100, g.share)}%"></span></span>
+                        <span class="atime-ms">{g.held}ms</span><span class="atime-of">{g.of}</span>
+                    </div>
+                {/each}
+                {#each atime.holders.filter((g: any) => g.held >= 20 && !g.of.endsWith(' think')) as g (g.of)}
+                    <div class="atime-row atime-holder" title="{g.n}× · longest {g.held_max}ms · queued up to {g.wait_max}ms">
+                        <span class="atime-bar"><span style="width:{Math.min(100, g.share)}%"></span></span>
+                        <span class="atime-ms">{g.held}ms</span><span class="atime-of">{g.of}</span>
+                    </div>
+                {/each}
+            </div>
         {/if}
         <!-- method histogram — compact count per unique elvis label, most common first: the
              "there's probably a flood of some type of them" line, answered in one row. -->
@@ -195,6 +221,16 @@
         border-radius: 3px; padding: 0.2rem 0.35rem; margin-bottom: 0.25rem; white-space: normal;
     }
     .todo-why { opacity: 0.6; padding: 0.1rem 0 0.25rem; white-space: normal; }
+
+    .atime { padding: 0.1rem 0 0.25rem; border-bottom: 1px solid #2a2a36; margin-bottom: 0.1rem; }
+    .atime-hd { opacity: 0.6; font-size: 0.65rem; padding-bottom: 0.1rem; }
+    .atime-hd b { color: #e0b070; font-weight: normal; }
+    .atime-row { display: flex; gap: 0.4rem; align-items: center; white-space: nowrap; font-size: 0.66rem; line-height: 1.35; }
+    .atime-bar { flex: 0 0 4rem; height: 0.4rem; background: #20202c; border-radius: 1px; overflow: hidden; }
+    .atime-bar > span { display: block; height: 100%; background: #c9924a; }
+    .atime-holder .atime-bar > span { background: #7d8fb8; }
+    .atime-ms { min-width: 3.5em; text-align: right; opacity: 0.55; font-variant-numeric: tabular-nums; }
+    .atime-of { overflow: hidden; text-overflow: ellipsis; }
 
     .push-log-hd  { opacity: 0.3; font-size: 0.6rem; padding: 0.3rem 0 0.1rem; border-top: 1px solid #2a2a36; margin-top: 0.2rem; }
     .push-log-row { display: flex; gap: 0.4rem; align-items: baseline; padding: 0.05rem 0; white-space: nowrap; font-size: 0.68rem; }

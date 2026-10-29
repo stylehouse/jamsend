@@ -793,8 +793,12 @@ abstract class StuffAware extends StuffIO {
         if (handler) {
             // first do(): expose the birth-stamped initial-do as %initialdo
             if (req.c.initialdo) { delete req.c.initialdo; req.sc.initialdo = 1 }
+            // the Atime ring's finer grain (Housing atime_part): a req's do_fn is charged as "> req:<name>", nested under
+            //  the w part that pumped it — read beside, never summed with it
+            const t0 = performance.now()
             try {
                 await handler(req)
+                H?.atime_part?.(`> req:${req.sc.req ?? Object.keys(req.sc)[0]}`, performance.now() - t0)
             } catch (err) {
                 // a throwing do_fn used to propagate straight out of do()'s for-loop, aborting it — every
                 //  req after this one at the same maz level never ran that pass, and (since do() itself

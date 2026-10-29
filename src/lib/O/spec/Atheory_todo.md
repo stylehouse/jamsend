@@ -12,6 +12,23 @@ A capture doc, not yet a plan — the owner has reached for this three times in 
 
 ## 0.0 START HERE — where it stands and what's next (2026-10-21)
 
+**Newest (2026-10-29): two generations, and the old one tests the new.**
+- **The new generation** is the Atheory fabric with its own top: **Desk** (`Aprac_todo.md` §0.5 — import Core, stand Wormhole,
+   read the recipe, stand its Grounds via `%TheACode`, wait for Firm, execute), Theory's compartments, Stuffica views, and
+    **`Ghost/O/StoryFu.g`** (renamed from Story.g 2026-10-29, a working title) stood as code on an A (`Ground/Story`) — never mounted by the spine.  Swapping it into the old
+     spine was considered and dropped: it would run the new Story without Atheory loading it, which is the point missed.
+- **The old generation** — Otro/Auto, the GhostList spine, `Story.svelte`, `runner_ask` runners — stays the gate.  It keeps
+   every Book green and **is the test harness for the new**: an old-Story Book stands a Desk inside its run, Desk stands
+    StoryFu.g, the inner Story runs a small Book, and the outer snaps the inner (its steps, its verdicts, its Turns).  That is
+     "a Story nests in a Story" with an old outer and a new inner, and each place the inner assumes it is alone (calls on
+      `top_House()`, the error ring and `This` on `H.ave`, one run owning the clock) is found by that test and fixed in the `.g`.
+- **Working doc: `AtheoryStory_todo.md`.**  **Order:** (1) Desk slice 3, as a House inside a run as well as a page; (2) Book `AtheStoryInStory` — StoryFu.g in a Desk,
+   running one AthePond Book, snapped from outside; (3) the step explorer (Storica grown: one window on a step, with resnap,
+    failure diffs and oaths as protrusions showing the change) built on recorded snaps and on the inner Story; (4) when the
+     inner Story gets the same greens, `/Desk?B=<Book>` runners — the relay addresses them as runners, so `runner_ask` keeps
+      working — and the old generation retires.  Until then a Story fix lands in both `Story.svelte` and `StoryFu.g` (they
+       drifted once: the 10-26 Waft guard, mirrored 10-29).
+
 **Where it stands.**  `Ghost/A/Theory.g` runs compartments: an A holds its code (`%TheACode`), code is pushed and let
  through by Story (CodePush), and a batch is **moves then the boundary** (`TheA_move`, `TheA_send` into `%TheAOutbox`,
   `TheA_boundary`), each move committing a `%TheATurn` to a history that readers trim.  The toy (`AtheFishTesting.g`) is

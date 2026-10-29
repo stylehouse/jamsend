@@ -478,7 +478,7 @@ async function probeLive(id, want) {
 			//   PLAYER_OPS gate is advisory; THIS is the authority — a music tab can be introspected but
 			//    never made to run a Book or reload."  The tab refuses run|release|retain|accept|declare|
 			//     reload|ghost_load on its own, so --unknown-ok can only widen READ-ONLY asks.
-			if (role === 'unknown' && UNKNOWN_OK && want === 'player' && PLAYER_OPS.includes(op)) {
+			if (role === 'unknown' && UNKNOWN_OK && want === 'player' && (PLAYER_OPS.includes(op) || VERB)) {
 				console.error(`… ${pub.slice(0, 8)} answered but would not classify — proceeding read-only (--unknown-ok)`)
 				return pub
 			}
@@ -530,7 +530,8 @@ if (runnerSel !== undefined) {
 //     one-sided reload) and it costs the human a moment of music, not a hijacked tab.
 if (playerSel !== undefined) {
 	if (runnerSel !== undefined) { console.error('✗ pass --runner= or --player=, not both'); process.exit(2) }
-	if (!PLAYER_OPS.includes(op)) { console.error(`✗ '${op}' is not allowed on a --player (someone's music page). Allowed: ${PLAYER_OPS.join(' ')}`); process.exit(2) }
+	if (!PLAYER_OPS.includes(op) && !VERB) {   // a VERB goes through: the tab (Verb_run) refuses a writing verb on a music page or hacker room
+	 console.error(`✗ '${op}' is not allowed on a --player (someone's music page). Allowed: ${PLAYER_OPS.join(' ')}`); process.exit(2) }
 	// EXPLICIT ONLY stays explicit live too: resolveLive(want:'player') matches a tab only when its own
 	//  `supervisor` says humdinger — never on the ping ack's role, which reads 'runner' for a Sounditron.
 	if (!playerSel) { console.error('✗ --player needs an id (no bare form, no "latest player" — picking someone\'s music tab by accident is what this shape prevents)'); process.exit(2) }

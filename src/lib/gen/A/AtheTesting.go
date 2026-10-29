@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheTesting(): string { return '4ea65039e57bb511~g1' },
+    Ghostmeta_Ghost_A_AtheTesting(): string { return '8e4a09995cecbf55~g1' },
 
 // AtheTesting.g — Atheory's proof (Ghost/A/Theory.g; spec/Atheory_todo.md §0.2 "The first Atheory tests").
 //
@@ -2829,11 +2829,11 @@ AthePondGround_witness(w) {
 },
 //#endregion
 //#region the test routine — Book AtheStoryCode
-// Story on TheACode (spec/Aprac_todo.md §0 item 1).  Story.svelte was ported to Ghost/O/Story.g by scripts/ghost_svelte_to_g.mjs
+// Story on TheACode (spec/Aprac_todo.md §0 item 1).  Story.svelte was ported to Ghost/O/StoryFu.g by scripts/ghost_svelte_to_g.mjs
 //  and proved member by member; a runner that has ghost_loaded it runs Story from the .g — every method of it laid over the
 //   .svelte's by ghostsHaunt, which says where each came from (House.ghost_origin).  This Book stands an A that holds Story's
 //    code, as Theory stands the toy's, and swears both: the A holds the loaded .g, and the House runs it.  It loads nothing itself
-//     — green only on a runner that loaded Ghost/O/Story.g first
+//     — green only on a runner that loaded Ghost/O/StoryFu.g first
 AtheStoryCode(A,w) {
     w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
         await this.AtheStoryCode_drive(w,req)
@@ -2853,14 +2853,14 @@ async AtheStoryCode_drive(w, req) {
 
 },
 AtheStoryCode_stand(w) {
-    w.i({ desc: 'stand an A holding Story’s code — Ghost/O/Story.g — and ask the House where Story’s methods came from' })
+    w.i({ desc: 'stand an A holding Story’s code — Ghost/O/StoryFu.g — and ask the House where Story’s methods came from' })
     if (typeof this.TheA_stand !== 'function') {
         w.i({ log: 'Theory.g is not loaded — ghost_load it beside AtheTesting.g' })
         return
     }
     let old = this.o({ A: 'Story_code' })[0]
     if (old) this.drop(old)
-    this.TheA_stand(this, 'Story_code', ['Ghost/O/Story.g'], null, 'Story')
+    this.TheA_stand(this, 'Story_code', ['Ghost/O/StoryFu.g'], null, 'Story')
     // where a handful of Story's methods came from — the run's own drive, its save, its snap, its plan, its toc codec
     let top = this.top_House()
     for (const name of ['story_drive', 'story_save', 'snap_H', 'Story_plan', 'decode_toc_snap', 'story_matching']) {
@@ -2872,13 +2872,13 @@ AtheStoryCode_witness(w) {
     let n = this.c.run?.c.step_n ?? 0
     if (n !== 2) return
     let A = this.o({ A: 'Story_code' })[0]
-    let layer = A?.o({ TheACode: 1 })[0]?.o({ TheALayer: 'Ghost/O/Story.g' })[0]
+    let layer = A?.o({ TheACode: 1 })[0]?.o({ TheALayer: 'Ghost/O/StoryFu.g' })[0]
     let came = w.o({ Came: 1 })
     if (layer?.sc.dige && A.o({ TheACode: 1 })[0]?.sc.dige) {
-        this.story_swear(w, 'an A holds Story’s code — its layer is Ghost/O/Story.g with the digest of the version loaded')
+        this.story_swear(w, 'an A holds Story’s code — its layer is Ghost/O/StoryFu.g with the digest of the version loaded')
     }
     if (came.length === 6 && came.every(c => c.sc.from === 'Ghostmeta_Ghost_O_Story') && typeof this.story_matching === 'function') {
-        this.story_swear(w, 'this House runs Story from its .g — every method asked about came from Ghost/O/Story.g')
+        this.story_swear(w, 'this House runs Story from its .g — every method asked about came from Ghost/O/StoryFu.g')
     }
 },
 //#endregion

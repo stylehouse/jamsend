@@ -1,4 +1,6 @@
-// Ghost: Story — mounts into the parent House via M.eatfunc({...}).
+// Ghost: StoryFu — the Atheory fork of Story (working title; renamed from Story.g 2026-10-29, spec/AtheoryStory_todo.md).
+//  Ported from src/lib/O/Story.svelte, which the spine still mounts; a Story fix lands in both until the old one retires.
+// Mounts into the parent House via M.eatfunc({...}).
 // All methods below become House instance methods once eatfunc completes.
 //
 // ── This / The duality ───────────────────────────────────────────────────
@@ -206,6 +208,10 @@ story_harvest_desc(w: TheC, Run: House, n: number):
         for (const A of Run.o({ A: 1 }) as TheC[]) {
             for (const fw of A.o({ w: 1 }) as TheC[]) {
                 for (const d of fw.o({ desc: 1 }) as TheC[]) {
+                    // a %desc PARTICLE only — `{desc:1}` is a presence wildcard and also matches anything that merely
+                    //  carries a desc (a Waft does: this harvested both of the hacker room's Wafts as the step's desc and
+                    //   DROPPED them at every snap — the "no wafts", found 2026-10-26)
+                    if (Object.keys(d.sc)[0] !== 'desc') continue
                     const sentence = d.sc.desc
                     if (typeof sentence === 'string' && sentence) H.The_step(w, n).sc.desc = sentence
                     fw.drop(d)

@@ -28,6 +28,8 @@ A **working `_todo`**, opened 2026-10-09.  Homethink §4 already named the disea
     `hand:1` (the hole).  **Split verbs**: a verb with `read:` runs `prepare` (Atime) → `read` (outside, no particles) → `land`
      (Atime).  `everything`/`everything_check` are split (Lagoon_everything_prepare|_read); `poke` holds only its sync part.
       Verified: `verbs` on da06, `everything_check` on the code room (problems: 0).  `by` reaching a verb is not yet observed live.
+- **`atime`** (2026-10-29, `verbs_Lies`, read-only): the Atime hold ring reduced per House, holder and part (Atheory_design open
+   item 3).  `runner_ask` now lets ANY verb through to `--player=`: `Verb_run` is the authority and refuses a writing verb there.
 - **Still holding Atime across disk:** `atlas_refresh` (index-served: one read + up to ATLAS_REFRESH_MAP maps) — splitting it means
    splitting Atlas_refresh itself (a prefetching nav is the likely shape).
 

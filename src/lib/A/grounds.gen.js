@@ -96,7 +96,7 @@ export const GROUNDS = {
  "Story": {
   "stands": [],
   "load": [
-   "Ghost/O/Story.g",
+   "Ghost/O/StoryFu.g",
    "Ghost/O/Supervisor.g"
   ]
  },

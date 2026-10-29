@@ -52,6 +52,17 @@ export const AMBIENT_MAIN_TICK_MS = 200
 //    living in a popover.  Generous: a legitimate belief cycle is milliseconds, and a heavy Book
 //     step is seconds — 30s is already pathological, so this never fires on a healthy run.
 export const MUTEX_WEDGE_MS = 30000
+// the Atime hold ring's size — enough for ~a minute of a busy room's holds
+export const ATIME_RING = 512
+const ATIME_WHERE_MS = 20
+// atime_where — the first stack frame outside this file: "fn@File.svelte" (transformed line numbers are useless, so dropped)
+function atime_where(e: Error): string {
+    const frames = (e.stack ?? '').split('\n').slice(1)
+        .map(line => line.match(/at (?:async )?(?:([^\s(]+) \()?.*\/([^/?:]+)(?:\?[^:]*)?:\d+/))
+        .filter(m => m && !/\.(clear|UItime)$/.test(m[1] ?? '')) as RegExpMatchArray[]
+    const m = frames.find(m => !m[2].startsWith('Housing.svelte')) ?? frames[0]
+    return m ? `${m[1] ?? 'λ'}@${m[2]}` : '@?'
+}
 
 // ── Wormhole op retry (Wormhole_park) ────────────────────────────────────────────────────────
 //  How long ONE disk/proxy op may run before we stop waiting on it and try again.  Comfortably
@@ -240,12 +251,18 @@ abstract class Housing extends TheC {
     //     state used to be entirely UNOBSERVABLE — no holder, no age, no alarm, and `trace('wait')`
     //      only records when trace_log happens to be enabled.  So stamp WHO and SINCE WHEN, always.
     //  Pure `.c` (never encoded, never snapped) and two assignments per lock — safe on this hot path.
-    async mutex(label: string, fn: () => Promise<void>, who = '') {
+    //  THE HOLD RING (Atheory_design open item 3, 2026-10-29): every `beliefs` hold also lands one row
+    //   {who, wait, held, at} in a fixed ring on this House's .c — off-snap, two clock reads + one slot write per
+    //    hold.  `wait` spans first arrival to lock (re-waits included), so a queued UItime shows its queue.
+    //     Read it with atime_holds() / the `atime` verb (LiesFunk verbs_Lies).
+    //  `where` (an unthrown Error from an unnamed UItime) is only read for a hold over ATIME_WHERE_MS — V8 formats lazily.
+    async mutex(label: string, fn: () => Promise<void>, who = '', where?: Error, _came?: number): Promise<void> {
         const key = `_mutex_${label}`
+        const came = _came ?? (label === 'beliefs' ? performance.now() : 0)
         if (this.c[key]) {
             this.trace('wait', label)
             await this.c[key]
-            return this.mutex(label, fn, who)
+            return this.mutex(label, fn, who, where, came)
         }
         let release: () => void
         this.c[key] = new Promise(r => release = r)
@@ -253,15 +270,85 @@ abstract class Housing extends TheC {
         this.c[`${key}_who`] = who
         if (label === 'beliefs') this.believing = true
         this.trace('lock', label)
+        const locked = came ? performance.now() : 0
+        if (came) this.c.atime_parts = null
         try {
             await fn()
         } finally {
             delete this.c[key]
             delete this.c[`${key}_at`]
             delete this.c[`${key}_who`]
+            if (came) {
+                const held = performance.now() - locked
+                this.atime_note(where && held > ATIME_WHERE_MS ? `${who} ${atime_where(where)}` : who, locked - came, held, this.c.atime_parts)
+            }
             release!()
             if (label === 'beliefs') this.believing = false
             this.trace('unlock', label)
+        }
+    }
+    // atime_note — one hold into the ring.  Slots are reused objects, so a steady machine allocates nothing here.
+    //  `parts` splits a think's hold by the w it visited (atime_part, from attend), so the board can say which w woke.
+    atime_note(who: string, wait: number, held: number, parts?: Record<string, number> | null) {
+        let r = this.c.atime_ring as { n: number, rows: { who: string, wait: number, held: number, at: number, parts?: Record<string, number> | null }[] } | undefined
+        if (!r) r = this.c.atime_ring = { n: 0, rows: [] }
+        const i = r.n++ % ATIME_RING
+        const row = r.rows[i] ?? (r.rows[i] = { who: '', wait: 0, held: 0, at: 0 })
+        row.who = who; row.wait = wait; row.held = held; row.at = Date.now(); row.parts = parts
+        this.c.atime_parts = null
+    }
+    // atime_part — charge `ms` of the current beliefs hold to `of` (e.g. "A:Lies/w:Lies"); kept on the TOP House.
+    atime_part(of: string, ms: number) {
+        const top = this.top_House() as any
+        const parts = top.c.atime_parts ?? (top.c.atime_parts = {})
+        parts[of] = (parts[of] ?? 0) + ms
+    }
+    // atime_holds — the ring's rows, oldest first, optionally only the last `since_ms`.  Ask the TOP House.
+    atime_holds(since_ms = 0): { who: string, wait: number, held: number, at: number }[] {
+        const r = this.c.atime_ring as { n: number, rows: any[] } | undefined
+        if (!r) return []
+        const len = Math.min(r.n, ATIME_RING), start = r.n - len, cut = since_ms ? Date.now() - since_ms : 0
+        const out = []
+        for (let k = start; k < r.n; k++) { const row = r.rows[k % ATIME_RING]; if (row.at >= cut) out.push({ ...row }) }
+        return out
+    }
+    // atime_reduce — the hold ring reduced to shares: what woke up and how much.  The `atime` verb (LiesFunk) and
+    //  TodoSpool's Atime strip both read this; ask the TOP House.
+    //   `span` is wall time across the rows, so `busy` = held/span is how much of it Atime was taken.
+    atime_reduce(since_ms = 0, k = 12): any {
+        const rows = this.atime_holds(since_ms) as { who: string, wait: number, held: number, at: number }[]
+        if (!rows.length) return { n: 0, note: 'no holds in the ring yet' }
+        const span = Math.max(1, rows[rows.length - 1].at - rows[0].at + rows[0].held)
+        const fold = (key: (r: any) => string) => {
+            const m = new Map<string, any>()
+            for (const r of rows) {
+                const g = m.get(key(r)) ?? { of: key(r), n: 0, held: 0, held_max: 0, wait: 0, wait_max: 0 }
+                g.n++; g.held += r.held; g.wait += r.wait
+                if (r.held > g.held_max) g.held_max = r.held
+                if (r.wait > g.wait_max) g.wait_max = r.wait
+                m.set(g.of, g)
+            }
+            return [...m.values()].sort((x, y) => y.held - x.held).slice(0, k).map(g => ({ ...g,
+                held: Math.round(g.held), held_max: Math.round(g.held_max), wait: Math.round(g.wait), wait_max: Math.round(g.wait_max),
+                share: Math.round(1000 * g.held / span) / 10 }))
+        }
+        const held = rows.reduce((t, r) => t + r.held, 0)
+        // the parts: each hold split by the w it visited or the watched-C handler it ran (atime_part)
+        const wm = new Map<string, any>()
+        for (const r of rows as any[]) for (const [of, ms] of Object.entries(r.parts ?? {}) as [string, number][]) {
+            const g = wm.get(of) ?? { of, n: 0, held: 0, held_max: 0 }
+            g.n++; g.held += ms; if (ms > g.held_max) g.held_max = ms
+            wm.set(of, g)
+        }
+        const parts = [...wm.values()].sort((x, y) => y.held - x.held).slice(0, k)
+            .map(g => ({ ...g, held: Math.round(g.held), held_max: Math.round(g.held_max), share: Math.round(1000 * g.held / span) / 10 }))
+        return {
+            n: rows.length, span_ms: Math.round(span), busy_pct: Math.round(1000 * held / span) / 10,
+            houses:  fold(r => (r.who || '?').split(' ').slice(0, r.who?.startsWith('UItime') ? 2 : 1).join(' ')),
+            holders: fold(r => r.who || '?'),
+            parts,   // a w (House/A/w) or a watched-C handler (House/watch:k:v)
+            longest: [...rows].sort((x, y) => y.held - x.held).slice(0, k).map((r: any) => ({ who: r.who, held: Math.round(r.held), wait: Math.round(r.wait), ago_ms: Date.now() - r.at,
+                ...(r.parts ? { top_w: Object.entries(r.parts).sort((x: any, y: any) => y[1] - x[1]).slice(0, 3).map(([of, ms]: any) => `${of} ${Math.round(ms)}`) } : {}) })),
         }
     }
     // mutex_held — {who, ms} while the named mutex is held, else null.  The readout behind the todo
@@ -1296,15 +1383,17 @@ export class House extends StorableHousing {
     //    to make sure all state is read without any other Atime changing things
     //  and it completes before the next beliefs cycle (Atime) can begin.
     // show: hospital staff call it to isolate the patient for an electric shock
-    async UItime(fn: () => void | Promise<void>): Promise<void> {
-        await this.clear(fn)
+    //  `who` names the hold in the Atime ring; leave it off and a long hold is named by its caller's stack frame.
+    async UItime(fn: () => void | Promise<void>, who?: string): Promise<void> {
+        await this.clear(fn, who)
     }
-    async clear(fn: () => void | Promise<void>): Promise<void> {
+    async clear(fn: () => void | Promise<void>, who?: string): Promise<void> {
+        const where = who ? undefined : new Error()
         await this.all_clear()
         let H = this.top_House()
         await H.mutex('beliefs', async () => {
             await fn()
-        })
+        }, `UItime H:${this.name}${who ? ' ' + who : ''}`, where)
     }
 
 
@@ -1349,7 +1438,9 @@ export class House extends StorableHousing {
     async reqdo_sweep(): Promise<void> {
         for (const A of this.o({ A: 1 }) as TheC[]) {
             for (const w of A.o({ w: 1 }) as TheC[]) {
+                const t0 = performance.now()
                 await this.reqdo(w)
+                this.atime_part(`${this.name}/${A.sc.A}/${w.sc.w}`, performance.now() - t0)
             }
         }
     }
@@ -1473,7 +1564,9 @@ export class House extends StorableHousing {
                 w.c.up = A
 
                 await this.self_timekeeping(w)
+                const t0 = performance.now()
                 await this._Aw_think(AT, wT, e)
+                this.atime_part(`${this.name}/${A.sc.A}/${w.sc.w}`, performance.now() - t0)
                 AwN.push({ AT, wT, A, w })
             }
         }
@@ -1858,10 +1951,18 @@ export class House extends StorableHousing {
                 if (v !== w.v) {
                     w.v = v
                     if (w.dead) continue   // torn down while an earlier handler awaited
-                    await w.handler()
+                    // charged in two: the handler's own sync run, then its await tail — where Svelte's microtask flush
+                    //  (every $effect and mount the handler's writes woke) lands, still inside this hold
+                    const t0 = performance.now()
+                    const ret = w.handler()
+                    const t1 = performance.now()
+                    await ret
+                    const k0 = Object.keys(w.C.sc)[0], of = `${this.name}/watch:${k0}:${w.C.sc[k0]}`
+                    this.atime_part(of, t1 - t0)
+                    this.atime_part(`${of} ~tail`, performance.now() - t1)
                 }
             }
-        })
+        }, 'watch_c')
         $effect(() => {
             for (const w of this.watched) void w.C.version
             if (!pending) { pending = true; setTimeout(flush, ANSWER_CALLS_TICK_MS / 2) }
@@ -2050,7 +2151,7 @@ export class House extends StorableHousing {
                 e.last_matrix = this.stuff_matrix(e.C)
                 e.handler()
             }
-        })
+        }, 'stuffing')
     }
 
 
@@ -2122,7 +2223,9 @@ export class House extends StorableHousing {
                 },
             })
             A.c.fsh = fsh
+            const t0 = performance.now()
             await fsh.start()    // tries restore; silent if nothing stored yet
+            H.atime_part('> fsh.start', performance.now() - t0)
             A.oai({ FileSystemHandler: 1, name: key })
         }
 
@@ -2162,7 +2265,9 @@ export class House extends StorableHousing {
                     return null
                 },
             })
+            const t0 = performance.now()
             await A.c.fsh_creds.start()
+            H.atime_part('> fsh_creds.start', performance.now() - t0)
         }
 
         const fsh = A.c.fsh as FileSystemHandler
@@ -2290,7 +2395,9 @@ export class House extends StorableHousing {
             // this is a DL:
             A.c.DL = fsh.list
             if (!fsh.list.expanded) {
+                const t0 = performance.now()
                 await fsh.list.expand()
+                H.atime_part('> fsh.list.expand', performance.now() - t0)
                 this.main()
             }
             H.top_House().c.disk_gated = false   // a real share is open — drop any FaceSucker gate

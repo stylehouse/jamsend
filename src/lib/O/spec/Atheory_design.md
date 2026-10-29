@@ -557,6 +557,7 @@ No Atheory adjustments yet.
 | 2026-10-21 | `House.ghost_versions`, and four lines in `ghostsHaunt`'s `if (meta) {…}` block | every arriving hash is also kept by its dige: `ghost_versions[meta][dige] = hash`, the newest 8 per file, on the top House | A\*\*: an A runs the version its `%TheALayer` names, so a newer version merged flat doesn't reach it until its push is let through — two versions of one file in one heap | `Ghost/A/Theory.g` (`TheA_as`, `TheA_version_keep`); Books `AthePondVersions`, `AthePondNest` | delete the field and the four lines; `TheA_as` then finds no versions and answers with the flat House |
 | 2026-10-20 | the CodePush line at the end of `ghostsHaunt` (`if (meta) (this as any).TheA_code_push?.(meta)`) | after the merge, every compiled file that arrives is announced to Theory by its `Ghostmeta_*` name | CodePush: code compiles centrally and is pushed to the As that hold it; `ghostsHaunt` is the one place every compiled `.g` arrives | `Ghost/A/Theory.g` (`TheA_code_push`); Book `AthePondCodePush` | delete the line |
 | 2026-10-20 | `House.ghost_origin`, `House.ghost_files`, the `if (meta) {…}` block in `ghostsHaunt` | `ghostsHaunt` finds the one `Ghostmeta_*` key in each eaten hash and records, on the **top** House: `ghost_files[meta]` = the methods this load carried (replaced whole each load, so a deleted method leaves), and `ghost_origin[method] = meta` (the file that last defined it).  A hash with no `Ghostmeta_*` (a hand-written `.svelte` ghost) records nothing.  (The first version kept a `ghost_clobbers` log that only grew; replaced the same day.) | `H.ghosts` is flat, so nothing could say which code an actor runs or where a method came from.  Each compiled `.g` arrives as exactly one hash with exactly one `Ghostmeta_*`, which is also its digest: the one cheap place to learn it. | `Ghost/A/Theory.g` (`TheA_clobbers_stand`); Book `AthePondCode` | delete the two fields and the `if (meta) {…}` block; nothing else depends on them yet |
+| 2026-10-29 | `Housing.svelte.ts` THE ATIME HOLD RING (`mutex` notes each `beliefs` hold; `atime_note`, `atime_part`, `atime_holds`, `atime_reduce`; `UItime`/`clear` take an optional `who`; parts charged in `attend` per w, in `reqdo_sweep` per w, in the watched-C flush per handler) | a 512-slot ring on the top House's `.c`: `{who, wait, held, at, parts}` per hold, wait from first arrival to lock; an unnamed UItime over 20ms is named by its caller's stack frame | open item 3 — "what woke up and how much"; the mutex had only a wedge alarm | the `atime` verb (LiesFunk, read-only, `--since= --k=`); TodoSpool's Atime strip (last 10s) | drop the ring methods and the `performance.now()` pairs; `mutex`'s 4th arg goes back to the recursion's `who` |
 | 2026-10-18 | `Wormhole_compose_app_tree` (AppTreeNav root), `Wormhole_mount_creds`, the serve wall (the `.jamsend` segment refusal), the import | the literal `'.jamsend'` became `APP_DATA_DIR` from `src/lib/app_data_dir.ts` | one spelling of the app's private corner; the serve wall and NodeWormholeNav's 0600 must agree on it (§ "The app's own storage") | — (same value) | inline the literal again; the value never changed |
 
 ### Beside the foundation (tooling and the app shell)
@@ -691,7 +692,7 @@ No Atheory adjustments yet.
 - **Rogue tickers — one mutex means starvation, not deadlock.**  Every House (Mundo, Story's run House, Atlas) drains under the
    top House's one `beliefs` mutex, so an inner ticker going rogue monopolises it: a think storm (a w re-elvising itself; Atlas's
     4s thinks), a holder awaiting the network (the 30s wedge alarm is the only guard), a `post_do(urgent)` feeder.  UItime only
-     waits for the current holder then races for the next turn, so a storm can starve it.  Cheap sight: ring every mutex hold
+     waits for the current holder then races for the next turn, so a storm can starve it.  Cheap sight (LANDED 2026-10-29, the Atime hold ring): ring every mutex hold
       by its label (`H:x fn:see` is already a name) and put Atime's share per House on the board — "what woke up and how much"
        for the trickle think too.  A bare Atheory House (Pondland) runs `TheA_run` off any mutex; inside Mundo it must enter
         through the door.
@@ -720,11 +721,37 @@ No Atheory adjustments yet.
 - **First subject.**  Something we are doing anyway, with a backend pile: a Book explorer — pick a Book, its steps' snaps
    unpacked as piles, one deep view re-seated step to step (Storica's snap panel, grown up), clicks as arrivals.  Book-provable
     on a pond: a pile arriving swaps whole (no empty read), a re-seat keeps names, a burst of clicks is one arrival.
-- **Landed 2026-10-28 (late):** (1) the guards, (2) the long verbs split (`everything`; `poke` sync-only), (4) a verb is an `e:Verb` arrival with `by` on `e.c`, (5) m16 — and ActionButtons enter through UItime.  Ledger: `Verbs_todo.md` §0, `IOexpr_todo.md` §0.  Open: (3) the Atime ring, (6) Stuffica.
-- **Next moves, small first:** (1) Theory guards — refuse an async wake handler, refuse a nested run, spill rows — Book-provable
-   on the toy; (2) split the long verbs (read outside, apply in UItime); (3) the Atime ring + board share; (4) `%Verb` as an arrival
-    with `by:`; (5) the `%Map` m9 — `kind:` on `%def`, `%i_elvis`/`%o_elvis` rows; (6) the Stuffica top-level UI as the door's
-     reference implementation.
+- **Landed 2026-10-28 (late):** (1) the guards, (2) the long verbs split (`everything`; `poke` sync-only), (4) a verb is an `e:Verb` arrival with `by` on `e.c`, (5) m16 — and ActionButtons enter through UItime.  Ledger: `Verbs_todo.md` §0, `IOexpr_todo.md` §0.  Open: (6) Stuffica.
+- **Landed 2026-10-29:** (3) the Atime hold ring — ledger row in the foundation table; read it with `runner_ask atime --runner=<id> [--since=10000]`
+   or the Atime strip in any House's todo popover.  First reads (da06, a fresh reload): Atime held 18–44% for the first seconds,
+    mostly two holds — one `Lies/Lies` think of ~840 ms and the `watched:UIs` handler flush of 350–460 ms; settled, it drops
+     to ~5% (a handful of 10–60 ms thinks, UItime holds of 1–5 ms, no wait over 16 ms).  So no starvation seen.  Not yet: a Book
+      swearing on it, and the music page read (no tab answered).
+- **The boot holds, looked at (2026-10-29).**  Parts now go one finer — a req's do_fn as `> req:<name>` (Stuff `_req_do_one`), and a
+   watched-C handler split into its sync run and its `~tail` (the await, where Svelte's microtask flush lands).  A fresh da06 boot:
+   - `Mundo/Lies/Lies` ~490 ms, reqs ~0: it is `await Creduler_ensure` — the 30 spine imports, already fired in parallel (the
+      2026-08-30 fix took this from 16 s), awaited in manifest order.  `Liesui ready … ghosts 486ms` is the same number.
+   - `watch:watched:UIs ~tail` ~370 ms, handler itself ~0: enrolling those ghosts into `H.UIs` mounts 30 ghost components, and
+      their onMount → eatfunc merges methods onto the House — inside the hold.
+   - `Mundo/Wormhole/DirectoryOpener` ~480 ms ONCE — split further (`> fsh.start`, `> fsh_creds.start`, `> fsh.list.expand`) it held
+      48, 29 and 18 ms over three more boots (restore ~20, listing ~12–21).  The 480 was a cold first IndexedDB/FSA open, not the shape.
+   **Verdict:** all three are right where they are.  The first two are the House's code being swapped in — no think should see half a
+    spine; the third is small.  A pitch to un-await DirectoryOpener's restore was withdrawn on these numbers.  Boot-to-boot noise is
+     large (Lies 314 → 2078 ms right after a src edit, while the dev server re-transforms): quote several boots, never one.
+- **The next stretch** (revised 2026-10-29; SUPERSEDED the same day by the two generations — `Atheory_todo.md` §0.0 "Newest"; the Storica door work below folds into its step explorer).  Stuffica's first subject already
+   exists: **Storica** (`src/lib/O/Storica.svelte`, Storui rebuilt on views — plan, live, snap) is the Book explorer.  It
+    breaks the In movement today: its `$effect` calls `Stuffica_from` + `Stuffica_refresh` off any mutex, and the refresh walks
+     `This`/`The` over awaits while the House moves under it.  So the stretch is Storica, put through the door, in this order:
+   1. **In, through UItime.**  The effect makes one UItime whose body is from + refresh; the snap pile stays a fresh `tree_of`
+       swapped whole.  Proof: the ring shows a named `UItime … Storica` hold per settle, small; no Story Book reds.
+   2. **Out, as arrivals.**  A click (`pick(n)`) becomes a `TheA_io` pulse on the screen's `%TheAIO` — at and corr on `.c`
+       (Double-think below) — and the open step is a particle the views read, not a `$state`.
+   3. **The door's qualities, as their own thing** — a per-House arrival queue with coalesce and a quiet window (20 ms after a
+       change, at most 300 ms), NOT the Lies batcher.  A Housing change: a ledger row, and a pond Book — a burst of clicks is
+        one arrival, a pile arriving swaps whole, a re-seat keeps names.
+   4. **The ring, sworn.**  A Book oath that a view commit is one hold; the music-page read once a tab is armed.
+   Beside it, small, any time: `%elvisto` → `%i_elvis` with Lagoon/Electrode (IOexpr §0); shape census v0 (IOexpr §0.4).
+    Owner's call, open: `TheA_io` → `TheA_hear`.
 
 **Double-think — corrections to the above** (2026-10-28, a fork read the code against this section).
 - **Starvation is not real; latency is.**  `H.mutex` (`Housing.svelte.ts` ~242): every waiter awaits the holder's promise; on

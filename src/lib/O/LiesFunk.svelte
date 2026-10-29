@@ -2643,6 +2643,10 @@ await M.eatfunc({
                 desc: 'every registered verb on this tab — name, owner, args, where it runs, whether it writes',
                 run: async () => ({ verbs: H.Verbs_all().map((v: any) => ({ name: v.name, owner: v.owner, args: v.args ?? '',
                     where: v.where ?? 'terminal', writes: v.writes ? 1 : 0, desc: v.desc ?? '' })) }),
+            }, {
+                name: 'atime', where: 'any', writes: 0, args: '[--since=ms] [--k=N]',
+                desc: 'the Atime hold ring — who held the beliefs mutex, how long, how long they queued; per House and per holder',
+                run: (w: TheC, ask: any) => H.top_House().atime_reduce(Number(ask?.since) || 0, Number(ask?.k) || 12),
             }]
         },
         async Lies_runner_ask_recv(w: TheC, frame: any): Promise<boolean> {

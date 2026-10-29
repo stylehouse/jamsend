@@ -1,5 +1,5 @@
 Ground:Story,desc:the foundation — particles in a House — the req machine — the Story that proves — the Lies pipeline that compiles and runs — the language of Wafts,FromWhat:Waft:Ghost/Hoho/Easy
-  Load:Ghost/O/Story.g
+  Load:Ghost/O/StoryFu.g
   Load:Ghost/O/Supervisor.g
   Beside:src/lib/Stuff.svelte.ts
   Beside:src/lib/O/Text.svelte

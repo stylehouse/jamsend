@@ -3,8 +3,8 @@
 //   a bag of methods eatfunc merges — so this is a transform, not a rewrite.  What the .g compiler can't carry is reported,
 //    and any method it had to change is named.
 //
-//   node scripts/ghost_svelte_to_g.mjs src/lib/O/Story.svelte Ghost/O/Story.g        # write the .g + print the report
-//   node scripts/ghost_svelte_to_g.mjs --prove src/lib/O/Story.svelte src/lib/gen/O/Story.go
+//   node scripts/ghost_svelte_to_g.mjs src/lib/O/Story.svelte Ghost/O/StoryFu.g        # write the .g + print the report
+//   node scripts/ghost_svelte_to_g.mjs --prove src/lib/O/Story.svelte src/lib/gen/O/StoryFu.go
 //        # after compiling the .g (LocalGen): same members, same bodies (printed by TypeScript, comments dropped)
 //
 //  What the .g compiler accepts (probed 2026-10-22 with LocalGen): a header `[async ]name(params)[: Ret]:` at column 0, the body

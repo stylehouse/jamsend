@@ -819,7 +819,7 @@
     //         a structural line-count drift, leaves a real surprise.  False when there are no
     //          spayers or either text is missing.
     // Story's default matching rules, whichever shape Story came in: a data property (Story.svelte) or a method returning it
-    //  (Ghost/O/Story.g — a .g has no data properties; spec/Aprac_todo.md §0 item 1, the port onto TheACode)
+    //  (Ghost/O/StoryFu.g — a .g has no data properties; spec/Aprac_todo.md §0 item 1, the port onto TheACode)
     story_matching_rules(): any[] {
         const m = (this as any).story_matching
         return (typeof m === 'function' ? m.call(this) : m) ?? []

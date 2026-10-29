@@ -100,7 +100,7 @@ Waft:Ghost/Hoho/Easy,desc:the foundation — particles in a House — the req ma
     Point,method:The_step_dige,desc:the change-sensitivity digest
     Point,method:e_story_accept,desc:accept a step as the new fixture
     Doc:src/lib/O/Storui.svelte
-    Doc:Ghost/O/Story.g
+    Doc:Ghost/O/StoryFu.g
     Doc:Ghost/O/Supervisor.g
     Point,method:Supervisor,desc:the ghost
     Point,method:Supervisor_beat,desc:the beat
