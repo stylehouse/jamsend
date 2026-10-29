@@ -6,7 +6,7 @@
 
 ## 0. What to get on with next
 
-0. **One tab, both Storys** (§1, "One tab"): load kept aside, then dispatch through the A.
+0. **One tab, both Storys** (§1, "One tab"): load kept aside, then dispatch through the A (both BUILT 2026-10-29, Book `AthePondAside`).
 1. **Desk slice 3, in two forms** (`Aprac_todo.md` §0.5): the page (`/Desk?G=…`) and a Desk **House standing inside a run**,
     so an old-Story Book can hold one.  Import Core, stand Wormhole, read the recipe, stand Grounds via `%TheACode`, wait for Firm.
 2. **Book `AtheStoryInStory`.**  The old Story (the spine's) runs a Book that stands a Desk, which stands `Ghost/O/StoryFu.g`
@@ -57,11 +57,21 @@ A Story nested in a Story is an A in an A, and A\*\* already has the two lookups
      the dige from `ghost_versions` rather than off the House.  Code kept aside is reachable only through `TheA_as(A)`.  A Ground
       line or the stand call says aside; `Ground/Story` stood on a Desk inside a runner is the first user.  Book-provable on the
        pond: a toy file stood aside runs through its A and is absent from the House.
+    **BUILT 2026-10-29, Book `AthePondAside` (5 steps, green warm ×3 and cold).**  Learned: what is kept aside is per TAB (on
+     the top House) and outlives a run, so a Book stands its A only after the load has surely landed — standing it with the
+      load gave a warm tab its digest two steps early.  A nested Story will meet the same: the inner StoryFu is loaded once per
+       tab, and each inner run takes it already kept.  Not yet: a recompile of an aside file isn't re-included (the reswap
+        sweeps the spine only).
 2. **Dispatch through the A.**  `TheA_as` decides `this` for calls made from code already speaking as the A — but Story is entered
     from outside: its w's think is called by name (`do_fn_for` → `w:Story`), its `e_*` handlers by elvis, its reqs by `do_fn`.
      All of those look on the flat House.  `do_fn_for` already has an unused `w_inst` seam (design §1.11): when the w's A holds
       code, resolve the w's method, the `e_*` and the req fns on `TheA_as(A)`.  That is the from-the-top list's item (2), "every
        call through its A", and nesting is what finally asks for it.
+    **BUILT 2026-10-29 for the w leg only**, gated: `do_fn_for` resolves on `TheA_as(A)` when `TheA_dispatches(A)` — a layer of the
+     A's code is kept aside and not flat.  An A holding an older version of FLAT code is still thought by the House's copy (a
+      ruling, not a fix: AthePondVersions relies on it).  Not yet: the req leg (`req_<name>` by convention looks on the House;
+       a `do_fn` made by code running as the A already closes over the A's `this`).  The owner's longer wish: the A always in
+        scope, so every call takes the A's version — `_Aw_think` already passes A first to every handler; what changed is `this`.
 Then the Desk-in-a-run stands `Ground/Story` aside, and `AtheStoryInStory` can begin.  StoryFu's 22 `top_House()` reaches (below)
  are what that Book reds on next.
 
@@ -101,3 +111,5 @@ One window on a step, and everything else is a protrusion from it showing a chan
 |---|---|---|---|
 | 2026-10-29 | `Ghost/O/Story.g` → `Ghost/O/StoryFu.g` (+ `.port.json`, gen `.go`, Ground/Story, everything.js, AtheStoryCode) | renamed, a working title | not to confuse it with Story.svelte |
 | 2026-10-29 | `Ghost/O/StoryFu.g` | mirrored the `%desc`-particle-only guard from Story.svelte | the two Storys had drifted |
+| 2026-10-29 | Housing `ghost_aside`, LiesLies include `{aside}`, Theory `TheA_loaded`, Ground `{aside}`; toy `Ghost/A/AtheAside.g`; Book `AthePondAside` | code kept aside: kept as a version, run only through its A, on no House | §1 "One tab", step 1 — foundation ledger row in `Atheory_design.md` §2 |
+| 2026-10-29 | Housing `do_fn_for` `opt.A`; Theory `TheA_dispatches`; toy gets `Athe_Aside(A,w)`; Book step 6 | the House thinks an aside A's w through the A | §1 "One tab", step 2 |

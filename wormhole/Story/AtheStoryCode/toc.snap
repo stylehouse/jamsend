@@ -4,17 +4,29 @@ story:AtheStoryCode
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.004
+    TimeTotal:beliefs,avg=0.005
       sample=0.004,at=1792659804
       sample=0.004,at=1792659817
       sample=0.003,at=1792666070
       sample=0.004,at=1792898507
+      sample=0.007,at=1793237367
+      sample=0.007,at=1793237380
+      sample=0.007,at=1793237381
+      sample=0.002,at=1793237475
+      sample=0.002,at=1793237505
+      sample=0.005,at=1793237538
     TimeTotal:step,avg=0.002
       sample=0.002,at=1792659804
       sample=0.002,at=1792659817
       sample=0.002,at=1792666070
       sample=0.002,at=1792898507
+      sample=0.004,at=1793237367
+      sample=0.004,at=1793237380
+      sample=0.004,at=1793237381
+      sample=0.001,at=1793237475
+      sample=0.001,at=1793237505
+      sample=0.002,at=1793237538
   step,dige:fb44592149c99222
-  step=2,desc:stand an A holding Story’s code — Ghost/O/Story.g — and ask the House where Story’s methods came from,dige:f527b57be6851606
-    Assertion:an-a-holds-story,sentence:an A holds Story’s code — its layer is Ghost/O/Story.g with the digest of the version loaded
-    Assertion:this-house-runs-story,sentence:this House runs Story from its .g — every method asked about came from Ghost/O/Story.g
+  step=2,desc:stand an A holding Story’s code — Ghost/O/StoryFu.g — and ask the House where Story’s methods came from,dige:51dedf7a54dcea93
+    Assertion:an-a-holds-story,sentence:an A holds Story’s code — its layer is Ghost/O/StoryFu.g with the digest of the version loaded
+    Assertion:this-house-runs-story,sentence:this House runs Story from its .g — every method asked about came from Ghost/O/StoryFu.g

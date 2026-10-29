@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheTesting(): string { return '8e4a09995cecbf55~g1' },
+    Ghostmeta_Ghost_A_AtheTesting(): string { return '91600aabc6b43e78~g1' },
 
 // AtheTesting.g — Atheory's proof (Ghost/A/Theory.g; spec/Atheory_todo.md §0.2 "The first Atheory tests").
 //
@@ -2828,6 +2828,98 @@ AthePondGround_witness(w) {
     }
 },
 //#endregion
+//#region the test routine — Book AthePondAside
+// code kept aside (Housing.ghost_aside; spec/AtheoryStory_todo.md §1 "One tab") — the first step to two Storys in one tab.  A file
+//  loaded aside has its methods kept as a version and Theory told, but no House gets them; only an A holding it runs it, through
+//  TheA_as.  Step 2 loads Ghost/A/AtheAside.g (a toy in no Ground) aside; step 3 lets it land; step 4 stands A:Athe_Aside holding
+//    it — at the kept digest, and no House has its method; step 5 the A runs it; step 6 gives the A a w:Athe_Aside, which the
+//     House's own think can reach only through the A (Housing do_fn_for → Theory TheA_dispatches).  The A is stood only once the toy is surely
+//     loaded, so a cold tab and one that kept it aside on an earlier run snap the same (the kept dige lives on the top House and
+//      outlives a run — standing the A at step 2 gave it its digest at step 2 on a warm tab, step 4 on a cold one).  Green only on a
+//     runner that ghost_loaded Theory.g beside this file, and never loaded AtheAside.g flat
+AthePondAside(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.AthePondAside_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async AthePondAside_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 6
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 6) this.AthePondAside_w(w)
+        if (n === 2) this.AthePondAside_load(w)
+        if (n === 3) w.i({ desc: 'let the toy land — kept as a version and on no House' })
+        if (n === 4) this.AthePondAside_stand(w)
+        if (n === 5) this.AthePondAside_run(w)
+    }
+    this.AthePondAside_witness(w)
+
+},
+AthePondAside_path() {
+    return 'Ghost/A/AtheAside.g'
+
+},
+AthePondAside_A(w) {
+    return this.o({ A: 'Athe_Aside' })[0] ?? null
+
+},
+AthePondAside_load(w) {
+    w.i({ desc: 'load a toy kept aside — no A holds it yet' })
+    if (typeof this.TheA_stand !== 'function' || typeof this.ghost_aside !== 'function') {
+        w.i({ log: 'Theory.g is not loaded, or this Housing has no ghost_aside' })
+        return
+    }
+    this.top_House().Lies_ghost_include?.(this.AthePondAside_path(), { aside: 1 })
+
+},
+AthePondAside_stand(w) {
+    w.i({ desc: 'stand an A holding the toy — it takes the digest kept aside' })
+    if (typeof this.TheA_stand === 'function') this.TheA_stand(this, 'Athe_Aside', [this.AthePondAside_path()])
+
+},
+AthePondAside_run(w) {
+    w.i({ desc: 'run the toy through its A' })
+    let A = this.AthePondAside_A(w)
+    let me = A ? this.TheA_as(A) : null
+    if (me && typeof me.Athe_Aside_hello === 'function') me.Athe_Aside_hello(w)
+
+},
+AthePondAside_w(w) {
+    w.i({ desc: 'give the A a w of the toy — the House thinks it, and only the A has its method' })
+    let A = this.AthePondAside_A(w)
+    if (A) A.oai({ w: 'Athe_Aside' })
+
+},
+// the toy's method is on no House: not on this one, not in the ghosts every House is given, not said to come from anywhere
+AthePondAside_absent() {
+    let top = this.top_House()
+    return typeof this.Athe_Aside_hello !== 'function' && !top.ghosts?.Athe_Aside_hello && !top.ghost_origin?.Athe_Aside_hello
+
+},
+AthePondAside_witness(w) {
+    let n = this.c.run?.c.step_n ?? 0
+    let A = this.AthePondAside_A(w)
+    if (!A) return
+    let path = this.AthePondAside_path()
+    let kept = this.top_House().ghost_aside_dige?.[this.TheA_meta(path)]
+    let layer = A.o({ TheACode: 1 })[0]?.o({ TheALayer: path })[0]
+    if (n === 4 && kept && layer?.sc.dige === kept && this.AthePondAside_absent()) {
+        this.story_swear(w, 'kept aside — the A holds the toy at the digest kept and no House has its method')
+    }
+    let said = w.o({ AsideSaid: 'hello' })[0]
+    if (n === 5 && said?.sc.by === 'its A' && this.AthePondAside_absent()) {
+        this.story_swear(w, 'through its A the toy runs — and still no House has it')
+    }
+    let thought = A.o({ w: 'Athe_Aside' })[0]?.o({ AsideThought: 1 })[0]
+    if (n === 6 && thought?.sc.by === 'its A' && this.AthePondAside_absent() && typeof this.Athe_Aside !== 'function') {
+        this.story_swear(w, 'the House thinks the toy’s w through its A — the w’s method is on no House')
+    }
+},
+//#endregion
 //#region the test routine — Book AtheStoryCode
 // Story on TheACode (spec/Aprac_todo.md §0 item 1).  Story.svelte was ported to Ghost/O/StoryFu.g by scripts/ghost_svelte_to_g.mjs
 //  and proved member by member; a runner that has ghost_loaded it runs Story from the .g — every method of it laid over the
@@ -2877,7 +2969,7 @@ AtheStoryCode_witness(w) {
     if (layer?.sc.dige && A.o({ TheACode: 1 })[0]?.sc.dige) {
         this.story_swear(w, 'an A holds Story’s code — its layer is Ghost/O/StoryFu.g with the digest of the version loaded')
     }
-    if (came.length === 6 && came.every(c => c.sc.from === 'Ghostmeta_Ghost_O_Story') && typeof this.story_matching === 'function') {
+    if (came.length === 6 && came.every(c => c.sc.from === 'Ghostmeta_Ghost_O_StoryFu') && typeof this.story_matching === 'function') {
         this.story_swear(w, 'this House runs Story from its .g — every method asked about came from Ghost/O/StoryFu.g')
     }
 },

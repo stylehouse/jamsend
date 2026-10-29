@@ -5,12 +5,12 @@ Snap:H
       w:AtheStoryCode
         self,round=2	{"mung":["age"]}
         req:wrangle,eternal,ok
-        Came:story_drive,from:Ghostmeta_Ghost_O_Story
-        Came:story_save,from:Ghostmeta_Ghost_O_Story
-        Came:snap_H,from:Ghostmeta_Ghost_O_Story
-        Came:Story_plan,from:Ghostmeta_Ghost_O_Story
-        Came:decode_toc_snap,from:Ghostmeta_Ghost_O_Story
-        Came:story_matching,from:Ghostmeta_Ghost_O_Story
+        Came:story_drive,from:Ghostmeta_Ghost_O_StoryFu
+        Came:story_save,from:Ghostmeta_Ghost_O_StoryFu
+        Came:snap_H,from:Ghostmeta_Ghost_O_StoryFu
+        Came:Story_plan,from:Ghostmeta_Ghost_O_StoryFu
+        Came:decode_toc_snap,from:Ghostmeta_Ghost_O_StoryFu
+        Came:story_matching,from:Ghostmeta_Ghost_O_StoryFu
     A:Story_code
-      TheACode:Story,variant:plain,dige:4dbb409138fcd3a9
-        TheALayer:Ghost/O/Story.g,dige:26bbf071b1b88708~g1
+      TheACode:Story,variant:plain,dige:eabec831fbed2458
+        TheALayer:Ghost/O/StoryFu.g,dige:c76d9a005b4814e4~g1

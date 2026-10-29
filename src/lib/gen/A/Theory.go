@@ -11,7 +11,7 @@ import { Selection } from "$lib/Selection.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_Theory(): string { return '8516c053e4377583~g1' },
+    Ghostmeta_Ghost_A_Theory(): string { return '91aaa012553f4014~g1' },
 
 // Theory.g — Atheory's first organ: an A says which code it runs (spec/Atheory_todo.md §0.1 and §0.2).
 //
@@ -43,9 +43,29 @@ TheA_meta(path) {
     return this.Lang_ghostmeta_name?.(path) ?? 'Ghostmeta_' + String(path).replace(/\.g$/, '').replace(/[^A-Za-z0-9]/g, '_')
 
 },
+// the dige of the code loaded for a file: its flat copy on the House, else what was last kept ASIDE (Housing.ghost_aside —
+//  reachable only through an A that holds it)
 TheA_loaded(path) {
-    if (this.Lies_ghost_get) return this.Lies_ghost_get(path)
-    return this[this.TheA_meta(path)]?.()
+    let flat = this.Lies_ghost_get ? this.Lies_ghost_get(path) : this[this.TheA_meta(path)]?.()
+    return flat || this.top_House().ghost_aside_dige?.[this.TheA_meta(path)]
+
+},
+// TheA_dispatches — does the House have to call this A's w through the A?  Yes when a layer of its code was kept ASIDE
+//  (Housing.ghost_aside) and is not flat on the House: nothing else could run it, and a same-named flat method (Story.svelte's,
+//   under a nested StoryFu) would be the wrong one.  Housing's do_fn_for asks this for every w it thinks; an A with no code
+//    answers at once.  Not yet for code merged flat — an A holding an older version than the House's (AthePondVersions) keeps
+//     being thought by the House's, until a ruling says every A runs its own
+TheA_dispatches(A) {
+    let codes = A.o({ TheACode: 1 })
+    if (!codes.length) return false
+    let aside = this.top_House().ghost_aside_dige || {}
+    for (const code of codes) {
+        for (const layer of code.o({ TheALayer: 1 })) {
+            let meta = this.TheA_meta(layer.sc.TheALayer)
+            if (aside[meta] && !this[meta]) return true
+        }
+    }
+    return false
 
 },
 // TheA_stand — stand an A together with the code it runs: an A arrives WITH its code, because the code is what makes it

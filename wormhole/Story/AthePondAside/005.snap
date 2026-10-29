@@ -1,0 +1,13 @@
+Snap:H
+  H:AthePondAside,Run
+    A:AthePondAside
+      self,round=5	{"mung":["age"]}
+      w:AthePondAside
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        AsideSaid:hello,by:its A
+    A:Athe_Aside
+      TheACode:Athe_Aside,variant:plain,dige:42cf0cca750e3279
+        TheALayer:Ghost/A/AtheAside.g,dige:6893a0249f9f8c20~g1
+      self,round	{"mung":["age"]}
+      w:Athe_Aside

@@ -657,6 +657,8 @@ export class House extends StorableHousing {
     // each file's arrived versions: Ghostmeta_* name → dige → the whole hash that dige came as (the newest 8).
     //  Lets an A run the version its %TheALayer names while a newer one is merged flat (Theory.g TheA_as).
     ghost_versions: Record<string, Record<string, Record<string, Function>>> = {}
+    // files loaded kept aside (ghost_aside): Ghostmeta_* name → the dige last kept.  Never merged onto a House.
+    ghost_aside_dige: Record<string, string> = {}
 
     // ghosts must have arrived before we are truly started
     override start_checks(): (boolean | null)[] {
@@ -756,21 +758,12 @@ export class House extends StorableHousing {
         // merge into H.ghosts
         this.ghosts = { ...(this.ghosts ?? {}), ...hash }
         // note which file these came from (a hash without a Ghostmeta_* is a hand-written ghost: no origin)
-        const meta = Object.keys(hash).find(k => k.startsWith('Ghostmeta_'))
+        const meta = this.ghost_keep(hash)
         if (meta) {
-            let top: House = this as House
-            while (top.up) top = top.up as House
+            const top = this.top_House() as House
             const methods = Object.keys(hash).filter(k => k !== meta)
             top.ghost_files[meta] = methods
             for (const k of methods) top.ghost_origin[k] = meta
-            // every version of the file that has arrived, by its dige — so an A can go on running the version it
-            //  holds after a newer one lands flat (Theory.g TheA_as).  The newest few per file; plain, not $state.
-            const dige = String(hash[meta]?.() ?? '')
-            const vs = top.ghost_versions[meta] ??= {}
-            delete vs[dige]
-            vs[dige] = hash
-            const keys = Object.keys(vs)
-            for (const k of keys.slice(0, Math.max(0, keys.length - 8))) delete vs[k]
         }
         // merge that into everything
         for (const h of this.all_House) {
@@ -786,6 +779,34 @@ export class House extends StorableHousing {
         //    lands.  Deposited by LiesLies; ?.() guards the pre-deposit boot window.  Its work
         //     goes through feebly_ponder (Runtime-gated), so the initial mount-wave never storms.
         ;(this as any).Ghost_version_checkin?.()
+    }
+
+    // ghost_keep — keep a compiled file's methods as a VERSION, by its dige, so an A can go on running the version it holds
+    //  after a newer one lands flat (Theory.g TheA_as).  The newest few per file; plain, not $state.  Returns the file's
+    //   Ghostmeta_* name, or undefined for a hand-written ghost (no Ghostmeta_*: nothing to key it by).
+    ghost_keep(hash: Record<string, Function>): string | undefined {
+        const meta = Object.keys(hash).find(k => k.startsWith('Ghostmeta_'))
+        if (!meta) return undefined
+        const top = this.top_House() as House
+        const dige = String(hash[meta]?.() ?? '')
+        const vs = top.ghost_versions[meta] ??= {}
+        delete vs[dige]
+        vs[dige] = hash
+        const keys = Object.keys(vs)
+        for (const k of keys.slice(0, Math.max(0, keys.length - 8))) delete vs[k]
+        return meta
+    }
+
+    // ghost_aside — a compiled file loaded KEPT ASIDE (spec/AtheoryStory_todo.md §1 "One tab"): its methods are kept as a
+    //  version and Theory hears it arrived, but nothing is merged onto any House — the code is reachable only through an A
+    //   that holds it (TheA_as).  So a second Story can stand in a tab whose House runs the first.  ghost_aside_dige says
+    //    what was last kept aside per file (TheA_loaded reads it when the House has no flat copy).
+    ghost_aside(hash: Record<string, Function>) {
+        const meta = this.ghost_keep(hash)
+        if (!meta) return
+        const top = this.top_House() as House
+        top.ghost_aside_dige[meta] = String(hash[meta]?.() ?? '')
+        ;(this as any).TheA_code_push?.(meta)
     }
 
     // -------------------------------------------------------------------------
@@ -1625,6 +1646,7 @@ export class House extends StorableHousing {
         T?: Travel
         e?: TheC
         inst?: any
+        A?: TheC
         last_resort?: (n: TheC) => Function | null | undefined
     } = {}): { handler?: Function, method?: string } {
         const con = n.c.on as TheC | undefined
@@ -1679,12 +1701,15 @@ export class House extends StorableHousing {
         //   targeting is just primitive.
         if (method == w.sc.w && w.sc.method) method = w.sc.method
 
-        // resolve handler: inst first, then H.* (ghost-injected methods)
+        // resolve handler: inst first, then H.* (ghost-injected methods) — or, when the w's A runs code kept aside
+        //  (Theory.g TheA_dispatches), the A's own code first: TheA_as(A) is the House with method names resolved on the
+        //   versions the A holds, so a nested StoryFu's w runs StoryFu while the House runs Story (AtheoryStory_todo §1)
+        const self: any = opt.A && (this as any).TheA_dispatches?.(opt.A) ? (this as any).TheA_as(opt.A) : this
         const handler: Function | undefined =
             (w_inst && typeof (w_inst as any)[method] === 'function')
                 ? (w_inst as any)[method].bind(w_inst)
-                : typeof (this as any)[method] === 'function'
-                    ? (this as any)[method].bind(this)
+                : typeof self[method] === 'function'
+                    ? self[method].bind(self)
                     : undefined
 
         return { handler, method }
@@ -1702,7 +1727,7 @@ export class House extends StorableHousing {
 
         const targeting = e ? this._e_targets_T(e, wT) : 0
 
-        const { handler, method } = this.do_fn_for(w, { ark: 'w', T: wT, e, inst: w_inst })
+        const { handler, method } = this.do_fn_for(w, { ark: 'w', T: wT, e, inst: w_inst, A })
 
         if (handler) {
             w.c.e = e

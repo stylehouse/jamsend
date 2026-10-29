@@ -1506,7 +1506,10 @@
             return String(e?.message ?? e ?? 'unknown').replace(/[\n,]+/g, ' ').slice(0, 120)
         },
 
-        async Lies_ghost_include(path: string): Promise<boolean> {
+        //  { aside: 1 } loads it KEPT ASIDE (Housing.ghost_aside): the .go's onMount gets a stand-in H whose eatfunc only
+        //   keeps the version, so no House gets its methods — an A holding it runs it through TheA_as
+        //    (spec/AtheoryStory_todo.md §1 "One tab").  Not hot-swapped by Creduler_reswap (that sweeps the spine only).
+        async Lies_ghost_include(path: string, opts?: { aside?: any }): Promise<boolean> {
             const H     = this as House
             const shelf = H.Lies_include_shelf()
             const gen   = H.Lies_gen_path(path)
@@ -1514,13 +1517,15 @@
                 shelf.oai({ GhostInclude: path }, { stood: 'no gen path' })
                 return false
             }
+            const aside = opts?.aside ? { aside: 1 } : {}
             const row = shelf.oai({ GhostInclude: gen })
             try {
                 const module = await import(/* @vite-ignore */ `../../lib/${gen}`)
                 // detached on purpose — the mount is the load, so we pay the mount and skip the draw
-                mount(module.default, { target: document.createElement('div'), props: { H } })
-                const dige = H.Lies_ghost_get(path)
-                shelf.oai({ GhostInclude: gen }, dige ? { stood: 'yes', dige } : { stood: 'yes' })
+                const host = opts?.aside ? { eatfunc: (hash: Record<string, Function>) => H.ghost_aside(hash) } : H
+                mount(module.default, { target: document.createElement('div'), props: { H: host } })
+                const dige = opts?.aside ? H.top_House().ghost_aside_dige[H.Lang_ghostmeta_name(path)] : H.Lies_ghost_get(path)
+                shelf.oai({ GhostInclude: gen }, dige ? { stood: 'yes', ...aside, dige } : { stood: 'yes', ...aside })
                 return true
             } catch (e) {
                 shelf.oai({ GhostInclude: gen }, { stood: H.Lies_include_why(e) })

@@ -11,7 +11,7 @@ import { ground_closure, ground_loads, GROUND_CORE } from "$lib/A/ground"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_Ground(): string { return '260f0531c6779267~g1' },
+    Ghostmeta_Ghost_A_Ground(): string { return 'bfd445d6257977a8~g1' },
 
 // Ground.g — what a tab stands on, said as particles on the A that stands on it (spec/Aprac_todo.md §0.5).
 //
@@ -41,7 +41,9 @@ Ground_closure(names) {
 // Ground_stand — stand Grounds on an A: a %GroundUsed and a %TheACode:Ground/<Name> for each in the closure, a
 //  %GroundRefused for a name nothing wears.  Idempotent — call it again whenever; current state, so a Ground no longer
 //   in the closure loses its rows.  Returns whether the A is Firm (every Ground's code fully loaded).
-Ground_stand(A, names) {
+//  opts.aside: what isn't loaded yet is fetched KEPT ASIDE (Housing.ghost_aside) — on no House, run only through this A.
+//   Said on the A as %GroundAside, so a reader sees how it stands.  Core is already flat on every tab, so it never needs it.
+Ground_stand(A, names, opts) {
     let c = ground_closure(names)
     let want = {}
     for (const step of c.order) {
@@ -55,7 +57,7 @@ Ground_stand(A, names) {
         let paths = ground_loads(step.name)
         this.TheA_code_stand(A, 'Ground/' + step.name, paths)
         for (const path of paths) {
-            if (!this.TheA_loaded(path)) this.Ground_fetch(path)
+            if (!this.TheA_loaded(path)) this.Ground_fetch(path, opts)
         }
     }
     for (const used of A.o({ GroundUsed: 1 })) {
@@ -65,6 +67,10 @@ Ground_stand(A, names) {
         let name = String(code.sc.TheACode)
         if (name.indexOf('Ground/') === 0 && !want[name.slice(7)]) A.drop(code)
     }
+    for (const x of A.o({ GroundAside: 1 })) {
+        if (!opts?.aside) A.drop(x)
+    }
+    if (opts?.aside) A.oai({ GroundAside: 1 })
     for (const name of c.unknown) A.oai({ GroundRefused: name }, { why: 'unknown' })
     for (const refused of A.o({ GroundRefused: 1 })) {
         if (!c.unknown.includes(refused.sc.GroundRefused)) A.drop(refused)
@@ -75,12 +81,13 @@ Ground_stand(A, names) {
 // Ground_fetch — the fallback load for a .g the floor didn't bring: through the include door if this tab has one.  Not
 //  awaited (this runs under the belief loop; the import's eatfunc needs further ticks), and the door never throws — it
 //   says how it went on its %GhostInclude row.  Once per path per tab, so a load that fails isn't retried every think.
-Ground_fetch(path) {
+Ground_fetch(path, opts) {
     let top = this.top_House()
     top.c.ground_fetched = top.c.ground_fetched || {}
-    if (top.c.ground_fetched[path]) return
-    top.c.ground_fetched[path] = 1
-    top.Lies_ghost_include?.(path)
+    let key = (opts?.aside ? 'aside ' : '') + path
+    if (top.c.ground_fetched[key]) return
+    top.c.ground_fetched[key] = 1
+    top.Lies_ghost_include?.(path, opts?.aside ? { aside: 1 } : undefined)
 
 },
 // Ground_firm — is every Ground this A uses fully loaded: each %TheACode:Ground/<Name> carries its dige

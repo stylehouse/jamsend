@@ -1,0 +1,29 @@
+story:AthePondAside
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.012
+      sample=0.011,at=1793240651
+      sample=0.011,at=1793240662
+      sample=0.011,at=1793240673
+      sample=0.014,at=1793240677
+      sample=0.012,at=1793240682
+      sample=0.016,at=1793240699
+    TimeTotal:step,avg=0.002
+      sample=0.002,at=1793240651
+      sample=0.002,at=1793240662
+      sample=0.002,at=1793240673
+      sample=0.002,at=1793240677
+      sample=0.002,at=1793240682
+      sample=0.003,at=1793240699
+  step,dige:78fe8537a6f0768a
+  step=2,desc:load a toy kept aside — no A holds it yet,dige:93ae271415d5b4dc
+  step=3,desc:let the toy land — kept as a version and on no House,dige:1a24635cd80db950
+  step=4,desc:stand an A holding the toy — it takes the digest kept aside,dige:44051b6aff9d3395
+    Assertion:kept-aside,sentence:kept aside — the A holds the toy at the digest kept and no House has its method
+  step=5,desc:run the toy through its A,dige:114e264b167832e9
+    Assertion:through-its-a-the,sentence:through its A the toy runs — and still no House has it
+  {"step":6,"desc":"give the A a w of the toy — the House thinks it, and only the A has its method","dige":"6a031192a08bbedc"}
+    Assertion:the-house-thinks-the,sentence:the House thinks the toy’s w through its A — the w’s method is on no House
