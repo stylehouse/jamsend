@@ -766,7 +766,10 @@ export class House extends StorableHousing {
             for (const k of methods) top.ghost_origin[k] = meta
         }
         // merge that into everything
+        // every House's table too, not just its methods: subHouse copies its parent's `ghosts`, so a House born later under one
+        //  that predates this load would miss it (a Book's Grounds land after its Run House exists — H:Desk was born without Theory)
         for (const h of this.all_House) {
+            h.ghosts = this.ghosts
             Object.assign(h, this.ghosts)
         }
         // CodePush: tell Atheory which file just arrived, so the As that hold it hear (Ghost/A/Theory.g TheA_code_push;

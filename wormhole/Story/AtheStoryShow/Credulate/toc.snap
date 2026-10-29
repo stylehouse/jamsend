@@ -30,11 +30,11 @@ Credulate,of_Book:AtheStoryShow
   GhostInclude:Ghost_Story_Sounditron,dige:0de272b54e59b42d~g1
   GhostInclude:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
   GhostInclude:Ghost_A_Theory,dige:a6e881cb3b26ad22~g1
-  GhostInclude:Ghost_A_AtheFishTesting,dige:426ea8a90ecf1e85~g1
   GhostInclude:Ghost_A_Stuffica,dige:1f0ec09474696daa~g1
   GhostInclude:Ghost_A_Ground,dige:a3fd45e57dcdf482~g1
-  GhostInclude:Ghost_A_AtheTesting,dige:bd5482ae45b9312d~g1
-  last_ok,at=1793263729.087,ok_pct
+  GhostInclude:Ghost_A_AtheTesting,dige:7b31ac0a2f95c918~g1
+  GhostInclude:Ghost_A_AtheFishTesting,dige:426ea8a90ecf1e85~g1
+  last_ok,at=1793268958.563,ok_pct
     uses:Ghost_N_Peeroleum,dige:ee39d52bb1441684~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:a3d82cb8e0a8910f~g1
@@ -66,7 +66,7 @@ Credulate,of_Book:AtheStoryShow
     uses:Ghost_Story_Sounditron,dige:0de272b54e59b42d~g1
     uses:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
     uses:Ghost_A_Theory,dige:a6e881cb3b26ad22~g1
-    uses:Ghost_A_AtheFishTesting,dige:426ea8a90ecf1e85~g1
     uses:Ghost_A_Stuffica,dige:1f0ec09474696daa~g1
     uses:Ghost_A_Ground,dige:a3fd45e57dcdf482~g1
-    uses:Ghost_A_AtheTesting,dige:bd5482ae45b9312d~g1
+    uses:Ghost_A_AtheTesting,dige:7b31ac0a2f95c918~g1
+    uses:Ghost_A_AtheFishTesting,dige:426ea8a90ecf1e85~g1

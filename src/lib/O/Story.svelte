@@ -123,6 +123,7 @@
     import { ANSWER_CALLS_TICK_MS, House } from "$lib/O/Housing.svelte"
     import Storui                       from "$lib/O/Storui.svelte"
     import { SoundSystem }              from "$lib/O/Audio.svelte"
+    import { ground_include }           from "$lib/A/ground"
 
     let { M } = $props()
     let V = { Story: 1 }   // set Story: 1 here to enable drive/analysis debug logs
@@ -1639,6 +1640,8 @@
         {
             const M: any = this.top_House ? this.top_House() : null
             if (M) { M.c.err_ring = []; M.c.err_run = run }
+            // the Book's Grounds refused before the run set off (the gate above the drive) — filed now, after the reset, so step 1 reds by name
+            for (const why of (run.c.grounds_refused ?? []) as string[]) (this as any).Story_error('GroundRefused', String(run.sc.run ?? '?'), why)
             const fw = (this as any).Story_errlog_world(Run) as TheC | undefined
             const log = fw?.o({ Errlog: 1 })[0] as TheC | undefined
             if (log) { for (const c of log.o({ Err: 1 })) log.drop(c) }
@@ -1951,6 +1954,31 @@
             w.c.exp_snaps    = {}            // fresh fixture cache per toc load (see preload below)
             delete run.c.exps_loaded
             H.story_analysis(w)
+        }
+
+        // ── stand the Book's Grounds (spec/Aprac_todo.md §0.5 slice 4) ─────
+        // A toc may say what its Book stands on: The/Stands:<Ground> — the word a Ground's own toc uses for the Grounds
+        //  under it.  The floor ($lib/A/ground.ts ground_include) loads their .g in order, Core first, before the drive —
+        //   the Book's own method is usually one of them — so `?B=<Book>` alone is enough, no hand ghost_load chain.
+        //    Held here like the toc read: no step clock is ticking yet.  A name no Ground wears, or a .g that won't load,
+        //     is a Story_error by name, so step 1 reds saying which.  Once per run; what's already loaded is left alone.
+        if (!run.c.grounds_stood) {
+            const names = ((w.c.The as TheC | undefined)?.o({ Stands: 1 }) ?? []).map(s => String(s.sc.Stands))
+            if (!names.length) run.c.grounds_stood = true
+            else {
+                if (!run.c.grounds_asked) {
+                    run.c.grounds_asked = true
+                    void ground_include(H.top_House(), names).then(r => {
+                        run.c.grounds_refused = [
+                            ...r.unknown.map(name => `Stands:${name} — no Ground wears that name`),
+                            ...r.failed.map(path => `${path} would not load`),
+                        ]
+                        run.c.grounds_stood = true
+                        H.main()
+                    })
+                }
+                return w.i({ see: `⏳ grounds ${names.join(' ')}...` })
+            }
         }
 
         // ── open shared EntropyProfiles as canonical Lies Wafts ────────────

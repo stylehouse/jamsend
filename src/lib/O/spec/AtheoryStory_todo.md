@@ -20,9 +20,26 @@
       Smallest, used every day.
 2. **The explorer's protrusion** (§3): the change window beside the strip, not replacing the snap panel; oaths drawn on the points
     they swore about; present mode (recorded snaps, no run); the inner Story as a second strip.
-3. **Pause at time's structure:** the outer drive pulses the Desk's clock (today it keeps its own), so a step can stop an inner run
-    at a round or a Turn — Story_future's 10-28 "crawl".
+3. **The leash — the outer Story walks the inner one stop by stop** (designed 2026-10-30, §5).  Owner: "the outer Story should be
+    able to observe the inner Story being all ready to begin, then let it begin, and observe again at any step the inner can stop at."
+     Grows AtheStoryInStory (not a new Book).  Later rungs go below a step: a round, a Turn — Story_future's 10-28 "crawl".
 4. **The Desk as a page** (`/Desk?G=…`, `/Desk?B=`) — waits on Lies (the relay seat) being standable by a Ground.
+5. **A Ground in front of a Ground** (owner, 2026-10-29: "a Ground might get in front of another Ground and inject some moment").
+    Today `Stands:` only orders loads; flat eatfunc is last-wins.  The parts exist: code kept aside on an A + the House reaching a
+     w/req through it (`TheA_as`), and Story letting code pushes through only between steps.  A Ground standing *before* another
+      on an A would intercept its methods at a named moment.  Unbuilt — design it when a Book wants it.
+
+*Slice 4 begun 2026-10-29:* a toc's depth-1 `Stands:<Ground>` line → Story (and StoryFu) `ground_include`s the closure before the
+ drive, `Story_error('GroundRefused')` for an unknown name / failed load.  First Book: AtheStoryShow (`Stands:CoreTesting`).
+  Still owed: `%GroundUsed` said on the run's A (Credulate), the Pond Books off their hand guards, `CREDULER_GHOSTS` → `Ground/Runner`.
+  *Rolled out 2026-10-29:* every Book whose routine lives in a CoreTesting or LandTesting .g (40) wears `Stands:`.  The spine Grounds'
+   Books (Swarm/Cave/Glass/Music/Wire Testing) don't yet — for them it would only load Core flat; they get it when the spine becomes
+    `Ground/Runner`.  Bomb found on the way: `subHouse` copies its parent's `ghosts` table, so a House born after a load under one that
+     predated it missed the load (H:Desk had no Theory) — `ghostsHaunt` now refreshes every House's table.
+6. **Testing in parallel, off the browser** (owner, 2026-10-29: "lets not stop for testing so often… lots of it can be done by node,
+    which can hang around responsively").  Today every Book is a live-runner run, one at a time, through a subagent.  A node runner that
+     stays up (not Story_cli_run's one-shot jsdom boot, which quiesces differently and is banned as a gate) could take the pure Books —
+      Theory/Stuffica/Pond, no audio, no DOM — many at once.  Needs: the same GhostList footprint as a tab, or fixtures that don't see it.
 
 **Know before touching it (the bombs):**
 - A Book's snap must never catch code *landing* — cold, warm and fresh tabs land it at different moments.  Stand + use + hold in
@@ -174,6 +191,54 @@ One window on a step, and everything else is a protrusion from it showing a chan
 - Next for the explorer: the protrusion as its own window beside the strip (today the lens replaces the snap panel); oaths on the
    points they swore about; present mode (recorded snaps without a run — Storica already falls back to them); the inner Story of
     AtheStoryInStory as a second strip.
+
+## 5. The leash — an outer Story walking an inner one (design, 2026-10-30)
+
+**Why.**  Today AtheStoryInStory lets the inner run loose and holds until `%StoryFinished`: one look, at the end, and every look
+ before that races the inner clock (the bomb: never snap code — or anything — *landing*).  If the inner run STOPS where the outer
+  looks, every look is deterministic, and the outer Book can swear about each stop.  That is also the first piece of "pause at
+   time's structure": a stop is a moment in another thing's time that someone else may hold.
+
+**The stops** (rung 1 — what StoryFu already has seams for):
+- `ready` — toc read, Grounds stood (`Stands:`), expected snaps preloaded, The's steps known; nothing driven.  The step before
+   `Story_settingoff`.
+- `step,n` — step n's snap taken and judged (ok/caveat known), n+1 not begun.  The seam where Story already lets code pushes through.
+- `finished` — today's `%StoryFinished` (kept; `%StoryAt:finished` says the same).
+
+**The particles** — both on the INNER Story's w (it is the inner's state; the outer only writes one row onto it):
+- `%StoryAt:ready` / `%StoryAt:step,n:3` / `%StoryAt:finished` — the inner says where it stands.  One row, replaced as it moves
+   (current state, not a log).  Written by the inner when it reaches a stop.
+- `%StoryLeash:ready` / `%StoryLeash:step,n:3` — the outer says how far the inner may go.  Absent ⇒ unleashed (today's behaviour:
+   nesting without a leash changes nothing).  The inner drives up to the leash and waits there.
+- The wait is a hold, not a stall: the inner's drive returns early at the leash each tick (its own clock keeps ticking, its reqs
+   keep answering) — the same shape as the toc read.
+
+**The handshake** (per stop):
+1. The outer's step moves the leash (`%StoryLeash` replaced) and holds on its gate req (`i_req_ttlilt`, as AtheStoryInStory_hold).
+2. The inner drives to the leash, writes `%StoryAt`, and wakes the outer's House (`base.up.main(true)`, as `Story_finished` does).
+3. The outer's gate sees `%StoryAt` = `%StoryLeash` → finishes, drops the gate; the outer step snaps.  The inner is standing still,
+    so what the snap catches is the stop, not a race.
+4. The outer swears about the stop: at `ready` — the inner planned N steps, its Grounds Firm, nothing ran; at `step,n` — step n
+    green (or the lens line of its snap, `Stuffica_focus_said`, as the summary).
+
+**The Book** — AtheStoryInStory grows from 3 steps to N+4 (N = AthePondRounds' steps):
+ 1 begin · 2 stand the Desk, leash `ready` · 3 observe ready, leash step 1 · 3+k observe inner step k, leash k+1 · last: unleash,
+  observe finished green.  One re-record.  The fold (`dontSnap` + `%InnerRun`) stays; `%InnerRun` gains `at:` so each outer snap
+   carries where the inner stands.
+
+**Where it lands in code.**  StoryFu only (the old Story.svelte never nests — the first change that is StoryFu's alone, so the twin
+ rule loosens here): `Story_at(w, at, n)` writes `%StoryAt` + wakes; `Story_leashed(w, at, n)` → true when the leash forbids going
+  past this stop.  Called at three seams: after the grounds/preload block (`ready`), before `do_step` n+1 (`step,n`), in
+   `Story_finished`.  Desk side: `Desk_leash(H, at, n)` writes the row onto the inner w (Ground.g, beside `Desk_story`).
+
+**Rung 2, later — below a step.**  A stop inside the inner's step: a round of its Run House, a Turn of an A in it.  That is the
+ outer giving the inner its TIME — the Desk's clock pulsed by the outer instead of its own interval — and Theory already has the
+  shape: time is IO on the tape (`TheA_io`), holds are `%TheAWait`.  The leash then reads `%StoryLeash:round,n:4`.  And it is
+   the same door as §0 item 5 (a Ground in front of a Ground): something standing between an A and its next moment.
+
+**Bombs to remember.**  A leash left on a standing inner (AtheStoryShow) stops it forever — the Show Book unleashes at its end.
+ The `self,round` Entcase still applies (the Desk ticks while held).  A stop must be reached on the inner's own tick, never written
+  by the outer — the outer only ever writes the leash.
 
 ## 4. Ledger — what this work changed in Atheory
 

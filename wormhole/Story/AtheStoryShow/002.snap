@@ -8,22 +8,22 @@ Snap:H
         InnerRun:AthePondFocus,steps=5,ok=5
     H:Desk	{"loopy":1}
       A:Desk
-        self,round=9	{"mung":["age"]}
+        self,round=8	{"mung":["age"]}
         GroundUsed:Core,via:Story
         TheACode:Ground/Core,variant:plain,dige:6a7f4b39364aaafc
           TheALayer:Ghost/A/Theory.g,dige:a6e881cb3b26ad22~g1
           TheALayer:Ghost/A/Stuffica.g,dige:1f0ec09474696daa~g1
           TheALayer:Ghost/A/Ground.g,dige:a3fd45e57dcdf482~g1
         GroundUsed:Story
-        TheACode:Ground/Story,variant:plain,dige:772b84e078ef8432
-          TheALayer:Ghost/O/StoryFu.g,dige:cd6ba6c792cfd093~g1
+        TheACode:Ground/Story,variant:plain,dige:8fb1dbc4edca489a
+          TheALayer:Ghost/O/StoryFu.g,dige:e4ec36454229aa88~g1
           TheALayer:Ghost/O/Supervisor.g,dige:4efe70cdd7ae19ac~g1
         GroundAside
         w:Desk
           DeskGround:Story
           DeskAside
           DeskBook:AthePondFocus
-          self,round=9	{"mung":["age"]}
+          self,round=8	{"mung":["age"]}
       A:Story
         GroundUsed:Core,via:Story
         TheACode:Ground/Core,variant:plain,dige:6a7f4b39364aaafc
@@ -31,11 +31,11 @@ Snap:H
           TheALayer:Ghost/A/Stuffica.g,dige:1f0ec09474696daa~g1
           TheALayer:Ghost/A/Ground.g,dige:a3fd45e57dcdf482~g1
         GroundUsed:Story
-        TheACode:Ground/Story,variant:plain,dige:772b84e078ef8432
-          TheALayer:Ghost/O/StoryFu.g,dige:cd6ba6c792cfd093~g1
+        TheACode:Ground/Story,variant:plain,dige:8fb1dbc4edca489a
+          TheALayer:Ghost/O/StoryFu.g,dige:e4ec36454229aa88~g1
           TheALayer:Ghost/O/Supervisor.g,dige:4efe70cdd7ae19ac~g1
         GroundAside
-        self,round=15	{"mung":["age"]}
+        self,round=14	{"mung":["age"]}
         w:Story,Book:AthePondFocus,dontSnap
       H:AthePondFocus,Run,dontSnap	{"loopy":0}
       watched:subHouses
@@ -50,7 +50,7 @@ Snap:H
         swatches
         live_poll
         Styles
-        {"story_analysis":1,"frontier":0,"open_at":null,"bad_count":0,"avg_step":0.004}	{"ref":{"run_sc":"Object()","steps":"[Object(),Object(),Object(),Object(),Object()]","notes":"Object()"}}
+        {"story_analysis":1,"frontier":0,"open_at":null,"bad_count":0,"avg_step":0.005}	{"ref":{"run_sc":"Object()","steps":"[Object(),Object(),Object(),Object(),Object()]","notes":"Object()"}}
         Assertioning,Story:AthePondFocus
           sworn:focused after a re-seat the eye lands on what moved — changed — new — gone — under its parent — the rest folds to a count,n=3
           sworn:a pinned point shows whole — by its name — beside what moved,n=4

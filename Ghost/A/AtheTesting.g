@@ -36,10 +36,6 @@ AthePondCode_tank(w):
 
 AthePondCode_stand(w):
     i %desc:'stand the toy as an A with the code it runs — and take its first turn'
-    if (typeof this.TheA_stand !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
-        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     let old = this.AthePondCode_A(w)
     if (old) this.drop(old)
     let A = this.TheA_stand(this, 'Athe_Tank', ['Ghost/A/AtheFishTesting.g'])
@@ -111,10 +107,6 @@ AthePondSunpitPassOrder_tank(name):
 
 AthePondSunpitPassOrder_stand(w):
     i %desc:'stand three tanks with the same code — two of them declaring another order — and take turn one'
-    if (typeof this.TheA_stand !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
-        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     for (const t of this.AthePondSunpitPassOrder_tanks()) this.AthePond_tank_stand(t)
 
 // one tank for a Sunpit Book: its own A running the toy's code, its world, the turn's Sunpit if the Book declares one
@@ -218,10 +210,6 @@ AthePondSunpitFrontier_tanks():
 
 AthePondSunpitFrontier_stand(w):
     i %desc:'stand three heron-first tanks that differ only in when a pass takes its rows — and take turn one'
-    if (typeof this.TheA_stand !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
-        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     for (const t of this.AthePondSunpitFrontier_tanks()) this.AthePond_tank_stand(t)
 
 AthePondSunpitFrontier_turns(w, upto):
@@ -283,10 +271,6 @@ async AthePondCodePush_drive(w, req):
 
 AthePondCodePush_stand(w):
     i %desc:'stand the tank and a bystander holding other code — and take turn one'
-    if (typeof this.TheA_stand !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
-        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     for (const name of ['Athe_Tank', 'Athe_Bystander']) {
         let old = this.o({ A: name })[0]
         if (old) this.drop(old)
@@ -371,10 +355,6 @@ AthePondSynapseSum_tanks():
 
 AthePondSynapseSum_stand(w):
     i %desc:'stand two joined tanks that differ only in how their fish synapse sums — and wake one clock pulse'
-    if (typeof this.TheA_stand !== 'function' || typeof this.TheA_move !== 'function') {
-        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     for (const t of this.AthePondSynapseSum_tanks()) this.AthePond_tank_stand(t)
 
 AthePondSynapseSum_each(fn):
@@ -461,10 +441,6 @@ AthePondWakeOrder_pairs():
 // stand every tank first (a Q that names from its P must find it), then wake them pair by pair in waking order
 AthePondWakeOrder_stand(w):
     i %desc:'stand four pairs of tanks — two pairs sharing a name counter — and wake each in its pair order'
-    if (typeof this.TheA_stand !== 'function' || typeof this.Athe_Tank_wake !== 'function') {
-        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     for (const pair of this.AthePondWakeOrder_pairs()) {
         for (const t of pair) {
             let old = this.o({ A: t.name })[0]
@@ -560,10 +536,6 @@ AthePond_clocks(names, n):
 
 AthePondSynapseOrder_stand(w):
     i %desc:'stand two pairs — P streaming into Q nine turns behind — and wake each pair whole'
-    if (typeof this.TheA_stand !== 'function' || typeof this.TheA_boundary !== 'function') {
-        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     for (const k of ['5', '6']) {
         this.AthePond_stream_pair('Athe_Tank_P' + k, 'Athe_Tank_Q' + k)
         this.AthePond_clocks(['Athe_Tank_P' + k, 'Athe_Tank_Q' + k], 1)
@@ -645,10 +617,6 @@ async AthePondStream_drive(w, req):
 
 AthePondStream_stand(w):
     i %desc:'stand P nine turns ahead with Q downstream of it — and wake both'
-    if (typeof this.TheA_stand !== 'function' || typeof this.TheA_boundary !== 'function') {
-        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     this.AthePond_stream_pair('Athe_Tank_P', 'Athe_Tank_Q')
     this.AthePondStream_wake(w, 1)
 
@@ -720,10 +688,6 @@ AthePondLoop_pairs():
 
 AthePondLoop_stand(w):
     i %desc:'stand two looped pairs with P nine turns ahead of Q — and wake each in its own order'
-    if (typeof this.TheA_stand !== 'function' || typeof this.TheA_boundary !== 'function') {
-        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     for (const p of this.AthePondLoop_pairs()) this.AthePond_stream_pair(p.P, p.Q, true)
     this.AthePondLoop_wake(w, 1)
 
@@ -794,10 +758,6 @@ async AthePondTurns_drive(w, req):
 
 AthePondTurns_stand(w):
     i %desc:'stand a tank that keeps its last three Turns — and wake one clock pulse'
-    if (typeof this.TheA_stand !== 'function' || typeof this.TheA_turn_commit !== 'function') {
-        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     let old = this.o({ A: 'Athe_Tank_Was' })[0]
     if (old) this.drop(old)
     let tank = this.TheA_stand(this, 'Athe_Tank_Was', ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
@@ -876,10 +836,6 @@ AthePondTurnReaders_tank():
 
 AthePondTurnReaders_stand(w):
     i %desc:'stand a tank that keeps two Turns with two readers — eye reads every step and slow waits — and wake one pulse'
-    if (typeof this.TheA_stand !== 'function' || typeof this.TheA_read !== 'function') {
-        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     let old = this.o({ A: 'Athe_Tank_Read' })[0]
     if (old) this.drop(old)
     let tank = this.TheA_stand(this, 'Athe_Tank_Read', ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
@@ -951,10 +907,6 @@ async AthePondTendril_drive(w, req):
 
 AthePondTendril_stand(w):
     w.i({ desc: 'stand Host beating Clock_A which ticks K_P by count and K_Q by latest — tendrils on — the outside says 2300 ms' })
-    if (typeof this.TheA_led_to !== 'function' || typeof this.Athe_Host_woken !== 'function') {
-        w.i({ log: 'Theory.g (with tendrils) or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     for (const name of ['Host', 'Clock_A', 'K_P', 'K_Q']) {
         let old = this.o({ A: name })[0]
         if (old) this.drop(old)
@@ -1144,10 +1096,6 @@ async AthePondVersions_drive(w, req):
 
 AthePondVersions_stand(w):
     i %desc:'stand two tanks on the one loaded version of the toy — and take turn one'
-    if (typeof this.TheA_as !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
-        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     for (const name of ['V_P', 'V_Q']) this.AthePond_tank_stand({ name })
 
 AthePondVersions_push(w):
@@ -1223,10 +1171,6 @@ async AthePondNest_drive(w, req):
 
 AthePondNest_stand(w):
     i %desc:'stand a warm pond and a cold pond — each an A with the toy’s code — and one tank in each with no code of its own — turn one'
-    if (typeof this.TheA_as !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
-        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     for (const [pond, weather, tank] of [['Pond_Warm', 'warm', 'Warm_P'], ['Pond_Cold', 'cold', 'Cold_P']]) {
         let old = this.o({ A: pond })[0]
         if (old) this.drop(old)
@@ -1313,10 +1257,6 @@ AthePondSeem_seem():
 
 async AthePondSeem_stand(w):
     i %desc:'stand a tank with a Seem over its rows and the eye’s sphere declared — turn one — walk and look'
-    if (typeof this.TheA_seem_walk !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
-        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     this.AthePond_tank_stand({ name: 'S_P' })
     let seem = this.TheA_seem(this.AthePondSeem_tank(), 'rows', ['Turns', 'EggsNamed', 'Egg', 'Fish', 'Heron'])
     this.TheA_sphere(seem, 'eye', 'Regard')
@@ -1419,10 +1359,6 @@ async AthePondMerge_drive(w, req):
 
 async AthePondMerge_stand(w):
     i %desc:'stand M — turn it to 10 — mark it fork — and fork N from the mark'
-    if (typeof this.TheA_seem_merge !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
-        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     this.AthePond_tank_stand({ name: 'M_P' })
     this.AthePond_turn_as('M_P', 10)
     let M = this.Athe_Tank_of('M_P')
@@ -1516,10 +1452,6 @@ AthePondMoves_seem():
 
 async AthePondMoves_stand(w):
     i %desc:'stand a pond with P nine turns ahead streaming into Q inside it — a Seem over the tanks — one batch — walk and look'
-    if (typeof this.TheA_seem_limbo !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
-        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     let old = this.o({ A: 'Pond_S' })[0]
     if (old) this.drop(old)
     let pond = this.TheA_stand(this, 'Pond_S', ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Pond')
@@ -1617,10 +1549,6 @@ AthePondReload_regards():
 
 async AthePondReload_stand(w):
     i %desc:'stand a tank with a Seem and the eye — turn to 10 — walk and look — mark it'
-    if (typeof this.TheA_thaw !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
-        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     this.AthePond_tank_stand({ name: 'R_P' })
     this.AthePond_turn_as('R_P', 10)
     let seem = this.TheA_seem(this.Athe_Tank_of('R_P'), 'rows', ['Turns', 'EggsNamed', 'Egg', 'Fish', 'Heron'])
@@ -1699,10 +1627,6 @@ async AthePondMergeHatch_drive(w, req):
 
 async AthePondMergeHatch_stand(w):
     i %desc:'stand M — turn it to 10 — mark it fork — and fork N from the mark'
-    if (typeof this.TheA_pair !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
-        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     this.AthePond_tank_stand({ name: 'MH_P' })
     this.AthePond_turn_as('MH_P', 10)
     let M = this.Athe_Tank_of('MH_P')
@@ -1767,10 +1691,6 @@ async AthePondStampMerge_drive(w, req):
 
 async AthePondStampMerge_stand(w):
     i %desc:'stand M at 13 — declare how Fish merge — mark it fork — fork N'
-    if (typeof this.TheA_merge_policy !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
-        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     this.AthePond_tank_stand({ name: 'SM_P' })
     this.AthePond_turn_as('SM_P', 13)
     let M = this.Athe_Tank_of('SM_P')
@@ -1859,10 +1779,6 @@ async AthePondRounds_drive(w, req):
 
 AthePondRounds_stand(w):
     i %desc:'stand P nine turns ahead streaming into Q — and R with a clock and nothing on it'
-    if (typeof this.TheA_run !== 'function' || typeof this.Athe_Tank_turn !== 'function') {
-        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     this.AthePond_stream_pair('RP_P', 'RP_Q')
     this.AthePond_tank_stand({ name: 'RP_R', synapses: [{ TheASynapse: 'clock', wake: 'turn', sum: 'count' }] })
 
@@ -1924,10 +1840,6 @@ async AthePondClock_drive(w, req):
 
 AthePondClock_stand(w):
     i %desc:'stand two clocks and three tanks — K_P and K_Q hear Clock_A — K_R hears Clock_B — poke Clock_A once and run'
-    if (typeof this.TheA_run !== 'function' || typeof this.Athe_Clock_woken !== 'function') {
-        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     for (const name of ['Clock_A', 'Clock_B', 'K_P', 'K_Q', 'K_R']) {
         let old = this.o({ A: name })[0]
         if (old) this.drop(old)
@@ -1995,10 +1907,6 @@ async AthePondEra_drive(w, req):
 
 AthePondEra_stand(w):
     w.i({ desc: 'stand Clock_A and two tanks that hear it — K_P and K_Q — poke once and run' })
-    if (typeof this.TheA_run !== 'function' || typeof this.Athe_Clock_woken !== 'function') {
-        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     for (const name of ['Clock_A', 'K_P', 'K_Q']) {
         let old = this.o({ A: name })[0]
         if (old) this.drop(old)
@@ -2070,10 +1978,6 @@ async AthePondTape_drive(w, req):
 
 AthePondTape_start(w):
     w.i({ desc: 'stand a host that time comes in by — Clock_A hears its beat — K_P and K_Q hear the clock — the outside says 1000 ms and runs' })
-    if (typeof this.TheA_io !== 'function' || typeof this.Athe_Host_woken !== 'function') {
-        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     this.AthePondTape_pond()
     this.AthePondTape_say(w, [1000])
 
@@ -2179,10 +2083,6 @@ async AthePondAsk_drive(w, req):
 
 AthePondAsk_stand(w):
     w.i({ desc: 'stand Clock_A — a Feeder that serves two ticks after an order — K_P who asks it — K_P gets hungry and runs' })
-    if (typeof this.TheA_ask !== 'function' || typeof this.Athe_Feeder_woken !== 'function') {
-        w.i({ log: 'Theory.g or AtheFishTesting.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     for (const name of ['Clock_A', 'Feeder', 'K_P']) {
         let old = this.o({ A: name })[0]
         if (old) this.drop(old)
@@ -2255,10 +2155,6 @@ async AthePondView_drive(w, req):
 
 async AthePondView_stand(w):
     w.i({ desc: 'stand Clock_A ticking K_P and K_Q — K_R hearing Clock_B which nobody pokes — a view on each tank — poke once' })
-    if (typeof this.Stuffica_commit !== 'function' || typeof this.TheA_io !== 'function') {
-        w.i({ log: 'Theory.g, AtheFishTesting.g or Stuffica.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     for (const name of ['Clock_A', 'Clock_B', 'K_P', 'K_Q', 'K_R']) {
         let old = this.o({ A: name })[0]
         if (old) this.drop(old)
@@ -2343,10 +2239,6 @@ async AthePondGlass_drive(w, req):
 
 async AthePondGlass_stand(w):
     w.i({ desc: 'stand K_P with a hand — a glass in the Book’s world with two views of K_P’s food — feed flakes' })
-    if (typeof this.Stuffica_refresh !== 'function' || typeof this.TheA_io !== 'function') {
-        w.i({ log: 'Theory.g, AtheFishTesting.g or Stuffica.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     let old = this.o({ A: 'K_P' })[0]
     if (old) this.drop(old)
     let t = this.TheA_stand(this, 'K_P', ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
@@ -2433,10 +2325,6 @@ AthePondReseat_tree(which):
 
 async AthePondReseat_stand(w):
     w.i({ desc: 'a glass with a deep view of the recorded pond — a snap decoded to C, held on the glass, not in the world' })
-    if (typeof this.Stuffica_refresh !== 'function' || typeof this.decode_wh_lines !== 'function') {
-        w.i({ log: 'Theory.g or Stuffica.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     let glass = w.oai({ w: 'Athe_Glass' })
     glass.c.trees = { recorded: this.AthePondReseat_tree('recorded') }
     this.Stuffica_view(glass, 'pond', ['*'], { bumps: 0, commit() { this.bumps++ } }, { from: glass.c.trees.recorded, deep: 1 })
@@ -2531,10 +2419,6 @@ AthePondGround_A(w):
 
 AthePondGround_stand(w, names, desc):
     w.i({ desc })
-    if (typeof this.Ground_stand !== 'function' || typeof this.TheA_code_stand !== 'function') {
-        w.i({ log: 'Theory.g or Ground.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     let A = this.AthePondGround_A(w) || this.i({ A: 'Athe_Grounded' })
     w.c.firm = this.Ground_stand(A, names)
 
@@ -2608,10 +2492,6 @@ AthePondAside_A(w):
 
 AthePondAside_load(w):
     w.i({ desc: 'load a toy kept aside — no A holds it yet' })
-    if (typeof this.TheA_stand !== 'function' || typeof this.ghost_aside !== 'function') {
-        w.i({ log: 'Theory.g is not loaded, or this Housing has no ghost_aside' })
-        return
-    }
     this.top_House().Lies_ghost_include?.(this.AthePondAside_path(), { aside: 1 })
 
 AthePondAside_stand(w):
@@ -2767,10 +2647,6 @@ async AthePondFocus_drive(w, req):
 
 async AthePondFocus_seat(w, which, desc):
     w.i({ desc })
-    if (typeof this.Stuffica_focus !== 'function' || typeof this.decode_wh_lines !== 'function') {
-        w.i({ log: 'Theory.g or Stuffica.g is not loaded — ghost_load them beside AtheTesting.g' })
-        return
-    }
     let glass = w.oai({ w: 'Athe_Glass' })
     if (!glass.o({ TheAView: 'pond' }).length) this.Stuffica_view(glass, 'pond', ['*'], null, { deep: 1 })
     glass.c.trees = glass.c.trees || {}
@@ -2863,10 +2739,6 @@ async AtheStoryCode_drive(w, req):
 
 AtheStoryCode_stand(w):
     w.i({ desc: 'stand an A holding Story’s code — Ghost/O/StoryFu.g — and ask the House where Story’s methods came from' })
-    if (typeof this.TheA_stand !== 'function') {
-        w.i({ log: 'Theory.g is not loaded — ghost_load it beside AtheTesting.g' })
-        return
-    }
     let old = this.o({ A: 'Story_code' })[0]
     if (old) this.drop(old)
     this.TheA_stand(this, 'Story_code', ['Ghost/O/StoryFu.g'], null, 'Story')
