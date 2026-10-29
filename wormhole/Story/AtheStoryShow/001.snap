@@ -1,0 +1,7 @@
+Snap:H
+  H:AtheStoryShow,Run
+    A:AtheStoryShow
+      self,round	{"mung":["age"]}
+      w:AtheStoryShow
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

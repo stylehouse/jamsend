@@ -6,6 +6,37 @@
 
 ## 0. What to get on with next
 
+**Where it stands (end of 2026-10-29).**  Built and green in one day: code kept aside (`AthePondAside`), the House reaching a w and
+ a req through its A, the Desk (Ground.g `Desk_*`, a House of its own with its own think), a Story inside a Story
+  (`AtheStoryInStory`), StoryFu's nesting guards (`Story_nested`), the step explorer's lens (`Stuffica_focus`, `AthePondFocus`) and
+   Storica's focus / since prev / pin controls.  **The way in to SEE it:** Book `AtheStoryShow` on a runner (after the 5-ghost load
+    chain below) — then the House called **Desk** on that tab carries the inner Story's Storica.  `*Show` Books may be untidy (owner):
+     they are a way in, not a test.
+
+**Next — the next layer (pick in this order):**
+1. **Ground slice 4: a Book names its Grounds in its toc** (`Aprac_todo.md` §0.5 "First slices" 4).  `become_book` stands them, the
+    begin gate becomes Firm, a missing one is `%GroundRefused` red by name.  Then `?B=AtheStoryShow` alone is the way in, and the
+     hand load chain (`ghost_load Theory, AtheFishTesting, Stuffica, Ground, AtheTesting`) and the 28 hand guards in Books retire.
+      Smallest, used every day.
+2. **The explorer's protrusion** (§3): the change window beside the strip, not replacing the snap panel; oaths drawn on the points
+    they swore about; present mode (recorded snaps, no run); the inner Story as a second strip.
+3. **Pause at time's structure:** the outer drive pulses the Desk's clock (today it keeps its own), so a step can stop an inner run
+    at a round or a Turn — Story_future's 10-28 "crawl".
+4. **The Desk as a page** (`/Desk?G=…`, `/Desk?B=`) — waits on Lies (the relay seat) being standable by a Ground.
+
+**Know before touching it (the bombs):**
+- A Book's snap must never catch code *landing* — cold, warm and fresh tabs land it at different moments.  Stand + use + hold in
+   one step, or stand only after the load surely landed.  (Bit three Books today.)
+- A `means,drop` Entcase must be in the toc BEFORE recording.
+- A new House thinks only once something lands on its todo; a Story run owns its Run House's clock (`no_ambient`); an A with no w
+   grows a default w on its first think (`procure_ways`).
+- Kept-aside code is per TAB and outlives a run.  A recompile of an aside file isn't re-included (the reswap sweeps the spine only).
+- Never edit `src/lib/L/everything.js` while a tab you care about is up — the save reloads tabs (owner: sublate it, next code-side
+   session).  `wormhole/Credence/toc.snap` is hand-edited.
+- The console's `🔍 n=… ok=false` lines are BEFORE noise forgiveness; the Step's ok/caveat is the verdict.
+
+### Done 2026-10-29 (detail)
+
 0. **One tab, both Storys** (§1, "One tab"): load kept aside, then dispatch through the A (both BUILT 2026-10-29, Book `AthePondAside`).
 **2026-10-29 — a Story ran inside a Story, green.**  Book `AtheStoryInStory` (3 steps; green warm ×3 and cold): the page's Story
  runs it; step 2 stands a Desk (`H:Desk`, Ground.g) holding Ground/Story with StoryFu kept aside, gives it AthePondRounds, and
@@ -132,6 +163,18 @@ One window on a step, and everything else is a protrusion from it showing a chan
    alike — Storica's re-seat already turns one into the other in place.  Wants: a focus (pinned points + their ancestors,
     the rest folded to counts), and "changed since the last step" as the default focus.
 
+**Built 2026-10-29 — the lens, and Storica's first explorer controls.**
+- `Stuffica_focus(w, view, {pins})` (Stuffica.g): after a walk, the moved points (shift, neu), each goner under the point that held
+   it (the deep walk now keeps `seem.c.gone`, runtime only), every pinned point whole (pins are Dip names, so a pin follows its
+    particle through re-seats), and the ancestors of each; untouched runs of siblings fold to one row.  `Stuffica_focus_said` says it
+     as one line.  Book `AthePondFocus` (5 steps, green warm ×3 and cold): `0Pond | 1…1 | 1chub 2[shift] | 1roach 3[neu] | 1-Weather:warm`.
+- Storica: **focus** (draw the lens instead of the whole snap), **since prev** (opening step n seats n−1 first, so the re-seat is what
+   that step changed — off, the last re-seat is whatever was open before, or recorded→live: the failure view), **click a line to pin**.
+    Not yet seen in a browser — Storica mounts only where StoryFu is loaded.
+- Next for the explorer: the protrusion as its own window beside the strip (today the lens replaces the snap panel); oaths on the
+   points they swore about; present mode (recorded snaps without a run — Storica already falls back to them); the inner Story of
+    AtheStoryInStory as a second strip.
+
 ## 4. Ledger — what this work changed in Atheory
 
 *(One row per change to Theory/Stuffica/Housing made for Story's sake; the foundation ledger in `Atheory_design.md` §2 gets the
@@ -145,3 +188,4 @@ One window on a step, and everything else is a protrusion from it showing a chan
 | 2026-10-29 | Housing `do_fn_for` `opt.A`; Theory `TheA_dispatches`; toy gets `Athe_Aside(A,w)`; Book step 6 | the House thinks an aside A's w through the A | §1 "One tab", step 2 |
 | 2026-10-29 | Stuff `_req_do_one` passes the req's A; Housing `_req_named`; toy `req_Athe_Aside_ask`; Book step 6 second oath | a named req of aside code is pumped through its A | §1 "One tab", the req leg |
 | 2026-10-29 | Ground.g the Desk (`Desk_house`, `Desk_stand`, `Desk_story`, `Desk`, `Desk_pushes_covered`); StoryFu `Story_finished` (nested: own w + wake the holder); Book `AtheStoryInStory` | a Story inside a Story, green | §0 items 1–2 |
+| 2026-10-29 | Theory deep walk keeps `seem.c.gone`; Stuffica `Stuffica_focus`, `Stuffica_moved_point`, `Stuffica_focus_said`; Storica focus/since/pin; Book `AthePondFocus` | the step explorer's lens | §3 |

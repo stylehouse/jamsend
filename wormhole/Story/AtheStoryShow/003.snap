@@ -1,0 +1,73 @@
+Snap:H
+  H:AtheStoryShow,Run
+    A:AtheStoryShow
+      self,round=4	{"mung":["age"]}
+      w:AtheStoryShow
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        InnerRun:AthePondFocus,steps=5,ok=5
+    H:Desk	{"loopy":1}
+      A:Desk
+        self,round=9	{"mung":["age"]}
+        GroundUsed:Core,via:Story
+        TheACode:Ground/Core,variant:plain,dige:6a7f4b39364aaafc
+          TheALayer:Ghost/A/Theory.g,dige:a6e881cb3b26ad22~g1
+          TheALayer:Ghost/A/Stuffica.g,dige:1f0ec09474696daa~g1
+          TheALayer:Ghost/A/Ground.g,dige:a3fd45e57dcdf482~g1
+        GroundUsed:Story
+        TheACode:Ground/Story,variant:plain,dige:772b84e078ef8432
+          TheALayer:Ghost/O/StoryFu.g,dige:cd6ba6c792cfd093~g1
+          TheALayer:Ghost/O/Supervisor.g,dige:4efe70cdd7ae19ac~g1
+        GroundAside
+        w:Desk
+          DeskGround:Story
+          DeskAside
+          DeskBook:AthePondFocus
+          self,round=9	{"mung":["age"]}
+      A:Story
+        GroundUsed:Core,via:Story
+        TheACode:Ground/Core,variant:plain,dige:6a7f4b39364aaafc
+          TheALayer:Ghost/A/Theory.g,dige:a6e881cb3b26ad22~g1
+          TheALayer:Ghost/A/Stuffica.g,dige:1f0ec09474696daa~g1
+          TheALayer:Ghost/A/Ground.g,dige:a3fd45e57dcdf482~g1
+        GroundUsed:Story
+        TheACode:Ground/Story,variant:plain,dige:772b84e078ef8432
+          TheALayer:Ghost/O/StoryFu.g,dige:cd6ba6c792cfd093~g1
+          TheALayer:Ghost/O/Supervisor.g,dige:4efe70cdd7ae19ac~g1
+        GroundAside
+        self,round=15	{"mung":["age"]}
+        w:Story,Book:AthePondFocus,dontSnap
+      H:AthePondFocus,Run,dontSnap	{"loopy":0}
+      watched:subHouses
+        H,Run,dontSnap	{"loopy":0,"hid":1}
+      watched:ave
+        This,Story:AthePondFocus
+          {"Step":1,"got_snap":"Snap:H\n  H:AthePondFocus,Run\n    A:AthePondFocus\n      self,round\t{\"mung\":[\"age\"]}\n      w:AthePondFocus\n        self,round\t{\"mung\":[\"age\"]}\n        req:wrangle,eternal,ok\n","dige":"921dcaad4ba02e53","ok":true}	{"ref":{"Run_trace":"[Object(),Object(),Object(),Object(),Object(),Object(),Object(),Object()]"}}
+          {"Step":2,"got_snap":"Snap:H\n  H:AthePondFocus,Run\n    A:AthePondFocus\n      self,round=2\t{\"mung\":[\"age\"]}\n      w:AthePondFocus\n        self,round=2\t{\"mung\":[\"age\"]}\n        req:wrangle,eternal,ok\n        w:Athe_Glass\n          TheASeem:pond,dip,walks\n            TheAKind:*\n            TheADeep\n            TheATrace:w,of:Pond\n              Dip:seem,value:pond_1,i=3\n              TheATrace:Fish,of:minnow 1,born\n                Dip:seem,value:pond_1_1,i=2\n                TheATrace:Fin,of:left\n                  Dip:seem,value:pond_1_1_1\n                TheATrace:Fin,of:right\n                  Dip:seem,value:pond_1_1_2\n              TheATrace:Fish,of:chub 2,born=4\n                Dip:seem,value:pond_1_2\n              TheATrace:Weather,of:warm\n                Dip:seem,value:pond_1_3\n            Dip:seem,value:pond,i\n            TheAWalk:1,neu=6\n              TheANeu:w,of:Pond\n          TheAView:pond,commits,dige:d3dc5f572af41df0\n          Focus:moved,said:0Pond[neu] | 1minnow 1[neu] | 2left[neu] | 2right[neu] | 1chub 2[neu] | 1warm[neu]\n","dige":"32e30c3d9429e323","ok":true}	{"ref":{"Run_trace":"[Object(),Object(),Object(),Object(),Object(),Object(),Object(),Object()]"}}
+          {"Step":3,"got_snap":"Snap:H\n  H:AthePondFocus,Run\n    A:AthePondFocus\n      self,round=3\t{\"mung\":[\"age\"]}\n      w:AthePondFocus\n        self,round=3\t{\"mung\":[\"age\"]}\n        req:wrangle,eternal,ok\n        w:Athe_Glass\n          TheASeem:pond,dip,walks=2\n            TheAKind:*\n            TheADeep\n            Dip:seem,value:pond,i\n            TheATrace:w,of:Pond\n              Dip:seem,value:pond_1,i=4\n              TheATrace:Fish,of:minnow 1,born\n                Dip:seem,value:pond_1_1,i=2\n                TheATrace:Fin,of:left\n                  Dip:seem,value:pond_1_1_1\n                TheATrace:Fin,of:right\n                  Dip:seem,value:pond_1_1_2\n              TheATrace:Fish,of:chub 2,born=5\n                Dip:seem,value:pond_1_2\n              TheATrace:Fish,of:roach 3,born=6\n                Dip:seem,value:pond_1_4\n            TheAWalk:2,reseat,fit=4,shift,neu,gone\n          TheAView:pond,commits=2,dige:98787e53311782f3\n          Focus:moved,said:0Pond | 1…1 | 1chub 2[shift] | 1roach 3[neu] | 1-Weather:warm\n","dige":"ca11e5afb6489c2a","ok":true}	{"ref":{"Run_trace":"[Object(),Object(),Object(),Object(),Object(),Object(),Object(),Object()]"}}
+          {"Step":4,"got_snap":"Snap:H\n  H:AthePondFocus,Run\n    A:AthePondFocus\n      self,round=4\t{\"mung\":[\"age\"]}\n      w:AthePondFocus\n        self,round=4\t{\"mung\":[\"age\"]}\n        req:wrangle,eternal,ok\n        w:Athe_Glass\n          TheASeem:pond,dip,walks=2\n            TheAKind:*\n            TheADeep\n            Dip:seem,value:pond,i\n            TheATrace:w,of:Pond\n              Dip:seem,value:pond_1,i=4\n              TheATrace:Fish,of:minnow 1,born\n                Dip:seem,value:pond_1_1,i=2\n                TheATrace:Fin,of:left\n                  Dip:seem,value:pond_1_1_1\n                TheATrace:Fin,of:right\n                  Dip:seem,value:pond_1_1_2\n              TheATrace:Fish,of:chub 2,born=5\n                Dip:seem,value:pond_1_2\n              TheATrace:Fish,of:roach 3,born=6\n                Dip:seem,value:pond_1_4\n            TheAWalk:2,reseat,fit=4,shift,neu,gone\n          TheAView:pond,commits=2,dige:98787e53311782f3\n          Focus:moved,said:0Pond | 1…1 | 1chub 2[shift] | 1roach 3[neu] | 1-Weather:warm\n          Focus:pinned,said:0Pond | 1minnow 1 | 2left | 2right | 1chub 2[shift] | 1roach 3[neu] | 1-Weather:warm\n","dige":"3c68a06d712a0bad","ok":true}	{"ref":{"Run_trace":"[Object(),Object(),Object(),Object(),Object(),Object(),Object(),Object()]"}}
+          {"Step":5,"got_snap":"Snap:H\n  H:AthePondFocus,Run\n    A:AthePondFocus\n      self,round=5\t{\"mung\":[\"age\"]}\n      w:AthePondFocus\n        self,round=5\t{\"mung\":[\"age\"]}\n        req:wrangle,eternal,ok\n        w:Athe_Glass\n          TheASeem:pond,dip,walks=3\n            TheAKind:*\n            TheADeep\n            Dip:seem,value:pond,i\n            TheATrace:w,of:Pond\n              Dip:seem,value:pond_1,i=4\n              TheATrace:Fish,of:minnow 1,born\n                Dip:seem,value:pond_1_1,i=2\n                TheATrace:Fin,of:left\n                  Dip:seem,value:pond_1_1_1\n                TheATrace:Fin,of:right\n                  Dip:seem,value:pond_1_1_2\n              TheATrace:Fish,of:chub 2,born=5\n                Dip:seem,value:pond_1_2\n              TheATrace:Fish,of:roach 3,born=6\n                Dip:seem,value:pond_1_4\n            TheAWalk:3,fit=6\n          TheAView:pond,commits=2,dige:98787e53311782f3\n          Focus:moved,said:0…1\n          Focus:pinned,said:0Pond | 1minnow 1 | 2left | 2right | 1…2\n","dige":"0f1d13216411b5ca","ok":true}	{"ref":{"Run_trace":"[Object(),Object(),Object(),Object(),Object(),Object(),Object(),Object()]"}}
+        swatches
+        live_poll
+        Styles
+        {"story_analysis":1,"frontier":0,"open_at":null,"bad_count":0,"avg_step":0.004}	{"ref":{"run_sc":"Object()","steps":"[Object(),Object(),Object(),Object(),Object()]","notes":"Object()"}}
+        Assertioning,Story:AthePondFocus
+          sworn:focused after a re-seat the eye lands on what moved — changed — new — gone — under its parent — the rest folds to a count,n=3
+          sworn:a pinned point shows whole — by its name — beside what moved,n=4
+          sworn:when nothing moved the focus folds to one row — and a pin still shows its point,n=5
+      watched:actions
+        action,role:save,label:Save,icon:💾,cls:save	{"ref":{"fn":"Function()"}}
+        action,role:reset,label:Reset,icon:🔄,cls:remove	{"ref":{"fn":"Function()"}}
+        action,role:lenient,label:lenient,icon:lenient,cls:toggle-off	{"ref":{"fn":"Function()"}}
+        action,role:snap_checking,label:verify snaps,icon:verify snaps,cls:toggle-off	{"ref":{"fn":"Function()"}}
+        action,role:keep_snaps,label:keep snaps,icon:keep snaps,cls:toggle-off	{"ref":{"fn":"Function()"}}
+        action,role:useCyto,label:useCyto,icon:useCyto,cls:toggle-off	{"ref":{"fn":"Function()"}}
+        action,role:trickle,label:trickle,icon:trickle,cls:toggle-off	{"ref":{"fn":"Function()"}}
+        action,role:resnap,label:Resnap,icon:📸,cls:save	{"ref":{"fn":"Function()"}}
+        action,role:pause,label:Resume,icon:▶,cls:start	{"ref":{"fn":"Function()"}}
+        action,role:status,label:check 005,cls:default,disabled:true
+      watched:UIs
+        UI:Story	{"ref":{"component":"Function()"}}
+        UI:Storica	{"ref":{"component":"Function()"}}
+    watched:subHouses
+      H	{"loopy":1,"hid":1}

@@ -1,0 +1,22 @@
+story:AtheStoryShow
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.023
+      sample=0.026,at=1793263706
+      sample=0.026,at=1793263713
+      sample=0.025,at=1793263729
+      sample=0.025,at=1793264002
+      sample=0.015,at=1793264062
+    TimeTotal:step,avg=0.008
+      sample=0.009,at=1793263706
+      sample=0.009,at=1793263713
+      sample=0.008,at=1793263729
+      sample=0.008,at=1793264002
+      sample=0.005,at=1793264062
+  step,dige:87bf684a27e1f4f5
+  step=2,desc:stand a Desk whose new Story runs AthePondFocus — and wait for it,dige:9abc17e1f5b5fb31
+  step=3,desc:look — on the runner tab the House called Desk shows the inner Story in Storica,dige:8f2b98c69b8d41fb
+    Assertion:the-inner-story-ran,sentence:the inner Story ran the step explorer’s Book green — and stands there to be looked at

@@ -1,0 +1,36 @@
+story:AthePondFocus
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.017
+      sample=0.027,at=1793260354
+      sample=0.027,at=1793260367
+      sample=0.015,at=1793260378
+      sample=0.012,at=1793260382
+      sample=0.01,at=1793260386
+      sample=0.018,at=1793260419
+      sample=0.02,at=1793263705
+      sample=0.018,at=1793263728
+      sample=0.013,at=1793264001
+      sample=0.011,at=1793264061
+    TimeTotal:step,avg=0.003
+      sample=0.005,at=1793260354
+      sample=0.005,at=1793260367
+      sample=0.003,at=1793260378
+      sample=0.002,at=1793260382
+      sample=0.002,at=1793260386
+      sample=0.004,at=1793260419
+      sample=0.004,at=1793263705
+      sample=0.004,at=1793263728
+      sample=0.003,at=1793264001
+      sample=0.002,at=1793264061
+  step,dige:921dcaad4ba02e53
+  step=2,desc:seat a deep view on the recorded pond,dige:32e30c3d9429e323
+  {"step":3,"desc":"re-seat it on the changed pond and focus — what moved, in context","dige":"ca11e5afb6489c2a"}
+    Assertion:focused-after-a-re,sentence:focused after a re-seat the eye lands on what moved — changed — new — gone — under its parent — the rest folds to a count
+  step=4,desc:pin the minnow — by its name — and focus again,dige:3c68a06d712a0bad
+    Assertion:a-pinned-point-shows,sentence:a pinned point shows whole — by its name — beside what moved
+  step=5,desc:walk again with nothing moved,dige:0f1d13216411b5ca
+    Assertion:when-nothing-moved-the,sentence:when nothing moved the focus folds to one row — and a pin still shows its point

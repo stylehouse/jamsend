@@ -118,3 +118,64 @@ Stuffica_flush(changed):
         view.c.ui?.commit?.()
     }
     return changed.map(x => x.view)
+
+// Stuffica_focus — a deep view's points seen through a FOCUS (spec/AtheoryStory_todo.md §3, the step explorer): what the last
+//  walk moved (shift, neu), what it lost (each goner under the point that held it), every pinned point (opts.pins: an object of
+//   Dip names — a name survives a re-seat, so a pin follows its particle from step to step) with all it holds, and the ancestors
+//    of each — so the eye lands on change, in context.  Everything else folds: one row per run of untouched siblings.  The last
+//     walk is whatever it was — step to step ("changed since the last step") or recorded to live (a failure) — one mechanism.
+//  Pure: reads points and their last marks, writes nothing.  Rows: { point, depth, how } · { fold: n, depth } · { gone: D, depth }
+Stuffica_focus(w, name, opts):
+    let seem = w?.o({ TheASeem: name })[0]
+    if (!seem) return []
+    let at = Number(seem.o({ TheAWalk: 1 })[0]?.sc.TheAWalk)
+    let pins = opts?.pins || {}
+    let gone_under = new Map()
+    for (const pair of seem.c.gone || []) {
+        let holder = pair[1] && pair[1].sc && pair[1].sc.TheATrace != null ? pair[1] : seem
+        gone_under.set(holder, [...(gone_under.get(holder) || []), pair[0]])
+    }
+    let wanted = new Set()
+    let want = (point) => {
+        let any = this.Stuffica_moved_point(point, at) || !!pins[this.Stuffica_key(point)] || gone_under.has(point)
+        for (const kid of point.o({ TheATrace: 1 })) {
+            if (want(kid)) any = true
+        }
+        if (any) wanted.add(point)
+        return any
+    }
+    let tops = seem.o({ TheATrace: 1 })
+    for (const point of tops) want(point)
+    let rows = []
+    let emit = (list, depth, holder, all) => {
+        let fold = 0
+        for (const point of list) {
+            if (all || wanted.has(point)) {
+                if (fold) rows.push({ fold, depth })
+                fold = 0
+                rows.push({ point, depth, how: point.c.at === at ? point.c.how : undefined })
+                emit(point.o({ TheATrace: 1 }), depth + 1, point, all || !!pins[this.Stuffica_key(point)])
+            }
+            else {
+                fold++
+            }
+        }
+        if (fold) rows.push({ fold, depth })
+        for (const D of gone_under.get(holder) || []) rows.push({ gone: D, depth })
+    }
+    emit(tops, 0, seem, false)
+    return rows
+
+// did the walk numbered at move this point — changed in place, or new
+Stuffica_moved_point(point, at):
+    return point.c.at === at && (point.c.how === 'shift' || point.c.how === 'neu')
+
+// a focus said as one line, for a Book or a log: depth then what — a point by name (and how it moved), a fold by its count, a goner
+//  by kind:name.  No commas, so it rides a snap line plainly
+Stuffica_focus_said(rows):
+    let say = (row) => {
+        if (row.fold) return row.depth + '…' + row.fold
+        if (row.gone) return row.depth + '-' + row.gone.sc.TheATrace + ':' + row.gone.sc.of
+        return row.depth + String(row.point.sc.of) + (row.how && row.how !== 'fit' ? '[' + row.how + ']' : '')
+    }
+    return rows.map(say).join(' | ')

@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheTesting(): string { return '6c2cf0b4af2ce00c~g1' },
+    Ghostmeta_Ghost_A_AtheTesting(): string { return 'bd5482ae45b9312d~g1' },
 
 // AtheTesting.g — Atheory's proof (Ghost/A/Theory.g; spec/Atheory_todo.md §0.2 "The first Atheory tests").
 //
@@ -2990,12 +2990,13 @@ AtheStoryInStory_hold(w) {
 },
 // the inner Story's insides stay out of this Book's snap — its toc tree, its timing records (they grow every run), its run's House
 //  — folded (%dontSnap: the node's line stays, its subtree goes); what this Book keeps of it is one summary line on its own w
-AtheStoryInStory_fold(w, sw, fin, steps) { const H = this;
+AtheStoryInStory_fold(w, sw, fin, steps, book) { const H = this;
     if (!sw) return
+    book = book || 'AthePondRounds'
     if (!sw.sc.dontSnap) sw.sc.dontSnap = 1
-    let inner = this.AtheStoryInStory_desk()?.o({ H: 'AthePondRounds' })[0]
+    let inner = this.AtheStoryInStory_desk()?.o({ H: book })[0]
     if (inner && !inner.sc.dontSnap) inner.sc.dontSnap = 1
-    if (fin) w.oai({ InnerRun: 'AthePondRounds' }, { steps: steps.length, ok: steps.filter(s => s.sc.ok && !s.sc.caveat).length })
+    if (fin) w.oai({ InnerRun: book }, { steps: steps.length, ok: steps.filter(s => s.sc.ok && !s.sc.caveat).length })
 
 },
 AtheStoryInStory_witness(w) {
@@ -3015,6 +3016,115 @@ AtheStoryInStory_witness(w) {
     this.AtheStoryInStory_fold(w, sw, fin, steps)
     if (n >= 3 && fin && steps.length && steps.every(s => s.sc.ok && !s.sc.caveat)) {
         this.story_swear(w, 'the inner Story ran its Book green — and told its own w it finished — not the page')
+    }
+},
+//#endregion
+//#region the test routine — Book AthePondFocus
+// a FOCUS on a deep view (Stuffica_focus; spec/AtheoryStory_todo.md §3 — the step explorer's lens): after a re-seat, what moved,
+//  with its parents, and the rest folded to counts; a pinned point (by its Dip name) shown whole wherever it goes.  The pond is
+//   AthePondReseat's.  Step 2 seats the recorded pond; step 3 re-seats on the changed one (chub older, a roach, no weather) and
+//    focuses; step 4 pins the minnow; step 5 walks again with nothing moved
+AthePondFocus(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.AthePondFocus_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async AthePondFocus_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 5
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.AthePondFocus_seat(w, 'recorded', 'seat a deep view on the recorded pond')
+        if (n === 3) await this.AthePondFocus_seat(w, 'changed', 're-seat it on the changed pond and focus — what moved, in context')
+        if (n === 4) this.AthePondFocus_pin(w)
+        if (n === 5) await this.AthePondFocus_seat(w, 'changed', 'walk again with nothing moved')
+        this.AthePondFocus_say(w)
+    }
+    this.AthePondFocus_witness(w)
+
+},
+async AthePondFocus_seat(w, which, desc) {
+    w.i({ desc })
+    if (typeof this.Stuffica_focus !== 'function' || typeof this.decode_wh_lines !== 'function') {
+        w.i({ log: 'Theory.g or Stuffica.g is not loaded — ghost_load them beside AtheTesting.g' })
+        return
+    }
+    let glass = w.oai({ w: 'Athe_Glass' })
+    if (!glass.o({ TheAView: 'pond' }).length) this.Stuffica_view(glass, 'pond', ['*'], null, { deep: 1 })
+    glass.c.trees = glass.c.trees || {}
+    glass.c.trees[which] = glass.c.trees[which] || this.AthePondReseat_tree(which)
+    this.Stuffica_from(glass, 'pond', glass.c.trees[which])
+    await this.Stuffica_refresh(glass)
+
+},
+AthePondFocus_pin(w) {
+    w.i({ desc: 'pin the minnow — by its name — and focus again' })
+    let glass = w.o({ w: 'Athe_Glass' })[0]
+    if (!glass) return
+    let key = this.AthePondReseat_names(glass)['minnow 1']
+    if (key) glass.c.pins = { [key]: 1 }
+
+},
+// the focus, said on the glass — unpinned, and with the pins if there are any
+AthePondFocus_say(w) {
+    let glass = w.o({ w: 'Athe_Glass' })[0]
+    if (!glass || typeof this.Stuffica_focus !== 'function') return
+    glass.oai({ Focus: 'moved' }, { said: this.Stuffica_focus_said(this.Stuffica_focus(glass, 'pond')) })
+    if (glass.c.pins) glass.oai({ Focus: 'pinned' }, { said: this.Stuffica_focus_said(this.Stuffica_focus(glass, 'pond', { pins: glass.c.pins })) })
+
+},
+AthePondFocus_witness(w) {
+    let n = this.c.run?.c.step_n ?? 0
+    let glass = w.o({ w: 'Athe_Glass' })[0]
+    if (!glass) return
+    let moved = glass.o({ Focus: 'moved' })[0]?.sc.said
+    let pinned = glass.o({ Focus: 'pinned' })[0]?.sc.said
+    if (n === 3 && moved === '0Pond | 1…1 | 1chub 2[shift] | 1roach 3[neu] | 1-Weather:warm') {
+        this.story_swear(w, 'focused after a re-seat the eye lands on what moved — changed — new — gone — under its parent — the rest folds to a count')
+    }
+    if (n === 4 && pinned === '0Pond | 1minnow 1 | 2left | 2right | 1chub 2[shift] | 1roach 3[neu] | 1-Weather:warm') {
+        this.story_swear(w, 'a pinned point shows whole — by its name — beside what moved')
+    }
+    if (n === 5 && moved === '0…1' && pinned === '0Pond | 1minnow 1 | 2left | 2right | 1…2') {
+        this.story_swear(w, 'when nothing moved the focus folds to one row — and a pin still shows its point')
+    }
+},
+//#endregion
+//#region the test routine — Book AtheStoryShow
+// THE WAY IN to see the new Story (owner 2026-10-29: "a Book that just loads this latest thing I'm after in the inner H, so I can
+//  see it").  Stands a Desk whose new Story (StoryFu, kept aside) runs AthePondFocus — the step explorer's own Book — and leaves it
+//   standing.  On the runner tab, find the House called Desk: its Storica is the inner Story's — the step strip, the snap panel,
+//    and the focus / since prev / pin controls (spec/AtheoryStory_todo.md §3).  Step 2 stands it and waits for the inner run; step 3
+//     is where you look.  Needs the same ghost_loads as AtheStoryInStory
+AtheStoryShow(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.AtheStoryShow_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async AtheStoryShow_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 3
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) w.i({ desc: 'stand a Desk whose new Story runs AthePondFocus — and wait for it' })
+        if (n === 3) w.i({ desc: 'look — on the runner tab the House called Desk shows the inner Story in Storica' })
+    }
+    if (n === 2 && typeof this.Desk_story === 'function') {
+        this.Desk_story(this, 'AthePondFocus')
+        this.AtheStoryInStory_hold(w)
+    }
+    let sw = this.AtheStoryInStory_inner(w)
+    let fin = sw?.o({ StoryFinished: 'AthePondFocus' })[0]
+    let steps = sw?.c.This?.o({ Step: 1 }) ?? []
+    this.AtheStoryInStory_fold(w, sw, fin, steps, 'AthePondFocus')
+    if (n >= 3 && fin && steps.length && steps.every(s => s.sc.ok && !s.sc.caveat)) {
+        this.story_swear(w, 'the inner Story ran the step explorer’s Book green — and stands there to be looked at')
     }
 },
 //#endregion

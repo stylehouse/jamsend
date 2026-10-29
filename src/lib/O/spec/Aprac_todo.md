@@ -301,7 +301,7 @@ Because each .g has exactly one home Ground, the Grounds partition the code, so 
      Desk reads that when Wormhole can't; the dev path reads the wormhole.
 
 ### Weird bits (worth knowing before building)
-1. **The map is code** — see above; the editor gesture needs a writable home for the tags.
+1. **The map is code** — see above; the editor gesture needs a writable home for the tags. **Owner 2026-10-29: "everything.js is silly" — sublate it next time we're on the code aspect** (the tags, the area Wafts and the Book lists into particles the wormhole holds, with Credence — today hand-edited — in the same shape).
 2. **Order matters**: eatfunc is last-wins (`ghostsHaunt` lays later files over earlier).  Stand order = what a Ground stands
     on first, then its .g in map order; clobbers are already reported (`TheA_clobbers_stand`).
 3. **The .svelte spine isn't .g**: Lies, Lang, Cyto, Story.svelte… are mounted by `Ghost.svelte`.  The first cut covers .g

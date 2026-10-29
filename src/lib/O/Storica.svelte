@@ -26,6 +26,13 @@
     let stood = false
     // the step open in the strip
     let open_n = $state<number | null>(null)
+    // the step explorer's lens (spec/AtheoryStory_todo.md §3): focus — draw only what the last re-seat moved, with its parents, the
+    //  rest folded (Stuffica_focus); since — opening step n seats step n−1 first, so that re-seat IS "what this step changed";
+    //   pins — points kept in view by their Dip name, which a re-seat keeps, so a pin follows its particle from step to step
+    let focus = $state(false)
+    let since = $state(false)
+    let pins = $state<Record<string, 1>>({})
+    let seated = ''
     // the render ledger: plain, so keeping it can't cause a render
     const ledger: Record<string, number> = {}
     const drew = (part: string) => { ledger[part] = (ledger[part] || 0) + 1 }
@@ -71,6 +78,7 @@
         const This = H.ave.ob({ This: 1 })[0] as TheC | undefined
         void H.ave.ob({ story_analysis: 1 })[0]
         const n = open_n
+        const by_step = since
         const now = loaded()
         if (now !== untrack(() => ready)) ready = now
         if (!now) return
@@ -81,9 +89,19 @@
             H.Stuffica_from(Wv, 'plan', w?.c.The)
             H.Stuffica_from(Wv, 'live', This)
             const snap = snap_source(w, This, n)
-            H.Stuffica_from(Wv, 'snap', snap.tree)
+            // "since": on opening a step (or turning it on), seat the step before first — then the re-seat onto this one is the change
+            const key = n + ':' + by_step
+            const prev = by_step && n != null && key !== seated ? snap_source(w, This, n - 1) : null
+            seated = key
             if (snap.from !== snap_from) snap_from = snap.from
-            refreshing = refreshing.then(() => H.Stuffica_refresh(Wv, ['plan', 'live', 'snap'])).catch(e => console.warn('Storica refresh', e))
+            refreshing = refreshing.then(async () => {
+                if (prev?.tree) {
+                    H.Stuffica_from(Wv, 'snap', prev.tree)
+                    await H.Stuffica_refresh(Wv, ['snap'])
+                }
+                H.Stuffica_from(Wv, 'snap', snap.tree)
+                return H.Stuffica_refresh(Wv, ['plan', 'live', 'snap'])
+            }).catch(e => console.warn('Storica refresh', e))
         })
     })
 
@@ -106,13 +124,29 @@
         if (!ready) return { lines: [] as any[], walk: {} as Record<string, any> }
         drew('snap')
         const points = H.Stuffica_points(Wv, 'snap') as TheC[]
+        const lens = focus
+        const pinned = { ...pins }
         return untrack(() => {
             const walk = (Wv.o({ TheASeem: 'snap' })[0]?.o({ TheAWalk: 1 })[0]?.sc ?? {}) as Record<string, any>
             const lines: any[] = []
-            const visit = (p: TheC, depth: number) => {
+            const glow_of = (p: TheC) => {
                 const how = p.c.how as string | undefined
-                const glow = !how || (how === 'fit' && !walk.reseat) || p.c.at !== Number(walk.TheAWalk) ? '' : how + ':' + p.c.at
-                lines.push({ key: H.Stuffica_key(p) || lines.length + ':' + depth, depth, text: line_of(p), glow })
+                return !how || (how === 'fit' && !walk.reseat) || p.c.at !== Number(walk.TheAWalk) ? '' : how + ':' + p.c.at
+            }
+            const point_line = (p: TheC, depth: number) => {
+                const pin = H.Stuffica_key(p)
+                return { key: pin || lines.length + ':' + depth, pin, depth, text: line_of(p), glow: glow_of(p), pinned: !!(pin && pinned[pin]) }
+            }
+            if (lens && typeof H.Stuffica_focus === 'function') {
+                for (const row of H.Stuffica_focus(Wv, 'snap', { pins: pinned }) as any[]) {
+                    if (row.point) lines.push(point_line(row.point, row.depth))
+                    else if (row.fold) lines.push({ key: 'fold:' + lines.length, depth: row.depth, text: '… ' + row.fold + ' alike', glow: '', fold: true })
+                    else if (row.gone) lines.push({ key: 'gone:' + lines.length, depth: row.depth, text: line_of(row.gone), glow: '', gone: true })
+                }
+                return { lines, walk }
+            }
+            const visit = (p: TheC, depth: number) => {
+                lines.push(point_line(p, depth))
                 for (const kid of p.o({ TheATrace: 1 }) as TheC[]) visit(kid, depth + 1)
             }
             for (const p of points) visit(p, 0)
@@ -157,6 +191,14 @@
     const glyph: Record<string, string> = { hollow: '○', accepted: '·', caveat: '≈', ok: '·', fail: '✗' }
 
     // a click asks Story to open the step, as Storui's pip does.  (When Story is an A this becomes IO on its %TheAIO.)
+    // a line clicked pins (or unpins) its point, by name
+    function pin(key: string | undefined) {
+        if (!key) return
+        const next = { ...pins }
+        if (next[key]) delete next[key]
+        else next[key] = 1
+        pins = next
+    }
     function pick(n: number) {
         open_n = n
         H.i_elvisto('Story/Story', 'story_sel', { open_at: n })
@@ -191,11 +233,15 @@
                 <div class="sc-snap-head">
                     <span>snap · {snap_from ?? 'none yet'}</span>
                     {#if snap.walk.reseat}<span class="sc-tally">seated — {snap.walk.fit ?? 0} fit{snap.walk.shift ? ` · ${snap.walk.shift} changed` : ''}{snap.walk.neu ? ` · ${snap.walk.neu} new` : ''}{snap.walk.gone ? ` · ${snap.walk.gone} gone` : ''}</span>{/if}
+                    <button class="sc-lens" class:on={focus} onclick={() => (focus = !focus)} title="draw only what the last re-seat moved, with its parents — the rest folded">focus</button>
+                    <button class="sc-lens" class:on={since} onclick={() => (since = !since)} title="opening a step seats the one before it first — so what glows is what this step changed">since prev</button>
+                    {#if Object.keys(pins).length}<button class="sc-lens on" onclick={() => (pins = {})} title="unpin all">{Object.keys(pins).length} pinned ×</button>{/if}
                     <span class="sc-commits">{looks.snap.v}</span>
                 </div>
                 <div class="sc-lines">
                     {#each snap.lines as l (l.key)}
-                        <div class="sc-line" style:padding-left="{l.depth * 1.2 + 0.3}em" use:glow={l.glow}>{l.text}</div>
+                        <div class="sc-line" class:fold={l.fold} class:gone={l.gone} class:pinned={l.pinned} style:padding-left="{l.depth * 1.2 + 0.3}em"
+                             use:glow={l.glow} role="button" tabindex="-1" onclick={() => pin(l.pin)} onkeydown={(e) => e.key === "Enter" && pin(l.pin)} title={l.pin ? (l.pinned ? 'unpin' : 'pin — keep it in view, step to step') : ''}>{l.text}</div>
                     {/each}
                 </div>
             </div>
@@ -225,5 +271,10 @@
     .sc-snap-head { display: flex; gap: 10px; opacity: .7; }
     .sc-tally { color: #3a7; }
     .sc-lines { max-height: 40vh; overflow: auto; white-space: pre; }
-    .sc-line { border-radius: 2px; }
+    .sc-line { border-radius: 2px; cursor: default; }
+    .sc-line.fold { opacity: .45; font-style: italic; }
+    .sc-line.gone { opacity: .6; text-decoration: line-through; color: #d33; }
+    .sc-line.pinned { box-shadow: inset -3px 0 0 #48f; }
+    .sc-lens { padding: 0 4px; border: 1px solid #8884; border-radius: 3px; background: none; color: inherit; font: inherit; cursor: pointer; opacity: .7; }
+    .sc-lens.on { background: #48f3; opacity: 1; }
 </style>

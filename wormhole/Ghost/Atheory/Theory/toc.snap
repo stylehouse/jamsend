@@ -30,6 +30,9 @@ Waft:Ghost/Atheory/Theory,desc:Atheory — an A says which code it runs — the 
     Funkcion:Storying,of_Book:AthePondSunpitFrontier
     Funkcion:Storying,of_Book:AthePondSunpitPassOrder
     Funkcion:Storying,of_Book:AtheStoryCode
+    Funkcion:Storying,of_Book:AthePondAside
+    Funkcion:Storying,of_Book:AthePondFocus
+    Funkcion:Storying,of_Book:AtheStoryInStory
   What:the code an A runs,desc:TheACode and its layers — a chain digest only once every layer is loaded — a pushed file waits for the era seam
     Doc:Ghost/A/Theory.g
     Point,method:TheA_stand,desc:an A arrives with its code

@@ -11,7 +11,7 @@ import { Selection } from "$lib/Selection.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_Theory(): string { return '91aaa012553f4014~g1' },
+    Ghostmeta_Ghost_A_Theory(): string { return 'a6e881cb3b26ad22~g1' },
 
 // Theory.g — Atheory's first organ: an A says which code it runs (spec/Atheory_todo.md §0.1 and §0.2).
 //
@@ -995,6 +995,9 @@ async TheA_seem_walk(w, name) {
     w.oai({ TheASeem: name }, { walks })
     for (const old of seem.o({ TheAWalk: 1 })) seem.drop(old)
     let walk = seem.i({ TheAWalk: String(walks), ...(deep ? this.TheA_nonzero({ reseat: reseat ? 1 : 0, ...tally, gone: all_gone.length }) : {}) })
+    // where each point that went was (a deep walk): runtime, never snapped — a focus shows a goner under the point that held it
+    //  (Stuffica_focus).  [gone D, the D it hung under]; the next walk replaces it
+    if (deep) seem.c.gone = all_gone
     for (const [D, bD] of became) walk.i({ TheABecame: D.sc.TheATrace, of: D.sc.of, was: bD.sc.TheATrace })
     let where = (up) => (over && up && up !== seem ? { in: this.TheA_point_key(up) } : {})
     for (const [D, up] of neus) walk.i({ TheANeu: D.sc.TheATrace, of: D.sc.of, ...where(up) })

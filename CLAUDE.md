@@ -204,8 +204,10 @@ Show the arc, not just the diff.
  (`FromWhat:Waft:…`) at that area's Waft — `Ghost/Net/Easy`, `Ghost/Swarm/Easy`, `Ghost/Music/Ality`,
   `Ghost/Music/Cave`, `Ghost/Vis/Visua`, `Ghost/Land/Wordland`, `Ghost/Hoho/Easy` — plus `Credence` (every
    Book). An area Waft lists its ghosts' MAIN functions as `Point,method:X,desc:<keywords>`. The keeping
-    policy is the last `What` of Everything. All of it is generated + validated by
-     `scripts/wafts_everything.mjs` — edit THAT, re-run it, reload the editor; never hand-edit the tocs.
+    policy is the last `What` of Everything. Everything and the area Wafts are generated + validated by
+     `scripts/wafts_everything.mjs` — edit THAT, re-run it, reload the editor; never hand-edit those tocs.
+      **`wormhole/Credence/toc.snap` is the exception: it is EDITED BY HAND** (one `Funkcion:Storying,of_Book:…` row
+       per Book, beside its neighbours) — the script only points at it.  A new Book gets its row there.
 
 ## Docs: specs, todos, and the history/ shelf
 

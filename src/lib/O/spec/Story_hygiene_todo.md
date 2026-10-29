@@ -9,6 +9,15 @@ A NEW Story primitive: a declared, per-run **reset** of the disk working-area a 
 
 ## 0. What to get on with next
 
+### Books with a toc but no Credence row — run them, or delete them (found 2026-10-29)
+
+`HohoRetake`, `MusuMagnet`, `MusuRadioAim`, `SwarmBorrow`, `SwarmCall` have a `wormhole/Story/<Book>/toc.snap` but no
+ `of_Book:` row in `wormhole/Credence/toc.snap` (hand-edited — see CLAUDE.md), and no step descs to say what they test.  Owner:
+  *"are we sure they all run and are ok? they might have been forgotten to be deleted"*.  For each: does its routine still exist
+   (grep the Book name in Ghost/), does it run green on a pinned runner (a subagent), and is it wanted — then a Credence row or a
+    deletion.  HohoRetake is known (a flaky retake gate — memory waft-retake-lands); the four Musu/Swarm ones are the doubt.
+     (AthePondGuards, LagoonCave, WorkshopStaple got rows 2026-10-29.)
+
 ### ⚠ Cold entropy profile — a fresh runner's FIRST run snaps without its shared drops (found 2026-10-29)
 
 **What happens.**  A Book's `The/EntropyProfile,Wref:Trope/Lies/NormalEntropy` is opened by Story (`Story.svelte` "open shared

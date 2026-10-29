@@ -1,4 +1,6 @@
-Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 209 of 404 — one What per directory — give each a home in its area and re-run
+Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 210 of 405 — one What per directory — give each a home in its area and re-run
+  What:Ghost/A,desc:1 file with no area
+    Doc:Ghost/A/AtheAside.g
   What:Ghost/L/test_corpus,desc:1 file with no area
     Doc:Ghost/L/test_corpus/Sample.g
   What:Ghost/Story,desc:1 file with no area
