@@ -1671,7 +1671,9 @@ export class House extends StorableHousing {
                 || n.c.do_fn || con?.c.do_fn                              // doai sets n.c.do_fn
                 // the %req-only rungs: name convention (H.req_$name) and the
                 //  req/*req last_resort — gated on n%req so a non-req never hits them.
-                || (is_req && name && (this as any)['req_' + name]?.bind(this))
+                // the name convention looks on the req's A first when the House must reach it through the A (code kept
+                //  aside — Theory TheA_dispatches), as the w leg below does
+                || (is_req && name && this._req_named(name, opt.A))
                 || (is_req && opt.last_resort?.(n))
                 || undefined
             return { handler, method: name }
@@ -1713,6 +1715,12 @@ export class House extends StorableHousing {
                     : undefined
 
         return { handler, method }
+    }
+
+    // _req_named — req_$name, on the A's code when the House can only reach it through the A, else on the House
+    _req_named(name: string, A?: TheC): Function | undefined {
+        const self: any = A && (this as any).TheA_dispatches?.(A) ? (this as any).TheA_as(A) : this
+        return self['req_' + name]?.bind(self)
     }
 
     // -------------------------------------------------------------------------

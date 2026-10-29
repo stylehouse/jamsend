@@ -4,26 +4,28 @@ story:AthePondAside
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.012
-      sample=0.011,at=1793240651
-      sample=0.011,at=1793240662
-      sample=0.011,at=1793240673
-      sample=0.014,at=1793240677
-      sample=0.012,at=1793240682
-      sample=0.016,at=1793240699
-    TimeTotal:step,avg=0.002
-      sample=0.002,at=1793240651
-      sample=0.002,at=1793240662
-      sample=0.002,at=1793240673
-      sample=0.002,at=1793240677
-      sample=0.002,at=1793240682
-      sample=0.003,at=1793240699
+    TimeTotal:beliefs,avg=0.021
+      sample=0.027,at=1793242476
+      sample=0.027,at=1793242483
+      sample=0.015,at=1793242495
+      sample=0.013,at=1793242499
+      sample=0.02,at=1793242505
+      sample=0.025,at=1793242539
+    TimeTotal:step,avg=0.003
+      sample=0.004,at=1793242476
+      sample=0.004,at=1793242483
+      sample=0.002,at=1793242495
+      sample=0.002,at=1793242499
+      sample=0.003,at=1793242505
+      sample=0.004,at=1793242539
   step,dige:78fe8537a6f0768a
   step=2,desc:load a toy kept aside — no A holds it yet,dige:93ae271415d5b4dc
   step=3,desc:let the toy land — kept as a version and on no House,dige:1a24635cd80db950
-  step=4,desc:stand an A holding the toy — it takes the digest kept aside,dige:44051b6aff9d3395
+  step=4,desc:stand an A holding the toy — it takes the digest kept aside,dige:1325e3682af8723a
     Assertion:kept-aside,sentence:kept aside — the A holds the toy at the digest kept and no House has its method
-  step=5,desc:run the toy through its A,dige:114e264b167832e9
+  step=5,desc:run the toy through its A,dige:969f8cf087eb165c
     Assertion:through-its-a-the,sentence:through its A the toy runs — and still no House has it
-  {"step":6,"desc":"give the A a w of the toy — the House thinks it, and only the A has its method","dige":"6a031192a08bbedc"}
+  {"step":6,"desc":"give the A a w of the toy — the House thinks it, and only the A has its method","dige":"89ddc073f88b2d9e"}
     Assertion:the-house-thinks-the,sentence:the House thinks the toy’s w through its A — the w’s method is on no House
+  step=7,desc:the House has pumped the req the toy’s w made — look where it was found,dige:35cad2fa3bca1d76
+    Assertion:the-house-pumps-the,sentence:the House pumps the toy’s req by name through its A — req_Athe_Aside_ask is on no House

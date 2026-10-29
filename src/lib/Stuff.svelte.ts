@@ -787,9 +787,14 @@ abstract class StuffAware extends StuffIO {
         // resolve the handler the way the walk does — climb c.up to the House for
         //  do_fn_for (req.c.do_fn, the req_$name convention, and mutated_fn).  At
         //  do-time the tree is wired, so the House is always up the chain.
+        //  The first A passed on the way is the req's A: the House may resolve req_$name through it (Theory TheA_dispatches).
         let H: any = this
-        while (H && typeof H.do_fn_for !== 'function') H = H.c?.up
-        const handler = fn || H?.do_fn_for(req, { ark: 'req' })?.handler
+        let A: any = undefined
+        while (H && typeof H.do_fn_for !== 'function') {
+            if (!A && H.sc?.A != null) A = H
+            H = H.c?.up
+        }
+        const handler = fn || H?.do_fn_for(req, { ark: 'req', A })?.handler
         if (handler) {
             // first do(): expose the birth-stamped initial-do as %initialdo
             if (req.c.initialdo) { delete req.c.initialdo; req.sc.initialdo = 1 }

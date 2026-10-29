@@ -4,8 +4,7 @@ story:VytoSketch
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.059
-      sample=0.046,at=1793189319
+    TimeTotal:beliefs,avg=0.078
       sample=0.041,at=1793189660
       sample=0.027,at=1793189709
       sample=0.019,at=1793190037
@@ -15,8 +14,8 @@ story:VytoSketch
       sample=0.058,at=1793220028
       sample=0.032,at=1793221633
       sample=0.057,at=1793236422
-    TimeTotal:step,avg=0.02
-      sample=0.015,at=1793189319
+      sample=0.234,at=1793241891
+    TimeTotal:step,avg=0.026
       sample=0.014,at=1793189660
       sample=0.009,at=1793189709
       sample=0.006,at=1793190037
@@ -26,6 +25,7 @@ story:VytoSketch
       sample=0.019,at=1793220028
       sample=0.011,at=1793221633
       sample=0.019,at=1793236422
+      sample=0.078,at=1793241891
   step,dige:8154f14fd36db19d
   step=2,desc:fetch the sketch — plain objects in the guise notation,dige:59dec67e6cf9875c
   step=3,desc:stand the sketch on the glass,dige:6016f7eb88190ec4

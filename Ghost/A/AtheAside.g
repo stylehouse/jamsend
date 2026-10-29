@@ -9,3 +9,9 @@ Athe_Aside_hello(w):
 // the toy's w: thought by the House like any w — which can reach it only through the A (Housing do_fn_for → TheA_dispatches)
 Athe_Aside(A, w):
     w.oai({ AsideThought: 1 }, { by: this.TheA_base ? 'its A' : 'the House' })
+    w.oai({ req: 'Athe_Aside_ask', eternal: 1 })
+
+// the toy's named req: pumped by the House, found by its name (req_<name>) — which the House can reach only through the A
+req_Athe_Aside_ask(req):
+    req.c.up.oai({ AsideAsked: 1 }, { by: this.TheA_base ? 'its A' : 'the House' })
+    req.sc.ok = 1

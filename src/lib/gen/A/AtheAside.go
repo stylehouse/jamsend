@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheAside(): string { return '6893a0249f9f8c20~g1' },
+    Ghostmeta_Ghost_A_AtheAside(): string { return 'b40a23a2eb5037d8~g1' },
 
 // AtheAside.g — a toy that is only ever loaded KEPT ASIDE (Housing.ghost_aside; spec/AtheoryStory_todo.md §1 "One tab").
 //  Book AthePondAside stands an A holding it and loads it aside: its method must reach no House, and run only through the A
@@ -22,6 +22,13 @@ Athe_Aside_hello(w) {
 // the toy's w: thought by the House like any w — which can reach it only through the A (Housing do_fn_for → TheA_dispatches)
 Athe_Aside(A, w) {
     w.oai({ AsideThought: 1 }, { by: this.TheA_base ? 'its A' : 'the House' })
+    w.oai({ req: 'Athe_Aside_ask', eternal: 1 })
+
+},
+// the toy's named req: pumped by the House, found by its name (req_<name>) — which the House can reach only through the A
+req_Athe_Aside_ask(req) {
+    req.c.up.oai({ AsideAsked: 1 }, { by: this.TheA_base ? 'its A' : 'the House' })
+    req.sc.ok = 1
 
 },
 

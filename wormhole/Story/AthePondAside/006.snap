@@ -7,9 +7,11 @@ Snap:H
         req:wrangle,eternal,ok
         AsideSaid:hello,by:its A
     A:Athe_Aside
-      TheACode:Athe_Aside,variant:plain,dige:42cf0cca750e3279
-        TheALayer:Ghost/A/AtheAside.g,dige:6893a0249f9f8c20~g1
+      TheACode:Athe_Aside,variant:plain,dige:2f47829426ae7ef1
+        TheALayer:Ghost/A/AtheAside.g,dige:b40a23a2eb5037d8~g1
       self,round=2	{"mung":["age"]}
       w:Athe_Aside
         self,round	{"mung":["age"]}
         AsideThought,by:its A
+        req:Athe_Aside_ask,eternal,ok
+        AsideAsked,by:its A

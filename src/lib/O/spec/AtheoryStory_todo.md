@@ -69,8 +69,10 @@ A Story nested in a Story is an A in an A, and A\*\* already has the two lookups
        call through its A", and nesting is what finally asks for it.
     **BUILT 2026-10-29 for the w leg only**, gated: `do_fn_for` resolves on `TheA_as(A)` when `TheA_dispatches(A)` — a layer of the
      A's code is kept aside and not flat.  An A holding an older version of FLAT code is still thought by the House's copy (a
-      ruling, not a fix: AthePondVersions relies on it).  Not yet: the req leg (`req_<name>` by convention looks on the House;
-       a `do_fn` made by code running as the A already closes over the A's `this`).  The owner's longer wish: the A always in
+      ruling, not a fix: AthePondVersions relies on it).  The req leg followed the same day: `_req_do_one` passes the first A on
+       its climb, and `req_<name>` is looked up through it (`_req_named`); a `do_fn` made by code running as the A already closes
+        over the A's `this`.  (Owner: "smells like we should just be calling `A.req_<name>`" — `TheA_as(A)` IS that object; a real
+         A class, House-like and holding code, waits until the proxy stops being enough.)  The owner's longer wish: the A always in
         scope, so every call takes the A's version — `_Aw_think` already passes A first to every handler; what changed is `this`.
 Then the Desk-in-a-run stands `Ground/Story` aside, and `AtheStoryInStory` can begin.  StoryFu's 22 `top_House()` reaches (below)
  are what that Book reds on next.
@@ -113,3 +115,4 @@ One window on a step, and everything else is a protrusion from it showing a chan
 | 2026-10-29 | `Ghost/O/StoryFu.g` | mirrored the `%desc`-particle-only guard from Story.svelte | the two Storys had drifted |
 | 2026-10-29 | Housing `ghost_aside`, LiesLies include `{aside}`, Theory `TheA_loaded`, Ground `{aside}`; toy `Ghost/A/AtheAside.g`; Book `AthePondAside` | code kept aside: kept as a version, run only through its A, on no House | §1 "One tab", step 1 — foundation ledger row in `Atheory_design.md` §2 |
 | 2026-10-29 | Housing `do_fn_for` `opt.A`; Theory `TheA_dispatches`; toy gets `Athe_Aside(A,w)`; Book step 6 | the House thinks an aside A's w through the A | §1 "One tab", step 2 |
+| 2026-10-29 | Stuff `_req_do_one` passes the req's A; Housing `_req_named`; toy `req_Athe_Aside_ask`; Book step 6 second oath | a named req of aside code is pumped through its A | §1 "One tab", the req leg |

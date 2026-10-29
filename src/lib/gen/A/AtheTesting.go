@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheTesting(): string { return '91600aabc6b43e78~g1' },
+    Ghostmeta_Ghost_A_AtheTesting(): string { return 'aed7d9592ff30e0b~g1' },
 
 // AtheTesting.g — Atheory's proof (Ghost/A/Theory.g; spec/Atheory_todo.md §0.2 "The first Atheory tests").
 //
@@ -2833,7 +2833,9 @@ AthePondGround_witness(w) {
 //  loaded aside has its methods kept as a version and Theory told, but no House gets them; only an A holding it runs it, through
 //  TheA_as.  Step 2 loads Ghost/A/AtheAside.g (a toy in no Ground) aside; step 3 lets it land; step 4 stands A:Athe_Aside holding
 //    it — at the kept digest, and no House has its method; step 5 the A runs it; step 6 gives the A a w:Athe_Aside, which the
-//     House's own think can reach only through the A (Housing do_fn_for → Theory TheA_dispatches).  The A is stood only once the toy is surely
+//     House's own think can reach only through the A (Housing do_fn_for → Theory TheA_dispatches), and whose named req the House's
+//      req pump finds the same way (Stuff _req_do_one passes the req's A; Housing _req_named) — sworn at step 7, since the w
+//       makes the req when it is thought and the pump reaches it after this Book's witness has run.  The A is stood only once the toy is surely
 //     loaded, so a cold tab and one that kept it aside on an earlier run snap the same (the kept dige lives on the top House and
 //      outlives a run — standing the A at step 2 gave it its digest at step 2 on a warm tab, step 4 on a cold one).  Green only on a
 //     runner that ghost_loaded Theory.g beside this file, and never loaded AtheAside.g flat
@@ -2846,11 +2848,12 @@ AthePondAside(A,w) {
 },
 async AthePondAside_drive(w, req) {
     let run = this.c.run
-    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 6
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 7
     let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 6) this.AthePondAside_w(w)
+        if (n === 7) w.i({ desc: 'the House has pumped the req the toy’s w made — look where it was found' })
         if (n === 2) this.AthePondAside_load(w)
         if (n === 3) w.i({ desc: 'let the toy land — kept as a version and on no House' })
         if (n === 4) this.AthePondAside_stand(w)
@@ -2914,9 +2917,14 @@ AthePondAside_witness(w) {
     if (n === 5 && said?.sc.by === 'its A' && this.AthePondAside_absent()) {
         this.story_swear(w, 'through its A the toy runs — and still no House has it')
     }
-    let thought = A.o({ w: 'Athe_Aside' })[0]?.o({ AsideThought: 1 })[0]
+    let tw = A.o({ w: 'Athe_Aside' })[0]
+    let thought = tw?.o({ AsideThought: 1 })[0]
     if (n === 6 && thought?.sc.by === 'its A' && this.AthePondAside_absent() && typeof this.Athe_Aside !== 'function') {
         this.story_swear(w, 'the House thinks the toy’s w through its A — the w’s method is on no House')
+    }
+    let asked = tw?.o({ AsideAsked: 1 })[0]
+    if (n === 7 && asked?.sc.by === 'its A' && typeof this.req_Athe_Aside_ask !== 'function') {
+        this.story_swear(w, 'the House pumps the toy’s req by name through its A — req_Athe_Aside_ask is on no House')
     }
 },
 //#endregion
