@@ -7,32 +7,23 @@ Snap:H
     H:Desk	{"loopy":1}
       A:Desk
         GroundUsed:Core,via:Story
-        TheACode:Ground/Core,variant:plain,dige:285efa8800805946
-          TheALayer:Ghost/A/Theory.g,dige:a6e881cb3b26ad22~g1
+        TheACode:Ground/Core,variant:plain,dige:a96dac236cf8848f
+          TheALayer:Ghost/A/Theory.g,dige:74c9dc6b43ca5a82~g1
           TheALayer:Ghost/A/Stuffica.g,dige:1f0ec09474696daa~g1
-          TheALayer:Ghost/A/Ground.g,dige:5a3d0081b4f8d0d0~g1
+          TheALayer:Ghost/A/Ground.g,dige:69891f1d742d9fd7~g1
         GroundUsed:Story
-        TheACode:Ground/Story,variant:plain,dige:1fabdfa0556100a5
-          TheALayer:Ghost/O/StoryFu.g,dige:73bff1f2c8cd28ce~g1
+        TheACode:Ground/Story,variant:plain,dige:9d5de2132d9ceb9f
+          TheALayer:Ghost/O/StoryFu.g,dige:e4cd3c1e1436cfac~g1
           TheALayer:Ghost/O/Supervisor.g,dige:4efe70cdd7ae19ac~g1
         GroundAside
+        TheABelieves
+        A:Story
+          w:Story,Book:AthePondRounds,dontSnap
         w:Desk
           DeskGround:Story
           DeskAside
           DeskBook:AthePondRounds
           DeskLeash:step,n=4
-      A:Story
-        GroundUsed:Core,via:Story
-        TheACode:Ground/Core,variant:plain,dige:285efa8800805946
-          TheALayer:Ghost/A/Theory.g,dige:a6e881cb3b26ad22~g1
-          TheALayer:Ghost/A/Stuffica.g,dige:1f0ec09474696daa~g1
-          TheALayer:Ghost/A/Ground.g,dige:5a3d0081b4f8d0d0~g1
-        GroundUsed:Story
-        TheACode:Ground/Story,variant:plain,dige:1fabdfa0556100a5
-          TheALayer:Ghost/O/StoryFu.g,dige:73bff1f2c8cd28ce~g1
-          TheALayer:Ghost/O/Supervisor.g,dige:4efe70cdd7ae19ac~g1
-        GroundAside
-        w:Story,Book:AthePondRounds,dontSnap
       H:AthePondRounds,Run	{"loopy":0}
       watched:subHouses
         H,Run	{"loopy":0,"hid":1}

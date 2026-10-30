@@ -23,6 +23,7 @@
 3. **The leash — BUILT 2026-10-30, rung 1** (§5).  AtheStoryInStory is 7 steps: ready, each of the inner's 4 steps, finished — each
     outer snap catches the inner standing still (`%InnerRun,at,leash,steps,ok`), 8 oaths, records green and replays green ×3.  Next
      rung goes below a step: a round, a Turn — the outer giving the inner its time (Story_future's 10-28 "crawl"; §5 Rung 2).
+3b. **NEXT, owner 2026-10-30 ("1-2 are go"): the debugger and the self-sabotaging Book — and the Desk's shape first** (§6).
 4. **The Desk as a page** (`/Desk?G=…`, `/Desk?B=`) — waits on Lies (the relay seat) being standable by a Ground.
 5. **A Ground in front of a Ground** (owner, 2026-10-29: "a Ground might get in front of another Ground and inject some moment").
     Today `Stands:` only orders loads; flat eatfunc is last-wins.  The parts exist: code kept aside on an A + the House reaching a
@@ -248,6 +249,47 @@ One window on a step, and everything else is a protrusion from it showing a chan
 **Bombs to remember.**  A leash left on a standing inner (AtheStoryShow) stops it forever — the Show Book unleashes at its end.
  The `self,round` Entcase still applies (the Desk ticks while held).  A stop must be reached on the inner's own tick, never written
   by the outer — the outer only ever writes the leash.
+
+## 6. The Desk's shape, the debugger, the self-sabotaging Book (design, owner 2026-10-30)
+
+*Owner, looking at a snap of H:Desk: "so is this H:Desk/A:(Desk|Story)?  we state TheACode twice? … I was expecting everything would
+ be inside the A:Desk, as I thought it was the toplevel thing that pulls our ghost environment together for us, and then has an
+  A:Story within?  A may be used to just spread out space, kind of replaces House ideologically but is also dependent on having one
+   above".  And: "we've muted snap too suddenly — we want to see its representation of how it is".*
+
+**The Desk's shape — A:Story inside A:Desk.**  Today H:Desk holds two sibling As, each standing Core + Story itself (`TheACode`
+ twice).  Wanted: `H:Desk/A:Desk/A:Story` — A:Desk stands the Grounds ONCE (the environment), A:Story stands nothing and finds its
+  code by nearness (`TheA_near` / `TheA_chain`, A\*\* §1.11 — so far only proven on `%Weather`; this is its first real service).
+   An A spreads out space inside a House the way a House used to.  To find out: does the House think an A inside an A (`A/A/w`)
+    the way it thinks `A/w`, and does a nested Story's Run House still belong to H:Desk.  Smallest proof: AtheStoryInStory green
+     with one `TheACode` pair, the inner's under `A:Desk`.
+*BUILT 2026-10-30:* `%TheABelieves` (owner's name — "it turns H/A/A into part of the beliefs walk") on A:Desk; Housing classifies
+ by mark below it (ledger row in `Atheory_design.md` §2); Theory `TheA_dispatches` reads the chain; StoryFu `Story_A()`.  Snap now
+  `H:Desk/A:Desk{GroundUsed,TheACode×2,GroundAside,TheABelieves}/A:Story/w:Story` — one code stand.  AtheStoryInStory recorded + replays
+   green; AtheStoryShow re-recorded on the shape alone; all 32 AthePond Books + LeafFarm green on the new Housing (AthePondFocus once
+    stuck at `begun` — the known never-starts tell — green on rerun).
+**Show the inner w, don't mute it.**  `w:Story` folded whole hides the inner's own account of itself.  Keep its line and its
+ STATE rows — the `run` (done/total/mode; volatile timing stripped or Entcase'd), `%StoryAt`, `%StoryLeash`, `%StoryFinished`,
+  the oath count — and fold only what grows or races: The (the toc tree, TimeSpool), This (every step's got_snap), the inner's
+   `watched:ave`/`actions` (already folded).  `%InnerRun` then may retire: the inner says it itself.
+**1 — The debugger: a human holds the leash.**  `%StoryLeash` is only a particle, so anything may move it.  Storui/Storica grow
+ Step · Continue · Run-to-red buttons (runtime controls — verbs with a face, `Atheory_design.md` §3) that write it; any Book
+  walks by hand; at each stop the lens (`Stuffica_focus`) seats the live snap over the recorded one and glows what moved.  And
+   **switch on debugging AT a step**: at a stop, push a debug variant of a method (tracing on, a breakpoint-ish `%see`) onto the
+    inner's A — CodePush lets it through only at the seam, so "from step 4 on, trace Q" is exact.  Pull it back the same way.
+**2 — The self-sabotaging Book: every oath proves it bites.**  Today each new oath is sabotaged once by hand (design §1.10,
+ S1–S27).  The outer Book: hold the inner at step k, push a sabotaged variant onto the inner's A, let one step through, swear the
+  inner's named oath FELL, pull the variant, re-run green.  **Where variants live (owner): the test ghost's Ground links each
+   sabotage to the real method** — a row like `Sabotage:<slug>,of:<Ghost/…/X.g>,method:<name>,bites:<oath slug>` — so the edge
+    between test code and real code is a particle Atlas and Credence can see (which methods are guarded by which oaths; which
+     oaths have never bitten).  This is the first real "a Ground in front of a Ground": code injected at a named moment.
+**Small things found on the way (2026-10-30):**
+- Reset on a nested Story did nothing (StoryFu refused by design, nobody held it) → `Desk_reset` (Ground.g), StoryFu hands Reset
+   to `TheA_base`.  Built, compiled; not yet clicked by the owner.
+- StoryFu's UIs are framed (violet rail) — `.c.fu` on the UI particle, Otro wraps it; never snapped.
+- `watched:subHouses / H {"loopy":1,"hid":1}` is a loopy SHADOW (every key munged to 1, so `H:Desk` loses its name).  Better:
+   keep the mainkey's value in the shadow (`H:Desk {"loopy":1,"hid":1}`) — touches every Book with a loop, so a re-record sweep.
+- AtheStoryCode needs StoryFu flat, AtheStoryInStory needs it aside — not both green on one tab; Code wants its own Ground.
 
 ## 4. Ledger — what this work changed in Atheory
 

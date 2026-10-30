@@ -5,29 +5,29 @@ story:AtheStoryShow
     For
   Stands:CoreTesting
   TimeSpool
-    TimeTotal:beliefs,avg=0.022
-      sample=0.021,at=1793312421
-      sample=0.021,at=1793312421
-      sample=0.021,at=1793312422
-      sample=0.016,at=1793312433
-      sample=0.022,at=1793313267
+    TimeTotal:beliefs,avg=0.027
       sample=0.022,at=1793313306
       sample=0.022,at=1793313307
       sample=0.022,at=1793313307
       sample=0.027,at=1793313318
       sample=0.025,at=1793314758
-    TimeTotal:step,avg=0.007
-      sample=0.007,at=1793312421
-      sample=0.007,at=1793312421
-      sample=0.007,at=1793312422
-      sample=0.005,at=1793312433
-      sample=0.007,at=1793313267
+      sample=0.065,at=1793316674
+      sample=0.023,at=1793317003
+      sample=0.021,at=1793318185
+      sample=0.021,at=1793318216
+      sample=0.021,at=1793318227
+    TimeTotal:step,avg=0.009
       sample=0.007,at=1793313306
       sample=0.007,at=1793313307
       sample=0.007,at=1793313307
       sample=0.009,at=1793313318
       sample=0.008,at=1793314758
+      sample=0.022,at=1793316674
+      sample=0.008,at=1793317003
+      sample=0.007,at=1793318185
+      sample=0.007,at=1793318216
+      sample=0.007,at=1793318227
   step,dige:87bf684a27e1f4f5
-  step=2,desc:stand a Desk whose new Story runs AthePondFocus — and wait for it,dige:3b40725a343f39c1
-  step=3,desc:look — on the runner tab the House called Desk shows the inner Story in Storica,dige:799766a33e027a6a
+  step=2,desc:stand a Desk whose new Story runs AthePondFocus — and wait for it,dige:c83cd989e86066fe
+  step=3,desc:look — on the runner tab the House called Desk shows the inner Story in Storica,dige:44d88ffbfd16500f
     Assertion:the-inner-story-ran,sentence:the inner Story ran the step explorer’s Book green — and stands there to be looked at

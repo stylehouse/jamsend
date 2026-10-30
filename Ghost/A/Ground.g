@@ -131,7 +131,7 @@ Desk_leash(H, at, n):
         if (row) w.drop(row)
         if (at) w.i(n != null ? { DeskLeash: at, n } : { DeskLeash: at })
     }
-    let sw = D.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0]
+    let sw = D.o({ A: 'Desk' })[0]?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0]
     if (sw) this.Desk_leash_carry(w, sw)
     return w
 
@@ -142,6 +142,28 @@ Desk_leash_carry(w, sw):
     if (want && have && have.sc.StoryLeash === want.sc.DeskLeash && have.sc.n === want.sc.n) return
     if (have) sw.drop(have)
     if (want) sw.i(want.sc.n != null ? { StoryLeash: want.sc.DeskLeash, n: want.sc.n } : { StoryLeash: want.sc.DeskLeash })
+
+// Desk_reset — the Desk's Story, rebuilt: a nested Story is its holder's to reset, as the page's is Auto's (StoryFu story_reset
+//  hands its Reset button here).  Like Auto's teardown: stop the run's drive, stop + drop the inner's Run House, drop A:Story —
+//   the Desk's next think stands a fresh one for the same %DeskBook (its code from what is loaded; a leash still on w:Desk holds it)
+Desk_reset(D):
+    let AD = D.o({ A: 'Desk' })[0]
+    for (const S of AD?.o({ A: 'Story' }) ?? []) {
+        for (const sw of S.o({ w: 1 })) {
+            for (const run of sw.o({ run: 1 })) run.c.driving = false
+            let R = sw.sc.Book ? D.o({ H: sw.sc.Book })[0] : null
+            if (R) {
+                R.stop()
+                D.drop(R)
+            }
+        }
+        AD.drop(S)
+    }
+    // stood again here, not left to a think: a Desk already Firm isn't thought again (the leash's probe 1)
+    let A = D.o({ A: 'Desk' })[0]
+    let w = A?.o({ w: 'Desk' })[0]
+    if (A && w) this.Desk(A, w)
+    D.main(true)
 
 // Desk — the Desk's think: stand the Grounds asked for on A:Desk; once Firm, a Story for the Book asked for — A:Story holding
 //  Ground/Story and its w:Story,Book stood in the SAME tick.  (Probe 5: an A with no w gets a default w named after it on its
@@ -155,9 +177,12 @@ Desk(A, w):
     this.Desk_pushes_covered(A)
     let book = w.o({ DeskBook: 1 })[0]?.sc.DeskBook
     if (!book || !H) return
-    let S = H.oai({ A: 'Story' })
-    if (!this.Ground_stand(S, ['Story'], aside)) return
-    this.Desk_pushes_covered(S)
+    // the Story stands IN the Desk (owner 2026-10-30: "everything inside the A:Desk … and then has an A:Story within"): A:Desk
+    //  stood the Grounds once; A:Story stands nothing and runs A:Desk's code by its chain (Theory TheA_dispatches).  The Desk
+    //   believes its As (%TheABelieves), so Housing thinks A:Story's w as it would an A's on a House
+    if (!A.o({ TheABelieves: 1 }).length) A.i({ TheABelieves: 1 })
+    let S = A.oai({ A: 'Story' })
+    S.c.up = H
     let sw = S.oai({ w: 'Story' }, { Book: book })
     this.Desk_leash_carry(w, sw)
 

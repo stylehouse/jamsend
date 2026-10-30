@@ -182,6 +182,14 @@ const organise_scheme = [
     { ark: 'req', sc_has: { req: 1 } },
 ]
 
+// A in A — an A wearing %TheABelieves brings the As standing in it into the beliefs walk (owner, 2026-10-30): below it an A is an
+//  A-level and its w a w-level, by their MARKS, at any depth — so H:Desk/A:Desk/A:Story/w:Story is thought like H/A/w.  Unmarked,
+//   nothing changes: an A in an A stays out of the walk as before, and the A** ponds stay TheA_run's alone (their tanks must never
+//    be thought ambiently).  Ledger: Atheory_design.md §2.
+const A_LEVEL = organise_scheme[1]
+const W_LEVEL = organise_scheme[2]
+const believes = (n: any): boolean => !!n?.o?.({ TheABelieves: 1 })?.length
+
 //#endregion
 
 //#region Housing
@@ -1150,13 +1158,15 @@ export class House extends StorableHousing {
         const depth = T.c.path.length - 1
         if (depth === 0) return 1
 
-        const level = organise_scheme[depth]
+        // an A or w-level reads its own level (A in A sits deeper than depth 1|2); Aw paths stay "A/w" relative to its A
+        const own = T.sc.level as Record<string, any> | undefined
+        const level = (own?.ark === 'A' || own?.ark === 'w') ? own : organise_scheme[depth]
         if (!level || level.is_inst) return 1
 
         const n = T.sc.n as TheC
         const name = n.sc[level.ark] as string
 
-        const seq = depth - 1
+        const seq = level.ark === 'A' ? 0 : level.ark === 'w' ? 1 : depth - 1
         const path_parts = e.o({ Aw_path: 1 })
         const here = path_parts.find(p => p.sc.seq === seq)
         if (!here) return 0
@@ -1460,13 +1470,15 @@ export class House extends StorableHousing {
 
     // sweep every w, supervising the pump where the host has migrated off reqy.
     async reqdo_sweep(): Promise<void> {
-        for (const A of this.o({ A: 1 }) as TheC[]) {
+        const sweep = async (A: TheC) => {
             for (const w of A.o({ w: 1 }) as TheC[]) {
                 const t0 = performance.now()
                 await this.reqdo(w)
                 this.atime_part(`${this.name}/${A.sc.A}/${w.sc.w}`, performance.now() - t0)
             }
+            if (believes(A)) for (const B of A.o({ A: 1 }) as TheC[]) await sweep(B)   // A in A (%TheABelieves)
         }
+        for (const A of this.o({ A: 1 }) as TheC[]) await sweep(A)
     }
 
     // -------------------------------------------------------------------------
@@ -1541,7 +1553,7 @@ export class House extends StorableHousing {
         // collect A-level T nodes
         let ATN: Travel[] = []
         await this.Se.c.T.forward(T => {
-            if (T.c.path.length - 1 === 1) ATN.push(T)
+            if ((T.sc.level as any)?.ark === 'A' && T.c.path.length > 1) ATN.push(T)   // depth 1, or an A some A believes
         })
 
         let targetedATN = e ? ATN.filter(T => this._e_targets_T(e, T) > 0) : ATN
@@ -1562,7 +1574,7 @@ export class House extends StorableHousing {
 
             let wTN: Travel[] = []
             await this.Se.c.T.forward(T => {
-                if (T.sc.up === AT && T.c.path.length - 1 === 2) wTN.push(T)
+                if (T.sc.up === AT && (T.sc.level as any)?.ark === 'w') wTN.push(T)
             })
 
             if (!wTN.length) {
@@ -1851,6 +1863,11 @@ export class House extends StorableHousing {
                 }
             }
         }
+        // under an A: an A that believes its As makes them A-levels; a w under any A-level is a w-level (at depth 2 that was so already)
+        if (cur_n && parent_lv?.ark === 'A') {
+            if (cur_n.sc.A != null && believes(pan)) return A_LEVEL
+            if (cur_n.sc.w != null) return W_LEVEL
+        }
         return organise_scheme[depth]
     }
 
@@ -1881,6 +1898,8 @@ export class House extends StorableHousing {
             }
         }
         if (out.length) return out
+        // an A-level's children are its ws — and, when it believes them, its As (A in A, %TheABelieves)
+        if (level?.ark === 'A') return believes(cur_n) ? [W_LEVEL, A_LEVEL] : [W_LEVEL]
         const next = organise_scheme[T.c.path.length]
         return next ? [next] : []
     }
@@ -2007,11 +2026,11 @@ export class House extends StorableHousing {
 
     enroll_watched() {
         const targets: TheC[] = [this]
-        for (const A of this.o({ A: 1 }) as TheC[]) {
-            for (const w of A.o({ w: 1 }) as TheC[]) {
-                targets.push(w)
-            }
+        const collect = (A: TheC) => {
+            for (const w of A.o({ w: 1 }) as TheC[]) targets.push(w)
+            if (believes(A)) for (const B of A.o({ A: 1 }) as TheC[]) collect(B)   // A in A (%TheABelieves)
         }
+        for (const A of this.o({ A: 1 }) as TheC[]) collect(A)
         for (const H of targets) {
             for (const C of H.o({ watched: 1 }) as TheC[]) {
                 if (this.watched.some(w => w.C === C && w.owner === undefined)) continue

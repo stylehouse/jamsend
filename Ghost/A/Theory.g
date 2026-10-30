@@ -42,14 +42,14 @@ TheA_loaded(path):
 //    answers at once.  Not yet for code merged flat — an A holding an older version than the House's (AthePondVersions) keeps
 //     being thought by the House's, until a ruling says every A runs its own
 TheA_dispatches(A):
-    let codes = A.o({ TheACode: 1 })
-    if (!codes.length) return false
+    // by the A's CHAIN — its own code and the code of the As it stands in — so an A in an A runs its holder's code
+    //  (A:Story in A:Desk, which stood the Grounds once; Housing thinks it there when A:Desk wears %TheABelieves)
+    let chain = this.TheA_chain(A)
+    if (!chain.length) return false
     let aside = this.top_House().ghost_aside_dige || {}
-    for (const code of codes) {
-        for (const layer of code.o({ TheALayer: 1 })) {
-            let meta = this.TheA_meta(layer.sc.TheALayer)
-            if (aside[meta] && !this[meta]) return true
-        }
+    for (const layer of chain) {
+        let meta = this.TheA_meta(layer.path)
+        if (aside[meta] && !this[meta]) return true
     }
     return false
 

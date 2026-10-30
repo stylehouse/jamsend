@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheTesting(): string { return '4202dd6fc845ee8d~g1' },
+    Ghostmeta_Ghost_A_AtheTesting(): string { return '1c68711f0601cb89~g1' },
 
 // AtheTesting.g — Atheory's proof (Ghost/A/Theory.g; spec/Atheory_todo.md §0.2 "The first Atheory tests").
 //
@@ -2862,7 +2862,7 @@ AtheStoryInStory_desk() { const H = this;
 
 },
 AtheStoryInStory_inner(w) {
-    return this.AtheStoryInStory_desk()?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] ?? null
+    return this.AtheStoryInStory_desk()?.o({ A: 'Desk' })[0]?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] ?? null
 
 },
 // does the inner Story stand at this stop?  (%StoryAt — StoryFu's Story_at)
@@ -2922,10 +2922,12 @@ AtheStoryInStory_fold(w, sw, fin, steps, book) { const H = this;
 },
 AtheStoryInStory_witness(w) {
     let n = this.c.run?.c.step_n ?? 0
-    let A = this.AtheStoryInStory_desk()?.o({ A: 'Story' })[0]
+    // the Story stands in the Desk and runs the Desk's code (A in A): the code is on A:Desk, the dispatch is A:Story's
+    let AD = this.AtheStoryInStory_desk()?.o({ A: 'Desk' })[0]
+    let A = AD?.o({ A: 'Story' })[0]
     if (!A) return
-    let code = A.o({ TheACode: 'Ground/Story' })[0]
-    if (n >= 2 && code?.sc.dige && A.o({ GroundAside: 1 }).length && !this.Ghostmeta_Ghost_O_StoryFu && this.TheA_dispatches(A)) {
+    let code = AD.o({ TheACode: 'Ground/Story' })[0]
+    if (n >= 2 && code?.sc.dige && AD.o({ GroundAside: 1 }).length && !A.o({ TheACode: 1 }).length && !this.Ghostmeta_Ghost_O_StoryFu && this.TheA_dispatches(A)) {
         this.story_swear(w, 'a Desk stands the new Story kept aside — its code on the A — on no House')
     }
     let sw = this.AtheStoryInStory_inner(w)

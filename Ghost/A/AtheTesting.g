@@ -2588,7 +2588,7 @@ AtheStoryInStory_desk():
     return this.o({ H: 'Desk' })[0] ?? null
 
 AtheStoryInStory_inner(w):
-    return this.AtheStoryInStory_desk()?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] ?? null
+    return this.AtheStoryInStory_desk()?.o({ A: 'Desk' })[0]?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] ?? null
 
 // does the inner Story stand at this stop?  (%StoryAt — StoryFu's Story_at)
 AtheStoryInStory_stands(sw, at, n):
@@ -2643,10 +2643,12 @@ AtheStoryInStory_fold(w, sw, fin, steps, book):
 
 AtheStoryInStory_witness(w):
     let n = this.c.run?.c.step_n ?? 0
-    let A = this.AtheStoryInStory_desk()?.o({ A: 'Story' })[0]
+    // the Story stands in the Desk and runs the Desk's code (A in A): the code is on A:Desk, the dispatch is A:Story's
+    let AD = this.AtheStoryInStory_desk()?.o({ A: 'Desk' })[0]
+    let A = AD?.o({ A: 'Story' })[0]
     if (!A) return
-    let code = A.o({ TheACode: 'Ground/Story' })[0]
-    if (n >= 2 && code?.sc.dige && A.o({ GroundAside: 1 }).length && !this.Ghostmeta_Ghost_O_StoryFu && this.TheA_dispatches(A)) {
+    let code = AD.o({ TheACode: 'Ground/Story' })[0]
+    if (n >= 2 && code?.sc.dige && AD.o({ GroundAside: 1 }).length && !A.o({ TheACode: 1 }).length && !this.Ghostmeta_Ghost_O_StoryFu && this.TheA_dispatches(A)) {
         this.story_swear(w, 'a Desk stands the new Story kept aside — its code on the A — on no House')
     }
     let sw = this.AtheStoryInStory_inner(w)

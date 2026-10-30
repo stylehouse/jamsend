@@ -90,7 +90,7 @@ const FRONTIER_COLOR = '#c55'
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_O_StoryFu(): string { return '73bff1f2c8cd28ce~g1' },
+    Ghostmeta_Ghost_O_StoryFu(): string { return 'e4cd3c1e1436cfac~g1' },
 
 // Ghost: StoryFu — the Atheory fork of Story (working title; renamed from Story.g 2026-10-29, spec/AtheoryStory_todo.md).
 //  Ported from src/lib/O/Story.svelte, which the spine still mounts; a Story fix lands in both until the old one retires.
@@ -1521,6 +1521,11 @@ Story_nested(): any {
 // Story_err_home — the House holding this Story's error ring: its own when nested (an inner run mustn't clear or drain the
 //  outer's), the top House otherwise.  NB a throw Housing catches still goes to the top ring (Housing calls the flat
 //   Story_error, Story.svelte's) — so the outer sees an inner throw; the inner's own Story_error calls stay its own
+// Story_A — this Story's A: on the House (the page's Story), or standing in another A (a Desk's — A in A, %TheABelieves)
+Story_A(): any {
+        return this.o({ A: 'Story' })[0] ?? (this as any).TheA_all?.(this).find((a: TheC) => a.sc.A === 'Story') ?? null
+
+},
 Story_err_home(): any {
         return this.Story_nested() ?? (this.top_House ? this.top_House() : null)
 
@@ -1666,9 +1671,10 @@ Story_plan(A: TheC, w: TheC, book: string) {
         // oai_enroll creates the container once and calls enroll_watched();
         // oai on the child is idempotent — subsequent Story_plan calls are no-ops.
         const uis = H.oai_enroll(H, { watched: 'UIs' })
-        uis.oai({ UI: 'Story', component: Storui })
+        // .c.fu — runtime only (never snapped): Otro frames a UI StoryFu registered, so the new generation is told apart on sight
+        uis.oai({ UI: 'Story', component: Storui }).c.fu = 1
         // Storica — Storui rebuilt on Stuffica views (spec/Aprac_todo.md §0 "Next" 2), mounted beside it until it can replace it
-        uis.oai({ UI: 'Storica', component: Storica })
+        uis.oai({ UI: 'Storica', component: Storica }).c.fu = 1
 
         const stylesC = this.The_Styles(w)
         H.watch_c(stylesC, () => H.story_save())
@@ -3157,7 +3163,7 @@ async story_drive(Run: House, w: TheC, run: TheC) {
 //  There is therefore no race between story_accept and the post_do here.
 async story_save(this: House) { const H = this;
         const storyH = this
-        const A      = storyH.o({ A: 'Story' })[0]
+        const A      = this.Story_A()
         const w      = A?.o({ w: 'Story' })[0]
         if (!w) return
 
@@ -3250,7 +3256,17 @@ story_reset(this: House) {
         // Delegate via elvis so Auto's picks_a_book() runs (tears down and
         // rebuilds H:Story cleanly rather than trying to reset in place).
         // a NESTED Story is not Auto's to rebuild — asking would tear down the page's Story.  Its holder resets it
-        if ((this as any).Story_nested?.()) { console.log('story_reset: a nested Story — left to whoever holds it'); return }
+        //  — so hand it to the House beneath our A (TheA_base: the Desk), which rebuilds it (Ground.g Desk_reset)
+        if ((this as any).Story_nested?.()) {
+            const D = (this as any).TheA_base
+            if (typeof D?.Desk_reset === 'function') {
+                D.Desk_reset(D)
+            }
+            else {
+                console.log('story_reset: a nested Story whose holder has no Desk_reset')
+            }
+            return
+        }
         const topH = this.top_House()
         // find our book name from the Story worker so Auto knows what to restart
         const bname = (this.o({ A: 'Story' })[0] as TheC | undefined)

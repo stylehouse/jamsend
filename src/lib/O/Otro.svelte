@@ -214,7 +214,12 @@
             </div>
             {#each house.UIs.ob({ UI: 1 }) as uiC (keyser(uiC.sc))}
                 {#if !cpu_leg_hides(uiC.sc.UI)}
-                    <svelte:component this={uiC.sc.component} H={house} />
+                    {#if uiC.c.fu}
+                        <!-- a UI the new generation (StoryFu) registered — framed so it's told apart from Story.svelte's -->
+                        <div class="fu-ui" title="StoryFu — the new Story"><svelte:component this={uiC.sc.component} H={house} /></div>
+                    {:else}
+                        <svelte:component this={uiC.sc.component} H={house} />
+                    {/if}
                 {/if}
             {/each}
             {#if house.stashed?.showC}
@@ -236,6 +241,13 @@
 {/if}
 
 <style>
+    /* the new generation's UIs (StoryFu) — a violet rail and a faint wash */
+    .fu-ui {
+        border-left: 3px solid #8b6cf0;
+        background: color-mix(in srgb, #8b6cf0 7%, transparent);
+        padding-left: 4px;
+        border-radius: 2px;
+    }
     .ungood { color: red; }
 
     /* Sits in the .house-actions row beside the data-driven <Actions>; styled to match them
