@@ -11,7 +11,7 @@ import { ground_closure, ground_loads, GROUND_CORE } from "$lib/A/ground"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_Ground(): string { return '69891f1d742d9fd7~g1' },
+    Ghostmeta_Ghost_A_Ground(): string { return '2f92e56da35176d4~g1' },
 
 // Ground.g — what a tab stands on, said as particles on the A that stands on it (spec/Aprac_todo.md §0.5).
 //
@@ -144,7 +144,11 @@ Desk_story(H, book) {
 //   and here it is carried at once onto a Story already standing (the Desk, Firm, is not thought again: probe 1 of the leash
 //    moved %DeskLeash every step and the inner sat at ready)
 Desk_leash(H, at, n) {
-    let D = this.Desk_house(H)
+    return this.Desk_leash_on(this.Desk_house(H), at, n)
+
+},
+// …the same, given the Desk's own House (Storica's debugger holds that, not the House above it)
+Desk_leash_on(D, at, n) {
     let w = D.oai({ A: 'Desk' }).oai({ w: 'Desk' })
     let row = w.o({ DeskLeash: 1 })[0]
     if (!(row && row.sc.DeskLeash === at && row.sc.n === n)) {
@@ -205,7 +209,7 @@ Desk(A, w) {
     //   believes its As (%TheABelieves), so Housing thinks A:Story's w as it would an A's on a House
     if (!A.o({ TheABelieves: 1 }).length) A.i({ TheABelieves: 1 })
     let S = A.oai({ A: 'Story' })
-    S.c.up = H
+    S.c.up = A
     let sw = S.oai({ w: 'Story' }, { Book: book })
     this.Desk_leash_carry(w, sw)
 

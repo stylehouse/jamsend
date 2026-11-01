@@ -406,17 +406,63 @@ abstract class Housing extends TheC {
             while (h.up && !(h instanceof House)) h = h.up
             return (h instanceof House) ? h : null
         }
-        const Aname = (target as string).split('/')[0]
-        let h: Housing = this
-        while (h) {
-            if (h instanceof House) {
-                for (const candidate of h.all_House) {
-                    if (candidate.o({ A: Aname })[0]) return candidate
+        return this._A_near(this, (target as string).split('/')[0])?.h ?? null
+    }
+
+    // _A_near — THE resolver for a name (spec/Atheory_design.md §1.15 "Addressing"): the A called Aname NEAREST the asker (a
+    //  House, an A or a w), counted in steps through the tree — out through the As holding it, up through Houses, down into
+    //   every sub-House and every A that believes the As in it.  Not the first match up the House chain: a Story's Desk asking
+    //    for 'Story' gets the Story in the Desk, not the page's.  Two at the same distance is a real ambiguity — warned once per
+    //     name and the first taken, as before.  Returns the A and the House that thinks it
+    _A_near(from: TheC | Housing, Aname: string): { h: House, A: TheC } | null {
+        const house_above = (x: any): House | null => {
+            while (x && !(x instanceof House)) x = x.up
+            return x ?? null
+        }
+        let start: any = from
+        if (!(start instanceof Housing) && start?.sc?.w != null) start = start.c.up
+        const h0 = (start instanceof Housing ? house_above(start) : start ? this._house_of(start) : null) ?? house_above(this)
+        if (!(start instanceof Housing) && start?.sc?.A == null) start = h0
+        if (!start || !h0) return null
+        const seen = new Set<any>([start])
+        let ring: { n: any, h: House }[] = [{ n: start, h: h0 }]
+        while (ring.length) {
+            const hits = ring.filter(q => !(q.n instanceof Housing) && q.n.sc.A === Aname)
+            if (hits.length) {
+                if (hits.length > 1) this._A_near_ambiguous(Aname, hits.length)
+                return { h: hits[0].h, A: hits[0].n }
+            }
+            const next: { n: any, h: House }[] = []
+            const go = (n: any, h: House | null) => {
+                if (n && h && !seen.has(n)) {
+                    seen.add(n)
+                    next.push({ n, h })
                 }
             }
-            h = h.up!
+            for (const { n, h } of ring) {
+                if (n instanceof House) {
+                    for (const A of n.o({ A: 1 }) as TheC[]) go(A, n)
+                    for (const sub of (n.subHouses?.ob({}) ?? []) as House[]) go(sub, sub)
+                    const up = house_above(n.up)
+                    go(up, up)
+                }
+                else {
+                    if (n.o({ TheABelieves: 1 }).length) for (const B of n.o({ A: 1 }) as TheC[]) go(B, h)
+                    // its holder: an A it stands in, or its House (attend keeps A.c.up the holder; unset, the House it was met in)
+                    const up = n.c.up
+                    go(up && !(up instanceof Housing) && up.sc?.A != null ? up : h, h)
+                }
+            }
+            ring = next
         }
         return null
+    }
+    _A_near_ambiguous(Aname: string, n: number) {
+        const top: any = this.top_House()
+        top.c.A_near_warned ||= {}
+        if (top.c.A_near_warned[Aname]) return
+        top.c.A_near_warned[Aname] = 1
+        console.warn(`⨳ ${n} A:${Aname} stand equally near — taking the first; address it by ref`)
     }
 
     // _find_house: the FATAL form — guaranteed non-null.  An INSISTING caller (i_elvisto's deferred
@@ -437,14 +483,12 @@ abstract class Housing extends TheC {
     //   A QUESTION, not an error: returns a boolean and throws nothing (caught-ly or otherwise), so a
     //    missing target never trips devtools "pause on exceptions" nor reads as a failure in the console.
     _target_present(target: string | TheC | Housing): boolean {
-        const h = this._house_of(target)
-        if (!h) return false
         if (typeof target === 'string') {
             const [Aname, w0] = target.split('/')
-            const A = h.o({ A: Aname })[0] as TheC | undefined
-            if (!A || !A.o({ w: w0 || Aname })[0]) return false
+            const A = this._A_near(this, Aname)?.A
+            return !!A && !!A.o({ w: w0 || Aname })[0]
         }
-        return true
+        return !!this._house_of(target)
     }
 
     // ── Awo: climb the A/w path by name ─────────────────────────────────
@@ -877,8 +921,16 @@ export class House extends StorableHousing {
 
         // targeting: deferred to UItime so it never races a beliefs cycle.
         // The promise is stored on e.c so callers who need sequencing can await it.
+        //  The A is resolved ONCE, here, to a ref (e%to_A, and e%to_w for a w sent to by its handle): a name by nearness from
+        //   this House (_A_near), a w or A by its holder chain — and the walk then matches that A by identity, never by name
+        //    again (spec/Atheory_design.md §1.15 "Addressing")
         e.c.targeting = this.clear(async () => {
-            const h = this._find_house(target)
+            const to = this._A_to(target)
+            const h = to?.h ?? this._find_house(target)
+            if (to) {
+                e.c.to_A = to.A
+                if (to.w) e.c.to_w = to.w
+            }
             h._expand_Aw(e)
             h._push_todo(e)
         })
@@ -897,6 +949,19 @@ export class House extends StorableHousing {
         })
 
         return e
+    }
+
+    // _A_to — where an elvis goes, as refs: { h, A, w? }.  A w or an A by its handle (its holder chain up to the House — attend
+    //  keeps it); a name by nearness (_A_near).  Null for a req (e%target) or a House, and for a handle not yet in a tree
+    _A_to(target: string | TheC | Housing): { h: House, A: TheC, w?: TheC } | null {
+        if (target instanceof Housing) return null
+        if (typeof target === 'string') return this._A_near(this, target.split('/')[0])
+        if (target.sc.req != null) return null
+        const w = target.sc.w != null ? target : undefined
+        const A = w ? w.c.up as TheC | undefined : target
+        if (!A || A.sc?.A == null) return null
+        const h = this._house_of(A)
+        return h ? { h, A, w } : null
     }
 
     // vaguely_ponder: a best-effort cross-ghost poke that fires ONLY if the target A/w is actually stood
@@ -1157,6 +1222,21 @@ export class House extends StorableHousing {
 
         const depth = T.c.path.length - 1
         if (depth === 0) return 1
+
+        // resolved to a ref: the A itself, and its w by handle or by the path's name — nothing else, however it is named
+        const to_A = e.c.to_A as TheC | undefined
+        if (to_A) {
+            const ark = (T.sc.level as any)?.ark ?? organise_scheme[depth]?.ark
+            const n = T.sc.n as TheC
+            if (ark === 'A') return n === to_A ? 1 : 0
+            if (ark === 'w') {
+                if ((T.sc.up as Travel | undefined)?.sc.n !== to_A) return 0
+                const to_w = e.c.to_w as TheC | undefined
+                const wname = (e.sc.Aw as string).split('/').filter(Boolean)[1] ?? to_A.sc.A
+                return (to_w ? n === to_w : n.sc.w === wname) ? 2 : 0
+            }
+            return 1
+        }
 
         // an A or w-level reads its own level (A in A sits deeper than depth 1|2); Aw paths stay "A/w" relative to its A
         const own = T.sc.level as Record<string, any> | undefined
@@ -1568,7 +1648,9 @@ export class House extends StorableHousing {
         let AwN: { AT: Travel; wT: Travel; A: TheC; w: TheC }[] = []
         for (let AT of ATN) {
             const A = AT.sc.n as TheC
-            A.c.up = this as House
+            // its holder: the A it stands in (one that believes it), else this House — so a nested A's chain climbs by c.up
+            const holder = (AT.sc.up as Travel | undefined)?.sc.n as TheC | undefined
+            A.c.up = holder && !(holder instanceof Housing) && holder.sc.A != null ? holder : this as House
 
             await this.self_timekeeping(A)
 

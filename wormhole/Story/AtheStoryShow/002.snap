@@ -1,33 +1,49 @@
 Snap:H
   H:AtheStoryShow,Run
     A:AtheStoryShow
-      self,round=3	{"mung":["age"]}
       w:AtheStoryShow
-        self,round=3	{"mung":["age"]}
         req:wrangle,eternal,ok
         InnerRun:AthePondFocus,steps=5,ok=5
     H:Desk	{"loopy":1}
       A:Desk
-        self,round=9	{"mung":["age"]}
         GroundUsed:Core,via:Story
-        TheACode:Ground/Core,variant:plain,dige:a96dac236cf8848f
+        TheACode:Ground/Core,variant:plain,dige:8daab8ad3bcf1173
           TheALayer:Ghost/A/Theory.g,dige:74c9dc6b43ca5a82~g1
           TheALayer:Ghost/A/Stuffica.g,dige:1f0ec09474696daa~g1
-          TheALayer:Ghost/A/Ground.g,dige:69891f1d742d9fd7~g1
+          TheALayer:Ghost/A/Ground.g,dige:ba2612caa41359e1~g1
         GroundUsed:Story
-        TheACode:Ground/Story,variant:plain,dige:9d5de2132d9ceb9f
-          TheALayer:Ghost/O/StoryFu.g,dige:e4cd3c1e1436cfac~g1
+        TheACode:Ground/Story,variant:plain,dige:f6fd3ca81d6c9960
+          TheALayer:Ghost/O/StoryFu.g,dige:b06f7d625ffcad4e~g1
           TheALayer:Ghost/O/Supervisor.g,dige:4efe70cdd7ae19ac~g1
         GroundAside
         TheABelieves
         A:Story
-          self,round=15	{"mung":["age"]}
-          w:Story,Book:AthePondFocus,dontSnap
+          w:Story,Book:AthePondFocus
+            The,story:AthePondFocus
+              Styles
+              Plan
+              Opt
+                For
+              Stands:CoreTesting
+              TimeSpool
+              step,dige:921dcaad4ba02e53
+              step=2,desc:seat a deep view on the recorded pond,dige:32e30c3d9429e323
+              {"step":3,"desc":"re-seat it on the changed pond and focus — what moved, in context","dige":"ca11e5afb6489c2a"}
+                Assertion:focused-after-a-re,sentence:focused after a re-seat the eye lands on what moved — changed — new — gone — under its parent — the rest folds to a count
+              step=4,desc:pin the minnow — by its name — and focus again,dige:3c68a06d712a0bad
+                Assertion:a-pinned-point-shows,sentence:a pinned point shows whole — by its name — beside what moved
+              step=5,desc:walk again with nothing moved,dige:0f1d13216411b5ca
+                Assertion:when-nothing-moved-the,sentence:when nothing moved the focus folds to one row — and a pin still shows its point
+            This,Story:AthePondFocus
+            run:AthePondFocus,done=5,total,mode:check,frontier=0,paused=2
+            wh
+            StoryFinished:AthePondFocus,mode:check
+            StoryAt:finished
+            see:AthePondFocus 5 [check] ⏸
         w:Desk
           DeskGround:Story
           DeskAside
           DeskBook:AthePondFocus
-          self,round=9	{"mung":["age"]}
       H:AthePondFocus,Run	{"loopy":0}
       watched:subHouses
         H,Run	{"loopy":0,"hid":1}

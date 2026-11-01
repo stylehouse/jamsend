@@ -1,13 +1,11 @@
 story:AthePondTurnReaders
-  Stands:CoreTesting
   Styles
   Plan
   Opt
     For
+  Stands:CoreTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.013
-      sample=0.011,at=1792576112
-      sample=0.016,at=1792577791
       sample=0.011,at=1792579027
       sample=0.013,at=1792634190
       sample=0.005,at=1792636564
@@ -16,9 +14,9 @@ story:AthePondTurnReaders
       sample=0.011,at=1793152606
       sample=0.017,at=1793152655
       sample=0.017,at=1793155942
+      sample=0.012,at=1793324195
+      sample=0.014,at=1793328399
     TimeTotal:step,avg=0.002
-      sample=0.002,at=1792576112
-      sample=0.003,at=1792577791
       sample=0.002,at=1792579027
       sample=0.003,at=1792634190
       sample=0.001,at=1792636564
@@ -27,6 +25,8 @@ story:AthePondTurnReaders
       sample=0.002,at=1793152606
       sample=0.003,at=1793152655
       sample=0.003,at=1793155942
+      sample=0.002,at=1793324195
+      sample=0.003,at=1793328399
   step,dige:6194012f1ce777c9
   step=2,desc:stand a tank that keeps two Turns with two readers — eye reads every step and slow waits — and wake one pulse,dige:f213a8267a71b73b
   step=3,desc:3 clock pulses woken together — eye reads,dige:6cbe8eb3d83752d8

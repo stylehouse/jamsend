@@ -25,6 +25,9 @@ A capture doc, not yet a plan — the owner has reached for this three times in 
      Wire_spec's one-elvis thesis starts coming true here.
 4. **The scheduler for real** — `TheA_run` inside `beliefs()`, unwatched work costs nothing; reqs woken by pulse (`%TheAWait`); every
     call through its A.  The first Housing change — ledger row first.
+    **Its ground is laid (2026-10-30): ADDRESSING R1–R3** (`Atheory_design.md` §1.15) — one name resolver by nearness
+     (`Housing._A_near`), a handle routed by identity (`e.c.to_A`), `A.c.up` the holder.  Book `AthePondNear`.  NEXT here: the
+      Seem `from:` onto R3, then `TheA_run` inside `beliefs()` for the Desk.
 5. **IO as compartments** — audio, WebRTC, disk, relay as `%TheAIO`; a replay mocks them; a Desk with no page in node (parallel
     testing, `AtheoryStory_todo.md` §0 item 6).
 6. **One real organ ported**, byte-identical Books — proves the fabric carries the app, not only ponds.
@@ -36,6 +39,8 @@ A capture doc, not yet a plan — the owner has reached for this three times in 
 *Vaguer, imagined as we get near:* spheres (Was\*\*, Trace\*\*, versions of data — waits on Seem); merge on the wire (fractures,
  signed — Repli's successor); synapses across Houses then bodies; turfs as seats, Grounds as advice + control, the Believer
   (`%Belief`); the manifest check (Electrode ⊆ Atlas ⊆ declared); one event particle; the woven view; Emotion (the will drives the work).
+ *Questions to think from the top* now live in **`AtheoryNexus_todo.md`** (2026-11-01: how real each part is, the words pinned, the
+  threads reduced, round 2's questions) — add new ones there.
 *Working method (owner, 2026-10-30):* foundation code is not throwaway — written serially, by the strongest hand; Sonnet runs the
  Books.  Parallel lanes only once dev servers are isolated (a second vite rewrites the shared `node_modules/.vite/deps`).
 

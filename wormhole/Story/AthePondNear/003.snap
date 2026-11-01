@@ -1,0 +1,31 @@
+Snap:H
+  H:AthePondNear,Run
+    A:AthePondNear
+      self,round=5	{"mung":["age"]}
+      w:AthePondNear
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        NearSaid,near:handle + name from the Hold,far:name from above
+    H:Athe_Far	{"loopy":0}
+      A:Athe_Near
+        self,round=2	{"mung":["age"]}
+        w:Athe_Near
+          NearIs:far
+          self,round=2	{"mung":["age"]}
+          Poked:name from above
+    watched:subHouses
+      H	{"loopy":0,"hid":1}
+      H	{"loopy":1,"hid":1}
+    H:Athe_Hold	{"loopy":1}
+      A:Athe_Hold
+        TheABelieves
+        A:Athe_Near
+          self,round=3	{"mung":["age"]}
+          w:Athe_Near
+            NearIs:near
+            self,round=3	{"mung":["age"]}
+            Poked:name from the Hold
+            Poked:handle
+        self,round	{"mung":["age"]}
+        w:Athe_Hold
+          self,round	{"mung":["age"]}

@@ -1,0 +1,27 @@
+Snap:H
+  H:AthePondNear,Run
+    A:AthePondNear
+      self,round=2	{"mung":["age"]}
+      w:AthePondNear
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+    H:Athe_Far	{"loopy":0}
+      A:Athe_Near
+        self,round	{"mung":["age"]}
+        w:Athe_Near
+          NearIs:far
+          self,round	{"mung":["age"]}
+    watched:subHouses
+      H	{"loopy":0,"hid":1}
+      H	{"loopy":1,"hid":1}
+    H:Athe_Hold	{"loopy":1}
+      A:Athe_Hold
+        TheABelieves
+        A:Athe_Near
+          self,round	{"mung":["age"]}
+          w:Athe_Near
+            NearIs:near
+            self,round	{"mung":["age"]}
+        self,round	{"mung":["age"]}
+        w:Athe_Hold
+          self,round	{"mung":["age"]}

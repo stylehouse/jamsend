@@ -9,40 +9,40 @@ story:AtheStoryInStory
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.039
-      sample=0.047,at=1793312679
-      sample=0.037,at=1793312733
-      sample=0.031,at=1793312756
-      sample=0.052,at=1793313215
-      sample=0.031,at=1793313234
-      sample=0.029,at=1793313243
-      sample=0.033,at=1793313252
-      sample=0.047,at=1793318134
-      sample=0.034,at=1793318159
-      sample=0.049,at=1793318172
-    TimeTotal:step,avg=0.006
-      sample=0.007,at=1793312679
-      sample=0.005,at=1793312733
-      sample=0.004,at=1793312756
-      sample=0.007,at=1793313215
-      sample=0.004,at=1793313234
-      sample=0.004,at=1793313243
-      sample=0.005,at=1793313252
-      sample=0.007,at=1793318134
-      sample=0.005,at=1793318159
-      sample=0.007,at=1793318172
+    TimeTotal:beliefs,avg=0.034
+      sample=0.034,at=1793325209
+      sample=0.034,at=1793325214
+      sample=0.034,at=1793325214
+      sample=0.034,at=1793325215
+      sample=0.034,at=1793325215
+      sample=0.034,at=1793325216
+      sample=0.034,at=1793325216
+      sample=0.031,at=1793325225
+      sample=0.039,at=1793328444
+      sample=0.035,at=1793329819
+    TimeTotal:step,avg=0.005
+      sample=0.005,at=1793325209
+      sample=0.005,at=1793325214
+      sample=0.005,at=1793325214
+      sample=0.005,at=1793325215
+      sample=0.005,at=1793325215
+      sample=0.005,at=1793325216
+      sample=0.005,at=1793325216
+      sample=0.004,at=1793325225
+      sample=0.006,at=1793328444
+      sample=0.005,at=1793329819
   step,dige:5baf55d7ac1a2524
-  step=2,desc:stand a Desk holding the new Story — kept aside — give it a Book — AthePondRounds — leashed — and wait till it stands ready,dige:3db281497be4544c
+  step=2,desc:stand a Desk holding the new Story — kept aside — give it a Book — AthePondRounds — leashed — and wait till it stands ready,dige:3132b02a85a5c021
     Assertion:a-desk-stands-the,sentence:a Desk stands the new Story kept aside — its code on the A — on no House
     Assertion:the-inner-story-planned,sentence:the inner Story planned its run — the House thought it through the A
     Assertion:the-inner-story-stands,sentence:the inner Story stands ready — its 4 steps known — none run — held by the leash
-  step=3,desc:let the inner Story through its step 1 — and wait till it stands there,dige:633164b4d8c29ac8
+  step=3,desc:let the inner Story through its step 1 — and wait till it stands there,dige:0c74762947e5face
     Assertion:the-inner-story-stands-2,sentence:the inner Story stands after its step 1 — green so far — and goes no further
-  step=4,desc:let the inner Story through its step 2 — and wait till it stands there,dige:e66f1c62c4fe4027
+  step=4,desc:let the inner Story through its step 2 — and wait till it stands there,dige:cb02ff665af7a483
     Assertion:the-inner-story-stands-3,sentence:the inner Story stands after its step 2 — green so far — and goes no further
-  step=5,desc:let the inner Story through its step 3 — and wait till it stands there,dige:fdcc72dd5ee2caf3
+  step=5,desc:let the inner Story through its step 3 — and wait till it stands there,dige:7e47f9fa8b15a0e9
     Assertion:the-inner-story-stands-4,sentence:the inner Story stands after its step 3 — green so far — and goes no further
-  step=6,desc:let the inner Story through its step 4 — and wait till it stands there,dige:7c8965dc460fd705
+  step=6,desc:let the inner Story through its step 4 — and wait till it stands there,dige:67fb69d095c4a60f
     Assertion:the-inner-story-stands-5,sentence:the inner Story stands after its step 4 — green so far — and goes no further
-  step=7,desc:unleash it — and wait for it to finish,dige:f46878d0cb861a45
+  step=7,desc:unleash it — and wait for it to finish,dige:f3bae226c22243b0
     Assertion:the-inner-story-ran,sentence:the inner Story ran its Book green — and told its own w it finished — not the page

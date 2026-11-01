@@ -11,7 +11,7 @@ import { Selection } from "$lib/Selection.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_Theory(): string { return '74c9dc6b43ca5a82~g1' },
+    Ghostmeta_Ghost_A_Theory(): string { return 'e992cfd7bcc89130~g1' },
 
 // Theory.g — Atheory's first organ: an A says which code it runs (spec/Atheory_todo.md §0.1 and §0.2).
 //
@@ -275,6 +275,9 @@ TheA_all(h) {
 // TheA_up — the A an A stands in, or nothing for an A standing in a House.  Read off the tree, so it survives a reload
 TheA_up(A) {
     if (!A) return null
+    // attend keeps an A's c.up its holder (an A it stands in, or its House): believed when the holder still holds it
+    let up = A.c.up
+    if (up && up.o?.({ A: 1 }).includes(A)) return up.sc?.A != null ? up : null
     for (const h of this.every_House()) {
         for (const B of this.TheA_all(h)) {
             if (B.o({ A: 1 }).includes(A)) return B

@@ -24,6 +24,9 @@
     outer snap catches the inner standing still (`%InnerRun,at,leash,steps,ok`), 8 oaths, records green and replays green ×3.  Next
      rung goes below a step: a round, a Turn — the outer giving the inner its time (Story_future's 10-28 "crawl"; §5 Rung 2).
 3b. **NEXT, owner 2026-10-30 ("1-2 are go"): the debugger and the self-sabotaging Book — and the Desk's shape first** (§6).
+    *2026-10-30:* the Desk's shape BUILT (`%TheABelieves`), the inner w unmuted, the debugger's hand BUILT (Book AtheStoryWalk).
+     The self-sabotaging Book BUILT the same day (AtheStorySabotage — the `red` leash proven by it).  **NEXT: the debug push at
+      a stop** (§6 item 1's rest), more declared sabotages, or THE MAP's next work (`Atheory_todo.md` §0.0).
 4. **The Desk as a page** (`/Desk?G=…`, `/Desk?B=`) — waits on Lies (the relay seat) being standable by a Ground.
 5. **A Ground in front of a Ground** (owner, 2026-10-29: "a Ground might get in front of another Ground and inject some moment").
     Today `Stands:` only orders loads; flat eatfunc is last-wins.  The parts exist: code kept aside on an A + the House reaching a
@@ -181,6 +184,8 @@ Then the Desk-in-a-run stands `Ground/Story` aside, and `AtheStoryInStory` can b
 | §16 UIless, agent as driver | drive Story from outside | arrivals through the door (verbs, `e:Verb`) | partly |
 | §13 test is a Waft, §14 Points are Assertions | oaths on Points | Atlas `%Map` Points + Regard | — |
 | directions §7 a Book declares its steps | no `req:wrangle` boilerplate | the Book as an A whose steps are its moves | — |
+| (new, owner 2026-11-02) a step points at part of attention | stop where the attention travel reaches a place, and snap a SUBSET — the compartments the Book watches — with a whole snap still taken at regular intervals | a step as a reader of what it watches (AtheoryNexus_todo §4: a step as a Sunpit) | **todo — stays until we can see it's really time** |
+| (new, owner 2026-11-02) a warnings and errors layer | various malfunctions warned about so Story sees them: a reactive loop cut (`most`), a spill, an ambiguous name (`_A_near`), a hold that ran out — rows a Book can swear about (or against) | today: `Story_error`'s ring (old Story), console warns (`_A_near_ambiguous`), silent cuts | — |
 
 ## 3. The step explorer
 
@@ -272,17 +277,49 @@ One window on a step, and everything else is a protrusion from it showing a chan
  STATE rows — the `run` (done/total/mode; volatile timing stripped or Entcase'd), `%StoryAt`, `%StoryLeash`, `%StoryFinished`,
   the oath count — and fold only what grows or races: The (the toc tree, TimeSpool), This (every step's got_snap), the inner's
    `watched:ave`/`actions` (already folded).  `%InnerRun` then may retire: the inner says it itself.
+ *BUILT 2026-10-30:* `AtheStoryInStory_fold` folds only The's TimeSpool, This and `wh` (by `.c.dontSnap`; The itself shown since — owner asked why it had no insides); the run line needed no Entcase
+  (`run:…,done=4,total,mode:check,frontier=0,paused=2` replays stable ×3).  AtheStoryShow had no `Self_round` Entcase, so the
+   inner's `self,round=N` caveated step 2 — added.  `%InnerRun` kept for now (it carries the oath tally); retire it when a Book reads
+    the inner's own rows instead.
 **1 — The debugger: a human holds the leash.**  `%StoryLeash` is only a particle, so anything may move it.  Storui/Storica grow
  Step · Continue · Run-to-red buttons (runtime controls — verbs with a face, `Atheory_design.md` §3) that write it; any Book
   walks by hand; at each stop the lens (`Stuffica_focus`) seats the live snap over the recorded one and glows what moved.  And
    **switch on debugging AT a step**: at a stop, push a debug variant of a method (tracing on, a breakpoint-ish `%see`) onto the
     inner's A — CodePush lets it through only at the seam, so "from step 4 on, trace Q" is exact.  Pull it back the same way.
+ *BUILT 2026-10-30 (the hand, not yet the debug push):* Storica's head grows **step · to red · continue** while held, **hold**
+  while free; they move the leash through `Desk_leash_on(D,…)` (Ground — the Desk re-carries %DeskLeash over %StoryLeash, so a
+   write on the inner w would be undone).  Each stop opens the step it stopped after.  StoryFu `Story_leashed` learned `red`: run
+    on, stop after the first non-green step (unproven until the sabotage Book — it is that Book's natural leash).  Storica also
+     finds its Story inside the Desk now (it looked for A:Story on its House: broken since A-in-A).  **Way in: Book AtheStoryWalk**
+      — leaves a Desk held at ready on AthePondRounds; open the House Desk's Storica and press step.  Owed: the debug push at a
+       stop.
+  *Same day, owner: "when I click H:AtheStoryWalk's steps it changed the outer H:Story's steps".*  Storica picked by NAME
+   (`i_elvisto('Story/Story', …)`); `_house_of` climbs from the Desk to the first House owning an A:Story — the page's.  Fixed
+    in Housing: `i_elvisto(w)` on a w now addresses it by its whole A path (`_Aw_of` → "Desk/Story/Story"), and `_e_targets_T`
+     places an A or w by how many As hold it (plain "A/w" reads as ever).  Storica sends to its own `sw`.
+  *Is Storica Stuffica-compliant?*  Its READS are: plan · live · snap · hand are views, the template reads only
+   `Stuffica_points` (the view's counter), refreshed after the Story's settled flush.  (The first cut of the hand read the w
+    with `ob()` — every bump of the w redrew; it's a `hand` view now, says `n`.)  Its WRITES are not yet: a click calls
+     `Desk_leash_on` / `i_elvisto` straight, where Stuffica's rule is a pulse on a compartment's `%TheAIO` (Theory.g TheA_io).
+      That wants the Desk run by the Atheory scheduler, not Housing — THE MAP's "scheduler in beliefs"; until then, direct.
 **2 — The self-sabotaging Book: every oath proves it bites.**  Today each new oath is sabotaged once by hand (design §1.10,
  S1–S27).  The outer Book: hold the inner at step k, push a sabotaged variant onto the inner's A, let one step through, swear the
   inner's named oath FELL, pull the variant, re-run green.  **Where variants live (owner): the test ghost's Ground links each
    sabotage to the real method** — a row like `Sabotage:<slug>,of:<Ghost/…/X.g>,method:<name>,bites:<oath slug>` — so the edge
     between test code and real code is a particle Atlas and Credence can see (which methods are guarded by which oaths; which
      oaths have never bitten).  This is the first real "a Ground in front of a Ground": code injected at a named moment.
+ *BUILT 2026-10-30 — Book AtheStorySabotage (4 steps, 4 oaths).*  S15 ("the boundary readies nobody") is now a variant method,
+  `AtheSabotage_boundary_readies_nobody` (AtheTesting.g), declared by AthePondRounds's toc:
+   `Sabotage:boundary_readies_nobody,of:Ghost/A/Theory.g,method:TheA_boundary,with:AtheSabotage_…,at:3,bites:a-pulse-sent-in with-nothing-waiting-the`.
+  The variant goes onto the INNER RUN'S HOUSE only (`R[method] = R[with]`; a House's methods are its own properties, assigned by
+   `ghostsHaunt`), the leash goes to `red`, and the inner stops at step 3 with `Fell:a-pulse-sent-in with-nothing-waiting-the,
+    held:only-what-has-a` — exactly the bite §1.13 recorded by hand.  Pulled (`R[method] = R.ghosts[method]`), reset, free: green.
+     So the `red` leash is proven too.  **Where it sits:** in the Book's toc, not the test ghost's Ground — Ground tocs are
+      generated by everything.js today; move it when the Ground's recipe is kept by hand.  **Bomb:** the row once wore `step:3`
+       — The finds steps by presence (`o({step:1})`), so the first record merged the row onto step=3 and nothing found it.  A toc
+        row beside steps must never carry `step`.  **Next:** more declared sabotages (S1–S27 are the ledger to port), a
+         Credence view of "which methods which oaths guard; which oaths never bit", and a ghostsHaunt mid-run would quietly
+          un-sabotage the House (unguarded).
 **Small things found on the way (2026-10-30):**
 - Reset on a nested Story did nothing (StoryFu refused by design, nobody held it) → `Desk_reset` (Ground.g), StoryFu hands Reset
    to `TheA_base`.  Built, compiled; not yet clicked by the owner.

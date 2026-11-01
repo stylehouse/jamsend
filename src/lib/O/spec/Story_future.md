@@ -1121,6 +1121,11 @@ The Waft unification (§13) is not a stage so much as the *direction* every stag
 
 ## Open / deferred
 
+- **A Story's runs as a collection** (parked here 2026-11-01 from `Atheory_design.md` §1.15; owner: "might be useful eventually but is
+   Story_future").  StoryFu "would like to collect variations of runs, being able to robustly reiterate the inner actual testrun"
+    (owner 2026-10-30): a run kept as a Was, variants side by side — the sabotage Book's bitten runs among them.  Today `Desk_reset`
+     tosses the run and its House.
+
 - ⛑️ Loopy *decode* still throws in `decode_wh_lines`. With refs lifted to
    `Snap:refs` (§2.1), `Snap:H` decodes *without* loopy at all — the re-link is a
     second pass that reads `Snap:refs` and stitches the shared `C` back. That may

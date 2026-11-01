@@ -1,17 +1,15 @@
 story:AthePondMergeHatch
-  Stands:CoreTesting
   Styles
   Plan
   Opt
     For
+  Stands:CoreTesting
   EntropyArrest
     Entcase:Self_round
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.017
-      sample=0.019,at=1792566782
-      sample=0.011,at=1792567784
+    TimeTotal:beliefs,avg=0.018
       sample=0.012,at=1792570989
       sample=0.018,at=1792575925
       sample=0.02,at=1792577521
@@ -20,9 +18,9 @@ story:AthePondMergeHatch
       sample=0.023,at=1792635954
       sample=0.017,at=1792650376
       sample=0.021,at=1792659845
-    TimeTotal:step,avg=0.004
-      sample=0.005,at=1792566782
-      sample=0.003,at=1792567784
+      sample=0.024,at=1793324086
+      sample=0.013,at=1793328055
+    TimeTotal:step,avg=0.005
       sample=0.003,at=1792570989
       sample=0.005,at=1792575925
       sample=0.005,at=1792577521
@@ -31,6 +29,8 @@ story:AthePondMergeHatch
       sample=0.006,at=1792635954
       sample=0.004,at=1792650376
       sample=0.005,at=1792659845
+      sample=0.006,at=1793324086
+      sample=0.003,at=1793328055
   step,dige:fbb5270c2c352c13
   step=2,desc:stand M — turn it to 10 — mark it fork — and fork N from the mark,dige:c2b629e8f44fbedf
   step=3,desc:N turns to 13 — its eggs hatch — a hand says M’s carp 3 egg was laid at 9,dige:897b7062510e1041

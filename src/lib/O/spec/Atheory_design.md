@@ -225,7 +225,8 @@ Each oath fell to the sabotage aimed at it, and only to that: the unrelated oath
 - **S14 — the ambient way** (every A moves every round, as `think` does).  Lost all three step-3 oaths: R, and even the Book's
    own A, went every round from round 2, and the run never went quiet (`rounds=50,cut`).  Held: "a run with nothing poked takes
     no rounds" — with nothing ready the sabotaged loop never starts.
-- **S15 — the boundary readies nobody.**  The run stopped after round 1; P's two old fish sat as pulses on Q's stream synapse,
+- **S15 — the boundary readies nobody.** *(A Book now does this one: AtheStorySabotage, 2026-10-30 — the variant declared in
+   AthePondRounds's toc and pushed onto the inner run's House only; same bite.  AtheoryStory_todo §6 item 2.)*  The run stopped after round 1; P's two old fish sat as pulses on Q's stream synapse,
    never arrived.  Lost: "a pulse sent in one round readies its receiver" and "goes quiet by itself — two rounds".  Held: R
     never visited, and the step-4 oath.
  Restored by checksum and recompiled; the runner needs a reload before its next Book.
@@ -530,6 +531,45 @@ A:Feeder
    `from:` resolved by nearness rather than a unique name, a Book's own routine running through its A, and whether the A\*\*
     tree maps onto relations (the owner's hunch).
 
+**Remaining conceptualisations** *(gathered 2026-10-30 — each is a question to think from the top, not a fix; patches made
+ meanwhile are in the ledger, §2).*  **Since 2026-11-01 the open concepts are reduced and tracked in `AtheoryNexus_todo.md`** —
+  add new ones there; this list stays as the record of how they were first put.
+- **Addressing — how anything finds anything (owner 2026-10-30: "that lookup thing kind of needs rethinking from the top").**
+   *The question:* there were several resolvers, each by NAME and each "first found": `i_elvisto('A/w')` → `_house_of` climbed
+    to the first House whose subtree had an `A:<name>` at its top; `Awo` throws on duplicates; a Seem's `from:` wants a unique
+     name (above); `TheA_up` scanned every House in the tab for an A's holder; Storica looked for `A:Story` on its own House.
+      Only a req was reached by REF (`e.c.target`).  And `attend` set every A's `c.up` to its House, so an A couldn't name the
+       A holding it.  A Desk holding a Story inside a run inside a page Story is where every one of these broke or nearly did.
+   **The rule, R1–R4 — R1–R3 built 2026-10-30 (Book `AthePondNear`); R4 is a habit:**
+   - **R1 Holding.**  `A.c.up` is its HOLDER — the A it stands in, else its House; `w.c.up` its A.  `attend` keeps it so, from
+      the walk's own parent; `Desk` stands A:Story with it.  So any A climbs to its House by `c.up`, and `TheA_up` reads it
+       first (the tab scan stays, for an A no walk has met — the A\*\* ponds, which `TheA_run` drives).
+   - **R2 Refs where a handle exists.**  `i_elvisto(w | A)` resolves to `e.c.to_A` (and `e.c.to_w`) ONCE, and the walk matches
+      by identity — the A, and that w — never by name again.  `e.sc.Aw` stays, for reading (the TodoSpool, the trace).  A UI
+       holds its w (Storica's `sw`); a Book holds its Desk.  The patch it replaced (`_Aw_of`, the `seq` count) is gone.
+   - **R3 Nearness when only a name exists.**  One resolver, `Housing._A_near(from, name)`: the A of that name fewest steps
+      from the asker, through holders, Houses up and down, and believing As.  The House that asks is the asker (`i_elvisto` on
+       `H` asks from `H`).  `_house_of` and `_target_present` (so `vaguely_ponder`) use it.  Two at one distance is a real
+        ambiguity — warned once per name, first taken (as before); the fix is a ref.  It walks the tab on each send, like the
+         `all_House` sweep it replaced; cache it the day it shows in the atime ring.
+   - **R4 Names only at a boundary** — the wire, a toc, a Credence row, a person typing.  Inside a tab a name is resolved once and
+      the ref kept.  The ~140 string `i_elvisto`s (Lies 52, Lang 34, Story 15, Vyto, Cyto, Auto 11 each…) are fine under R3 while
+       there is one of each; each becomes a ref when a second one stands.
+   *Still open:* a Seem's `from:` by R3 (Theory `TheA_near` is R3 for services, walking up only); `Awo` (a House's own A, by
+    name, throws on two) — keep, it is local; turfs — what an A may reach, not just what it finds.
+- **Classifying by mark, not depth.**  `%TheABelieves` puts As-in-As into the beliefs walk by a mark; `organise_scheme` still
+   classifies everything else by depth.  Should depth fall away — every level saying what it is?  Then the A\*\* ponds
+    (`TheA_run`'s) and the Housing walk would be one tree with two drivers, not two trees.
+- **A click as IO.**  Stuffica's rule: what the UI does is a pulse on a compartment's `%TheAIO` (Theory.g `TheA_io`), on its
+   tape like time.  Storica's hand (step · to red · continue) calls `Desk_leash_on` straight, because the Desk is run by Housing,
+    not the scheduler.  Waits on the scheduler in beliefs (`Atheory_todo.md` §0.0 THE MAP).
+- **A Story's runs as a collection** — parked to `Story_future.md` "Open / deferred" (owner 2026-11-01).
+- **What a revisit prints.**  A snap's loopy shadow line (`H\t{"loopy":1,"hid":1}`) munges every key to 1, its name included,
+   so it says nothing of what it revisits.  It should keep its mainkey's value (a re-record sweep).
+- **A Ground in front of a Ground** (`AtheoryStory_todo.md` §0 item 5): intercepting another Ground's methods at a named
+   moment.  **Views that stand only while open**, and **how much of `H.ave` moves onto views** (`Aprac_todo.md` §0 "Open
+    questions").
+
 ## 2. The foundation ledger — every change Atheory makes to Stuff or Housing
 
 *The owner, 2026-10-20: "I want to track everything we adjust in Stuff|Housing" — and again, "carefully collect all the
@@ -554,6 +594,8 @@ No Atheory adjustments yet.
 
 | date | where | what | why | read by | to undo |
 |---|---|---|---|---|---|
+| 2026-10-30 | `Housing.svelte.ts` ADDRESSING, R1–R3 (§1.15): `_A_near` + `_A_near_ambiguous` (new) — `_house_of`'s string branch and `_target_present` use it; `_A_to` (new; replaces `_Aw_of`); `i_elvisto`'s targeting sets `e.c.to_A`/`e.c.to_w`; `_e_targets_T` matches those by identity (and its `seq` goes back to `A ? 0 : w ? 1 : depth-1`); `attend` sets `A.c.up` to the holder A.  Theory `TheA_up` reads `c.up` first; Ground `Desk` sets A:Story's `c.up` to A:Desk | a name finds the nearest A of that name from the asking House; a handle reaches exactly its A and w; an A's `c.up` is what holds it | the 2026-10-30 patch row below was a patch; this is the rule.  Owner: "that lookup thing kind of needs rethinking from the top" | every `i_elvisto` / `vaguely_ponder`; Storica `pick`; Book `AthePondNear` | `_house_of` back to the climb over `all_House`; drop `_A_near`, `_A_to`, the `to_A` branch; `attend` back to `A.c.up = this` |
+| 2026-10-30 | `Housing.svelte.ts` ADDRESSING A IN A: `_Aw_of(w)` (new); `i_elvisto` given a w TheC uses it for `Aw`; `_e_targets_T` places an A/w-level by how many As hold it (its `seq`) | an elvis sent to a w carries its whole A path (`Desk/Story/Story`), found from the House down, through As that `%TheABelieves` only (an A's `c.up` is the House — attend sets it — so the path can't be climbed); the path's Nth part matches the A or w with N As above it.  Plain `A/w` places as ever (0, 1) | owner 2026-10-30: "when I click H:AtheStoryWalk's steps it changed the outer H:Story's steps" — Storica's `i_elvisto('Story/Story', …)` climbed to the first House owning an A:Story, the page's.  A patch: the lookup wants rethinking (§1.15 "Addressing") | Storica `pick` (`i_elvisto(sw, 'story_sel')`) | drop `_Aw_of` and its use; `seq` back to `A ? 0 : w ? 1 : depth-1` — **went 2026-10-30, replaced by the R1–R3 row above** |
 | 2026-10-21 | `House.ghost_versions`, and four lines in `ghostsHaunt`'s `if (meta) {…}` block | every arriving hash is also kept by its dige: `ghost_versions[meta][dige] = hash`, the newest 8 per file, on the top House | A\*\*: an A runs the version its `%TheALayer` names, so a newer version merged flat doesn't reach it until its push is let through — two versions of one file in one heap | `Ghost/A/Theory.g` (`TheA_as`, `TheA_version_keep`); Books `AthePondVersions`, `AthePondNest` | delete the field and the four lines; `TheA_as` then finds no versions and answers with the flat House |
 | 2026-10-20 | the CodePush line at the end of `ghostsHaunt` (`if (meta) (this as any).TheA_code_push?.(meta)`) | after the merge, every compiled file that arrives is announced to Theory by its `Ghostmeta_*` name | CodePush: code compiles centrally and is pushed to the As that hold it; `ghostsHaunt` is the one place every compiled `.g` arrives | `Ghost/A/Theory.g` (`TheA_code_push`); Book `AthePondCodePush` | delete the line |
 | 2026-10-20 | `House.ghost_origin`, `House.ghost_files`, the `if (meta) {…}` block in `ghostsHaunt` | `ghostsHaunt` finds the one `Ghostmeta_*` key in each eaten hash and records, on the **top** House: `ghost_files[meta]` = the methods this load carried (replaced whole each load, so a deleted method leaves), and `ghost_origin[method] = meta` (the file that last defined it).  A hash with no `Ghostmeta_*` (a hand-written `.svelte` ghost) records nothing.  (The first version kept a `ghost_clobbers` log that only grew; replaced the same day.) | `H.ghosts` is flat, so nothing could say which code an actor runs or where a method came from.  Each compiled `.g` arrives as exactly one hash with exactly one `Ghostmeta_*`, which is also its digest: the one cheap place to learn it. | `Ghost/A/Theory.g` (`TheA_clobbers_stand`); Book `AthePondCode` | delete the two fields and the `if (meta) {…}` block; nothing else depends on them yet |

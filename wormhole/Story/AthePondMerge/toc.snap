@@ -1,17 +1,15 @@
 story:AthePondMerge
-  Stands:CoreTesting
   Styles
   Plan
   Opt
     For
+  Stands:CoreTesting
   EntropyArrest
     Entcase:Self_round
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.03
-      sample=0.037,at=1792567774
-      sample=0.025,at=1792570978
+    TimeTotal:beliefs,avg=0.028
       sample=0.033,at=1792575914
       sample=0.028,at=1792577510
       sample=0.036,at=1792578734
@@ -20,9 +18,9 @@ story:AthePondMerge
       sample=0.029,at=1792650366
       sample=0.028,at=1792659839
       sample=0.027,at=1792666065
+      sample=0.025,at=1793324079
+      sample=0.02,at=1793328048
     TimeTotal:step,avg=0.006
-      sample=0.007,at=1792567774
-      sample=0.005,at=1792570978
       sample=0.007,at=1792575914
       sample=0.006,at=1792577510
       sample=0.007,at=1792578734
@@ -31,6 +29,8 @@ story:AthePondMerge
       sample=0.006,at=1792650366
       sample=0.006,at=1792659839
       sample=0.005,at=1792666065
+      sample=0.005,at=1793324079
+      sample=0.004,at=1793328048
   step,dige:57811e66bfee272b
   step=2,desc:stand M — turn it to 10 — mark it fork — and fork N from the mark,dige:f799380238c97c6b
   step=3,desc:both turn to 13 — then hands — perch 2 is caught from N — carp 3 is said born 11 in M and 12 in N,dige:2c55ea3da2641836

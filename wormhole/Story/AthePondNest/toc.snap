@@ -1,17 +1,15 @@
 story:AthePondNest
-  Stands:CoreTesting
   Styles
   Plan
   Opt
     For
+  Stands:CoreTesting
   EntropyArrest
     Entcase:Self_round
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.025
-      sample=0.043,at=1792570559
-      sample=0.027,at=1792571013
+    TimeTotal:beliefs,avg=0.023
       sample=0.021,at=1792576036
       sample=0.019,at=1792577546
       sample=0.026,at=1792578773
@@ -20,9 +18,9 @@ story:AthePondNest
       sample=0.027,at=1792650396
       sample=0.023,at=1792659852
       sample=0.023,at=1792666058
+      sample=0.023,at=1793324103
+      sample=0.027,at=1793328171
     TimeTotal:step,avg=0.004
-      sample=0.007,at=1792570559
-      sample=0.004,at=1792571013
       sample=0.004,at=1792576036
       sample=0.003,at=1792577546
       sample=0.004,at=1792578773
@@ -31,6 +29,8 @@ story:AthePondNest
       sample=0.004,at=1792650396
       sample=0.004,at=1792659852
       sample=0.004,at=1792666058
+      sample=0.004,at=1793324103
+      sample=0.005,at=1793328171
   step,dige:51f8eda66156a011
   step=2,desc:stand a warm pond and a cold pond — each an A with the toy’s code — and one tank in each with no code of its own — turn one,dige:1efd136ec2845a0a
   step=3,desc:turn both tanks to turn 13 — each asks its pond for the weather,dige:f39cbe6a7ab90405

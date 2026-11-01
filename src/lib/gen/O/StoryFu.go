@@ -90,7 +90,7 @@ const FRONTIER_COLOR = '#c55'
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_O_StoryFu(): string { return 'e4cd3c1e1436cfac~g1' },
+    Ghostmeta_Ghost_O_StoryFu(): string { return 'b6e0770a7d17064b~g1' },
 
 // Ghost: StoryFu — the Atheory fork of Story (working title; renamed from Story.g 2026-10-29, spec/AtheoryStory_todo.md).
 //  Ported from src/lib/O/Story.svelte, which the spine still mounts; a Story fix lands in both until the old one retires.
@@ -1541,6 +1541,13 @@ Story_finished(w: TheC, mode: string) {
         if (base) {
             w.oai({ StoryFinished: w.sc.Book }, { mode })
             this.Story_at(w, 'finished')
+            // the status line Story's think ends on, written here too: a holder snaps the inner as soon as it says finished, and
+            //  whether one more think had landed to rewrite it was a race (AtheStorySabotage step 4: "0 [check]" vs "4 [check] ⏸")
+            const run = w.o({ run: 1 })[0]
+            if (run) {
+                for (const s of w.o({ see: 1 })) w.drop(s)
+                w.i({ see: `${w.sc.Book} ${run.sc.done} [${run.sc.mode}]${run.sc.paused ? ' ⏸' : ''}` })
+            }
             base.up?.main?.(true)
             return
         }
@@ -1561,11 +1568,17 @@ Story_at(w: TheC, at: string, n?: number) {
         base.up?.main?.(true)
 
 },
-// Story_leashed — true when the leash forbids beginning step n
+// Story_leashed — true when the leash forbids beginning step n.  ready: nothing begins.  step,n: up to n.  red: on until a step
+//  comes out other than green (a red or a caveat) — the debugger's run-to-red; it stops after that step, as step,n would
 Story_leashed(w: TheC, n: number) {
         const leash = w.o({ StoryLeash: 1 })[0]
         if (!leash) return false
         if (leash.sc.StoryLeash === 'ready') return true
+        if (leash.sc.StoryLeash === 'red') {
+            if (n === 1) return false
+            const was = (w.c.This as TheC | undefined)?.o({ Step: 1 }).find((s: TheC) => s.sc.Step == n - 1)
+            return !!was && (!was.sc.ok || !!was.sc.caveat)
+        }
         return n > Number(leash.sc.n ?? 0)
 
 },

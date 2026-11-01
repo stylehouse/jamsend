@@ -10,7 +10,6 @@ story:HohoTtlilt
     quiesce_snap_time=0.4
   TimeSpool
     TimeTotal:beliefs,avg=0.029
-      sample=0.013,at=1784598672
       sample=0.063,at=1784598676
       sample=0.017,at=1784598680
       sample=0.02,at=1785994668
@@ -20,8 +19,8 @@ story:HohoTtlilt
       sample=0.029,at=1789563741
       sample=0.021,at=1789563751
       sample=0.029,at=1789563759
+      sample=0.015,at=1793324337
     TimeTotal:step,avg=0.029
-      sample=0.013,at=1784598672
       sample=0.063,at=1784598676
       sample=0.017,at=1784598680
       sample=0.02,at=1785994668
@@ -31,4 +30,5 @@ story:HohoTtlilt
       sample=0.029,at=1789563741
       sample=0.021,at=1789563751
       sample=0.029,at=1789563759
+      sample=0.015,at=1793324337
   step,dige:7db3b52cdaa30762

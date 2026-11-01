@@ -1,0 +1,31 @@
+story:AthePondNear
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.037
+      sample=0.044,at=1793329337
+      sample=0.044,at=1793329358
+      sample=0.037,at=1793329364
+      sample=0.027,at=1793329371
+      sample=0.025,at=1793329378
+      sample=0.023,at=1793329420
+      sample=0.04,at=1793329520
+      sample=0.059,at=1793329857
+    TimeTotal:step,avg=0.013
+      sample=0.015,at=1793329337
+      sample=0.015,at=1793329358
+      sample=0.012,at=1793329364
+      sample=0.009,at=1793329371
+      sample=0.008,at=1793329378
+      sample=0.008,at=1793329420
+      sample=0.013,at=1793329520
+      sample=0.02,at=1793329857
+  step,dige:a78e5b48dd4eff17
+  step=2,desc:stand two As of one name — one at the top of a House — one standing in an A on another,dige:f695caae334a4acd
+  step=3,desc:poke by name from inside the Hold — by name from above — and by handle,dige:2aaeb6a911b83bee
+    Assertion:asked-by-name-from,sentence:asked by name from inside the Hold — the A standing there answers — not the one at the top of another House
+    Assertion:asked-by-name-from-2,sentence:asked by name from above — the shallower answers — nearness counts both ways
+    Assertion:sent-to-by-its,sentence:sent to by its handle — that w and no other — whatever it is named
+    Assertion:an-a-in-an,sentence:an A in an A knows its holder — its c.up is the A it stands in

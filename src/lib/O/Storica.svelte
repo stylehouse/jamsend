@@ -21,7 +21,7 @@
     let { H }: { H: House } = $props()
 
     class Look { v = $state(0); commit() { this.v++ } }
-    const looks: Record<string, Look> = { plan: new Look(), live: new Look(), snap: new Look() }
+    const looks: Record<string, Look> = { plan: new Look(), live: new Look(), snap: new Look(), hand: new Look() }
     const Wv = new TheC({ c: {}, sc: { w: 'Storica' } })
     let stood = false
     // the step open in the strip
@@ -33,6 +33,11 @@
     let since = $state(false)
     let pins = $state<Record<string, 1>>({})
     let seated = ''
+    // the debugger (spec/AtheoryStory_todo.md §6 item 1): a human holds the leash.  The Story's w (raw: a particle, not a proxy) is
+    //  where a click goes; where it stands (%StoryAt) and how far it may go (%StoryLeash) come back as a view, like the rest
+    let sw = $state.raw<TheC | undefined>(undefined)
+    // the Story: on this House, or (A in A, %TheABelieves) inside its Desk
+    const story_A = () => (H.o({ A: 'Story' })[0] ?? H.o({ A: 'Desk' })[0]?.o({ A: 'Story' })[0]) as TheC | undefined
     // the render ledger: plain, so keeping it can't cause a render
     const ledger: Record<string, number> = {}
     const drew = (part: string) => { ledger[part] = (ledger[part] || 0) + 1 }
@@ -48,6 +53,7 @@
         H.Stuffica_view(Wv, 'plan', ['step'], looks.plan, { says: ['dige', 'desc'] })
         H.Stuffica_view(Wv, 'live', ['Step'], looks.live, { says: ['ok', 'caveat', 'accepted', 'dige'] })
         H.Stuffica_view(Wv, 'snap', ['*'], looks.snap, { deep: 1 })
+        H.Stuffica_view(Wv, 'hand', ['StoryLeash', 'StoryAt'], looks.hand, { says: ['n'] })
     }
 
     // a snap decoded once: the same text is the same tree, so a refresh re-seats nothing
@@ -84,8 +90,9 @@
         if (!now) return
         untrack(() => {
             stand()
-            const A = H.o({ A: 'Story' })[0] as TheC | undefined
-            const w = A?.o({ w: 'Story' })[0] as TheC | undefined
+            const w = story_A()?.o({ w: 'Story' })[0] as TheC | undefined
+            if (w !== sw) sw = w
+            H.Stuffica_from(Wv, 'hand', w)
             H.Stuffica_from(Wv, 'plan', w?.c.The)
             H.Stuffica_from(Wv, 'live', This)
             const snap = snap_source(w, This, n)
@@ -100,7 +107,7 @@
                     await H.Stuffica_refresh(Wv, ['snap'])
                 }
                 H.Stuffica_from(Wv, 'snap', snap.tree)
-                return H.Stuffica_refresh(Wv, ['plan', 'live', 'snap'])
+                return H.Stuffica_refresh(Wv, ['plan', 'live', 'snap', 'hand'])
             }).catch(e => console.warn('Storica refresh', e))
         })
     })
@@ -199,9 +206,40 @@
         else next[key] = 1
         pins = next
     }
+    let hand_rows = $derived.by(() => {
+        const by: Record<string, { at: string, n?: number }> = {}
+        if (!ready) return by
+        drew('hand')
+        for (const p of H.Stuffica_points(Wv, 'hand') as TheC[]) by[String(p.sc.TheATrace)] = { at: String(p.sc.of), n: p.sc.n as number | undefined }
+        return by
+    })
+    let leash = $derived(hand_rows.StoryLeash ?? null)
+    let stands = $derived(hand_rows.StoryAt ?? null)
+    // at each stop, open the step it stopped after: its live snap seats over what was showing (with since, over the step before)
+    $effect(() => {
+        const k = stands?.at === 'step' ? stands.n : null
+        if (leash && k != null) untrack(() => { if (open_n !== k) open_n = k })
+    })
+    // move the leash.  A Desk's Story is leashed through the Desk — it carries %DeskLeash over %StoryLeash on every think, so a
+    //  write straight onto the w would be undone; a Story with no Desk holds its own.  at undefined ⇒ unleashed (continue)
+    function hand(at?: string, n?: number) {
+        const w = sw
+        if (!w) return
+        const h = H as any
+        if (H.o({ A: 'Desk' })[0] && typeof h.Desk_leash_on === 'function') h.Desk_leash_on(H, at, n)
+        else {
+            const row = w.o({ StoryLeash: 1 })[0]
+            if (row) w.drop(row)
+            if (at) w.i(n != null ? { StoryLeash: at, n } : { StoryLeash: at })
+        }
+        h.main?.(true)
+    }
+    // the step it stands after (0 at ready), and how far a run has got when no leash holds it
+    const at_n = () => stands?.at === 'step' ? (stands.n ?? 0) : stands?.at === 'ready' ? 0 : Object.keys(live).length
     function pick(n: number) {
         open_n = n
-        H.i_elvisto('Story/Story', 'story_sel', { open_at: n })
+        // to THIS Story's w — by name, 'Story/Story' found the page's Story first (the Desk's sits in A:Desk)
+        if (sw) H.i_elvisto(sw, 'story_sel', { open_at: n })
     }
     let opened = $derived(open_n == null ? null : { n: open_n, plan: plan.find(s => s.n === open_n), live: live[open_n] })
 </script>
@@ -214,6 +252,18 @@
             <span class="sc-name">Storica</span>
             <span class="sc-count">{Object.keys(live).length}/{strip.length}</span>
             <span class="sc-commits" title="commits of each view — a redraw happens only on one">plan {looks.plan.v} · live {looks.live.v}</span>
+            {#if sw && stands?.at !== 'finished'}
+                <span class="sc-hand">
+                    {#if leash}
+                        <span class="sc-held" title="the leash — how far the Story may go">⏸ {stands?.at === 'step' ? 'after ' + stands.n : stands?.at ?? '…'}{leash.at === 'red' ? ' · to red' : ''}</span>
+                        <button class="sc-lens" onclick={() => hand('step', at_n() + 1)} title="let one step through, then stop">step</button>
+                        <button class="sc-lens" onclick={() => hand('red')} title="run on until a step comes out other than green">to red</button>
+                        <button class="sc-lens" onclick={() => hand()} title="let go — run to the end">continue</button>
+                    {:else}
+                        <button class="sc-lens" onclick={() => hand('step', at_n())} title="hold the Story after the step it is on">hold</button>
+                    {/if}
+                </span>
+            {/if}
         </div>
         <div class="sc-strip">
             {#each strip as s (s.key)}
@@ -277,4 +327,6 @@
     .sc-line.pinned { box-shadow: inset -3px 0 0 #48f; }
     .sc-lens { padding: 0 4px; border: 1px solid #8884; border-radius: 3px; background: none; color: inherit; font: inherit; cursor: pointer; opacity: .7; }
     .sc-lens.on { background: #48f3; opacity: 1; }
+    .sc-hand { display: flex; gap: 4px; align-items: baseline; margin-left: auto; }
+    .sc-held { color: #c90; }
 </style>

@@ -42,8 +42,7 @@ story:HohoFlush
     quiesce_snap_time=0.4
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=0.375
-      sample=0.55,at=1793183862
+    TimeTotal:beliefs,avg=0.372
       sample=0.33,at=1793183897
       sample=0.382,at=1793183945
       sample=0.382,at=1793184082
@@ -53,8 +52,8 @@ story:HohoFlush
       sample=0.318,at=1793184183
       sample=0.318,at=1793184234
       sample=0.399,at=1793184263
-    TimeTotal:step,avg=0.054
-      sample=0.079,at=1793183862
+      sample=0.517,at=1793324352
+    TimeTotal:step,avg=0.053
       sample=0.047,at=1793183897
       sample=0.055,at=1793183945
       sample=0.055,at=1793184082
@@ -64,6 +63,7 @@ story:HohoFlush
       sample=0.045,at=1793184183
       sample=0.045,at=1793184234
       sample=0.057,at=1793184263
+      sample=0.074,at=1793324352
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   step,dige:14b7c11f25f97eb8
   step=2,dige:aed45f6885e73cb3

@@ -1,0 +1,61 @@
+Snap:H
+  H:AtheStorySabotage,Run
+    A:AtheStorySabotage
+      w:AtheStorySabotage
+        req:wrangle,eternal,ok
+        Sabotaged:boundary_readies_nobody,method:TheA_boundary,pulled
+        Fell:a-pulse-sent-in with-nothing-waiting-the,held:only-what-has-a
+        InnerRun:AthePondRounds,at:finished,leash:none,steps=4,ok=4
+    H:Desk	{"loopy":1}
+      A:Desk
+        GroundUsed:Core,via:Story
+        TheACode:Ground/Core,variant:plain,dige:8daab8ad3bcf1173
+          TheALayer:Ghost/A/Theory.g,dige:74c9dc6b43ca5a82~g1
+          TheALayer:Ghost/A/Stuffica.g,dige:1f0ec09474696daa~g1
+          TheALayer:Ghost/A/Ground.g,dige:ba2612caa41359e1~g1
+        GroundUsed:Story
+        TheACode:Ground/Story,variant:plain,dige:f6fd3ca81d6c9960
+          TheALayer:Ghost/O/StoryFu.g,dige:b06f7d625ffcad4e~g1
+          TheALayer:Ghost/O/Supervisor.g,dige:4efe70cdd7ae19ac~g1
+        GroundAside
+        TheABelieves
+        A:Story
+          w:Story,Book:AthePondRounds
+            The,story:AthePondRounds
+              Styles
+              Plan
+              Opt
+                For
+              Stands:CoreTesting
+              Sabotage:boundary_readies_nobody,of:Ghost/A/Theory.g,method:TheA_boundary,with:AtheSabotage_boundary_readies_nobody,at:3,bites:a-pulse-sent-in with-nothing-waiting-the
+              EntropyArrest
+                Entcase:Self_round
+              TimeSpool
+              step,dige:acc822a82c0f14d0
+              step=2,desc:stand P nine turns ahead streaming into Q — and R with a clock and nothing on it,dige:9994865185e9847b
+              step=3,desc:thirteen pulses on P’s clock — run until quiet,dige:7cfc92dce34f82fc
+                Assertion:only-what-has-a,sentence:only what has a pulse waiting moves — R with a clock and nothing on it is never visited
+                Assertion:a-pulse-sent-in,sentence:a pulse sent in one round readies its receiver for the next — P moves then Q and the two old fish land
+                Assertion:with-nothing-waiting-the,sentence:with nothing waiting the run goes quiet by itself — two rounds of the fifty it was allowed
+              step=4,desc:run again with nothing poked,dige:dc220adbc7a35b4b
+                Assertion:a-run-with-nothing,sentence:a run with nothing poked takes no rounds at all
+            This,Story:AthePondRounds
+            run:AthePondRounds,done=4,total,mode:check,frontier=0,paused=2
+            wh
+            StoryFinished:AthePondRounds,mode:check
+            StoryAt:finished
+            see:AthePondRounds 4 [check] ⏸
+        w:Desk
+          DeskGround:Story
+          DeskAside
+          DeskBook:AthePondRounds
+      watched:subHouses
+        H,Run	{"loopy":0,"hid":1}
+      watched:ave
+      watched:actions
+      watched:UIs
+        UI:Story	{"ref":{"component":"Function()"}}
+        UI:Storica	{"ref":{"component":"Function()"}}
+      H:AthePondRounds,Run	{"loopy":0}
+    watched:subHouses
+      H	{"loopy":1,"hid":1}

@@ -1,17 +1,15 @@
 story:AthePondReload
-  Stands:CoreTesting
   Styles
   Plan
   Opt
     For
+  Stands:CoreTesting
   EntropyArrest
     Entcase:Self_round
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.05
-      sample=0.246,at=1792551100
-      sample=0.021,at=1792566809
+    TimeTotal:beliefs,avg=0.027
       sample=0.036,at=1792567830
       sample=0.066,at=1792571023
       sample=0.023,at=1792575949
@@ -20,9 +18,9 @@ story:AthePondReload
       sample=0.02,at=1792633967
       sample=0.016,at=1792635988
       sample=0.027,at=1792650533
-    TimeTotal:step,avg=0.01
-      sample=0.049,at=1792551100
-      sample=0.004,at=1792566809
+      sample=0.02,at=1793324110
+      sample=0.024,at=1793328179
+    TimeTotal:step,avg=0.005
       sample=0.007,at=1792567830
       sample=0.013,at=1792571023
       sample=0.005,at=1792575949
@@ -31,6 +29,8 @@ story:AthePondReload
       sample=0.004,at=1792633967
       sample=0.003,at=1792635988
       sample=0.005,at=1792650533
+      sample=0.004,at=1793324110
+      sample=0.005,at=1793328179
   step,dige:3ca761805094b4da
   step=2,desc:stand a tank with a Seem and the eye — turn to 10 — walk and look — mark it,dige:9141a49151f4917d
   step=3,desc:reload the tank — said as text — dropped — stood again from the text — walk,dige:f2c00e06ff1c59df

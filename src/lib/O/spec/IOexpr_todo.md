@@ -18,6 +18,11 @@ What falls on the floor, an unheard pulse, is an Atheory row that lives here bec
 
 ## 0. What to get on with next (smallest first)
 
+**Ruled 2026-11-02 (owner): ONE word for every IO site — `%ioing,input|output,mainkey,via`** — not `%mint` / `%probe` / a third
+ `%read`: a site either takes particles in (a read, a probe) or puts them out (a mint).  The "census" is then not an artifact but a
+  query over Atlas's `%Map` ("every `%ioing` with `mainkey:Fish`").  Line regexes are a hack: stho should parse all our JavaScript
+   (perhaps a subset of TypeScript) sooner or later — a side track, not now.  Below, `%mint`/`%probe` are the m16 rows that word replaces.
+
 **Landed 2026-10-28 (late), Atlas mapper m16:** items 1 and 3 below, and most of 2.  `.g` sugar `i|oai|roai %k` → `%mint,sugar,mainkey`;
  `oa %k` and raw `.oa({k` → `%probe,mainkey`; `o_elvis|o_elvis_req(w,'t')` → `%o_elvis:t`; every `%def` carries
   `kind:e|verbs|req|recipe|w|helper`; all with `via`.  Line regexes in the independent sweep (compile.ts), not tree reads yet.
