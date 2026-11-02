@@ -9,8 +9,10 @@
 
 ## 0. What to get on with next
 
-**The next build is THE MAP item 4, the scheduler for real (§3.5):** step 1, Theory's scheduler off names — the ready set as As, a
- synapse's `from:` by nearness (Book: two ponds, each tank hears only its own clock); step 2, `TheA_run` inside `beliefs()` for the Desk.  The rounds below were thinking, not a change of course.
+**The next build is THE MAP item 4, the scheduler for real (§3.5):** step 1, Theory's scheduler off names, is BUILT (2026-11-02, Book
+ `AthePondTwoClocks`); step 2, the run loop in `beliefs()` (`%TheAAttend:run`, `TheA_attend_runs`, `TheA_poke`), is BUILT
+ (2026-11-02, Book `AthePondAttend`).  **Next:** tidy (one R3 walk with a scope; `TheA_near` is now `TheA_seek_out`, 2026-11-02), then Aip (§3.10), then give a
+  real compartment the mark — the first duty racked onto Atheory beyond the ponds.  The rounds below were thinking, not a change of course.
 *Side thread, any time, static:* IOexpr's code-graph (§3.3) — one `%ioing,input|output,mainkey,via` word per IO site on Atlas's
  `%Map` (ruled 2026-11-02, IOexpr_todo §0), so the editor relates the `i` end and the `o` end of a piece of data by a query.
 
@@ -98,13 +100,15 @@ Every arrival (a frame, a key, a click, a verb, a timer, a `runner_ask`) is one 
 ### 3.5 The scheduler for real — THE NEXT BUILD
 `TheA_run` inside `beliefs()` for a believed tree first (the Desk); unwatched work costs nothing; reqs woken by pulse; every call
  through its A.  THE MAP item 4.  Its ground is laid: addressing R1–R3 (2026-10-30, Housing's elvis side).  **Step 1 — the same in
- Theory, whose scheduler still addresses by NAME** (read 2026-11-02): a synapse hears `from:` when `synapse.sc.from === A.sc.A` — any
+ Theory — BUILT 2026-11-02** (`Atheory_design.md` §1.15, Book `AthePondTwoClocks`; tendril addresses, `TheA_io` and `TheA_tape`
+  still read by name).  What it was: a synapse hears `from:` when `synapse.sc.from === A.sc.A` — any
   A of that name anywhere in the House (`TheA_boundary`); `TheA_run`'s ready set and `TheA_boundary(names)` are sets of names, so two
    As of one name (a Story in a Story, two ponds each with a `Clock_A`) are one to the scheduler.  So: the ready set and the batch
     become As (refs), names accepted only at the edge and resolved once; a synapse's `from:` binds to the NEAREST A of that name from
      the synapse's own A (up through its holders, then down — R3's walk over the A\*\* tree), kept on `synapse.c`.  Proof: a pond Book —
-      two ponds each holding a `Clock_A` and a tank; each tank hears only its own pond's clock (today each hears both).  **Step 2:**
-       `TheA_run` inside `beliefs()` for the Desk — shaped by §3.2.  Writes from the `think` loop stay gapped (no Turn, no pulse) — fine: we are moving into the new fabric,
+      two ponds each holding a `Clock_A` and a tank; each tank hears only its own pond's clock (today each hears both).  **Step 2 — BUILT 2026-11-02** (Book `AthePondAttend`; Housing ledger row):
+       an A marked `%TheAAttend:run`, found through believing As, has its As run by the House's own think whenever one has a pulse waiting
+        (`TheA_attend_runs`, scoped `TheA_run`, `TheA_poke`); `beliefs()` is the abdomen the duties get racked in.  Was: `TheA_run` inside `beliefs()` for the Desk — shaped by §3.2.  Writes from the `think` loop stay gapped (no Turn, no pulse) — fine: we are moving into the new fabric,
    not bridging the old one (owner 2026-11-02).
 
 ### 3.6 Toc rows are programmatic; advice about a Book goes in Credence
@@ -147,6 +151,72 @@ R1 holding, R2 refs, R3 nearness are built (`Atheory_design.md` §1.15, Book `At
     tree under the binding changes** (an A stood or dropped).  R3's cost goes to stand time; a call costs a property read.  `@` is free
      in stho (reserved as a Sigil; only `$` is used).
 - **`@Loop` in an `S` expression** brings that loop's attention to the line: `S o @Clock/%Tick` wakes on the nearest Clock's beats.
+
+### 3.10 Aip — every standing A has a name of its own
+*Owner 2026-11-02:* "perhaps we should have a Dip for the A that exist?  maybe call it Aip.  this idea has seemed important to it in
+ past conceptualisings … I've been inventing the A in waves for a long time now."
+- **The want.**  A name is what you SAY (R3 finds the nearest A called it); a ref is what you HOLD (R2, identity, dies with the tab).
+   Neither can be written down and read back: `Aw` (`Desk/Story/Story`) is long and says nothing when two of a name stand, and a
+    tendril address (`Clock_A/Athe_Clock/Turn3`) points at whichever `Clock_A` comes first.  An **Aip** is the third thing: a short
+     label for one standing A, unique in its House, stable while it stands, that a snap, a trace, a tape or a person can carry.
+- **The shape: a Dip, claimed the way Stuffica's points claim theirs** (Theory `TheA_dip`, Hovercraft `Dip_assign`): an
+   `%Aip:<label>` row on the A, its label a slot claimed from the nearest holder that keeps a counter — the House, or an A that
+    holds As.  Never reused, so a dropped A's label can't turn up on a stranger.  Lean label: the A's name, plus `_<n>` only when its
+     name is already taken under that holder (`Clock_A`, `Clock_A_2`) — a reader sees the name, and the number only when it matters.
+- **It IS a Dip** (*owner 2026-11-02:* "is Aip not exactly Dip, as in eg 1.1.4.6 for the first H/H's fourth /A and sixth /A?") — yes:
+   the value is the slot path (`Dip_assign`'s shape, `<parent>_<i>`), `1.1.4.6` = the first H, its first H, its fourth A, that A's
+    sixth A.  The path IS the identity; the name is printed beside it for reading (`1.1.4.6 Clock_A`) and is never part of it.  (The
+     `Mundo/Story_2/Pond_P/Clock_A` above was the same path read by names.)
+- **Identity only — no resemblance.**  Se's `resolve()` pairs a new D with an old one by what their particles look like, and a Dip on
+   a D rides that pairing (`resume_X`) — so two `A:Clock_A` side by side could swap Aips.  *Owner:* "Se must never resolve() an A to
+    another A and resume its Aip there … needs a compare-objects override, and do no reductionist logic at all."  So: **the Aip lives
+     on the A itself** (a row, snapped, so it survives a reload), not on a walk's D; the holder keeps the counter; a walk only READS it.
+      Where beliefs()'s Se does pair H|A|w levels, it pairs by the particle object (`D.c.n === n`), never by sc.  A dropped and
+       re-stood A is a new A with a new Aip.
+- **Snap cost:** an `%Aip` row on every A changes every Book's snaps; fold it out of `snap_H` (as `dontSnap` does) and let a Book
+   that wants it opt in.
+- **What it replaces:**
+  - `e%Aw` — stamped as the target's Aip (one word, not a path);
+  - the tendril address — `<Aip>/<w>/Turn<n>` — so `TheA_at` (and `TheA_io`, `TheA_tape`) look up the label, never the first A of a
+     name;
+  - the board's places and a Stuffica point's key for an A — the same label.
+- **It is stamped once, when the A stands** (`attend`, `TheA_stand`, `Desk`).  Lookup is a map on the holder (`c.aips`), rebuilt
+   from the rows after a reload, since the rows are snapped.  Whether it survives a reload is the open part: as rows it does, so a
+    Book's tape can name a compartment across `Desk_reset` only if the reset re-stands the same labels — or the era tells the reader
+     it's another A of the same label.
+- **Ties (owner):** "a tie is likely some warn|error situation.  Ground should advise if not to warn perhaps."  Two As of one name
+   equally near the asker: warn by default (now); a Ground may advise per name — `%TieIs:error` refuses, `%TieIs:fine` stays quiet — the
+    way it plants `%lematch` qualities.  With Aips, a name that ties can always be said exactly.
+- **H and w carry one too** (*owner 2026-11-02:* "H is basically a type of A, and w a type of A, very loosely … actually having storage
+   is via H").  One scheme for every standing thing: an H's Aip is claimed under the House above it, an A's under its holder, a w's
+    under its A (and is just its name, since two w of one name in an A is rare).  Then an Aip **path** — `Mundo/Story_2/Pond_P/Clock_A` —
+     is unique everywhere and says where the thing's storage lives (the H in it), and a label alone is unique under its holder.
+- **Not yet:** the slot scheme across Houses (an Aip unique per House is enough while Houses are the seam); Aips across the network
+   (§3.11).
+
+### 3.11 Turf — where an arrival is let in
+*Owner 2026-11-02:* turf "should be where authorisation to do things is checked at the door, eg the %Grant:Music"; a synapse across the
+ network "seems similar to the turf idea allowing some stuff to 'arrive' somewhere that matters."
+- **One thought, three faces:** an arrival (§3.4) reaches a compartment; the door checks the turf it enters (who holds the lease, and
+   whether the arrival's `by:` holds the Grant the turf asks for); a pulse to another body is the same arrival, routed to the lease's
+    holder.  Today's one lease is `seat:editor` (relay.ts); the general one is `seat:<address>` — the address an Aip (§3.10).
+- **Leases nest like As:** holding a compartment covers what stands in it unless something deeper is leased; who holds a thing is
+   found by nearness.  A lease changing hands starts a new era of that compartment's version (§2), so readers see "everything changed".
+- **Across the network:** the relay is the arbiter of record, the holder mirrors it, renews by heartbeat, writes locally while it
+   holds; on a partition both sides' leases lapse, the side without it holds its sends as waits, and the tapes explain the merge.
+    Authority beyond one relay is the crew's: a lease the Captain signs.  The pulse that crosses is the `%Remote` over Reach layer
+     (RemoteHeist_todo) seen as a synapse — join the two rather than build a third.
+- **Open for the owner:** a lease names a compartment or a whole A subtree; a relay-held lease is enough until the crew signs.
+
+### 3.12 Stuffica's showroom — tracked, not yet a page
+*Owner 2026-11-02:* "keep tracking all that … we'll rebuild those *ui at some point, when we have the core more worked out … the Editron
+ has seemed quite sluggish and does want refactoring with the new model."
+- **Where it is today:** `/Pondland` (every figure a view), Storica (the step strip on views, beside Storui in StoryFu), and Books
+   AthePondView, Glass, Seem, Reseat.  The shape is `Atheory_design.md` "Stuffica, the shape": **Show** built; **In** (a backend pile
+    swapped whole through the door) and **Out** (a click as one arrival) not.
+- **`reactivity_docs.md`** is demoted, not retired: its hazards (`replace()` publishes its empty middle; the per-tick
+   `agency_officing`) still bite every legacy UI — Cytui, Vytui, Langui, Editron.  When those move onto views, it goes to `history/`.
+- **Owed:** a Book gating renders-per-commit; the first In/Out subject (a Book explorer, or Editron's slow paths).
 
 ## 4. Parked — moved out, with where
 - **A Story's runs as a collection** → `Story_future.md` "Open / deferred".  Owner: "might be useful eventually but is Story_future."

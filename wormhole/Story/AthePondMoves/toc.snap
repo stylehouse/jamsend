@@ -9,10 +9,7 @@ story:AthePondMoves
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.053
-      sample=0.048,at=1792567810
-      sample=0.037,at=1792571002
-      sample=0.051,at=1792575938
+    TimeTotal:beliefs,avg=0.052
       sample=0.055,at=1792577534
       sample=0.052,at=1792578757
       sample=0.048,at=1792633947
@@ -20,10 +17,10 @@ story:AthePondMoves
       sample=0.051,at=1792650386
       sample=0.034,at=1793324095
       sample=0.047,at=1793328064
-    TimeTotal:step,avg=0.007
-      sample=0.006,at=1792567810
-      sample=0.005,at=1792571002
-      sample=0.006,at=1792575938
+      sample=0.039,at=1793573764
+      sample=0.043,at=1793578582
+      sample=0.039,at=1793579682
+    TimeTotal:step,avg=0.006
       sample=0.007,at=1792577534
       sample=0.007,at=1792578757
       sample=0.006,at=1792633947
@@ -31,6 +28,9 @@ story:AthePondMoves
       sample=0.006,at=1792650386
       sample=0.004,at=1793324095
       sample=0.006,at=1793328064
+      sample=0.005,at=1793573764
+      sample=0.005,at=1793578582
+      sample=0.005,at=1793579682
   step,dige:cec35210d274612b
   step=2,desc:stand a pond with P nine turns ahead streaming into Q inside it — a Seem over the tanks — one batch — walk and look,dige:926b64bf752e759d
   step=3,desc:11 clock pulses each — one batch — walk and look,dige:57ca98e007b8929b

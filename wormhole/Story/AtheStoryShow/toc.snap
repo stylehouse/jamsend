@@ -9,9 +9,7 @@ story:AtheStoryShow
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.019
-      sample=0.017,at=1793323045
-      sample=0.019,at=1793323579
+    TimeTotal:beliefs,avg=0.022
       sample=0.019,at=1793323585
       sample=0.019,at=1793323586
       sample=0.019,at=1793323586
@@ -20,9 +18,9 @@ story:AtheStoryShow
       sample=0.015,at=1793323628
       sample=0.02,at=1793328458
       sample=0.016,at=1793329841
-    TimeTotal:step,avg=0.006
-      sample=0.006,at=1793323045
-      sample=0.006,at=1793323579
+      sample=0.054,at=1793573940
+      sample=0.02,at=1793578885
+    TimeTotal:step,avg=0.007
       sample=0.006,at=1793323585
       sample=0.006,at=1793323586
       sample=0.006,at=1793323586
@@ -31,6 +29,8 @@ story:AtheStoryShow
       sample=0.005,at=1793323628
       sample=0.007,at=1793328458
       sample=0.005,at=1793329841
+      sample=0.018,at=1793573940
+      sample=0.007,at=1793578885
   step,dige:a7e2957f64010c8a
   step=2,desc:stand a Desk whose new Story runs AthePondFocus — and wait for it,dige:8ff8e10568f0cc69
   step=3,desc:look — on the runner tab the House called Desk shows the inner Story in Storica,dige:8ff8e10568f0cc69

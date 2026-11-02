@@ -27,10 +27,10 @@ Athe_Tank(A, w):
 Athe_Pond(A, w):
     return
 
-// the weather a tank is in: the nearest %Weather walking out through the As it stands in (Theory.g TheA_near).  A tank
+// the weather a tank is in: the nearest %Weather walking out through the As it stands in (Theory.g TheA_seek_out).  A tank
 //  standing in no pond has none, and lays as it always has; in a cold pond fish don't lay
 Athe_Tank_weather(w):
-    return this.TheA_near(this.TheA_A(w), { Weather: 1 })?.sc.Weather
+    return this.TheA_seek_out(this.TheA_A(w), { Weather: 1 })?.sc.Weather
 
 // one turn of the tank.  Time is the tank's own: Turns,count is how many turns it has taken, and every egg and fish
 //  carries the turn it was born, so its age is a sum anyone can do — never a hidden counter
@@ -144,7 +144,7 @@ Athe_Tank_heron(w):
 // one batch of one tank: its move, then the boundary (what it sent lands — on its own synapses too, for the next wake)
 Athe_Tank_wake(w):
     this.TheA_move(w, 'Athe_Tank_woken')
-    this.TheA_boundary([this.TheA_A(w)?.sc.A])
+    this.TheA_boundary([this.TheA_A(w)].filter(A => A))
 
 // a batch of tanks (A names): each one's move, in the order given — which can't matter — then the boundary
 Athe_Tanks_wake(names):

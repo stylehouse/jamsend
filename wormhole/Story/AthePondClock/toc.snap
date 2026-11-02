@@ -9,10 +9,7 @@ story:AthePondClock
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.019
-      sample=0.021,at=1792577454
-      sample=0.018,at=1792578550
-      sample=0.013,at=1792633875
+    TimeTotal:beliefs,avg=0.024
       sample=0.016,at=1792636157
       sample=0.015,at=1792650321
       sample=0.025,at=1793155966
@@ -20,10 +17,10 @@ story:AthePondClock
       sample=0.021,at=1793168079
       sample=0.02,at=1793323851
       sample=0.032,at=1793327982
-    TimeTotal:step,avg=0.005
-      sample=0.005,at=1792577454
-      sample=0.005,at=1792578550
-      sample=0.003,at=1792633875
+      sample=0.067,at=1793573683
+      sample=0.023,at=1793578371
+      sample=0.018,at=1793579601
+    TimeTotal:step,avg=0.006
       sample=0.004,at=1792636157
       sample=0.004,at=1792650321
       sample=0.006,at=1793155966
@@ -31,6 +28,9 @@ story:AthePondClock
       sample=0.005,at=1793168079
       sample=0.005,at=1793323851
       sample=0.008,at=1793327982
+      sample=0.017,at=1793573683
+      sample=0.006,at=1793578371
+      sample=0.005,at=1793579601
   step,dige:0e6c4ededbb6b494
   step=2,desc:stand two clocks and three tanks — K_P and K_Q hear Clock_A — K_R hears Clock_B — poke Clock_A once and run,dige:030e96504aa337fc
     Assertion:a-clock-is-a,sentence:a clock is a compartment like any other — poked it ticks and the tanks joined to it move a round later

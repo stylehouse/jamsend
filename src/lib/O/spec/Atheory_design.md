@@ -40,7 +40,7 @@
 | **A\*\*** | As standing in As.  Where an A stands says which code it runs (its ancestors' layers, then its own) and what it is served (the nearest) | `A:Pond` › `A:P`, `TheA_all`, `TheA_up` |
 | **version** | one arrival of a compiled file, kept by its dige; an A runs the version its layer names | `House.ghost_versions`, `%TheALayer,dige` |
 | **speaking as an A** | the House, but a method name resolves first on the A's own versions | `TheA_as(A)` |
-| **served** | given the nearest matching thing, walking out through the As one stands in — never sideways, never from the top | `TheA_near(A, sc)` |
+| **served** | given the nearest matching thing, walking out through the As one stands in — never sideways, never from the top | `TheA_seek_out(A, sc)` |
 | **Seem** | a controller over a compartment: it walks the rows of the kinds it holds and keeps a point for each | `%TheASeem:<name>` with `%TheAKind` rows; `TheA_seem_walk` |
 | **point** (Trace) | the Seem's reading of one row, paired walk to walk by what holds still (its name), so it survives a change of kind | `%TheATrace:<kind>,of:<name>` |
 | **Regard** | another organ's opinion of a point, kept ON the point, so it lives and dies with it | `%TheARegard:<sphere>` under a point; `%TheASphere:<name>,tense:Regard` declares it |
@@ -188,7 +188,7 @@ Each oath fell to the sabotage aimed at it, and only to that: the unrelated oath
      not the boundary).  Restored by checksum and re-run green.
 
 **A\*\*, sabotaged once each (S5, S6, 2026-10-21).**  Each predicted before it ran; each came out as predicted.
-- **S5 — `TheA_near` from the top** (the first `%Weather` in the House, as a `top_House()` lookup finds a Supervisor).
+- **S5 — `TheA_seek_out` from the top** (the first `%Weather` in the House, as a `top_House()` lookup finds a Supervisor).
    Nest lost only "a tank is served the weather of the pond it stands in": the cold tank found the warm pond's weather
     and laid (roach 5, bream 6 at turn 13).  Versions and SynapseSum stayed green: no other Book has weather.
 - **S6 — `TheA_as` answers with the flat House** (every A runs whatever was merged last).  Versions lost "after the seam
@@ -299,7 +299,7 @@ A:Pond_Warm                                   %TheACode:Athe_Pond, one layer (th
 - **Heredity.**  An A standing in an A starts its chain digest from its pond's.  A pond taking a push stands its tanks' code
    again, so a version pushed to a pond reaches exactly the tanks in it (`AthePondNest`).  An A in an A isn't ticked by any
     House, so it takes a push directly at the seam instead of by elvis.
-- **Services.**  `TheA_near(A, sc)` walks the A's own world, then each enclosing A's, outward.  A tank asks for `%Weather`;
+- **Services.**  `TheA_seek_out(A, sc)` walks the A's own world, then each enclosing A's, outward.  A tank asks for `%Weather`;
    the cold pond's fish don't lay.  This is the cure the MusuRadioAim leak asked for (a Book's run finding the runner's
     Supervisor via `top_House()`), in miniature.
 - **Still calls by name.**  Nothing looks methods up in a table; `TheA_as` only decides what `this` is.  Class methods of
@@ -555,7 +555,13 @@ A:Feeder
    - **R4 Names only at a boundary** — the wire, a toc, a Credence row, a person typing.  Inside a tab a name is resolved once and
       the ref kept.  The ~140 string `i_elvisto`s (Lies 52, Lang 34, Story 15, Vyto, Cyto, Auto 11 each…) are fine under R3 while
        there is one of each; each becomes a ref when a second one stands.
-   *Still open:* a Seem's `from:` by R3 (Theory `TheA_near` is R3 for services, walking up only); `Awo` (a House's own A, by
+   **R3 in Theory's scheduler — built 2026-11-02 (Book `AthePondTwoClocks`):** `TheA_run`'s ready set and `TheA_boundary`'s batch
+    are As, names resolved once at the edge (`TheA_refs`, from the House: the shallowest answers); a synapse's `from:` hears the A
+     of that name nearest the synapse's own A (`TheA_nearest` over `TheA_tree`, rings through holders and held As; a tie takes the
+      first in tree order and warns once), bound per boundary and kept on `synapse.c.from_A`.  Two ponds each with a `Clock_A`: each
+       tank hears its own.
+   *Still open:* a Seem's `from:` by R3 (Theory `TheA_seek_out` is R3 for services, walking up only); the other by-name readers in
+    Theory — `TheA_at` (tendril addresses are `<A>/<w>`), `TheA_io`, `TheA_tape` — take the first A of a name; `Awo` (a House's own A, by
     name, throws on two) — keep, it is local; turfs — what an A may reach, not just what it finds.
 - **Classifying by mark, not depth.**  `%TheABelieves` puts As-in-As into the beliefs walk by a mark; `organise_scheme` still
    classifies everything else by depth.  Should depth fall away — every level saying what it is?  Then the A\*\* ponds
@@ -594,6 +600,7 @@ No Atheory adjustments yet.
 
 | date | where | what | why | read by | to undo |
 |---|---|---|---|---|---|
+| 2026-11-02 | `Housing.svelte.ts` `beliefs()`: after `attend`, on a think (or no e), calls Theory `TheA_attend_runs` when loaded (atime part `<House>/runs`) | THE RUN LOOP: an A marked `%TheAAttend:run`, found from the House down through believing As, gives its As to `TheA_run` (scoped to it, its `%TheARun` on itself) whenever one has a pulse waiting; `TheA_poke` lands a pulse and wakes the House | THE MAP item 4 / AtheoryNexus_todo §3.5 step 2: the scheduler run by the House, not by hand; attention by mark (§3.2) | every House think; Book `AthePondAttend` | drop the block in `beliefs()` |
 | 2026-10-30 | `Housing.svelte.ts` ADDRESSING, R1–R3 (§1.15): `_A_near` + `_A_near_ambiguous` (new) — `_house_of`'s string branch and `_target_present` use it; `_A_to` (new; replaces `_Aw_of`); `i_elvisto`'s targeting sets `e.c.to_A`/`e.c.to_w`; `_e_targets_T` matches those by identity (and its `seq` goes back to `A ? 0 : w ? 1 : depth-1`); `attend` sets `A.c.up` to the holder A.  Theory `TheA_up` reads `c.up` first; Ground `Desk` sets A:Story's `c.up` to A:Desk | a name finds the nearest A of that name from the asking House; a handle reaches exactly its A and w; an A's `c.up` is what holds it | the 2026-10-30 patch row below was a patch; this is the rule.  Owner: "that lookup thing kind of needs rethinking from the top" | every `i_elvisto` / `vaguely_ponder`; Storica `pick`; Book `AthePondNear` | `_house_of` back to the climb over `all_House`; drop `_A_near`, `_A_to`, the `to_A` branch; `attend` back to `A.c.up = this` |
 | 2026-10-30 | `Housing.svelte.ts` ADDRESSING A IN A: `_Aw_of(w)` (new); `i_elvisto` given a w TheC uses it for `Aw`; `_e_targets_T` places an A/w-level by how many As hold it (its `seq`) | an elvis sent to a w carries its whole A path (`Desk/Story/Story`), found from the House down, through As that `%TheABelieves` only (an A's `c.up` is the House — attend sets it — so the path can't be climbed); the path's Nth part matches the A or w with N As above it.  Plain `A/w` places as ever (0, 1) | owner 2026-10-30: "when I click H:AtheStoryWalk's steps it changed the outer H:Story's steps" — Storica's `i_elvisto('Story/Story', …)` climbed to the first House owning an A:Story, the page's.  A patch: the lookup wants rethinking (§1.15 "Addressing") | Storica `pick` (`i_elvisto(sw, 'story_sel')`) | drop `_Aw_of` and its use; `seq` back to `A ? 0 : w ? 1 : depth-1` — **went 2026-10-30, replaced by the R1–R3 row above** |
 | 2026-10-21 | `House.ghost_versions`, and four lines in `ghostsHaunt`'s `if (meta) {…}` block | every arriving hash is also kept by its dige: `ghost_versions[meta][dige] = hash`, the newest 8 per file, on the top House | A\*\*: an A runs the version its `%TheALayer` names, so a newer version merged flat doesn't reach it until its push is let through — two versions of one file in one heap | `Ghost/A/Theory.g` (`TheA_as`, `TheA_version_keep`); Books `AthePondVersions`, `AthePondNest` | delete the field and the four lines; `TheA_as` then finds no versions and answers with the flat House |

@@ -13,6 +13,9 @@ story:AthePondGlass
       sample=0.014,at=1792898489
       sample=0.019,at=1793323887
       sample=0.023,at=1793328019
+      sample=0.015,at=1793573720
+      sample=0.017,at=1793578537
+      sample=0.022,at=1793579637
     TimeTotal:step,avg=0.004
       sample=0.005,at=1792659769
       sample=0.003,at=1792659779
@@ -21,6 +24,9 @@ story:AthePondGlass
       sample=0.003,at=1792898489
       sample=0.004,at=1793323887
       sample=0.005,at=1793328019
+      sample=0.003,at=1793573720
+      sample=0.003,at=1793578537
+      sample=0.004,at=1793579637
   step,dige:c1bd27c826c7c167
   step=2,desc:stand K_P with a hand — a glass in the Book’s world with two views of K_P’s food — feed flakes,dige:8327ab026ebdb3d9
     Assertion:a-view-reads-rows,sentence:a view reads rows held elsewhere — the glass shows K_P’s food and holds none of it

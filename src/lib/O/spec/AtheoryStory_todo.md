@@ -112,7 +112,7 @@ A Story nested in a Story is an A in an A, and A\*\* already has the two lookups
    `StoryFu.g`'s methods while the outer runs the spine's — *if* every call goes through the A.  The open question for slice 2:
     eatfunc merges ghost methods flat onto the House, and a flat-merged `StoryFu.g` would land on top of the outer Story.
      Expect to stand it un-merged and call it only through `TheA_as`.
-- **Services: `TheA_near(A, sc)`** walks the A's own world, then each enclosing A's, outward.  This is the cure for Story's
+- **Services: `TheA_seek_out(A, sc)`** walks the A's own world, then each enclosing A's, outward.  This is the cure for Story's
    habit of reaching for the top.  `StoryFu.g` calls `top_House()` at **22 sites** (2026-10-29 count), and each is a service it
     should find by nearness instead:
    - `i_elvisto('Auto/Auto', 'storyFinished')` ×4 — who hears that a Story finished: the enclosing Story, not the page.
@@ -136,7 +136,7 @@ A Story nested in a Story is an A in an A, and A\*\* already has the two lookups
 ### One tab, both Storys — what A\*\* gives and what it doesn't (read 2026-10-29)
 
 **Data and services branch already.**  A Desk is an A; an inner Story's Run House, `This`, its error ring are particles under it,
- and `TheA_near` finds services from where it stands.  **Code does not branch yet.**  Every load goes through `Lies_ghost_include`
+ and `TheA_seek_out` finds services from where it stands.  **Code does not branch yet.**  Every load goes through `Lies_ghost_include`
   (LiesLies ~1509), which mounts the `.go`; its `onMount` calls `H.eatfunc(hash)`, and `ghostsHaunt` (Housing ~755)
    `Object.assign`s the methods onto **every House in the tab**.  StoryFu.g has the same method names as Story.svelte, so standing
     it flat would turn the OUTER Story into StoryFu too — the renaming changes the file, not the names.  So one tab needs two
@@ -166,7 +166,7 @@ A Story nested in a Story is an A in an A, and A\*\* already has the two lookups
 Then the Desk-in-a-run stands `Ground/Story` aside, and `AtheStoryInStory` can begin.  StoryFu's 22 `top_House()` reaches (below)
  are what that Book reds on next.
 
-**What this teaches Atheory:** whether `TheA_near` is enough for real services (it has only ever found `%Weather`), and
+**What this teaches Atheory:** whether `TheA_seek_out` is enough for real services (it has only ever found `%Weather`), and
  whether "calls by name, `this` decided by `TheA_as`" holds up for a 3,200-line ghost.
 
 ## 2. Story_future's list, as Atheory things
@@ -176,7 +176,7 @@ Then the Desk-in-a-run stands `Ground/Story` aside, and `AtheStoryInStory` can b
 | §15 drive as a req\*\* | how and when a step happens | the drive as a compartment; a step is a pulse | — |
 | (new) present a Book without running it | the Book stands, nothing drives | falls out of the above: no pulse to the drive | — |
 | (new) pause at time's structure | stop at a round, a Turn, an Ate | `TheA_run(…, most:1)`; the crawl (10-28 §15) | scheduler built |
-| (new) a Story nests in a Story | test Story with Story | A\*\*: `TheA_as`, `TheA_near` (§1) | lookups built |
+| (new) a Story nests in a Story | test Story with Story | A\*\*: `TheA_as`, `TheA_seek_out` (§1) | lookups built |
 | §2.3 continuity, §3.2 surfing | which particle is which across steps | Seem re-seat + Dip (`AthePondReseat`); the snapper's own pairing kept as `Snap:cont` | re-seat built |
 | §5 ghosts, §6 fern gardens | what went; fold what didn't change | `gone` from a walk; limbo; a view that shows only changed points + parents | gone/limbo built |
 | §2 channels, 10-28 §15 timing | time in the snap without red fixtures | `%TheATime`, tendrils (`AthePondTendril`); quantise in Story | tendrils built |
@@ -264,7 +264,7 @@ One window on a step, and everything else is a protrusion from it showing a chan
 
 **The Desk's shape — A:Story inside A:Desk.**  Today H:Desk holds two sibling As, each standing Core + Story itself (`TheACode`
  twice).  Wanted: `H:Desk/A:Desk/A:Story` — A:Desk stands the Grounds ONCE (the environment), A:Story stands nothing and finds its
-  code by nearness (`TheA_near` / `TheA_chain`, A\*\* §1.11 — so far only proven on `%Weather`; this is its first real service).
+  code by nearness (`TheA_seek_out` / `TheA_chain`, A\*\* §1.11 — so far only proven on `%Weather`; this is its first real service).
    An A spreads out space inside a House the way a House used to.  To find out: does the House think an A inside an A (`A/A/w`)
     the way it thinks `A/w`, and does a nested Story's Run House still belong to H:Desk.  Smallest proof: AtheStoryInStory green
      with one `TheACode` pair, the inner's under `A:Desk`.

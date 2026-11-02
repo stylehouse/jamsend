@@ -1,0 +1,62 @@
+Snap:H
+  H:AthePondTwoClocks,Run
+    A:AthePondTwoClocks
+      self,round=3	{"mung":["age"]}
+      w:AthePondTwoClocks
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        TheARun,rounds=2,quiet
+          TheARound:1,landed=2
+            TheAWent:Clock_A
+          TheARound:2
+            TheAWent:Tank
+    A:Pond_P
+      TheACode:Athe_Pond,variant:plain,dige:3ef1ff1e83b2fe1f
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:20ce7cddee381695~g1
+      A:Clock_A
+        TheACode:Athe_Clock,variant:plain,dige:2267e92b8893c436
+        w:Athe_Clock
+          TheASynapse:poke,wake:tick,sum:count
+            TheAWoke,count,pulses
+          TheAAxon:clock
+          Ticks,count
+      A:Tank
+        TheACode:Athe_Tank,variant:plain,dige:2267e92b8893c436
+        w:Athe_Tank
+          TheASynapse:clock,from:Clock_A,wake:turn,sum:count
+            TheAWoke,count,pulses
+          Turns,count
+          TheASunpit:turn
+            TheAPass:Egg
+            TheAPass:Fish
+            TheAPass:Heron
+          EggsNamed,count=2
+          Egg:minnow 1,born
+          Egg:perch 2,born
+      self,round	{"mung":["age"]}
+      w:Pond_P
+    A:Pond_Q
+      TheACode:Athe_Pond,variant:plain,dige:3ef1ff1e83b2fe1f
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:20ce7cddee381695~g1
+      A:Clock_A
+        TheACode:Athe_Clock,variant:plain,dige:2267e92b8893c436
+        w:Athe_Clock
+          TheASynapse:poke,wake:tick,sum:count
+            TheAWoke,count=2,pulses=2
+          TheAAxon:clock
+          Ticks,count=2
+      A:Tank
+        TheACode:Athe_Tank,variant:plain,dige:2267e92b8893c436
+        w:Athe_Tank
+          TheASynapse:clock,from:Clock_A,wake:turn,sum:count
+            TheAWoke,count=2,pulses=2
+          Turns,count=2
+          TheASunpit:turn
+            TheAPass:Egg
+            TheAPass:Fish
+            TheAPass:Heron
+          EggsNamed,count=2
+          Egg:minnow 1,born
+          Egg:perch 2,born
+      self,round	{"mung":["age"]}
+      w:Pond_Q

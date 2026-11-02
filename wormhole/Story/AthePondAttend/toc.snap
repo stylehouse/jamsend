@@ -1,0 +1,34 @@
+story:AthePondAttend
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.019
+      sample=0.004,at=1793578276
+      sample=0.02,at=1793579028
+      sample=0.02,at=1793579066
+      sample=0.02,at=1793579067
+      sample=0.02,at=1793579067
+      sample=0.02,at=1793579068
+      sample=0.023,at=1793579078
+      sample=0.015,at=1793579085
+      sample=0.016,at=1793579093
+      sample=0.034,at=1793579594
+    TimeTotal:step,avg=0.006
+      sample=0.001,at=1793578276
+      sample=0.007,at=1793579028
+      sample=0.007,at=1793579066
+      sample=0.007,at=1793579067
+      sample=0.007,at=1793579067
+      sample=0.007,at=1793579068
+      sample=0.008,at=1793579078
+      sample=0.005,at=1793579085
+      sample=0.005,at=1793579093
+      sample=0.011,at=1793579594
+  step,dige:326fb498d09f4152
+  step=2,dige:1db1015083c51b61,desc:a Desk believing a pond marked to attend the run loop — and a pond beside it unmarked — poke both clocks once
+    Assertion:a-pulse-poked-into,sentence:a pulse poked into a pond marked to attend the run loop moves it on the House’s own think — nobody called a run
+    Assertion:a-pond-without-the,sentence:a pond without the mark is not run — its pulse waits on the synapse
+  step=3,dige:ba8852034641fac7,desc:poke the marked pond’s clock twice before the House thinks
+    Assertion:two-pokes-before-the,sentence:two pokes before the House thinks are one run — the clock moves once and ticks twice — the tank turns twice

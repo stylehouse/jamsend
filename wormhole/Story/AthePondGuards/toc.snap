@@ -9,20 +9,26 @@ story:AthePondGuards
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.027
+    TimeTotal:beliefs,avg=0.025
       sample=0.037,at=1793182940
       sample=0.037,at=1793182950
       sample=0.025,at=1793182957
       sample=0.021,at=1793182966
       sample=0.025,at=1793324056
       sample=0.018,at=1793328034
-    TimeTotal:step,avg=0.005
+      sample=0.02,at=1793573735
+      sample=0.02,at=1793578552
+      sample=0.025,at=1793579652
+    TimeTotal:step,avg=0.004
       sample=0.006,at=1793182940
       sample=0.006,at=1793182950
       sample=0.004,at=1793182957
       sample=0.004,at=1793182966
       sample=0.004,at=1793324056
       sample=0.003,at=1793328034
+      sample=0.003,at=1793573735
+      sample=0.003,at=1793578552
+      sample=0.004,at=1793579652
   step,dige:ca8acbfe6b4550ab
   step=2,desc:stand four bare guards — each with a poke waiting,dige:485a0fbe09c0bda6
   {"step":3,"desc":"run G_Async with an async wake — refused, never called","dige":"27f2b180c2de2b09"}

@@ -1527,6 +1527,16 @@ export class House extends StorableHousing {
 
         await this.organise(e)
         await this.attend(e)
+        // THE RUN LOOP (Theory.g TheA_attend_runs): As under an A marked %TheAAttend:run move by pulse, in rounds — one sync
+        //  call, so a run is one Atime task.  Absent Theory, or any such A, it costs one walk of the believed As
+        if (!e || e.sc.elvis === 'think') {
+            const runs = (this as any).TheA_attend_runs
+            if (runs) {
+                const t0 = performance.now()
+                runs.call(this)
+                this.atime_part(`${this.name}/runs`, performance.now() - t0)
+            }
+        }
         // supervise the pump on a think beat — tug along this beat's reqs for any
         //  host that has migrated off reqy (no antiquated reqs).  A targeted
         //  re-entry (reqyoncile) pumps its own host, so it skips the sweep.

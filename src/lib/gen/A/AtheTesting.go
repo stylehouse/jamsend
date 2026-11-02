@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheTesting(): string { return '8402151058179678~g1' },
+    Ghostmeta_Ghost_A_AtheTesting(): string { return 'ab82b05838fd4d02~g1' },
 
 // AtheTesting.g — Atheory's proof (Ghost/A/Theory.g; spec/Atheory_todo.md §0.2 "The first Atheory tests").
 //
@@ -1344,7 +1344,7 @@ AthePondNest_witness(w) {
     let code = (A) => A.o({ TheACode: 1 })[0]
     let live = this.Lies_ghost_get(path)
     let v1 = live ? this.TheA_version_of(path, live) : null
-    if (n === 3 && warm.eggs + warm.fish > 2 && cold.fish === 2 && !cold.eggs && this.TheA_near(TW, { Weather: 1 })?.sc.Weather === 'warm' && this.TheA_near(TC, { Weather: 1 })?.sc.Weather === 'cold') {
+    if (n === 3 && warm.eggs + warm.fish > 2 && cold.fish === 2 && !cold.eggs && this.TheA_seek_out(TW, { Weather: 1 })?.sc.Weather === 'warm' && this.TheA_seek_out(TC, { Weather: 1 })?.sc.Weather === 'cold') {
         this.story_swear(w, 'a tank is served the weather of the pond it stands in — the warm pond’s fish lay and the cold pond’s never do')
     }
     if (n === 4 && !code(TW)?.o({ TheALayer: 1 }).length && code(TW)?.sc.dige === this.TheA_digest(code(PW)?.sc.dige) && v1 && this.TheA_as(TW).Athe_Tank_egg === v1.Athe_Tank_egg) {
@@ -3548,6 +3548,163 @@ AthePondNear_witness(w) { const H = this;
         this.story_swear(w, 'an A in an A knows its holder — its c.up is the A it stands in')
     }
     if (!w.o({ NearSaid: 1 }).length) w.i({ NearSaid: 1, near, far })
+},
+//#endregion
+//#region the test routine — Book AthePondTwoClocks
+// from: by nearness (Theory.g TheA_boundary; Atheory_design §1.15 R3).  Two ponds, A:Pond_P and A:Pond_Q, each holding a Clock_A
+//  and a Tank that hears from:Clock_A — the same names twice.  Step 2 pokes P's clock and runs from it; step 3 pokes Q's twice
+//   and runs from it.  Each tank hears only the clock in its own pond: by name the two were one to the scheduler
+AthePondTwoClocks(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.AthePondTwoClocks_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async AthePondTwoClocks_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 3
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) {
+            w.i({ desc: 'stand two ponds — each a Clock_A and a Tank hearing from:Clock_A — poke P’s clock once and run from it' })
+            this.AthePondTwoClocks_stand()
+            this.AthePondTwoClocks_poke(w, 'Pond_P', 1)
+        }
+        if (n === 3) {
+            w.i({ desc: 'poke Q’s clock twice and run from it' })
+            this.AthePondTwoClocks_poke(w, 'Pond_Q', 2)
+        }
+    }
+    this.AthePondTwoClocks_witness(w)
+
+},
+AthePondTwoClocks_stand() {
+    for (const name of ['Pond_P', 'Pond_Q']) {
+        let old = this.o({ A: name })[0]
+        if (old) this.drop(old)
+        // the pond carries the toy's code (A**); what stands in it runs that
+        let pond = this.TheA_stand(this, name, ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Pond')
+        let c = this.TheA_stand(pond, 'Clock_A', [], null, 'Athe_Clock').i({ w: 'Athe_Clock' })
+        c.i({ TheASynapse: 'poke', wake: 'tick', sum: 'count' })
+        c.i({ TheAAxon: 'clock' })
+        let t = this.TheA_stand(pond, 'Tank', [], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
+        t.i({ TheASynapse: 'clock', from: 'Clock_A', wake: 'turn', sum: 'count' })
+    }
+
+},
+// the pond's own Clock_A, poked k times, then a run readied by that A — a ref, not a name, since the name is twice
+AthePondTwoClocks_poke(w, pond, k) {
+    let clock = this.o({ A: pond })[0]?.o({ A: 'Clock_A' })[0]
+    let poke = clock?.o({ w: 'Athe_Clock' })[0]?.o({ TheASynapse: 'poke' })[0]
+    if (!poke) return
+    for (let i = 0; i < k; i++) poke.i({ TheAPulse: 1 })
+    this.TheA_run(w, null, [clock])
+
+},
+AthePondTwoClocks_witness(w) {
+    let n = this.c.run?.c.step_n ?? 0
+    let run = w.o({ TheARun: 1 })[0]
+    if (!run) return
+    let in_pond = (pond, A, ww) => this.o({ A: pond })[0]?.o({ A })[0]?.o({ w: ww })[0]
+    let turns = (pond) => in_pond(pond, 'Tank', 'Athe_Tank')?.o({ Turns: 1 })[0]?.sc.count || 0
+    let ticks = (pond) => in_pond(pond, 'Clock_A', 'Athe_Clock')?.o({ Ticks: 1 })[0]?.sc.count || 0
+    let went = run.o({ TheARound: 1 }).map(round => round.o({ TheAWent: 1 }).map(x => x.sc.TheAWent).join(' '))
+    if (n === 2 && run.sc.quiet && ticks('Pond_P') === 1 && !ticks('Pond_Q') && turns('Pond_P') === 1 && !turns('Pond_Q') && went.join('|') === 'Clock_A|Tank') {
+        this.story_swear(w, 'a synapse hears the Clock_A nearest it — P’s clock ticks and turns P’s tank — the tank in Q is not visited')
+    }
+    if (n === 3 && run.sc.quiet && ticks('Pond_Q') === 2 && ticks('Pond_P') === 1 && turns('Pond_Q') === 2 && turns('Pond_P') === 1) {
+        this.story_swear(w, 'each pond’s tank hears only its own clock — two ticks in Q turn Q’s tank twice and P’s not at all')
+    }
+},
+//#endregion
+//#region the test routine — Book AthePondAttend
+// the run loop in beliefs (Theory.g TheA_attend_runs; AtheoryNexus_todo §3.5 step 2).  A:Athe_Desk believes its As, as the Desk
+//  does; in it A:Pond_Run carries %TheAAttend:run and holds a Clock_A and a Tank.  A:Pond_Still, beside the Desk, holds the same
+//   without the mark.  The Book only pokes (TheA_poke) — it never calls TheA_run: the House's own think runs what is marked.
+//    Step 2 pokes both clocks once; step 3 pokes Pond_Run's clock twice before the House thinks
+AthePondAttend(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.AthePondAttend_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async AthePondAttend_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 3
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) {
+            w.i({ desc: 'a Desk believing a pond marked to attend the run loop — and a pond beside it unmarked — poke both clocks once' })
+            this.AthePondAttend_stand()
+            this.TheA_poke(this.AthePondAttend_poke_of('Pond_Run'))
+            this.TheA_poke(this.AthePondAttend_poke_of('Pond_Still'))
+        }
+        if (n === 3) {
+            w.i({ desc: 'poke the marked pond’s clock twice before the House thinks' })
+            let poke = this.AthePondAttend_poke_of('Pond_Run')
+            this.TheA_poke(poke)
+            this.TheA_poke(poke)
+        }
+        let want = n === 2 ? 1 : n === 3 ? 3 : 0
+        if (want) this.AtheStoryInStory_hold(w, () => {
+            if (this.AthePondAttend_count('Pond_Run', 'Tank', 'Athe_Tank', 'Turns') < want) return false
+            this.AthePondAttend_witness(w, n)
+            return true
+        })
+    }
+
+},
+AthePondAttend_stand() {
+    for (const name of ['Athe_Desk', 'Pond_Still']) {
+        let old = this.o({ A: name })[0]
+        if (old) this.drop(old)
+    }
+    let desk = this.TheA_stand(this, 'Athe_Desk', ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Pond')
+    desk.i({ TheABelieves: 1 })
+    let marked = this.TheA_stand(desk, 'Pond_Run', [], null, 'Athe_Pond')
+    marked.i({ TheAAttend: 'run' })
+    let still = this.TheA_stand(this, 'Pond_Still', ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Pond')
+    for (const pond of [marked, still]) {
+        let c = this.TheA_stand(pond, 'Clock_A', [], null, 'Athe_Clock').i({ w: 'Athe_Clock' })
+        c.i({ TheASynapse: 'poke', wake: 'tick', sum: 'count' })
+        c.i({ TheAAxon: 'clock' })
+        let t = this.TheA_stand(pond, 'Tank', [], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
+        t.i({ TheASynapse: 'clock', from: 'Clock_A', wake: 'turn', sum: 'count' })
+    }
+
+},
+AthePondAttend_pond(name) {
+    return name === 'Pond_Run' ? this.o({ A: 'Athe_Desk' })[0]?.o({ A: 'Pond_Run' })[0] : this.o({ A: name })[0]
+
+},
+AthePondAttend_poke_of(pond) {
+    return this.AthePondAttend_pond(pond)?.o({ A: 'Clock_A' })[0]?.o({ w: 'Athe_Clock' })[0]?.o({ TheASynapse: 'poke' })[0]
+
+},
+AthePondAttend_count(pond, A, ww, key) {
+    return this.AthePondAttend_pond(pond)?.o({ A })[0]?.o({ w: ww })[0]?.o({ [key]: 1 })[0]?.sc.count || 0
+
+},
+AthePondAttend_witness(w, n) {
+    let P = this.AthePondAttend_pond('Pond_Run')
+    let run = P?.o({ TheARun: 1 })[0]
+    let went = run ? run.o({ TheARound: 1 }).map(round => round.o({ TheAWent: 1 }).map(x => x.sc.TheAWent).join(' ')) : []
+    let ticks = (pond) => this.AthePondAttend_count(pond, 'Clock_A', 'Athe_Clock', 'Ticks')
+    let turns = (pond) => this.AthePondAttend_count(pond, 'Tank', 'Athe_Tank', 'Turns')
+    let waiting = this.AthePondAttend_poke_of('Pond_Still')?.o({ TheAPulse: 1 }).length || 0
+    if (n === 2 && run?.sc.quiet && went.join('|') === 'Clock_A|Tank' && ticks('Pond_Run') === 1 && turns('Pond_Run') === 1) {
+        this.story_swear(w, 'a pulse poked into a pond marked to attend the run loop moves it on the House’s own think — nobody called a run')
+    }
+    if (n === 2 && !ticks('Pond_Still') && !turns('Pond_Still') && waiting === 1 && !this.AthePondAttend_pond('Pond_Still')?.o({ TheARun: 1 }).length) {
+        this.story_swear(w, 'a pond without the mark is not run — its pulse waits on the synapse')
+    }
+    if (n === 3 && run?.sc.quiet && went.join('|') === 'Clock_A|Tank' && ticks('Pond_Run') === 3 && turns('Pond_Run') === 3 && waiting === 1) {
+        this.story_swear(w, 'two pokes before the House thinks are one run — the clock moves once and ticks twice — the tank turns twice')
+    }
 },
 //#endregion
 

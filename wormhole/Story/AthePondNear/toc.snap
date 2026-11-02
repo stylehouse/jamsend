@@ -4,8 +4,7 @@ story:AthePondNear
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.037
-      sample=0.044,at=1793329337
+    TimeTotal:beliefs,avg=0.035
       sample=0.044,at=1793329358
       sample=0.037,at=1793329364
       sample=0.027,at=1793329371
@@ -13,8 +12,10 @@ story:AthePondNear
       sample=0.023,at=1793329420
       sample=0.04,at=1793329520
       sample=0.059,at=1793329857
-    TimeTotal:step,avg=0.013
-      sample=0.015,at=1793329337
+      sample=0.034,at=1793573771
+      sample=0.031,at=1793578588
+      sample=0.032,at=1793579689
+    TimeTotal:step,avg=0.012
       sample=0.015,at=1793329358
       sample=0.012,at=1793329364
       sample=0.009,at=1793329371
@@ -22,6 +23,9 @@ story:AthePondNear
       sample=0.008,at=1793329420
       sample=0.013,at=1793329520
       sample=0.02,at=1793329857
+      sample=0.011,at=1793573771
+      sample=0.01,at=1793578588
+      sample=0.011,at=1793579689
   step,dige:a78e5b48dd4eff17
   step=2,desc:stand two As of one name — one at the top of a House — one standing in an A on another,dige:f695caae334a4acd
   step=3,desc:poke by name from inside the Hold — by name from above — and by handle,dige:2aaeb6a911b83bee

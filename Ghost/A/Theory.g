@@ -228,7 +228,7 @@ TheA_code_take(A):
 //   %TheALayer names — not whatever was merged flat onto the House last (TheA_as).  So a newer version of a file reaches an
 //    A only when its push is let through, and two versions of one file can run side by side in one heap.  SERVICES: an A
 //     asks for something (the weather) and gets the nearest one, walking up through the As it stands in, never sideways
-//      and never from the top (TheA_near) — a Book's pond sees its own weather, the way a Book's run should see its own
+//      and never from the top (TheA_seek_out) — a Book's pond sees its own weather, the way a Book's run should see its own
 //       Supervisor and not the runner's (the MusuRadioAim leak).
 //  Not yet: what an A may READ or WRITE by where it stands (turfs), from: resolved by nearness, a routine's own A running
 //   through TheA_as (that's do_fn_for's unused w_inst seam, in Housing).
@@ -310,9 +310,9 @@ TheA_as(A):
     A.c.TheA_as = { key, H, me }
     return me
 
-// TheA_near — the nearest thing matching sc that an A can be served: its own world first, then each A it stands in, outward.
+// TheA_seek_out — the nearest thing matching sc that an A can be served: its own world first, then each A it stands in, outward.
 //  Never a sibling's, never the first one found from the top
-TheA_near(A, sc):
+TheA_seek_out(A, sc):
     for (let a = A; a; a = this.TheA_up(a)) {
         for (const w of a.o({ w: 1 })) {
             let hit = w.o(sc)[0]
@@ -528,14 +528,18 @@ TheA_led_to(addr):
 TheA_outbox(w):
     return w.o({ TheAOutbox: 1 })[0]?.o({ TheAPulse: 1 }) || []
 
-// TheA_boundary — deliver the outboxes of a batch's compartments (names: their As; none = every A in this House), in one fixed order (senders by name, each outbox oldest first) so the
+// TheA_boundary — deliver the outboxes of a batch's compartments (names: their As, as As or names; none = every A in this House), in one fixed order (senders by name, each outbox oldest first) so the
 //  order things happened in can't show.  A pulse goes to every synapse of its name that is FROM its sender, or, for a synapse with
 //   no from:, to the sender's own synapse (a compartment telling itself, as the fish synapse does).  An outbox is dropped once
-//    emptied.  Returns how many pulses landed.  Given a ready set, adds every A a pulse landed on (TheA_run's next round)
+//    emptied.  Returns how many pulses landed.  Given a ready set, adds every A a pulse landed on (TheA_run's next round).
+//  FROM IS BY NEARNESS (Atheory_design §1.15 R3): a synapse's from: names the A of that name nearest the synapse's own A, so two
+//   ponds each with a Clock_A each hear their own.  Bound once per boundary, kept on synapse.c.from_A for reading
 TheA_boundary(names, ready):
+    let tree = this.TheA_tree()
+    let batch = names && new Set(this.TheA_refs(names, tree))
     let senders = []
-    for (const A of this.TheA_all(this)) {
-        if (names && !names.includes(A.sc.A)) continue
+    for (const A of tree.all) {
+        if (batch && !batch.has(A)) continue
         for (const w of A.o({ w: 1 })) {
             if (w.o({ TheAOutbox: 1 }).length) senders.push({ A, w })
         }
@@ -547,15 +551,15 @@ TheA_boundary(names, ready):
         for (const pulse of box.o({ TheAPulse: 1 })) {
             let { TheAPulse, synapse: name, ...rest } = pulse.sc
             let heard = 0
-            for (const B of this.TheA_all(this)) {
+            for (const B of tree.all) {
                 for (const v of B.o({ w: 1 })) {
                     for (const synapse of v.o({ TheASynapse: name })) {
-                        let hears = synapse.sc.from ? synapse.sc.from === A.sc.A : v === w
+                        let hears = synapse.sc.from ? this.TheA_from(synapse, B, tree) === A : v === w
                         if (!hears) continue
                         synapse.i({ TheAPulse: 1, ...rest }).c.sent_at = pulse.c.sent_at
                         landed++
                         heard++
-                        if (ready) ready.add(B.sc.A)
+                        if (ready) ready.add(B)
                     }
                 }
             }
@@ -564,6 +568,71 @@ TheA_boundary(names, ready):
         w.drop(box)
     }
     return landed
+
+// TheA_tree — this House's As at once: all (depth first, as TheA_all) and up (each A's holder: an A, or this House), read off the
+//  tree so it is right whatever c.up says.  A boundary walks it once
+TheA_tree():
+    let all = []
+    let up = new Map()
+    let walk = (C) => {
+        for (const A of C.o({ A: 1 })) {
+            all.push(A)
+            up.set(A, C)
+            walk(A)
+        }
+    }
+    walk(this)
+    return { all, up }
+
+// TheA_nearest — the A named name nearest from (an A, or nothing for this House): rings out through holders and held As, the
+//  first ring with one wins.  A tie takes the first in tree order and warns once per name, the way Housing._A_near does
+TheA_nearest(from, name, tree):
+    tree = tree || this.TheA_tree()
+    let start = from || this
+    let seen = new Set([start])
+    let ring = [start]
+    while (ring.length) {
+        let hit = ring.filter(n => n !== this && n.sc.A === name)
+        if (hit.length) {
+            if (hit.length > 1) {
+                hit.sort((a, b) => tree.all.indexOf(a) - tree.all.indexOf(b))
+                if (!this.c.TheA_near_warned) this.c.TheA_near_warned = new Set()
+                let warned = this.c.TheA_near_warned
+                if (!warned.has(name)) {
+                    warned.add(name)
+                    console.warn('⚠ TheA ' + name + ' is ' + hit.length + ' As equally near — took the first')
+                }
+            }
+            return hit[0]
+        }
+        let next = []
+        for (const n of ring) {
+            let up = n === this ? null : tree.up.get(n)
+            for (const m of [...n.o({ A: 1 }), ...(up ? [up] : [])]) {
+                if (seen.has(m)) continue
+                seen.add(m)
+                next.push(m)
+            }
+        }
+        ring = next
+    }
+    return null
+
+// TheA_refs — names at the edge, As inside: each name (asked from this House, so the shallowest answers) or A, as an A; what
+//  names nothing falls out
+TheA_refs(list, tree):
+    let out = []
+    for (const x of list || []) {
+        let A = typeof x === 'string' ? this.TheA_nearest(null, x, tree) : x
+        if (A && !out.includes(A)) out.push(A)
+    }
+    return out
+
+// TheA_from — the A a synapse hears from: its from: by nearness from B, the A it stands in
+TheA_from(synapse, B, tree):
+    let A = this.TheA_nearest(B, synapse.sc.from, tree)
+    synapse.c.from_A = A
+    return A
 
 // SPILL (IOexpr_todo §5) — a pulse no synapse heard.  A synapse nobody hears is a plug-hole, fine to leave open; a pulse sent INTO
 //  one is news nobody took, so it is counted, not dropped silently: %TheASpilled:<synapse>,n: on the sender, and on the Turn that
@@ -577,7 +646,7 @@ TheA_spill(w, name, turn):
     }
 
 // TheA_run — the scheduler, by hand (Atheory_todo §0.0 "From the top", item 1): rounds of pulses, nothing ambient.  It holds
-//  a READY set — the names of the As something has poked (the caller says who: an elvis from outside, in effect) — and never
+//  a READY set — the As something has poked (the caller says who, by name or A: an elvis from outside, in effect) — and never
 //   scans for work.  Each round, every ready A moves (one batch, in name order — which can't matter), then the boundary, which
 //    adds to the next round's ready set every A a pulse landed on.  When nothing is ready the run is quiet and stops by
 //     itself; `most` only caps a runaway.  So a compartment nobody pulsed is never visited: none of its handlers run and none
@@ -586,8 +655,10 @@ TheA_spill(w, name, turn):
 //   each world is woken by its own <w>_woken (w:Athe_Clock → Athe_Clock_woken) — a name, called by name, never looked up.
 //  THE ERA SEAM: before round one, every A with code waiting (%TheACodePush) takes it — %TheAArrived:<A> on the run — and
 //   moves in round one, with nothing asked if nothing else readied it.  So the code an A runs changes only between runs,
-//    and a run is all one era
-TheA_run(at, wake, ready, most):
+//    and a run is all one era.
+//  SCOPE (optional, an A): only the As standing in it move and take code — a pond's run inside a House that thinks the rest
+//   (TheA_attend_runs).  A pulse landing on a synapse outside the scope waits there for whoever drives that A
+TheA_run(at, wake, ready, most, scope):
     // NO NESTED RUNS: a run inside a move would break the batch and clobber run_t0/run_round.  Refused, as a counting row on at
     if (this.c.run_t0 != null) {
         let had = at.o({ TheAFault: 'nested_run' })[0]
@@ -595,13 +666,14 @@ TheA_run(at, wake, ready, most):
         if (!had) console.warn('🛑 TheA nested_run refused — a run was asked for inside a move')
         return null
     }
-    let todo = new Set(ready || [])
+    // names only at the edge: resolved once, here; the ready set is As from now on
+    let todo = new Set(this.TheA_refs(ready))
     for (const old of at.o({ TheARun: 1 })) at.drop(old)
     let run = at.i({ TheARun: 1 })
-    for (const A of this.TheA_all(this)) {
+    for (const A of this.TheA_all(scope || this)) {
         if (!A.o({ TheACodePush: 1 }).length || !this.TheA_code_take(A)) continue
         run.i({ TheAArrived: A.sc.A })
-        todo.add(A.sc.A)
+        todo.add(A)
     }
     let n = 0
     // TIMING (Theory.g TENDRILS): every run and round keeps when it began and ended on .c, never snapped; a move reads the run's
@@ -610,17 +682,19 @@ TheA_run(at, wake, ready, most):
     try {
         while (todo.size && n < (most || 50)) {
             n++
-            let names = [...todo].sort()
+            // in name order, two of one name in tree order — which can't matter
+            let all = this.TheA_all(scope || this)
+            let movers = [...todo].filter(A => all.includes(A))
+                .sort((a, b) => String(a.sc.A).localeCompare(String(b.sc.A)) || all.indexOf(a) - all.indexOf(b))
             todo = new Set()
             let t_round = performance.now()
             this.c.run_round = n
-            for (const name of names) {
-                let A = this.TheA_all(this).find(A => A.sc.A === name)
-                for (const w of A ? A.o({ w: 1 }) : []) this.TheA_move(w, wake || w.sc.w + '_woken')
+            for (const A of movers) {
+                for (const w of A.o({ w: 1 })) this.TheA_move(w, wake || w.sc.w + '_woken')
             }
-            let landed = this.TheA_boundary(names, todo)
+            let landed = this.TheA_boundary(movers, todo)
             let round = run.i({ TheARound: String(n), ...(landed ? { landed } : {}) })
-            for (const name of names) round.i({ TheAWent: name })
+            for (const A of movers) round.i({ TheAWent: A.sc.A })
             round.c.t0 = t_round
             round.c.t1 = performance.now()
             this.TheA_time(round, round.c.t0, round.c.t1)
@@ -634,6 +708,44 @@ TheA_run(at, wake, ready, most):
     let waits = this.TheA_waits()
     at.oai({ TheARun: 1 }, { rounds: n, ...(todo.size ? { cut: 1 } : { quiet: 1 }), ...(waits ? { waiting: waits } : {}) })
     return run
+
+// THE RUN LOOP IN BELIEFS (THE MAP item 4; AtheoryNexus_todo §3.2, §3.5 step 2) — attention by mark.  An A holding
+//  %TheAAttend:run gives the As standing in it to TheA_run: Housing's beliefs() calls TheA_attend_runs once per think (after
+//   attend, before the req sweep), and each such A whose As have a pulse waiting gets one run, scoped to it, its %TheARun on
+//    itself.  Nothing else: no pulse waiting, no run, nothing of it read beyond its synapses.  Found from the House down through
+//     As that %TheABelieves (the Desk's shape), as the think walk finds As; an A without the mark is the think loop's, as ever.
+//  A pulse from outside lands and wakes the House: TheA_poke.  So nobody calls TheA_run by hand — the House's loop does
+//
+//      A:Desk  %TheABelieves
+//        A:Pond  %TheAAttend:run      ← its As move by pulse, in rounds; A:Pond itself is still thought
+//          A:Clock_A / w:Athe_Clock
+//          A:Tank / w:Athe_Tank
+TheA_attend_runs():
+    let holders = []
+    let walk = (C) => {
+        for (const A of C.o({ A: 1 })) {
+            if (A.o({ TheAAttend: 'run' }).length) {
+                holders.push(A)
+            } else if (A.o({ TheABelieves: 1 }).length) {
+                walk(A)
+            }
+        }
+    }
+    walk(this)
+    let ran = 0
+    for (const P of holders) {
+        let ready = this.TheA_all(P).filter(A => A.o({ w: 1 }).some(w => w.o({ TheASynapse: 1 }).some(s => s.o({ TheAPulse: 1 }).length)))
+        if (!ready.length) continue
+        if (this.TheA_run(P, null, ready, null, P)) ran++
+    }
+    return ran
+
+// TheA_poke — a pulse from outside onto a synapse, and the House woken to deliver it (TheA_attend_runs, next think).  Untaped:
+//  a compartment that wants its arrivals on a tape declares %TheAIO and is spoken to through TheA_io
+TheA_poke(synapse, sc):
+    if (!synapse) return
+    synapse.i({ TheAPulse: 1, ...(sc || {}) }).c.sent_at = performance.now()
+    this.feebly_ponder?.()
 
 // IO — where the outside comes in (Atheory_todo §0.0 "From the top", item 3: what a replay mocks).  A compartment declaring
 //  %TheAIO:<synapse> takes that synapse's pulses from outside the House — a page's timer, one day a socket — and from no A.

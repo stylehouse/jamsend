@@ -90,7 +90,7 @@ A capture doc, not yet a plan — the owner has reached for this three times in 
 
 **A\*\* first slice — BUILT and green 2026-10-21; S5/S6 bit as predicted (design §1.10)** (`Atheory_design.md` §1.11): Housing keeps every compiled version
  (`ghost_versions`); `TheA_as(A)` speaks as an A's own versions; As stand in As (`TheA_all`, `TheA_up`, `TheA_chain`);
-  `TheA_near` serves the nearest; the toy lays only out of the cold (`%Weather` on a pond).  Books `AthePondVersions`
+  `TheA_seek_out` serves the nearest; the toy lays only out of the cold (`%Weather` on a pond).  Books `AthePondVersions`
    (two versions in one heap, the push waits for the seam) and `AthePondNest` (ponds serve weather; a push to a pond
     reaches only its tanks).
 
@@ -161,7 +161,7 @@ A capture doc, not yet a plan — the owner has reached for this three times in 
  (c) yes — CLAUDE.md's private-vite recipe now warns about the shared deps.
 
 **Next moves, in order:**
-1. *Done 2026-10-21:* all 13 AthePond Books green after A\*\* + the rename; S5 (`TheA_near` from the top) and S6 (`TheA_as`
+1. *Done 2026-10-21:* all 13 AthePond Books green after A\*\* + the rename; S5 (`TheA_seek_out` from the top) and S6 (`TheA_as`
     flat) bit as predicted.  Nest's heredity oath is a known gap under S6 (design §1.10).
 2. **Resisting CodePush during a run, the rest:** a Book's own routine through its A (`do_fn_for`'s unused `w_inst` seam —
     a Housing edit, so a ledger row), and the routines calling the toy through `TheA_as` rather than flat.
