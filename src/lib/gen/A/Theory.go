@@ -11,7 +11,7 @@ import { Selection } from "$lib/Selection.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_Theory(): string { return 'e2b3672909552aba~g1' },
+    Ghostmeta_Ghost_A_Theory(): string { return '8cfb77fd134d1642~g1' },
 
 // Theory.g — Atheory's first organ: an A says which code it runs (spec/Atheory_todo.md §0.1 and §0.2).
 //
@@ -632,39 +632,12 @@ TheA_tree() {
     return { all, up }
 
 },
-// TheA_nearest — the A named name nearest from (an A, or nothing for this House): rings out through holders and held As, the
-//  first ring with one wins.  A tie takes the first in tree order and warns once per name, the way Housing._A_near does
+// TheA_nearest — the A named name nearest from (an A, or nothing for this House): Housing's one resolver (_A_near, R3), kept
+//  inside this House, walking into every A (not only believing ones), holders read off the tree.  A tie takes the first and warns
+//   once per name, as everywhere
 TheA_nearest(from, name, tree) {
     tree = tree || this.TheA_tree()
-    let start = from || this
-    let seen = new Set([start])
-    let ring = [start]
-    while (ring.length) {
-        let hit = ring.filter(n => n !== this && n.sc.A === name)
-        if (hit.length) {
-            if (hit.length > 1) {
-                hit.sort((a, b) => tree.all.indexOf(a) - tree.all.indexOf(b))
-                if (!this.c.TheA_near_warned) this.c.TheA_near_warned = new Set()
-                let warned = this.c.TheA_near_warned
-                if (!warned.has(name)) {
-                    warned.add(name)
-                    console.warn('⚠ TheA ' + name + ' is ' + hit.length + ' As equally near — took the first')
-                }
-            }
-            return hit[0]
-        }
-        let next = []
-        for (const n of ring) {
-            let up = n === this ? null : tree.up.get(n)
-            for (const m of [...n.o({ A: 1 }), ...(up ? [up] : [])]) {
-                if (seen.has(m)) continue
-                seen.add(m)
-                next.push(m)
-            }
-        }
-        ring = next
-    }
-    return null
+    return this._A_near(from || this, name, { house: this, every: true, up: (A) => tree.up.get(A) })?.A || null
 
 },
 // TheA_refs — names at the edge, As inside: each name (asked from this House, so the shallowest answers) or A, as an A; what

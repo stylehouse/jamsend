@@ -1,0 +1,34 @@
+story:AthePondIdentity
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.023
+      sample=0.022,at=1793583984
+      sample=0.022,at=1793583985
+      sample=0.022,at=1793583985
+      sample=0.016,at=1793584087
+      sample=0.018,at=1793584185
+      sample=0.018,at=1793584283
+      sample=0.021,at=1793584585
+      sample=0.027,at=1793585183
+      sample=0.01,at=1793595438
+      sample=0.056,at=1793596226
+    TimeTotal:step,avg=0.006
+      sample=0.005,at=1793583984
+      sample=0.005,at=1793583985
+      sample=0.005,at=1793583985
+      sample=0.004,at=1793584087
+      sample=0.004,at=1793584185
+      sample=0.004,at=1793584283
+      sample=0.005,at=1793584585
+      sample=0.007,at=1793585183
+      sample=0.002,at=1793595438
+      sample=0.014,at=1793596226
+  step,dige:5034c98100fe0885
+  step=2,dige:795b0cc213f160f8,desc:stand two As — Twin_Keep and Twin_Swap — and let the House walk them
+  step=3,dige:24d04ffb2a0bf0a8,desc:drop Twin_Swap and stand one exactly like it
+    Assertion:an-a-dropped-and,sentence:an A dropped and stood again looking the same is a new A to the walk — its D starts with no history — the one left standing goes on
+  step=4,dige:cb5914feb2ae8827,desc:with the walk’s veto off — swap Twin_Swap again for one exactly like it
+    Assertion:with-the-veto-off,sentence:with the veto off the lookalike takes the old one’s D — resemblance is what the veto stops

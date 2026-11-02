@@ -1394,7 +1394,9 @@ if (watch && (op === 'run' || op === 'state') && reply.control === 'runner_ack')
 	//    the SHARED liveness() verdict.  Forward progress resets the clock (a run stepping IS life).
 	let heard = Date.now(), progress = Date.now(), quietNoted = 0
 	while (Date.now() - t0 < WATCH_MS) {
-		await new Promise(r => setTimeout(r, 700))
+		// 2s, not 700ms (2026-11-02): each poll is two console lines on the runner (ws RECV + 📥 state) — a sweep of 40 Books
+		//  flooded its ring; a run settles in seconds either way
+		await new Promise(r => setTimeout(r, Number(process.env.RUNNER_WATCH_POLL_MS || 2000)))
 		const s = await sendAsk(ws, { op: 'state' })
 		if (s.control !== 'runner_ack') {
 			const now = Date.now()

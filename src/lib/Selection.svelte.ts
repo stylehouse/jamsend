@@ -31,6 +31,17 @@ hook into essential points of the lifecycle
 
 // reality is like a.i(b) and b.i(c), so we can travel the a/b/c graph (hierarchy)
 // the visitor of $n**
+
+// Se_veto_A_H — resolve()'s veto for a Selection's trace: an old D and a new one tracing two DIFFERENT objects, either an A or an
+//  H, are never paired (see process' many_fn)
+const Se_veto_A_H = (a: any, b: any): boolean => {
+    const was = a?.c?.T?.sc?.n
+    const now = b?.c?.T?.sc?.n
+    if (!was || !now || was === now) return false
+    const ark = (n: any) => Object.keys(n.sc || {})[0]
+    return ark(was) === 'A' || ark(was) === 'H' || ark(now) === 'A' || ark(now) === 'H'
+}
+
 export class Travel extends TheC {
     // these are all really on T.c.*, but for documentation:
     // the first step - so all n** visits have T.c.n=topn
@@ -302,6 +313,13 @@ class SelectionItself extends Travel {
                     }
                 },{
                     resolve_strict: Se.c.resolve_strict,
+                    // IDENTITY FOR A AND H (2026-11-02, owner: "a total negation if !==, if %A or %H"): a D tracing an A or an H
+                    //  continues only from the D that traced THAT object — a lookalike standing in its place (Desk_reset's new
+                    //   A:Story, two Clock_A side by side) is goner + neu, never a resumed D with the old one's Dips and .c.  A w
+                    //    keeps resemblance (agency_officing replace()s every A's w each tick, re-adding the same objects — they
+                    //     pair by identity first anyway).  An old D back from text (a reload) knows no object, so it may still pair.
+                    //  Se.c.resolve_veto overrides (a function, or false for none)
+                    resolve_veto: Se.c.resolve_veto === false ? undefined : (Se.c.resolve_veto ?? Se_veto_A_H),
                     // receive pairs of continuous-looking particles
                     pairs_fn: async (a:TheD,b:TheD)=>{
                         if (a && !b) {

@@ -18,6 +18,13 @@ A NEW Story primitive: a declared, per-run **reset** of the disk working-area a 
     deletion.  HohoRetake is known (a flaky retake gate — memory waft-retake-lands); the four Musu/Swarm ones are the doubt.
      (AthePondGuards, LagoonCave, WorkshopStaple got rows 2026-10-29.)
 
+### ReactiveWaft is red on every run — fixture drift, not today's code (found 2026-11-02)
+
+Its fixtures date from 2026-06-10.  Live step 1 adds `logger,n=12` (was 8) with `imount,Waft:test1|2,inA` and `form,Waft:test1|2,open=0`
+ rows, a `UI:ReactiveInline` ref row, and loses `mo:main,interval`.  The same diff with the resolve() identity veto switched off (a
+  baseline run, Atheory_design §2 2026-11-02), so it predates it.  Wants a look and a re-record — the test components moved in the
+   2026-09-16 "fleeing of the structure" commit.
+
 ### ⚠ Cold entropy profile — a fresh runner's FIRST run snaps without its shared drops (found 2026-10-29)
 
 **What happens.**  A Book's `The/EntropyProfile,Wref:Trope/Lies/NormalEntropy` is opened by Story (`Story.svelte` "open shared

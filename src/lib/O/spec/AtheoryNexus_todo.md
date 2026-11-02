@@ -11,7 +11,7 @@
 
 **The next build is THE MAP item 4, the scheduler for real (§3.5):** step 1, Theory's scheduler off names, is BUILT (2026-11-02, Book
  `AthePondTwoClocks`); step 2, the run loop in `beliefs()` (`%TheAAttend:run`, `TheA_attend_runs`, `TheA_poke`), is BUILT
- (2026-11-02, Book `AthePondAttend`).  **Next:** tidy (one R3 walk with a scope; `TheA_near` is now `TheA_seek_out`, 2026-11-02), then Aip (§3.10), then give a
+ (2026-11-02, Book `AthePondAttend`).  Tidy DONE (one R3 resolver — `_A_near(from, name, opts)`, Theory `TheA_nearest` calls it; `TheA_near` → `TheA_seek_out`), Aip's identity half BUILT (the resolve() veto, Book `AthePondIdentity`).  **Next: Aip itself (§3.10) — RULED `A.c.Aip`** (owner 2026-11-02: "it's just to have a unique id for all the A … yeah to A.c.Aip"): claimed in tree order, never snapped, so no Book re-records; re-claimed identically after a reload when the tree is the same.  Then DECISION A (§6) — give a
   real compartment the mark — the first duty racked onto Atheory beyond the ponds.  The rounds below were thinking, not a change of course.
 *Side thread, any time, static:* IOexpr's code-graph (§3.3) — one `%ioing,input|output,mainkey,via` word per IO site on Atlas's
  `%Map` (ruled 2026-11-02, IOexpr_todo §0), so the editor relates the `i` end and the `o` end of a piece of data by a query.
@@ -66,6 +66,14 @@
   A\*\* pond is `TheA_run`'s.  Then the ponds and the Housing walk are one tree with several drivers, and the scheduler-in-beliefs is
    one more loop on it.
 - *Shape (lean):* `%TheAAttend:<loop>` on the A; `%TheABelieves` becomes "my As attend my loop".
+- **What `%TheABelieves` bundles today** (Housing, read 2026-11-02) — four things, and a loop mark must say which it carries:
+  1. **thought** — organise/attend walk into the A's As and call their w's method each tick (`get_next_levels`);
+  2. **pumped** — the req sweep tugs their reqs (`reqdo_sweep`);
+  3. **findable** — `_A_near` walks into them, so a name from outside reaches them;
+  4. **watched** — their w's `%watched` channels enrol for the UI (`enroll_watched`).
+  The run mark (`%TheAAttend:run`, built) takes **none** of them today.  Lean: a run-marked A's As are **findable** and **watched**
+   (an address and a screen need them), never **thought** or **pumped** (that is the think loop's; a run-loop A's reqs wake by pulse,
+    §3.5 "reqs woken by pulse").  So the unified mark is `%TheAAttend:think` = all four (today's believing), `%TheAAttend:run` = 3+4.
 - **The door, clocks, time and Story's steps are one thing** (owner: "indeed") — loops, each named by `@` (§3.9).
 
 ### 3.3 IO — boring `i|o`, reactive `S`, the two ends related
@@ -170,9 +178,12 @@ R1 holding, R2 refs, R3 nearness are built (`Atheory_design.md` §1.15, Book `At
 - **Identity only — no resemblance.**  Se's `resolve()` pairs a new D with an old one by what their particles look like, and a Dip on
    a D rides that pairing (`resume_X`) — so two `A:Clock_A` side by side could swap Aips.  *Owner:* "Se must never resolve() an A to
     another A and resume its Aip there … needs a compare-objects override, and do no reductionist logic at all."  So: **the Aip lives
-     on the A itself** (a row, snapped, so it survives a reload), not on a walk's D; the holder keeps the counter; a walk only READS it.
+     on the A itself** — *ruled 2026-11-02: on `A.c.Aip`, never snapped* ("it's just to have a unique id for all the A"), not on a walk's D; the holder keeps the counter; a walk only READS it.
       Where beliefs()'s Se does pair H|A|w levels, it pairs by the particle object (`D.c.n === n`), never by sc.  A dropped and
        re-stood A is a new A with a new Aip.
+- **BUILT 2026-11-02 — the identity half:** `Stuff.resolve()` takes `q.resolve_veto`; `Selection.process` passes `Se_veto_A_H` by default
+   (`Se.c.resolve_veto` overrides, `false` = none).  Book `AthePondIdentity`: a lookalike A gets a fresh D, its sibling goes on; veto off,
+    the lookalike takes the old D.  The Aip row itself is next.
 - **Snap cost:** an `%Aip` row on every A changes every Book's snaps; fold it out of `snap_H` (as `dontSnap` does) and let a Book
    that wants it opt in.
 - **What it replaces:**
@@ -241,6 +252,24 @@ R1 holding, R2 refs, R3 nearness are built (`Atheory_design.md` §1.15, Book `At
    one of the malfunctions to warn (§4).
 
 ## 6. Open, for when a build needs them
+- **DECISION A — which duty gets the `run` mark first** (owner 2026-11-02: "I don't know.  perhaps you can present it for me
+   better").  The mark moves a compartment off the `think` loop onto pulses.  The first real one should be small, already
+   pulse-shaped, and seen by a Book:
+  | candidate | what moves | for | against |
+  |---|---|---|---|
+  | **Storica's step strip** | a click → a pulse on the strip's compartment; the views commit after the run | already Stuffica views; StoryFu's debugger hand is where clicks land wrongly today (the AtheStoryWalk bug was a click) | Storui still beside it; two Storys |
+  | **the Desk's leash** | ready · step · red as pulses into A:Story | the Desk is the believed tree §3.5 named; the leash is already rows | the inner Story is legacy `think` code — the run would only carry the leash, not the steps |
+  | **the Atime ring / a clock** | a timer's beat → `TheA_io` → a Host, as /Pondland does | proven shape (AthePondTape); costs nothing when idle | no user-facing gain |
+  | **a verb** | `e:Verb` arrival → the owner's compartment, taped | §3.4's one arrival shape; verbs already enter through UItime | touches every `verbs_*` owner |
+  *RULED 2026-11-02 (owner: "should be fine doing it in Storica"):* **Storica's step strip** first — the frontend→backend vector: a click is one arrival through the door, a pulse on the strip's compartment.  Was the lean — clicks are the IO Stuffica's "Out" movement is missing, and a click that lands on the right Story
+   by pulse is exactly what addressing and identity were built for.
+- **DECISION B — what a turf lease names** (§3.11).  Three shapes:
+  1. **a compartment** (`seat:<Aip>/<w>`) — finest; a flock of editors can each hold one doc.  Many leases, many heartbeats.
+  2. **an A subtree** (`seat:<Aip>`) — holding the A covers every w and A standing in it unless something deeper is leased (nested,
+     like R3).  Fewer leases; matches "authorisation at the door" — a Grant names an A (`%Grant:Music` ≈ the Music A).
+  3. **a wormhole path** (`seat:wormhole/<path>`) — what FSA writes need, independent of the A tree.
+  *Lean:* **2, with 3 as the disk's own case** — the door checks the nearest leased A above the target; files keep path leases since
+   the disk is not an A tree.  A relay-held lease is enough until the crew signs (then the Captain signs the lease).
 - **An A inside a w** (owner 2026-11-02, §2): what it means for the walk, the address (`A/w/A/w`) and R3.
 - **What a stand-time `@name` binding listens to** — the House keeping a tree version (bumped on A stand/drop), one integer compare
    per use?

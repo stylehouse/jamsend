@@ -413,15 +413,18 @@ abstract class Housing extends TheC {
     //  House, an A or a w), counted in steps through the tree — out through the As holding it, up through Houses, down into
     //   every sub-House and every A that believes the As in it.  Not the first match up the House chain: a Story's Desk asking
     //    for 'Story' gets the Story in the Desk, not the page's.  Two at the same distance is a real ambiguity — warned once per
-    //     name and the first taken, as before.  Returns the A and the House that thinks it
-    _A_near(from: TheC | Housing, Aname: string): { h: House, A: TheC } | null {
+    //     name and the first taken, as before.  Returns the A and the House that thinks it.
+    //  opts (Theory's scheduler, TheA_nearest — one walk, two scopes): house keeps the walk inside that one House (no sub-Houses,
+    //   none above); every walks into the As of every A, believing or not; up(A) says an A's holder (a tree read once) in place of
+    //    c.up
+    _A_near(from: TheC | Housing, Aname: string, opts: { house?: House, every?: boolean, up?: (A: TheC) => any } = {}): { h: House, A: TheC } | null {
         const house_above = (x: any): House | null => {
             while (x && !(x instanceof House)) x = x.up
             return x ?? null
         }
         let start: any = from
         if (!(start instanceof Housing) && start?.sc?.w != null) start = start.c.up
-        const h0 = (start instanceof Housing ? house_above(start) : start ? this._house_of(start) : null) ?? house_above(this)
+        const h0 = opts.house ?? (start instanceof Housing ? house_above(start) : start ? this._house_of(start) : null) ?? house_above(this)
         if (!(start instanceof Housing) && start?.sc?.A == null) start = h0
         if (!start || !h0) return null
         const seen = new Set<any>([start])
@@ -442,14 +445,15 @@ abstract class Housing extends TheC {
             for (const { n, h } of ring) {
                 if (n instanceof House) {
                     for (const A of n.o({ A: 1 }) as TheC[]) go(A, n)
+                    if (opts.house) continue
                     for (const sub of (n.subHouses?.ob({}) ?? []) as House[]) go(sub, sub)
                     const up = house_above(n.up)
                     go(up, up)
                 }
                 else {
-                    if (n.o({ TheABelieves: 1 }).length) for (const B of n.o({ A: 1 }) as TheC[]) go(B, h)
+                    if (opts.every || n.o({ TheABelieves: 1 }).length) for (const B of n.o({ A: 1 }) as TheC[]) go(B, h)
                     // its holder: an A it stands in, or its House (attend keeps A.c.up the holder; unset, the House it was met in)
-                    const up = n.c.up
+                    const up = opts.up ? opts.up(n) : n.c.up
                     go(up && !(up instanceof Housing) && up.sc?.A != null ? up : h, h)
                 }
             }

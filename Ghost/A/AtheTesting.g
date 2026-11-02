@@ -3361,3 +3361,85 @@ AthePondAttend_witness(w, n):
         this.story_swear(w, 'two pokes before the House thinks are one run — the clock moves once and ticks twice — the tank turns twice')
     }
 //#endregion
+//#region the test routine — Book AthePondIdentity
+// an A is its object (Selection.svelte.ts Se_veto_A_H; AtheoryNexus_todo §3.10).  The House's beliefs walk (its Se) keeps a D per
+//  A it walks, continued walk after walk.  Two As stand: Twin_Keep and Twin_Swap.  Step 3 drops Twin_Swap and stands one exactly
+//   like it: to the walk it is a new A — its D starts with no history — while Twin_Keep's D goes on.  Step 4 does the same with the
+//    veto off (Se.c.resolve_veto = false): the lookalike takes the old D, as resemblance always did — so the Book can tell
+AthePondIdentity(A,w):
+    w oai %req:wrangle,eternal
+        await &AthePondIdentity_drive,w,req
+        req%ok = 1
+
+async AthePondIdentity_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) {
+            w.i({ desc: 'stand two As — Twin_Keep and Twin_Swap — and let the House walk them' })
+            for (const name of ['Twin_Keep', 'Twin_Swap']) {
+                let old = this.o({ A: name })[0]
+                if (old) this.drop(old)
+                this.i({ A: name }).i({ w: 'Athe_Twin' }).i({ Twin: 'same' })
+            }
+        }
+        if (n === 3) {
+            w.i({ desc: 'drop Twin_Swap and stand one exactly like it' })
+            this.AthePondIdentity_swap(w)
+        }
+        if (n === 4) {
+            w.i({ desc: 'with the walk’s veto off — swap Twin_Swap again for one exactly like it' })
+            this.Se.c.resolve_veto = false
+            this.AthePondIdentity_swap(w)
+        }
+        this.feebly_ponder()
+        this.AtheStoryInStory_hold(w, () => {
+            let keep = this.o({ A: 'Twin_Keep' })[0]
+            let swap = this.o({ A: 'Twin_Swap' })[0]
+            if (!this.AthePondIdentity_D(keep) || !this.AthePondIdentity_D(swap)) return false
+            if (n >= 3 && !this.AthePondIdentity_D(swap)?.c.T) return false
+            this.AthePondIdentity_witness(w, n)
+            return true
+        })
+    }
+
+// the old Twin_Swap kept on .c so the witness can ask which object a D last traced
+AthePondIdentity_swap(w):
+    let old = this.o({ A: 'Twin_Swap' })[0]
+    w.c.was_swap = old
+    if (old) this.drop(old)
+    this.i({ A: 'Twin_Swap' }).i({ w: 'Athe_Twin' }).i({ Twin: 'same' })
+
+// the House's beliefs-walk D tracing this very object, or nothing
+AthePondIdentity_D(n):
+    if (!n) return null
+    let find = (D, depth) => {
+        if (depth > 6) return null
+        for (const d of D.o()) {
+            if (d.c.T?.sc.n === n) return d
+            let r = find(d, depth + 1)
+            if (r) return r
+        }
+        return null
+    }
+    let top = this.Se.sc.topD
+    return top ? find(top, 0) : null
+
+// what a D continued from: the object the D before it traced (bD, set when resolve() paired them), or nothing for a new D
+AthePondIdentity_came(D):
+    return D?.c.T?.sc.bD?.c.T?.sc.n || null
+
+AthePondIdentity_witness(w, n):
+    let keep = this.o({ A: 'Twin_Keep' })[0]
+    let swap = this.o({ A: 'Twin_Swap' })[0]
+    let kD = this.AthePondIdentity_D(keep)
+    let sD = this.AthePondIdentity_D(swap)
+    if (n === 3 && this.AthePondIdentity_came(kD) === keep && !this.AthePondIdentity_came(sD)) {
+        this.story_swear(w, 'an A dropped and stood again looking the same is a new A to the walk — its D starts with no history — the one left standing goes on')
+    }
+    if (n === 4 && w.c.was_swap && this.AthePondIdentity_came(sD) === w.c.was_swap) {
+        this.story_swear(w, 'with the veto off the lookalike takes the old one’s D — resemblance is what the veto stops')
+    }
+//#endregion

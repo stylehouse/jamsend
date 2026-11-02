@@ -1121,6 +1121,23 @@ The Waft unification (§13) is not a stage so much as the *direction* every stag
 
 ## Open / deferred
 
+- **A concise report for an LLM — the sweep and the failure, in a few lines** (owner 2026-11-02: "running tests … should be peeking
+   just a little information … a more concise report for LLMs to read about failures").  Today a Book run by an agent is `run --watch`
+    (a poll line per state change), then `assertions`, `steps`, `snap <n>`, `console` — each a separate call echoing JSON, and a
+     sweep of 40 Books is ~40×4 calls whose output piles into the agent's context (one long-lived runner agent reached ~900k tokens
+      in a day of sweeps).  Wanted, on the runner side so it is one round trip:
+  - **`runner_ask sweep <Book…|Athe*>`** — runs each, prints ONE line per Book (`✓ AthePondNear 3/3` · `✗ ReactiveWaft 0/6 step1`),
+     and a final count; nothing else unless something is red.
+  - **a failure digest** for a red: the first failing step, its oath gaps by sentence, and the snap diff cut to the changed lines with
+     two lines of context (the `story_accept` filtered diff), capped (say 40 lines) — plus any console warn|error from that run, deduped.
+  - **hollow detection**: a run whose step snaps hold only the Book's own A/w and whose drive left no `desc` says `HOLLOW (method
+     absent?)` instead of a red — the LocalGen-stale case (memory new-book-hollow-first-runs).
+  - **primacy** (owner 2026-11-02: "cover the 90% of possible breakage in the first 10% of the time … one Book will be the 'best'
+     if you were pressed for time"): a `primacy:1|2|3` on each Credence `Funkcion:Storying` row (hand-edited, beside `doc:`) — 1 = the
+      one Book per system that breaks first when that system does; `runner_sweep --primacy=1` runs only those.  Credence today says
+       what each Book proves (`desc`, `doc`) but not which to run first.  Parked until usage allows.
+  - **flake memory**: a Book known to flake (HohoRetake, AtheStoryShow) is rerun once by the sweep itself and reported as `~`.
+
 - **A Story's runs as a collection** (parked here 2026-11-01 from `Atheory_design.md` §1.15; owner: "might be useful eventually but is
    Story_future").  StoryFu "would like to collect variations of runs, being able to robustly reiterate the inner actual testrun"
     (owner 2026-10-30): a run kept as a Was, variants side by side — the sabotage Book's bitten runs among them.  Today `Desk_reset`

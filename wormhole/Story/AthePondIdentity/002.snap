@@ -1,0 +1,17 @@
+Snap:H
+  H:AthePondIdentity,Run
+    A:AthePondIdentity
+      self,round=4	{"mung":["age"]}
+      w:AthePondIdentity
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+    A:Twin_Keep
+      self,round	{"mung":["age"]}
+      w:Athe_Twin
+        Twin:same
+        self,round	{"mung":["age"]}
+    A:Twin_Swap
+      self,round	{"mung":["age"]}
+      w:Athe_Twin
+        Twin:same
+        self,round	{"mung":["age"]}

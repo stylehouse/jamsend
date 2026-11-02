@@ -172,11 +172,11 @@ Waft:Credence
       Funkcion:Storying,of_Book:AwFloat,brand_new:1
     What:Misc,inline:1,desc:editor codecs LangHold-checkout peering export ttl-waits and reactive-Waft stability
       Funkcion:StoryTimes
-      Funkcion:Storying,of_Book:Editron
+      Funkcion:Storying,of_Book:Editron,unusual:destination — stands the editor app to use — not a regression test (and hangs a runner)
       Funkcion:Storying,of_Book:Interesting
       Funkcion:Storying,of_Book:MundaneStation
       Funkcion:Storying,of_Book:MundaneStaying
-      Funkcion:Storying,of_Book:ReactiveWaft
+      Funkcion:Storying,of_Book:ReactiveWaft,unusual:stale-fixtures — red on every run since its 2026-06 fixtures drifted — re-record after a look (Story_hygiene_todo §0)
       Funkcion:Storying,of_Book:Snapmigrating,unusual:data-migration
       Funkcion:Storying,of_Book:Snaptesting
       Funkcion:Storying,of_Book:TextInca
@@ -225,11 +225,12 @@ Waft:Credence
     Funkcion:Storying,of_Book:AthePondAside,born:2026-10-29,synapse:no synapse — a toy loaded aside with no Ground standing only through its own A,doc:AtheoryStory_todo,desc:code kept aside — a toy loaded aside runs only through its A — its w is thought through the A too — and its named req is pumped by the House through the A — no House ever gets the method itself
     Funkcion:Storying,of_Book:AthePondFocus,born:2026-10-29,synapse:no synapse — a deep view re-seated by hand and focused with a point pinned by name,doc:AtheoryStory_todo,desc:the step explorer’s lens — a focus on a deep view after a re-seat lands on what moved under its parent and folds the rest to a count — a pinned point still shows whole beside it
     Funkcion:Storying,of_Book:AtheStoryInStory,born:2026-10-29,synapse:no synapse — a Desk House holding StoryFu kept aside whose inner Story drives AthePondRounds,doc:AtheoryStory_todo,desc:a Story inside a Story — a Desk holding StoryFu kept aside runs AthePondRounds green through its own A and folds the inner run to one summary line
-    Funkcion:Storying,of_Book:AtheStoryShow,born:2026-10-29,synapse:no synapse — a Desk whose StoryFu runs AthePondFocus and is left standing for Storica,doc:AtheoryStory_todo,desc:the way in — a Desk whose StoryFu runs AthePondFocus and stays standing afterward to be looked at in Storica
+    Funkcion:Storying,of_Book:AtheStoryShow,born:2026-10-29,unusual:destination — a Desk left standing for Storica — a place to be not a regression test,synapse:no synapse — a Desk whose StoryFu runs AthePondFocus and is left standing for Storica,doc:AtheoryStory_todo,desc:the way in — a Desk whose StoryFu runs AthePondFocus and stays standing afterward to be looked at in Storica
     Funkcion:Storying,of_Book:AtheStoryWalk,born:2026-10-30,synapse:no synapse — a Desk whose StoryFu is held at ready for a hand on its leash,doc:AtheoryStory_todo,desc:the way in to the debugger — a Desk whose StoryFu stands held at ready so Storica’s step · to red · continue walk it
     Funkcion:Storying,of_Book:AthePondNear,born:2026-10-30,synapse:no synapse — two As of one name on two Houses — one standing in an A that believes it,doc:Atheory_design,desc:addressing by nearness — a name asked from inside a Hold finds the A standing there — from above the shallower — a handle reaches its w and no other — an A in an A knows its holder
     Funkcion:Storying,of_Book:AthePondTwoClocks,born:2026-11-02,synapse:clock — two ponds each a Clock_A and a Tank hearing from:Clock_A,doc:Atheory_design,desc:the scheduler off names — a synapse’s from: binds the nearest A of that name — each pond’s tank hears only its own clock
     Funkcion:Storying,of_Book:AthePondAttend,born:2026-11-02,synapse:poke — a pond marked %TheAAttend:run in a believing Desk and one unmarked beside it,doc:Atheory_design,desc:the run loop in beliefs — a poke moves a marked pond on the House’s own think — an unmarked pond’s pulse waits — two pokes before a think are one run
+    Funkcion:Storying,of_Book:AthePondIdentity,born:2026-11-02,synapse:no synapse — two As in a House — one dropped and stood again exactly alike,doc:Atheory_design,desc:an A is its object — the beliefs walk gives a lookalike a fresh D — the one left standing goes on — with the veto off resemblance resumes the old D
     Funkcion:Storying,of_Book:AtheStorySabotage,born:2026-10-30,synapse:no synapse — a Desk whose StoryFu runs AthePondRounds under the sabotage its toc declares,doc:AtheoryStory_todo,desc:every oath proves it bites — the variant pushed onto the inner run’s House at a stop — the inner stops at its first red with exactly the declared oaths fallen — pulled — green again
   What:Misc,inline
     Funkcion:StoryTimes

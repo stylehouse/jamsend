@@ -1262,6 +1262,9 @@ export class Stuff extends TimeOffice {
                     //    lots of permuting?
                     // or just accept the first one?
                     //  they are sorted for uniqueness, won't re-claim...
+                    // a VETO (q.resolve_veto(oldn, n) true): these two are never the same thing, however alike — Selection
+                    //  says so for an A or H that is not the very same object (AtheoryNexus_todo §3.10: A !== A is a new A)
+                    if (q.resolve_veto?.(oldn, n)) continue
                     if (q.resolve_strict) {
                         // be more likely to drop and recreate things
                         //  if any stringified value has changed
