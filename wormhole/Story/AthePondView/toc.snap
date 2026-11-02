@@ -9,8 +9,7 @@ story:AthePondView
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.034
-      sample=0.035,at=1792666043
+    TimeTotal:beliefs,avg=0.039
       sample=0.026,at=1792898495
       sample=0.039,at=1793152773
       sample=0.038,at=1793155955
@@ -20,8 +19,8 @@ story:AthePondView
       sample=0.034,at=1793578848
       sample=0.023,at=1793579951
       sample=0.056,at=1793603921
-    TimeTotal:step,avg=0.007
-      sample=0.007,at=1792666043
+      sample=0.085,at=1793608822
+    TimeTotal:step,avg=0.008
       sample=0.005,at=1792898495
       sample=0.008,at=1793152773
       sample=0.008,at=1793155955
@@ -31,6 +30,7 @@ story:AthePondView
       sample=0.007,at=1793578848
       sample=0.005,at=1793579951
       sample=0.011,at=1793603921
+      sample=0.017,at=1793608822
   step,dige:8f15a3f712445cf7
   step=2,desc:stand Clock_A ticking K_P and K_Q — K_R hearing Clock_B which nobody pokes — a view on each tank — poke once,dige:ad2a3284841a0827
     Assertion:a-view-is-walked,sentence:a view is walked only when what it shows moved — it commits once at the end of the run — K_R is never read

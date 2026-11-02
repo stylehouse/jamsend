@@ -29,9 +29,12 @@ Credulate,of_Book:AthePondAip
   GhostInclude:Ghost_Story_VoroTesting,dige:ba7f8d826ff81866~g1
   GhostInclude:Ghost_Story_Sounditron,dige:0de272b54e59b42d~g1
   GhostInclude:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
-  GhostInclude:Ghost_A_Theory,dige:3d75780c00c24471~g1
-  GhostInclude:Ghost_A_AtheTesting,dige:19752c0313a8f63a~g1
-  last_ok,at=1793603309.73,ok_pct
+  GhostInclude:Ghost_A_Theory,dige:d2e777d714065ac5~g1
+  GhostInclude:Ghost_A_Stuffica,dige:1f0ec09474696daa~g1
+  GhostInclude:Ghost_A_Ground,dige:9a00574f49138f7a~g1
+  GhostInclude:Ghost_A_AtheTesting,dige:0423c0549e2c0a76~g1
+  GhostInclude:Ghost_A_AtheFishTesting,dige:3d13bf77d88a5d90~g1
+  last_ok,at=1793615271.003,ok_pct
     uses:Ghost_N_Peeroleum,dige:ee39d52bb1441684~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:a3d82cb8e0a8910f~g1
@@ -62,5 +65,8 @@ Credulate,of_Book:AthePondAip
     uses:Ghost_Story_VoroTesting,dige:ba7f8d826ff81866~g1
     uses:Ghost_Story_Sounditron,dige:0de272b54e59b42d~g1
     uses:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
-    uses:Ghost_A_Theory,dige:3d75780c00c24471~g1
-    uses:Ghost_A_AtheTesting,dige:19752c0313a8f63a~g1
+    uses:Ghost_A_Theory,dige:d2e777d714065ac5~g1
+    uses:Ghost_A_Stuffica,dige:1f0ec09474696daa~g1
+    uses:Ghost_A_Ground,dige:9a00574f49138f7a~g1
+    uses:Ghost_A_AtheTesting,dige:0423c0549e2c0a76~g1
+    uses:Ghost_A_AtheFishTesting,dige:3d13bf77d88a5d90~g1

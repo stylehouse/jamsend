@@ -5,6 +5,3 @@ Snap:H
       w:AthePondIdentity
         self,round=2	{"mung":["age"]}
         req:wrangle,eternal,ok
-        req:inner_run,ok
-          ttlilt	{"mung":["until_ts"]}
-    ttlilt,of_w:AthePondIdentity	{"ref":{"req":"%req:inner_run, ok:1"},"mung":["until_ts"]}

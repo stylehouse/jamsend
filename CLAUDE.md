@@ -298,7 +298,7 @@ Verify a Book by asking a LIVE runner to run it — not a headless boot.
  **Many Books: `scripts/runner_sweep.mjs [--runner=<id>] [--reload] [--swap=a.g,b.g] [--quiet] <Book|Glob*>…`** — one line per
   Book (✓ / ~ flake / ✗ with a capped digest: oath gaps, first failing step, its snap diff vs the fixture, that run's console warnings /
    ∅ HOLLOW), a tally, exit 1 on a red.  Globs skip every Credence row carrying `unusual:<why>` (destinations, migrations, stale
-    fixtures, runner-killers); `--list` prints the selection and runs nothing.  ⚠ A Book runs HOLLOW (no `req:wrangle`, 0 sworn) when its toc lacks `Stands:<Ground>` —
+    fixtures, runner-killers); `--list` prints the selection and runs nothing.  `⏱ timeout step N` on a line = that step ENDED because its ttlilt ran out (`Step%timeout`) — a green made of waiting; read it as a suspect.  ⚠ A Book runs HOLLOW (no `req:wrangle`, 0 sworn) when its toc lacks `Stands:<Ground>` —
      a new Book's toc is born without it; add `  Stands:CoreTesting` (or its Ground) after `Opt/For` with its Credence row.  `--swap` only hot-swaps a
       recompiled ghost into a tab without a reload; a reload already gets the fresh `.go`.
  **A REMOTE NODE** (another host's server) works the same way, with discovery off the wire

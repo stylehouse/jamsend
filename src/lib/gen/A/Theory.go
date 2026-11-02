@@ -11,7 +11,7 @@ import { Selection } from "$lib/Selection.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_Theory(): string { return '225eaf9a22331110~g1' },
+    Ghostmeta_Ghost_A_Theory(): string { return 'd2e777d714065ac5~g1' },
 
 // Theory.g — Atheory's first organ: an A says which code it runs (spec/Atheory_todo.md §0.1 and §0.2).
 //
@@ -810,7 +810,14 @@ TheA_attend_runs() {
 TheA_poke(synapse, sc) {
     if (!synapse) return
     synapse.i({ TheAPulse: 1, ...(sc || {}) }).c.sent_at = performance.now()
-    this.feebly_ponder?.()
+    // a Story's Run House keeps a clock (c.runtime: true within a step) and is woken only within one; a House that never had
+    //  that clock — a page's, a Desk's sub-House — would never wake by feebly_ponder, so its poke sat unmoved (the step strip,
+    //   2026-11-02): woken outright
+    if (this.c.runtime === undefined) {
+        this.main?.(true)
+    } else {
+        this.feebly_ponder?.()
+    }
 
 },
 // IO — where the outside comes in (Atheory_todo §0.0 "From the top", item 3: what a replay mocks).  A compartment declaring

@@ -4,3 +4,27 @@ story:AtheStoryPick
   Opt
     For
   Stands:CoreTesting
+  TimeSpool
+    TimeTotal:beliefs,avg=0.032
+      sample=0.022,at=1793607040
+      sample=0.022,at=1793607047
+      sample=0.024,at=1793607058
+      sample=0.024,at=1793607069
+      sample=0.03,at=1793607542
+      sample=0.024,at=1793607584
+      sample=0.026,at=1793608858
+      sample=0.085,at=1793615283
+    TimeTotal:step,avg=0.011
+      sample=0.007,at=1793607040
+      sample=0.007,at=1793607047
+      sample=0.008,at=1793607058
+      sample=0.008,at=1793607069
+      sample=0.01,at=1793607542
+      sample=0.008,at=1793607584
+      sample=0.009,at=1793608858
+      sample=0.028,at=1793615283
+  step,dige:f65decd578adef02
+  step=2,desc:stand a Desk whose new Story runs AthePondRounds — held at ready,dige:fd7924fecaf05d8a
+  step=3,desc:click step 1 then step 2 on the strip — before the House thinks,dige:af43af3864cf7248
+    Assertion:two-clicks-before-a,sentence:two clicks before a think are one move of the strip — it ate both and kept the latest — Picked 2
+    Assertion:the-strip-s-move,sentence:the strip’s move tells the inner Story — it opens step 2 — the click never wrote the Story itself

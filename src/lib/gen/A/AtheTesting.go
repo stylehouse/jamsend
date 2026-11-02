@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheTesting(): string { return '69eda4814414cdf6~g1' },
+    Ghostmeta_Ghost_A_AtheTesting(): string { return '0423c0549e2c0a76~g1' },
 
 // AtheTesting.g — Atheory's proof (Ghost/A/Theory.g; spec/Atheory_todo.md §0.2 "The first Atheory tests").
 //
@@ -3743,7 +3743,9 @@ async AthePondIdentity_drive(w, req) {
             this.AthePondIdentity_swap(w)
         }
         this.feebly_ponder()
-        this.AtheStoryInStory_hold(w, () => {
+        // held from step 2, when the twins stand — at step 1 there is nothing to wait for, and the hold ran out its whole 90s
+        //  ttlilt every run (Step%timeout's first catch, 2026-11-02)
+        if (n >= 2) this.AtheStoryInStory_hold(w, () => {
             let keep = this.o({ A: 'Twin_Keep' })[0]
             let swap = this.o({ A: 'Twin_Swap' })[0]
             if (!this.AthePondIdentity_D(keep) || !this.AthePondIdentity_D(swap)) return false
@@ -4014,7 +4016,12 @@ async AtheStoryPick_drive(w, req) {
         }
     }
     if (n === 2) this.AtheStoryInStory_hold(w, sw => this.AtheStoryInStory_stands(sw, 'ready'))
-    if (n === 3) this.AtheStoryInStory_hold(w, sw => sw?.o({ run: 1 })[0]?.sc.open_at === 2)
+    // the witness also rides the gate's own check: the strip moves on the Desk's think, after this drive's pass, so the pass that
+    //  finds it moved is the gate's
+    if (n === 3) this.AtheStoryInStory_hold(w, sw => {
+        this.AtheStoryPick_witness(w, sw)
+        return sw?.o({ run: 1 })[0]?.sc.open_at === 2
+    })
     let sw = this.AtheStoryInStory_inner(w)
     this.AtheStoryInStory_fold(w, sw, null, [])
     if (n === 3) this.AtheStoryPick_witness(w, sw)
@@ -4027,7 +4034,7 @@ AtheStoryPick_strip() {
 AtheStoryPick_witness(w, sw) {
     let tw = this.AtheStoryPick_strip()
     let woke = tw?.o({ TheASynapse: 'pick' })[0]?.o({ TheAWoke: 1 })[0]
-    if (woke?.sc.count === 1 && woke?.sc.pulses === 2 && tw.o({ Picked: 2 }).length && tw.o({ Picked: 1 }).length === 0) {
+    if (woke?.sc.count === 1 && woke?.sc.pulses === 2 && tw.o({ Picked: 2 }).length && tw.o({ Picked: 1 }).length === 1) {
         this.story_swear(w, 'two clicks before a think are one move of the strip — it ate both and kept the latest — Picked 2')
     }
     if (sw?.o({ run: 1 })[0]?.sc.open_at === 2) {

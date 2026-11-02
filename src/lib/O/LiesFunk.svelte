@@ -3201,7 +3201,7 @@ await M.eatfunc({
                         const desc_of = (n: number) => the_steps.find(s => s.sc.step === n)?.sc.desc
                         result = {
                             book, uid,
-                            steps: steps.map(s => ({ n: s.n, ok: s.ok, caveat: s.caveat, untried: s.untried, error: s.error, dige: s.dige, desc: desc_of(s.n) })),
+                            steps: steps.map(s => ({ n: s.n, ok: s.ok, caveat: s.caveat, timeout: (s as any).timeout ?? 0, untried: s.untried, error: s.error, dige: s.dige, desc: desc_of(s.n) })),
                             done: steps.length, ok: steps.length > 0 && steps.every(s => !!s.ok),
                         }
                     } else if (op === 'snaps') {
@@ -3975,7 +3975,7 @@ await M.eatfunc({
         //   (deterministic — survives the live This churn + the 5-step trim).  Without: the live This
         //    (a run still going, or the just-finished one before the next begin).  Empty when a uid is
         //     given but the run isn't pinned yet (still running / unknown uid) — the caller errors.
-        Lies_rungo_steps(w: TheC, ask: { uid?: string }): Array<{ n: number, ok: number, caveat: number, dige: any, got_snap: any, exp_snap: any, trace: any }> {
+        Lies_rungo_steps(w: TheC, ask: { uid?: string }): Array<{ n: number, ok: number, caveat: number, timeout?: number, dige: any, got_snap: any, exp_snap: any, trace: any }> {
             const H = this as House
             if (ask.uid) {
                 const pins = H.Lies_rungo_record(w, ask.uid)?.c.pins as Record<number, any> | undefined
@@ -3991,7 +3991,7 @@ await M.eatfunc({
             return steps.map(s => {
                 const n = Number(s.sc.Step)
                 return {
-                    n, ok: s.sc.ok ? 1 : 0, caveat: s.sc.caveat ? 1 : 0, dige: s.sc.dige,
+                    n, ok: s.sc.ok ? 1 : 0, caveat: s.sc.caveat ? 1 : 0, timeout: s.sc.timeout ? 1 : 0, dige: s.sc.dige,
                     untried: s.sc.untried ? 1 : 0, error: s.sc.error ?? null,
                     got_snap: s.sc.got_snap ?? null, exp_snap: s.sc.exp_snap ?? exps[n] ?? null,
                     trace: Array.isArray(s.sc.Run_trace) ? s.sc.Run_trace : null,
@@ -4054,7 +4054,7 @@ await M.eatfunc({
                     for (const s of live) {
                         const n = Number(s.sc.Step)
                         pins[n] = {
-                            n, ok: s.sc.ok ? 1 : 0, caveat: s.sc.caveat ? 1 : 0, dige: s.sc.dige,
+                            n, ok: s.sc.ok ? 1 : 0, caveat: s.sc.caveat ? 1 : 0, timeout: s.sc.timeout ? 1 : 0, dige: s.sc.dige,
                             untried: s.sc.untried ? 1 : 0, error: s.sc.error ?? null,
                             got_snap: s.sc.got_snap ?? null, exp_snap: s.sc.exp_snap ?? exps[n] ?? null,
                             trace: Array.isArray(s.sc.Run_trace) ? s.sc.Run_trace : null,

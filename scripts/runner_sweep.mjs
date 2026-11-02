@@ -183,16 +183,19 @@ for (const b of books) {
     else if (!fx) { mark = '?'; note = `no fixtures — ran ${r.done}${r.gaps.length ? ', ' + r.gaps.length + ' oath gaps' : ''}` }
     const green = (x) => x.ok && (!fx || x.done === fx)
     if (!r.dead && fx && !green(r)) {
-        if (hollow(b, r.total)) { mark = '∅'; note = 'HOLLOW — method never ran (ghost_load --swap its .g?)' }
+        if (hollow(b, r.total)) { mark = '∅'; note = 'HOLLOW — method never ran (its toc lacks Stands:<Ground>?)' }
         else if (!flag('no-rerun')) {
             const r2 = once(b)
             if (green(r2)) { mark = '~'; note = '(red, then green)'; r = r2 }
             else { mark = '✗'; r = r2 }
         } else mark = '✗'
     }
-    if (mark === '?' && hollow(b, r.total)) { mark = '∅'; note = 'HOLLOW — method never ran (ghost_load --swap its .g?)' }
+    if (mark === '?' && hollow(b, r.total)) { mark = '∅'; note = 'HOLLOW — method never ran (its toc lacks Stands:<Ground>?)' }
     tally[mark]++
+    // steps that ENDED ON A TIMEOUT (a ttlilt ran out — Story stamps Step%timeout): a green made of waiting is not a pass, said
+    const timeouts = mark === '∅' ? [] : (json_after(ask('steps').out, 'steps: ')?.steps || []).filter(s => s.timeout).map(s => s.n)
     const counts = mark === '∅' || mark === '?' ? '' : ` ${r.done}/${fx || r.total}${r.caveat ? ` caveat ${r.caveat}` : ''}`
+        + (timeouts.length ? `  ⏱ timeout step ${timeouts.join(',')}` : '')
     if (!quiet || mark === '✗' || mark === '∅') console.log(`${mark} ${b}${counts}${note ? '  ' + note : ''}`)
     if (mark === '✗' && !r.dead) console.log(digest(b, r))
 }

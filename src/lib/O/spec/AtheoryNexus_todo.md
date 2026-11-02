@@ -18,26 +18,49 @@
 - **Aip BUILT** (§3.10): `Housing.Aip_claim` → `n.c.Aip` (Dip path, never reused, never snapped); `attend` and Theory `TheA_tree`
    claim; `TheA_by`/`TheA_aip`/`TheA_say`; `TheA_at`/`TheA_io`/`TheA_tape`/`TheA_refs` take an A, an Aip or a name.  Book
     `AthePondAip` accepted, green ×3; AthePond* + AtheStoryInStory/Walk swept green.  Left: `e%Aw` → Aip (Housing's elvis path).
-- **One attention mark BUILT, recorded, NOT yet swept** (§3.2): Housing `attends(n)` — `%TheAAttend:think` (= `%TheABelieves`, still
+- **One attention mark BUILT, recorded, swept green** (§3.2): Housing `attends(n)` — `%TheAAttend:think` (= `%TheABelieves`, still
    read) all four legs; `%TheAAttend:run` = findable + watched.  Book `AthePondAttendMark` accepted (3 oaths).
-- **Storica's strip pocket — BROKEN, fixture deleted.**  Ground.g `Desk_pick` stands `A:Desk/A:Hand(%TheAAttend:run)/A:Strip/w:Desk_Strip`
-   and pokes it; `Desk_Strip_woken` keeps `%Picked:n` and elvises `story_sel` to the inner Story.  Storica's `pick` calls `Desk_pick`
-    first.  **Live: the pulses land and are never moved** (the recorded 003.snap showed both `TheAPulse,open_at` still waiting; 0
-     oaths — the agent accepted it anyway; deleted).  Suspect: the Desk's sub-House never runs `TheA_attend_runs` (its beliefs
-      run on a non-think e, or it never thinks after `TheA_poke`'s `feebly_ponder`).  Owner's live clicks then showed steps 1+2
-       "failed" in Storica (§3.12).  Storica's `Desk_pick` call is COMMENTED OUT (live clicks take the old
-        `story_sel` road again); FIRST fix the Desk House's run leg, re-record AtheStoryPick (its Credence row stands), then re-enable.
+- **Storica's strip pocket — BUILT, recorded (night, 2026-11-02).**  Ground.g `Desk_pick` stands `A:Desk/A:Hand(%TheAAttend:run)/A:Strip/w:Desk_Strip`
+   and pokes it; `Desk_Strip_woken` keeps `%Picked:n` and elvises `story_sel` to the inner Story.  Storica's `pick` calls it again.
+    Book `AtheStoryPick` accepted (2 oaths), green ×3; inner-Story + AthePond Books swept green after.  Three bugs it took:
+   - `TheA_poke` woke by `feebly_ponder`, which only fires on a Story Run House mid-step — a Desk sub-House never woke, the
+      pulses sat.  Now a House with no Story clock (`c.runtime` never set) is woken by `main(true)`.
+   - `e_story_sel` minted `This/Step:n` (`i_step`) for a step never run — the panel read it as run: "snap not yet loaded", not ok
+      (owner's live glitch).  Now found only (`step_c(...,soft)`), in StoryFu.g and Story.svelte.
+   - a nested `story_sel` never woke its holder (`Story_at` does) — a ttlilt HOLDS, it never wakes, so the outer step slept its
+      90s ttlilt and was snapped on the timeout, `ok:1`, its gate and witness never run.  Now it wakes `TheA_base.up`.
+   Also: the leash poll (`schedule()` every 200ms while held) no longer logs `⏭ schedule`.
+- **A step that outlives its ttlilt — SURFACED, not yet red.**  It came out `ok:1`, a timeout recorded as the truth.  Now Story
+   stamps `Step%timeout` (Story.svelte + StoryFu.g), `runner_ask steps` shows it, `runner_sweep` prints `⏱ timeout step N`.  Athe*
+    sweep (42): ONE timeout, and it was a bug — AthePondIdentity held step 1 for twins stood at step 2, 90s every run, its
+     fixture recording the held gate; fixed + re-recorded.  Before it caveats: sweep the music/Hoho families (expecting() waits)
+      and count.  Also re-recorded AthePondAip (its fixtures were taken under the `--swap` misdiagnosis: TheACode without dige).
 - **Hollow runs were a missing `Stands:CoreTesting`**, not stale code: a new Book's toc is born without it, so no runner loads
    AtheTesting.g for it (my `--swap` advice was a misdiagnosis; the swap only loaded it by hand).  Added to the 8 Books since
-    AthePondNear.  AtheStoryPick's toc must get it when re-recorded.  Want: StoryFu inferring a missing Stands from the Credence
+    AthePondNear.  Want: StoryFu inferring a missing Stands from the Credence
      row's ghost, so a new Book can't forget it.
 - **A hollow first run saves itself (bug, 2026-11-02 night).**  AtheStoryPick dispatched with no toc and no Stands ran one empty
    step (its method never loaded) and wrote a 1-step toc + 001.snap — a blank Book, silently.  A new-mode run whose Book method
     is absent should refuse to save (and say so), not record nothing as the truth.  Its dir is now a bare toc with `Stands:CoreTesting`.
+- **Wanted: a format to work in together (owner, 2026-11-02 night).**  What we say to each other — spec links, particle notation, .g
+   excerpts, snaps — is printed into a terminal or buried in Waft tocs, so nothing links and nothing renders.  Wanted: a place where a
+    reply can link a doc and a line (`spec/X.md §3`, `Ground.g Desk_pick`) and show the notation laid out (a particle tree as a tree,
+     a snap with its diff) — a working surface, not a Waft database.  Candidates to weigh: Wordland's doc reading (spec/Wordland_todo.md)
+      grown to render this notation; a published page per session; markdown with a renderer for `%particle` and snap blocks.  Unruled.
+- **Inner Books are shared.**  AthePondRounds is the inner Book of AtheStoryInStory, Walk, Sabotage and Pick (AthePondFocus of Show):
+   one fixture, four outer Books — a change to it reds all four.  Nested Stories no longer write TimeSpool into it (StoryFu
+    `collect_time_sample` returns when `TheA_base`).  Story_future §19: the Credence `desc:` as the runner's headline would show this.
 - **ReactiveWaft kept**: the only guard on the gated-vs-ungated read that once tore down KeepFace for weeks (subagent stopped
    short of deleting).  Re-record its fixtures, don't delete — owner to confirm.
 
-**Next, in order:**
+**Overnight queue (2026-11-02 night, owner leaving it running after a compact — no Book runs inline, a Sonnet agent per sweep):**
+1. Sweep the music/Hoho/other non-Athe families for `⏱ timeout` (runner_sweep, unusual rows skipped) — the count decides whether a
+    timeout caveats (§0 "a step that outlives its ttlilt").  Report per family; fix only Book-side holds that wait for nothing.
+2. The leash by news (§0.1 item 1): `Desk_leash_carry` changing `%StoryLeash` wakes the inner drive; the leashed `schedule()` stops
+    polling.  Gate: AtheStoryInStory/Walk/Sabotage/Pick green, and faster.
+3. Refuse a hollow new-mode save (§0 "A hollow first run saves itself").
+4. AtheStoryPick variant: let the inner run to step 2 before the clicks, so the selection lands on a ran step.
+**Next, in order** (items 1–3 below are DONE as of 2026-11-02 night; next: the ttlilt-timeout-ok bug, the hollow-saves bug, Stands from Credence, `e%Aw` → Aip):
 1. **Aip on `A.c.Aip`** (§3.10, ruled) — a Dip-path id claimed when an A stands, never snapped.  Then the by-name readers
     (`TheA_at`, `TheA_io`, `TheA_tape`, tendril addresses) look up by it — the tendril-printing Books re-record.
 2. **One attention mark** (§3.2) — `%TheAAttend:think` (= today's `%TheABelieves`: thought, pumped, findable, watched) and
@@ -47,6 +70,42 @@
 
 *Open for the owner:* §6 DECISION B (what a turf lease names).  *Side thread, any time:* IOexpr's `%ioing` rows (§3.3).
 *Tooling:* `scripts/runner_sweep.mjs` runs Books one line each, skipping Credence's `unusual:` rows.  A new Book needs `Stands:<Ground>` in its toc (memory new-book-hollow-first-runs).
+
+## 0.1 Where it's going — the night think (2026-11-02, owner: "read Atheory docs and give it a good long think")
+
+**What tonight showed.**  Every bug in the strip pocket was a WAKE.  `TheA_poke` woke by `feebly_ponder`, which a Story clock gates
+ (`c.runtime`) — a Story idea deciding whether an Atheory poke wakes a House.  A ttlilt held step 3 and woke nothing, so it slept 90s
+  and was snapped on the timeout.  `story_sel` changed what the inner Story shows and told no one.  The leash is a 200ms poll.  And
+   AthePondIdentity paid 90s every run on a hold with nothing to wait for — found only because a timeout is now stamped.  The legacy
+    generation waits by TIME (ttlilt, poll, `setTimeout`: 14 in StoryFu alone, 13 gate holds in AtheTesting, 43 `feebly_ponder`s in
+     Ghost/); Atheory waits by NEWS (a pulse on a synapse that declared it hears it).  Where the two meet, a wait that should have been
+      a hearing becomes a timeout, and a timeout reads as a pass.
+
+**So the arc, said once.**  From a House that thinks everything every tick and waits by clock, to a tree of compartments that move
+ when news arrives — news entering at one door, written on a tape, with Story a reader of that tape.  Each level says which loop it
+  attends (§3.2); each wait says what it is waiting FOR (a `%TheAWait` answered by a pulse), and its timeout is an alarm, not a verdict
+   (design §3 "the Believer": "a `%ttlilt` that runs out should alarm, not only expire" — tonight is the proof).  The screen is pockets
+    (§3.13): run-loop compartments the UI pokes and reads.  The Desk becomes the page and the old generation retires (THE MAP 1).
+
+**Three things to hold onto.**
+1. **The wait is the next duty, not another button.**  DECISION A put the strip on the run loop; the next run-loop duties are the
+    WAITS the two generations share: the leash (a `%DeskLeash` change is a pulse into the inner Story, not a poll it notices), the
+     gate holds (`AtheStoryInStory_hold` — a `%TheAWait` on the outer's compartment, answered when the inner says `Story_at`), and
+      `Story_at` itself (already a wake; make it a pulse).  Each one converted deletes a timeout path, and its Book gets faster and
+       more honest.  A Book's step that ENDS on news is causal; one that ends on time is now `Step%timeout` — the measure of progress.
+2. **The harness must not believe absence.**  Tonight it took for truth: a hollow run (no `Stands`), an unaccepted new-mode run
+    (it saved itself), a click-minted step (read as failed), a timeout (read as ok).  One motif (design §4.2 #5, "record what
+     landed, not what was asked", has a twin): **nothing recorded from nothing.**  A recording should need positive evidence — a step
+      that ended causally, the Book's method seen running, an oath per step that claims anything.  Credence's `desc:` as the
+       headline (Story_future §19) is the human half of it.
+3. **The poke's wake rule is a patch on a missing door.**  `TheA_poke` now asks `c.runtime === undefined` to decide how to wake — a
+    House-level fact read off a Story field.  The door (§3.4: a per-House arrival queue, its own qualities) is where "wake this House
+     for this arrival" belongs; Story's between-steps freeze becomes the door being shut, not a flag every poker must read.
+
+**What that orders.**  (a) the waits onto the run loop, one by one, each with its Book faster and timeout-free; (b) "nothing from
+ nothing" in the recorder (refuse hollow saves, refuse timeout greens — after the music/Hoho count); (c) the door, small: an arrival
+  queue per House that `TheA_poke`, `UItime` and Storica's In movement all enter through.  THE MAP 1 (the Desk is the page) waits
+   on all three: a StoryFu that waits by news is one worth making the page.
 
 ## 1. How real each part is
 

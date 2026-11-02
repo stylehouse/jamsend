@@ -5,7 +5,7 @@ story:AthePondGround
     For
   Stands:CoreTesting
   TimeSpool
-    TimeTotal:beliefs,avg=0.012
+    TimeTotal:beliefs,avg=0.013
       sample=0.013,at=1792898448
       sample=0.009,at=1792898463
       sample=0.008,at=1792898469
@@ -15,7 +15,8 @@ story:AthePondGround
       sample=0.012,at=1793578544
       sample=0.014,at=1793579645
       sample=0.022,at=1793603636
-    TimeTotal:step,avg=0.002
+      sample=0.017,at=1793608281
+    TimeTotal:step,avg=0.003
       sample=0.003,at=1792898448
       sample=0.002,at=1792898463
       sample=0.002,at=1792898469
@@ -25,6 +26,7 @@ story:AthePondGround
       sample=0.002,at=1793578544
       sample=0.003,at=1793579645
       sample=0.004,at=1793603636
+      sample=0.003,at=1793608281
   step,dige:b217f13e63aa3000
   step=2,desc:stand an A on Ground/Core — the base — and nothing else,dige:1bfff1b82ea1d912
     Assertion:an-a-stands-on,sentence:an A stands on Ground/Core — its three .g as layers — each with the digest loaded here — and it is Firm

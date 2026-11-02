@@ -9,8 +9,7 @@ story:AthePondCodePush
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.026
-      sample=0.036,at=1792636177
+    TimeTotal:beliefs,avg=0.029
       sample=0.026,at=1792649276
       sample=0.028,at=1792650340
       sample=0.017,at=1792898476
@@ -20,8 +19,8 @@ story:AthePondCodePush
       sample=0.022,at=1793578386
       sample=0.029,at=1793579616
       sample=0.034,at=1793603357
-    TimeTotal:step,avg=0.004
-      sample=0.006,at=1792636177
+      sample=0.068,at=1793608250
+    TimeTotal:step,avg=0.005
       sample=0.004,at=1792649276
       sample=0.005,at=1792650340
       sample=0.003,at=1792898476
@@ -31,6 +30,7 @@ story:AthePondCodePush
       sample=0.004,at=1793578386
       sample=0.005,at=1793579616
       sample=0.006,at=1793603357
+      sample=0.011,at=1793608250
   step,dige:c2f1728dc0b239b5
   step=2,desc:stand the tank and a bystander holding other code — and take turn one,dige:4476f6e6a52b821e
   step=3,desc:the toy file arrives once — the push waits on the tank,dige:66c28940b9d54f5b

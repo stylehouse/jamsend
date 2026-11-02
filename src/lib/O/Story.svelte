@@ -866,8 +866,10 @@
         // fetch it), queue a fetch now so the diff panel can show it on demand.
         const n = run?.sc.open_at as number | undefined
         if (n != null && run) {
-            const step = this.i_step(w, n)
-            if (!step.sc.exp_snap && this.The_step_dige(w, n)) {
+            // FOUND, never made: a step not run this session has no live Step, and minting one here made the panel read it as
+            //  run — "snap not yet loaded" on a step the leash never let begin (a click on the strip, 2026-11-02)
+            const step = w.c.This ? this.step_c(w.c.This, n, 'Step', true) : undefined
+            if (step && !step.sc.exp_snap && this.The_step_dige(w, n)) {
                 run.sc.fetch_snap = n
                 this.main()
             }
@@ -2665,6 +2667,7 @@
             Run.trace('quiescent', timed_out ? `${ago.toFixed(3)} timeout` : ago.toFixed(3))
             ;V.Story && console.log(`⏱ poll_step quiescent n=${run.c.step_n} since ${ago.toFixed(3)} TICK=${TICK_MS}`)
             // on_step_ending: called once at quiescence, before the snap.
+            run.c.step_timed_out = timed_out   // snap_step stamps it on the Step: a step ended by its ttlilt running out, not by its work
             Run.c.on_step_ending?.(timed_out ? 'timeout' : 'causal')
             Run.c.runtime = false         // feebly_ponder is now no-op; ponder throws
             H.post_do(snap_step, { see: 'story_snap' })
@@ -2745,6 +2748,11 @@
                                    //  boolean is 1-or-absent, and `false` throws at encode (it decodes back
                                    //   as the truthy string "false" and inverts the flag).  Latent until a
                                    //    Step got snapped — Vyto_spool_capture is the first thing to snap one.
+            // a step that ENDED ON A TIMEOUT (its ttlilt ran out, or leave_running did) says so — its verdict is a snap of whatever
+            //  stood when time ran out, and a recording took that as the truth (AtheStoryPick, 2026-11-02).  Surfaced, not yet red:
+            //   steps / runner_sweep show it; which Books time out on purpose is to be counted before it caveats
+            if (run.c.step_timed_out) step.sc.timeout = 1
+            else delete step.sc.timeout
             step.sc.Run_trace = Run.trace_drain()
             step.bump_version()
 

@@ -19,6 +19,7 @@ story:AthePondAsk
       sample=0.029,at=1793578364
       sample=0.018,at=1793579588
       sample=0.032,at=1793603326
+      sample=0.021,at=1793608214
     TimeTotal:step,avg=0.005
       sample=0.003,at=1792633857
       sample=0.005,at=1792635998
@@ -29,6 +30,7 @@ story:AthePondAsk
       sample=0.007,at=1793578364
       sample=0.004,at=1793579588
       sample=0.008,at=1793603326
+      sample=0.005,at=1793608214
   step,dige:5c65fc80a8a8f1cf
   step=2,desc:stand Clock_A — a Feeder that serves two ticks after an order — K_P who asks it — K_P gets hungry and runs,dige:4e60066ead253a46
     Assertion:an-ask-holds-a,sentence:an ask holds a wait on the asker — the run goes quiet but is not settled while an answer is owed

@@ -6,30 +6,30 @@ Snap:H
         self,round=3	{"mung":["age"]}
         req:wrangle,eternal,ok
     A:Aip_P
-      TheACode:Athe_Pond,variant:plain
-        TheALayer:Ghost/A/AtheFishTesting.g
+      TheACode:Athe_Pond,variant:plain,dige:2001ee490226d906
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:3d13bf77d88a5d90~g1
       A:Clock_A
-        TheACode:Athe_Clock,variant:plain
+        TheACode:Athe_Clock,variant:plain,dige:e5e1911bfd6848b8
         w:Athe_Clock
           TheASynapse:poke,wake:tick,sum:count
           TheAAxon:clock
       A:Tank
-        TheACode:Athe_Tank,variant:plain
+        TheACode:Athe_Tank,variant:plain,dige:e5e1911bfd6848b8
         w:Athe_Tank
           TheASynapse:clock,from:Clock_A,wake:turn,sum:count
       self,round	{"mung":["age"]}
       w:Aip_P
     A:Aip_Q
-      TheACode:Athe_Pond,variant:plain
-        TheALayer:Ghost/A/AtheFishTesting.g
+      TheACode:Athe_Pond,variant:plain,dige:2001ee490226d906
+        TheALayer:Ghost/A/AtheFishTesting.g,dige:3d13bf77d88a5d90~g1
       A:Tank
-        TheACode:Athe_Tank,variant:plain
+        TheACode:Athe_Tank,variant:plain,dige:e5e1911bfd6848b8
         w:Athe_Tank
           TheASynapse:clock,from:Clock_A,wake:turn,sum:count
       self,round	{"mung":["age"]}
       w:Aip_Q
       A:Clock_A
-        TheACode:Athe_Clock,variant:plain
+        TheACode:Athe_Clock,variant:plain,dige:e5e1911bfd6848b8
         w:Athe_Clock
           TheASynapse:poke,wake:tick,sum:count
           TheAAxon:clock

@@ -1213,3 +1213,22 @@ What Atheory now records (Theory.g TENDRILS, Book `AthePondTendril`): in a House
   (frames in, lanes, order out, how long the mutex was held) would make that legible; it's the first real customer for an
    arrival tape outside the Atheory toys.  Story today keeps a tape of STATES (a snap per step), not of arrivals — Story reading
     arrival tapes is §3's "Story adapted to read tapes".
+
+## 19. The headline — a Book says what it is, on the runner (owner 2026-11-02)
+
+Every Book has a Credence row (`wormhole/Credence/toc.snap`, hand-kept): `Funkcion:Storying,of_Book:X,…,synapse:…,doc:…,desc:…`.
+ The `desc:` is the one sentence saying what the Book proves; `synapse:` says what it stands up.  None of it reaches the runner's
+  page: a Book opens on its step strip and nothing says what it is for.  The owner, running AtheStoryPick, read an inner Story held
+   at `ready` as broken, and wondered whether the inner Story (AthePondRounds) was shared by the other Books; one line would have
+    answered both: *"a click is an arrival — … — tells the inner Story story_sel by ref"*, and the inner's own: *"run by four
+     outer Books: InStory, Walk, Sabotage, Pick"*.
+- **Headline:** the Book's Credence `desc:` above its strip, `synapse:` under it smaller, `doc:` as a link to the spec.  A nested
+   Story (a Desk's) shows its own Book's headline in its frame, so the picture says which Book is inside which.
+- **Credence is local** (rebuilt each side from live Ghostmeta, never streamed) — so the runner can read its
+   own copy; no streaming needed.  Read once per Book at `become_book`, kept on `w:Story` `.c` (never snapped: a headline edit
+    must not red a fixture).
+- **Shared inners, said:** Credence can answer "who else runs this Book as their inner" by grepping `Desk_story(this, '<Book>')`
+   once (Atlas's callers) — a `used_by:` line under the headline.  A change to AthePondRounds reds four Books; the headline is
+    where that should be visible before it happens.
+- **`unusual:`** rides too — a Book marked `unusual:destination` or `unbuilt` says so in its headline, so a hollow-looking run
+   reads as expected rather than broken.

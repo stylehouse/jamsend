@@ -681,6 +681,9 @@ spool_time_sample(tt: TheC, seconds: number):
 // this test take to run".
 collect_time_sample(w: TheC):
         const H    = this as House
+        // nested (a Desk's Story — TheA_base, as Story_at reads it) keeps no TimeSpool: the inner Book's toc is the fixture every
+        //  outer Book checks against (AthePondRounds under four of them), and its runs wrote their timings into it
+        if ((this as any).TheA_base) return
         const This = w.c.This as TheC
         const ranSteps = (This?.o({ Step: 1 }) ?? [])
             .filter((s: TheC) => Array.isArray(s.sc.Run_trace) && s.sc.Run_trace.length)
@@ -819,13 +822,18 @@ story_analysis(w: TheC):
 async e_story_sel(A: TheC, w: TheC, e?: TheC):
         const run = w.o({ run: 1 })[0]
         if (run) run.sc.open_at = e?.sc.open_at ?? null
+        // nested, the holder is told it changed, as Story_at tells it: a ttlilt holds a step, it never wakes one, so a holder
+        //  waiting on open_at slept out its whole ttlilt (AtheStoryPick step 3, 2026-11-02)
+        ;(this as any).TheA_base?.up?.main?.(true)
 
         // if opening a step that has no exp_snap yet (e.g. lenient run that didn't
         // fetch it), queue a fetch now so the diff panel can show it on demand.
         const n = run?.sc.open_at as number | undefined
         if (n != null && run) {
-            const step = this.i_step(w, n)
-            if (!step.sc.exp_snap && this.The_step_dige(w, n)) {
+            // FOUND, never made: a step not run this session has no live Step, and minting one here made the panel read it as
+            //  run — "snap not yet loaded" on a step the leash never let begin (a click on the strip, 2026-11-02)
+            const step = w.c.This ? this.step_c(w.c.This, n, 'Step', true) : undefined
+            if (step && !step.sc.exp_snap && this.The_step_dige(w, n)) {
                 run.sc.fetch_snap = n
                 this.main()
             }
@@ -2431,7 +2439,7 @@ story_drive(Run: House, w: TheC, run: TheC):
                 else {
                     H.Story_at(w, 'step', n - 1)
                 }
-                schedule(); return
+                schedule(true); return
             }
             ;V.Story && console.log(`▷ do_step n=${n} mode=${run.sc.mode}`)
             ;V.Story && console.log(`The at n=${n}:`, (w.c.The)?.o({step:1}).map((s:any)=>s.sc.step+'→'+(s.sc.dige?s.sc.dige.slice(0,6):'no-dige')).join(', '))
@@ -2675,6 +2683,7 @@ story_drive(Run: House, w: TheC, run: TheC):
             Run.trace('quiescent', timed_out ? `${ago.toFixed(3)} timeout` : ago.toFixed(3))
             ;V.Story && console.log(`⏱ poll_step quiescent n=${run.c.step_n} since ${ago.toFixed(3)} TICK=${TICK_MS}`)
             // on_step_ending: called once at quiescence, before the snap.
+            run.c.step_timed_out = timed_out   // snap_step stamps it on the Step: a step ended by its ttlilt running out, not by its work
             Run.c.on_step_ending?.(timed_out ? 'timeout' : 'causal')
             Run.c.runtime = false         // feebly_ponder is now no-op; ponder throws
             H.post_do(snap_step, { see: 'story_snap' })
@@ -2755,6 +2764,14 @@ story_drive(Run: House, w: TheC, run: TheC):
                                    //  boolean is 1-or-absent, and `false` throws at encode (it decodes back
                                    //   as the truthy string "false" and inverts the flag).  Latent until a
                                    //    Step got snapped — Vyto_spool_capture is the first thing to snap one.
+            // a step that ENDED ON A TIMEOUT (its ttlilt ran out, or leave_running did) says so — its verdict is a snap of whatever
+            //  stood when time ran out, and a recording took that as the truth (AtheStoryPick, 2026-11-02).  Surfaced, not yet red:
+            //   steps / runner_sweep show it; which Books time out on purpose is to be counted before it caveats
+            if (run.c.step_timed_out) {
+                step.sc.timeout = 1
+            } else {
+                delete step.sc.timeout
+            }
             step.sc.Run_trace = Run.trace_drain()
             step.bump_version()
 
@@ -3064,9 +3081,10 @@ story_drive(Run: House, w: TheC, run: TheC):
             snap_step_finish()   // not advance() — go through the waitCyto gate
         }
 
-        const schedule = () => {
+        // quiet: the leash's own poll (a held Story asks again every 200ms) — logging each ask buried the console
+        const schedule = (quiet = false) => {
             if (!run.c.driving) { H.diag('schedule() early-return — not driving'); return }
-            V.Story && console.log(`⏭ schedule driving=${run.c.driving} paused=${run.sc.paused}`)
+            V.Story && !quiet && console.log(`⏭ schedule driving=${run.c.driving} paused=${run.sc.paused}`)
             setTimeout(() => {
                 if (!run.c.driving) { H.diag('schedule setTimeout fired — not driving, skipped post_do'); return }
                 H.diag('schedule setTimeout fired — posting do_step')

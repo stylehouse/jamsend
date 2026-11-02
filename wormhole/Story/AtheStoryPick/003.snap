@@ -1,0 +1,78 @@
+Snap:H
+  H:AtheStoryPick,Run
+    A:AtheStoryPick
+      self,round=5	{"mung":["age"]}
+      w:AtheStoryPick
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok
+    H:Desk	{"loopy":1}
+      A:Desk
+        self,round=8	{"mung":["age"]}
+        GroundUsed:Core,via:Story
+        TheACode:Ground/Core,variant:plain,dige:28f51019007285e6
+          TheALayer:Ghost/A/Theory.g,dige:d2e777d714065ac5~g1
+          TheALayer:Ghost/A/Stuffica.g,dige:1f0ec09474696daa~g1
+          TheALayer:Ghost/A/Ground.g,dige:9a00574f49138f7a~g1
+        GroundUsed:Story
+        TheACode:Ground/Story,variant:plain,dige:cf72ff338142ba52
+          TheALayer:Ghost/O/StoryFu.g,dige:f3c43fc3c92c62c4~g1
+          TheALayer:Ghost/O/Supervisor.g,dige:4efe70cdd7ae19ac~g1
+        GroundAside
+        TheABelieves
+        A:Story
+          self,round=14	{"mung":["age"]}
+          w:Story,Book:AthePondRounds
+            StoryLeash:ready
+            self,round=14	{"mung":["age"]}
+            The,story:AthePondRounds
+              Styles
+              Plan
+              Opt
+                For
+              Stands:CoreTesting
+              Sabotage:boundary_readies_nobody,of:Ghost/A/Theory.g,method:TheA_boundary,with:AtheSabotage_boundary_readies_nobody,at:3,bites:a-pulse-sent-in with-nothing-waiting-the
+              EntropyArrest
+                Entcase:Self_round
+                  lematch,self,round
+                    means,drop
+              TimeSpool
+              step,dige:acc822a82c0f14d0
+              step=2,desc:stand P nine turns ahead streaming into Q — and R with a clock and nothing on it,dige:9994865185e9847b
+              step=3,desc:thirteen pulses on P’s clock — run until quiet,dige:7cfc92dce34f82fc
+                Assertion:only-what-has-a,sentence:only what has a pulse waiting moves — R with a clock and nothing on it is never visited
+                Assertion:a-pulse-sent-in,sentence:a pulse sent in one round readies its receiver for the next — P moves then Q and the two old fish land
+                Assertion:with-nothing-waiting-the,sentence:with nothing waiting the run goes quiet by itself — two rounds of the fifty it was allowed
+              step=4,desc:run again with nothing poked,dige:dc220adbc7a35b4b
+                Assertion:a-run-with-nothing,sentence:a run with nothing poked takes no rounds at all
+            This,Story:AthePondRounds
+            run:AthePondRounds,done=0,total,mode:check,frontier=0,open_at=2
+            wh
+            StoryAt:ready
+        A:Hand
+          TheAAttend:run
+          A:Strip
+            w:Desk_Strip
+              TheASynapse:pick,sum:latest
+                TheAWoke,count,pulses=2
+              Picked=2
+          self,round	{"mung":["age"]}
+          w:Hand
+          TheARun,rounds,quiet
+            TheARound:1
+              TheAWent:Strip
+        w:Desk
+          DeskLeash:ready
+          DeskGround:Story
+          DeskAside
+          DeskBook:AthePondRounds
+          self,round=8	{"mung":["age"]}
+      H:AthePondRounds,Run	{"loopy":0}
+      watched:subHouses
+        H,Run	{"loopy":0,"hid":1}
+      watched:ave
+      watched:actions
+      watched:UIs
+        UI:Story	{"ref":{"component":"Function()"}}
+        UI:Storica	{"ref":{"component":"Function()"}}
+    watched:subHouses
+      H	{"loopy":1,"hid":1}
