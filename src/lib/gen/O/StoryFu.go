@@ -90,7 +90,7 @@ const FRONTIER_COLOR = '#c55'
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_O_StoryFu(): string { return '1f483974a8523382~g1' },
+    Ghostmeta_Ghost_O_StoryFu(): string { return '932ba3bd3520723a~g1' },
 
 // Ghost: StoryFu — the Atheory fork of Story (working title; renamed from Story.g 2026-10-29, spec/AtheoryStory_todo.md).
 //  Ported from src/lib/O/Story.svelte, which the spine still mounts; a Story fix lands in both until the old one retires.
@@ -882,6 +882,12 @@ async e_story_sel(A: TheC, w: TheC, e?: TheC) {
         // nested, the holder is told it changed, as Story_at tells it: a ttlilt holds a step, it never wakes one, so a holder
         //  waiting on open_at slept out its whole ttlilt (AtheStoryPick step 3, 2026-11-02)
         ;(this as any).TheA_base?.up?.main?.(true)
+        // …and says its status line now, as Story_finished does nested: whether the Story's next think landed to write it before the
+        //  holder snapped was a race (AtheStoryPick step 3 flipped with it, 2026-11-03)
+        if (run && (this as any).TheA_base) {
+            for (const s of w.o({ see: 1 })) w.drop(s)
+            w.i({ see: `${w.sc.Book} ${run.sc.done} [${run.sc.mode}]${run.sc.paused ? ' ⏸' : ''}` })
+        }
 
         // if opening a step that has no exp_snap yet (e.g. lenient run that didn't
         // fetch it), queue a fetch now so the diff panel can show it on demand.
@@ -2021,7 +2027,6 @@ async Story(A: TheC, w: TheC) {
         const sub  = H.Story_subHouse(A, w)
         if (!sub) { H.diag('Story() blocked — Story_subHouse returned falsy'); return }
         const { Run, book } = sub
-        H.diag(`Story() entered book=${book}`)
 
         // Story_plan runs once — creates everything. If run exists, everything else does too.
         let run = w.o({ run: book })[0]
@@ -2629,9 +2634,10 @@ async story_drive(Run: House, w: TheC, run: TheC) {
             }
             // reset so ===0 detection below only fires for THIS step's alleviation
             Run.c.leave_running_until = null
-            Run.c.runtime = true          // feebly_ponder and ponder are now live
+            const knocks = Run.door_open()     // feebly_ponder and ponder are now live; knocks kept while shut ride this step's think
             Run.trace_enable()
             Run.trace('step', String(n))
+            if (knocks) Run.trace('door', String(knocks))
             // Pre-Story hygiene: opt-in, once at Story-beginning.  NON-BLOCKING — armed through expecting()
             //  so the sweep runs OFF the Atime mutex.  A bare `await` here would freeze the belief loop for
             //   the sweep's whole extent — and Atime is exactly what the Wormhole needs to think and get
@@ -2813,7 +2819,7 @@ async story_drive(Run: House, w: TheC, run: TheC) {
             // on_step_ending: called once at quiescence, before the snap.
             run.c.step_timed_out = timed_out   // snap_step stamps it on the Step: a step ended by its ttlilt running out, not by its work
             Run.c.on_step_ending?.(timed_out ? 'timeout' : 'causal')
-            Run.c.runtime = false         // feebly_ponder is now no-op; ponder throws
+            Run.door_shut()               // feebly_ponder is now no-op; ponder throws; knock() is kept for the next step
             H.post_do(snap_step, { see: 'story_snap' })
         }
 

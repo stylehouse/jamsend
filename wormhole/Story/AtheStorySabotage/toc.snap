@@ -9,10 +9,7 @@ story:AtheStorySabotage
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.039
-      sample=0.037,at=1793607005
-      sample=0.047,at=1793608871
-      sample=0.03,at=1793608881
+    TimeTotal:beliefs,avg=0.041
       sample=0.037,at=1793609138
       sample=0.039,at=1793617517
       sample=0.045,at=1793617527
@@ -20,10 +17,10 @@ story:AtheStorySabotage
       sample=0.037,at=1793617760
       sample=0.038,at=1793618881
       sample=0.043,at=1793648650
+      sample=0.051,at=1793659864
+      sample=0.037,at=1793659874
+      sample=0.045,at=1793662707
     TimeTotal:step,avg=0.01
-      sample=0.009,at=1793607005
-      sample=0.012,at=1793608871
-      sample=0.007,at=1793608881
       sample=0.009,at=1793609138
       sample=0.01,at=1793617517
       sample=0.011,at=1793617527
@@ -31,6 +28,9 @@ story:AtheStorySabotage
       sample=0.009,at=1793617760
       sample=0.01,at=1793618881
       sample=0.011,at=1793648650
+      sample=0.013,at=1793659864
+      sample=0.009,at=1793659874
+      sample=0.011,at=1793662707
   step,dige:dfb94df4962fbaaa
   step=2,desc:stand a Desk whose new Story runs AthePondRounds — held at ready — and read the sabotage its toc declares,dige:e057981f8bd64bf5
     Assertion:the-inner-book-declares,sentence:the inner Book declares a sabotage — Theory’s TheA_boundary stood in for — biting two of its oaths

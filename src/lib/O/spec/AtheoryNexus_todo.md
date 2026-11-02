@@ -157,6 +157,11 @@
         hand that checks the mat: a whole-House think that finds it.  Meanwhile `main(true)` / `ponder_now` / `i_elvisto` walk
          straight past (Story_at, disk settles, Desk_pick).  So the door is: a queue of knocks held while shut, opened at step start
           in place of that blanket think, with the bypassers either going through it or named as exceptions.
+    *First slice BUILT 2026-11-03* (Atheory_design §2 Housing row): Housing `knock()` / `door_open()` / `door_shut()`; a knock on a
+     shut door is KEPT (`c.knocks`), counted in at the next `door_open` (Run trace `door`), delivered by the step's own think;
+      `TheA_poke` knocks, its runtime rule gone.  Still owed: knocks as ROWS (with the arrival shape `{what, by, from, corr, at}`),
+       `feebly_ponder` and the bypassers (`main(true)`, `ponder_now`, `i_elvisto`, `UItime`, Storica's In) entering through it, and
+        the step's blanket think becoming the door's own.
 
 **What that orders.**  (a) the waits onto the run loop, one by one, each with its Book faster and timeout-free; (b) "nothing from
  nothing" in the recorder (refuse hollow saves, refuse timeout greens — after the music/Hoho count); (c) the door, small: an arrival

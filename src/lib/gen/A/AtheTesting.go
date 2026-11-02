@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheTesting(): string { return '0423c0549e2c0a76~g1' },
+    Ghostmeta_Ghost_A_AtheTesting(): string { return 'a6411eebb38ab117~g1' },
 
 // AtheTesting.g — Atheory's proof (Ghost/A/Theory.g; spec/Atheory_todo.md §0.2 "The first Atheory tests").
 //
@@ -4017,7 +4017,8 @@ async AtheStoryPick_drive(w, req) {
     }
     if (n === 2) this.AtheStoryInStory_hold(w, sw => this.AtheStoryInStory_stands(sw, 'ready'))
     // the witness also rides the gate's own check: the strip moves on the Desk's think, after this drive's pass, so the pass that
-    //  finds it moved is the gate's
+    //  finds it moved is the gate's.  (A Storui showing the Desk re-asserted its pick into the Story from an $effect, giving it a
+    //   second story_sel and a pass this step never asked for; that re-assert now keeps to the Story it was picked on, 2026-11-03)
     if (n === 3) this.AtheStoryInStory_hold(w, sw => {
         this.AtheStoryPick_witness(w, sw)
         return sw?.o({ run: 1 })[0]?.sc.open_at === 2

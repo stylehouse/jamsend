@@ -16,6 +16,7 @@
 //      --no-rerun      a red is reported as is (default: rerun once; green the second time prints ~)
 //      --lines=N       cap on each red's digest (default 40)
 //      --quiet         print only reds, hollows and the tally
+//      --out=<file>    every line (as if not --quiet, digests included) also goes to <file> — an agent reads the tally, opens the file only on a red
 //      --list          print the Books a pattern picks (after Credence's unusual: skips) and run NOTHING
 //    Exit 0 when nothing stayed red or hollow.
 //
@@ -166,6 +167,9 @@ const digest = (b, r) => {
 }
 
 // ── the sweep ───────────────────────────────────────────────────────────────
+const OUT = process.argv.find(a => a.startsWith('--out='))?.slice(6)
+const full = []
+const say = (line, loud) => { full.push(line); if (loud) console.log(line); if (OUT) writeFileSync(OUT, full.join('\n') + '\n') }
 const tally = { '✓': 0, '~': 0, '✗': 0, '∅': 0, '?': 0 }
 const SETTLE_MS = Number(process.env.RUNNER_SWEEP_SETTLE_MS || 3000)
 let first = true
@@ -177,7 +181,7 @@ for (const b of books) {
     // a run that never started (another client's run, a lost ask) is tried once more before it is reported
     // a runner wants a beat between runs (memory fleet-sweep-measurement-confounds: release + settle) — back to back, one Book in
     //  ~36 sat at phase:begun (trial 2026-11-02); a non-start waits longer before its one retry
-    if (r.dead?.startsWith('NEVER STARTED') && !flag('no-rerun')) { await sleep(12000); r = once(b) }
+    if (r.dead?.startsWith('NEVER STARTED') && !flag('no-rerun')) { await sleep(3000); r = once(b) }
     let mark = '✓', note = ''
     if (r.dead) { mark = '✗'; note = r.dead }
     else if (!fx) { mark = '?'; note = `no fixtures — ran ${r.done}${r.gaps.length ? ', ' + r.gaps.length + ' oath gaps' : ''}` }
@@ -196,8 +200,8 @@ for (const b of books) {
     const timeouts = mark === '∅' ? [] : (json_after(ask('steps').out, 'steps: ')?.steps || []).filter(s => s.timeout).map(s => s.n)
     const counts = mark === '∅' || mark === '?' ? '' : ` ${r.done}/${fx || r.total}${r.caveat ? ` caveat ${r.caveat}` : ''}`
         + (timeouts.length ? `  ⏱ timeout step ${timeouts.join(',')}` : '')
-    if (!quiet || mark === '✗' || mark === '∅') console.log(`${mark} ${b}${counts}${note ? '  ' + note : ''}`)
-    if (mark === '✗' && !r.dead) console.log(digest(b, r))
+    say(`${mark} ${b}${counts}${note ? '  ' + note : ''}`, !quiet || mark === '✗' || mark === '∅')
+    if (mark === '✗' && !r.dead) say(digest(b, r), true)
 }
-console.log(`${books.length} Books: ${tally['✓']} ✓ · ${tally['~']} ~ · ${tally['✗']} ✗ · ${tally['∅']} hollow · ${tally['?']} new`)
+say(`${books.length} Books: ${tally['✓']} ✓ · ${tally['~']} ~ · ${tally['✗']} ✗ · ${tally['∅']} hollow · ${tally['?']} new`, true)
 process.exit(tally['✗'] || tally['∅'] ? 1 : 0)

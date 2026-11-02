@@ -5,9 +5,7 @@ story:AthePondAside
     For
   Stands:CoreTesting
   TimeSpool
-    TimeTotal:beliefs,avg=0.022
-      sample=0.013,at=1793242499
-      sample=0.02,at=1793242505
+    TimeTotal:beliefs,avg=0.024
       sample=0.025,at=1793242539
       sample=0.017,at=1793323835
       sample=0.027,at=1793327969
@@ -16,9 +14,9 @@ story:AthePondAside
       sample=0.019,at=1793579581
       sample=0.039,at=1793603319
       sample=0.026,at=1793608206
+      sample=0.017,at=1793659521
+      sample=0.027,at=1793662414
     TimeTotal:step,avg=0.003
-      sample=0.002,at=1793242499
-      sample=0.003,at=1793242505
       sample=0.004,at=1793242539
       sample=0.002,at=1793323835
       sample=0.004,at=1793327969
@@ -27,6 +25,8 @@ story:AthePondAside
       sample=0.003,at=1793579581
       sample=0.006,at=1793603319
       sample=0.004,at=1793608206
+      sample=0.002,at=1793659521
+      sample=0.004,at=1793662414
   step,dige:78fe8537a6f0768a
   step=2,desc:load a toy kept aside — no A holds it yet,dige:93ae271415d5b4dc
   step=3,desc:let the toy land — kept as a version and on no House,dige:1a24635cd80db950

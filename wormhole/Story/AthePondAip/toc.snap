@@ -5,9 +5,7 @@ story:AthePondAip
     For
   Stands:CoreTesting
   TimeSpool
-    TimeTotal:beliefs,avg=0.015
-      sample=0.021,at=1793608192
-      sample=0.01,at=1793608196
+    TimeTotal:beliefs,avg=0.014
       sample=0.016,at=1793609042
       sample=0.016,at=1793609064
       sample=0.016,at=1793609064
@@ -16,9 +14,9 @@ story:AthePondAip
       sample=0.01,at=1793609075
       sample=0.015,at=1793609153
       sample=0.012,at=1793615270
+      sample=0.011,at=1793659513
+      sample=0.016,at=1793662405
     TimeTotal:step,avg=0.005
-      sample=0.007,at=1793608192
-      sample=0.003,at=1793608196
       sample=0.005,at=1793609042
       sample=0.005,at=1793609064
       sample=0.005,at=1793609064
@@ -27,6 +25,8 @@ story:AthePondAip
       sample=0.003,at=1793609075
       sample=0.005,at=1793609153
       sample=0.004,at=1793615270
+      sample=0.004,at=1793659513
+      sample=0.005,at=1793662405
   step,dige:c43d6c29306ca9ea
   step=2,desc:stand two ponds — each a Clock_A and a Tank — and give every standing thing its id,dige:b80c6c651c26f173
     Assertion:every-a-and-compartment,sentence:every A and compartment standing has an id — all different — each its holder’s id and then one slot

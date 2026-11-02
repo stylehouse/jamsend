@@ -1,7 +1,5 @@
 Snap:H
   H:AtheStoryPick,Run
     A:AtheStoryPick
-      self,round	{"mung":["age"]}
       w:AtheStoryPick
-        self,round	{"mung":["age"]}
         req:wrangle,eternal,ok

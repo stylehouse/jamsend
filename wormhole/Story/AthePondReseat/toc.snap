@@ -5,9 +5,7 @@ story:AthePondReseat
     For
   Stands:CoreTesting
   TimeSpool
-    TimeTotal:beliefs,avg=0.02
-      sample=0.015,at=1792666015
-      sample=0.016,at=1792666026
+    TimeTotal:beliefs,avg=0.023
       sample=0.016,at=1792898483
       sample=0.016,at=1793324117
       sample=0.024,at=1793328186
@@ -16,9 +14,9 @@ story:AthePondReseat
       sample=0.016,at=1793579711
       sample=0.033,at=1793603805
       sample=0.035,at=1793608451
-    TimeTotal:step,avg=0.004
-      sample=0.003,at=1792666015
-      sample=0.003,at=1792666026
+      sample=0.017,at=1793659663
+      sample=0.039,at=1793662557
+    TimeTotal:step,avg=0.005
       sample=0.003,at=1792898483
       sample=0.003,at=1793324117
       sample=0.005,at=1793328186
@@ -27,6 +25,8 @@ story:AthePondReseat
       sample=0.003,at=1793579711
       sample=0.007,at=1793603805
       sample=0.007,at=1793608451
+      sample=0.003,at=1793659663
+      sample=0.008,at=1793662557
   step,dige:df14b1793d0b550f
   {"step":2,"desc":"a glass with a deep view of the recorded pond — a snap decoded to C, held on the glass, not in the world","dige":"50c866b3e8bec7dc"}
     {"Assertion":"a-deep-view-seats","sentence":"a deep view seats a whole tree — every line a point, nested as the snap is, and the tree held elsewhere"}

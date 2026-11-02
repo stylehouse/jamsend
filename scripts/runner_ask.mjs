@@ -1398,7 +1398,7 @@ if (watch && (op === 'run' || op === 'state') && reply.control === 'runner_ack')
 	while (Date.now() - t0 < WATCH_MS) {
 		// 2s, not 700ms (2026-11-02): each poll is two console lines on the runner (ws RECV + 📥 state) — a sweep of 40 Books
 		//  flooded its ring; a run settles in seconds either way
-		await new Promise(r => setTimeout(r, Number(process.env.RUNNER_WATCH_POLL_MS || 2000)))
+		await new Promise(r => setTimeout(r, Number(process.env.RUNNER_WATCH_POLL_MS || 1000)))
 		const s = await sendAsk(ws, { op: 'state' })
 		if (s.control !== 'runner_ack') {
 			const now = Date.now()
@@ -1435,6 +1435,12 @@ if (watch && (op === 'run' || op === 'state') && reply.control === 'runner_ack')
 		if (acWaited && run) { acWaited = false; console.error(`✓ AudioContext granted — running`) }
 		const tag = run ? `${run.phase} ${run.n ?? '?'}/${run.total ?? '?'}` : 'no run'
 		if (tag !== last) { console.log(`… ${JSON.stringify({ run, outcome: out })}`); last = tag; progress = Date.now() }   // a step advanced ⇒ reset the death-clock
+		// a run that never leaves begun (no step yet) is the begun-wedge (memory begun-wedge-lost-drain) — give it up after
+		//  RUNNER_BEGUN_MS so the sweep's retry comes in seconds, not after the whole watch budget (2026-11-03)
+		if (run && run.n == null && /begun/.test(String(run.phase)) && Date.now() - progress > Number(process.env.RUNNER_BEGUN_MS || 20000)) {
+			console.error(`✗ stalled at ${run.phase} ${Math.round((Date.now() - progress) / 1000)}s with no step — NEVER STARTED`)
+			exitCode = 1; break
+		}
 		if (run && (run.phase === 'done' || run.phase === 'failed')) {
 			// contract verdict (Seen_split rulings): a declared %Assertion whose %sworn never latched
 			//  is a NAMED red, un-maskable by entropy — surface it distinctly from a step/dige failure.

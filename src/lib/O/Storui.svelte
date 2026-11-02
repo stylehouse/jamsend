@@ -307,6 +307,10 @@
         const book = display.run_sc?.run as string | undefined
         if (!book) return
         stash_loaded = true   // arm the guard before any mutations below
+        // a Story inside a Book's run (a Desk under a Run House — it keeps a door, Housing door_open) is the Book's subject, not the
+        //  user's page: restoring "Storui:<inner Book>" sent AtheStoryPick's open step 2 into AtheStoryInStory's inner AthePondRounds
+        //   five seconds in, by story_sel (2026-11-03)
+        if ((H as any).up?.c?.runtime !== undefined) return
         const saved = H.stashed?.['Storui:' + book] as { open_at?: number, open_at_ts?: number, sticky_mode?: DiffMode, expanded?: boolean } | undefined
         if (!saved) return
         if (saved.expanded    != null) expanded     = saved.expanded
@@ -945,6 +949,10 @@
     // so pick() setting it cannot re-trigger the effect. $state here would create
     // a loop: pick() → last_user_pick changes → re-assert fires again mid-flight.
     let last_user_pick: number | null = null
+    // …and on WHICH Story: a re-assert onto another Story (the next Book's Desk mounting where the last one stood — a new This)
+    //  sent the old pick to it by name (AtheStoryPick's step 2 opened inside AtheStoryInStory's inner Story, 2026-11-03)
+    let picked_This: TheC | undefined = undefined
+    let picked_H: House | undefined = undefined
 
     function pick(n: number) {
         if (diff_collecting && diff_anchor != null && n !== diff_anchor) {
@@ -957,6 +965,8 @@
             diff_anchor     = null
         }
         last_user_pick = n
+        picked_This = This
+        picked_H = H
         // opening a step pip IS a show-diff choice — the mutex swaps sworn mode away here
         //  exactly like the mode buttons do.  (The assertion-mark click still lands in the
         //   explorer: it calls pick() first, then open_explorer() re-raises it.)
@@ -1006,6 +1016,8 @@
         if (server_at == null)            return   // server closed — fine
         if (displayed_at == null)         return   // nothing open yet — let server decide
         if (server_at === last_user_pick) return   // this was our own pick echoing back
+        if (last_user_pick == null) return   // nobody picked — the server's open_at is the Story's own to keep
+        if (H !== picked_H || This !== picked_This) return   // another Story now — what was picked was picked on the last one
         // server jumped to a different step — re-assert what the user was looking at
         pick(displayed_at)
     })

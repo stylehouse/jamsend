@@ -1222,6 +1222,23 @@ export class House extends StorableHousing {
         this.main(true)
     }
 
+    // the door (AtheoryNexus_todo §3.4, first slice): knock() = "something arrived for you, think when you may".  A House
+    //  whose door is SHUT — a Story's Run House between steps, c.runtime false — keeps the knock instead of dropping it
+    //   (feebly_ponder's old silence, which the next step's blanket think covered by luck); door_open() counts the kept
+    //    knocks in, and the step's own think delivers them.  A House that never had a door (c.runtime undefined — a page's,
+    //     a Desk's) is woken outright.
+    knock() {
+        if (this.c.runtime === false) { this.c.knocks = (this.c.knocks || 0) + 1; return }
+        this.main(true)
+    }
+    door_open(): number {
+        this.c.runtime = true
+        const k = this.c.knocks || 0
+        this.c.knocks = 0
+        return k
+    }
+    door_shut() { this.c.runtime = false }
+
     // ponder_now: an UNTHROTTLED think push, for a real event that must not wait out the ambient
     //  throttle.  main()/feebly_ponder()/ponder() all funnel through main_throttle at
     //   AMBIENT_MAIN_TICK_MS (200 ms) — deliberately, because ambient chatter SHOULD collapse.
@@ -1448,6 +1465,7 @@ export class House extends StorableHousing {
         // an item actually moved — the ONE fact that says this House is alive.  A standing queue
         //  with a stale drain_at is the wedge; a standing queue with a fresh one is just a backlog.
         this.c.drain_at = Date.now()
+        this.c.drain_tag = e.c.push_tag      // what that drain took (the 📭 hand-on guard names it)
         // ELECTRODE (2026-08-07) — DRAIN LAG readout.  Read `why` BEFORE the delete below: it holds the
         //  reason the LAST look bailed, which is the whole question when an item waited seconds.
         //  HOW TO READ THE FORK (runner_ask world → `drain-lag` marks):
@@ -1481,8 +1499,14 @@ export class House extends StorableHousing {
         this.todo_version++
         if (e.sc.elvis == 'think') {
             // merge duplicate e:think at the start of the todo
-            //  so we don't remove any think from between non-think
-            while (this.todo[0]?.sc.elvis == 'think') this.todo.shift()
+            //  so we don't remove any think from between non-think.
+            //  ONLY WHAT e COVERS (2026-11-03): a plain think (no Aw, no ref) walks every w, so it covers any think; an AIMED
+            //   think (i_elvisto(X,'think')) runs only X, so it covers only the same aim.  It used to swallow a plain think
+            //    queued behind it — a disk reply's ponder_now — and the Wormhole never got the pass that hands the reply on:
+            //     read_toc settled in 5ms, handed on 48.9s later (AthePondTendril NEVER STARTED; the 📭 guard's "thinks since 1")
+            const aimed = (t: TheC) => !!(t.sc.Aw || t.c.target || t.c.to_A)
+            const covers = (t: TheC) => !aimed(e) || (!t.c.target && !t.c.to_A && !e.c.target && !e.c.to_A && t.sc.Aw === e.sc.Aw)
+            while (this.todo[0]?.sc.elvis == 'think' && covers(this.todo[0])) this.todo.shift()
             if (0) {
                 // skip to the final thought! everything more specific will be done first
                 let finalthought = grep(e=>e.sc.elvis == 'think', this.todo).pop()
@@ -1594,6 +1618,7 @@ export class House extends StorableHousing {
     // -------------------------------------------------------------------------
     async beliefs(e?: TheC) {
         if (REACTAP.on) REACTAP.thinks++   // census: bumps-per-think needs the denominator
+        if (!e || e.sc.elvis === 'think') this.c.thinks_n = Number(this.c.thinks_n ?? 0) + 1   // the 📭 hand-on guard counts these
         if (e) this._expand_Aw(e)
         V.organise && console.log(`beliefs() e%${e ? keyser(e.sc) : 'none'}`)
 
@@ -2836,6 +2861,7 @@ export class House extends StorableHousing {
             const enq = Number(wrap.c.enq_at ?? 0), lau = Number(wrap.c.started_at ?? 0), set = Number(wrap.c.settled_at ?? 0)
             if (enq && lau && set && t_done - enq > 300)
                 console.log(`⏱ wormhole ${(wrap.c.label as string) || '?'} total ${t_done - enq}ms — queue→launch ${lau - enq} · launch→settle ${set - lau} · settle→done ${t_done - set}${Number(wrap.c.tries ?? 1) > 1 ? ` · tries ${wrap.c.tries}` : ''}`)
+            wrap.c.handed = 1
             done(wrap.c.reply); return
         }
         const H = this as House
@@ -2935,8 +2961,27 @@ export class House extends StorableHousing {
                 return
             }
             wrap.c.reply = reply
-            wrap.c.settled_at = Date.now()
+            const settled = wrap.c.settled_at = Date.now()
+            const thinks_at_settle = Number(H.c.thinks_n ?? 0)
             H.ponder_now()
+            // THE HAND-ON GUARD (2026-11-03): a read_toc settled in 5ms sat 48.9s before a pass handed it on (settle→done), the drain
+            //  dog silent and the ambient tick starved by runner_ask's polls — a Book NEVER STARTED.  So each settled reply checks
+            //   once: not handed on in 1.5s → say why, in one line, and drive the House's drain
+            setTimeout(() => {
+                if (wrap.c.handed || wrap.c.settled_at !== settled) return
+                const now = Date.now()
+                const line = `📭 wormhole ${what} answered ${now - settled}ms ago, not handed on — H:${H.name} stopped=${H.stopped ? 1 : 0} started=${H.started ? 1 : 0} todo=${H.todo.length} why=${H.c.drain_why ?? '—'} drained ${now - Number(H.c.drain_at ?? 0)}ms ago (${H.c.drain_tag ?? '?'}) · Wormhole ran ${now - Number(H.c.wormhole_ran_at ?? 0)}ms ago · thinks since ${Number(H.c.thinks_n ?? 0) - thinks_at_settle} · todo [${H.todo.map((t: TheC) => t.c.push_tag ?? '?').join(' ')}] · driving it`
+                console.warn(line)
+                H.diag(line)
+                const M = H.top_House() as any
+                M.c.drain_stuck_n = (M.c.drain_stuck_n ?? 0) + 1
+                const ring = (M.c.drain_stuck ??= []) as string[]
+                ring.push(`${line} @${now % 100000}`)
+                if (ring.length > 20) ring.splice(0, ring.length - 20)
+                if (H.stopped) return
+                H.answer_calls_waiting = false
+                H.ponder_now()
+            }, 1500)
         })
     }
 
@@ -3082,6 +3127,7 @@ export class House extends StorableHousing {
         //   (the elvis req + its finish live in .c, not sc).  fs.do(fn) pumps them.
         const fs = w.oai({ fs_op: 1 })
 
+        H.c.wormhole_ran_at = Date.now()   // the 📭 hand-on guard: did a pass reach the Wormhole after the reply landed?
         const wh_pending = H.o_elvis_req(w, 'wh_op')
         if (wh_pending.length) this.diag(`Wormhole() sees ${wh_pending.length} pending wh_op req(s)`)
         for (const { req, finish } of wh_pending) {

@@ -1,29 +1,24 @@
 Snap:H
   H:AtheStoryPick,Run
     A:AtheStoryPick
-      self,round=3	{"mung":["age"]}
       w:AtheStoryPick
-        self,round=3	{"mung":["age"]}
         req:wrangle,eternal,ok
     H:Desk	{"loopy":1}
       A:Desk
-        self,round=7	{"mung":["age"]}
         GroundUsed:Core,via:Story
-        TheACode:Ground/Core,variant:plain,dige:28f51019007285e6
-          TheALayer:Ghost/A/Theory.g,dige:d2e777d714065ac5~g1
+        TheACode:Ground/Core,variant:plain,dige:ccf1859c56ad6d1b
+          TheALayer:Ghost/A/Theory.g,dige:804ebab235555f08~g1
           TheALayer:Ghost/A/Stuffica.g,dige:1f0ec09474696daa~g1
-          TheALayer:Ghost/A/Ground.g,dige:9a00574f49138f7a~g1
+          TheALayer:Ghost/A/Ground.g,dige:164ccddf95ad6245~g1
         GroundUsed:Story
-        TheACode:Ground/Story,variant:plain,dige:cf72ff338142ba52
-          TheALayer:Ghost/O/StoryFu.g,dige:f3c43fc3c92c62c4~g1
+        TheACode:Ground/Story,variant:plain,dige:b4c2488b84a84993
+          TheALayer:Ghost/O/StoryFu.g,dige:a6f7768d9ec69d8e~g1
           TheALayer:Ghost/O/Supervisor.g,dige:4efe70cdd7ae19ac~g1
         GroundAside
         TheABelieves
         A:Story
-          self,round=11	{"mung":["age"]}
           w:Story,Book:AthePondRounds
             StoryLeash:ready
-            self,round=11	{"mung":["age"]}
             The,story:AthePondRounds
               Styles
               Plan
@@ -33,8 +28,6 @@ Snap:H
               Sabotage:boundary_readies_nobody,of:Ghost/A/Theory.g,method:TheA_boundary,with:AtheSabotage_boundary_readies_nobody,at:3,bites:a-pulse-sent-in with-nothing-waiting-the
               EntropyArrest
                 Entcase:Self_round
-                  lematch,self,round
-                    means,drop
               TimeSpool
               step,dige:acc822a82c0f14d0
               step=2,desc:stand P nine turns ahead streaming into Q — and R with a clock and nothing on it,dige:9994865185e9847b
@@ -54,7 +47,6 @@ Snap:H
           DeskGround:Story
           DeskAside
           DeskBook:AthePondRounds
-          self,round=7	{"mung":["age"]}
       H:AthePondRounds,Run	{"loopy":0}
       watched:subHouses
         H,Run	{"loopy":0,"hid":1}

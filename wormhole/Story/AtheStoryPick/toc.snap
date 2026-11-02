@@ -4,31 +4,35 @@ story:AtheStoryPick
   Opt
     For
   Stands:CoreTesting
+  EntropyArrest
+    Entcase:Self_round
+      lematch,self,round
+        means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.034
-      sample=0.026,at=1793608858
-      sample=0.085,at=1793615283
-      sample=0.038,at=1793617536
-      sample=0.032,at=1793617543
-      sample=0.036,at=1793617769
-      sample=0.023,at=1793617776
-      sample=0.027,at=1793618823
-      sample=0.025,at=1793618829
-      sample=0.027,at=1793618890
-      sample=0.023,at=1793648658
-    TimeTotal:step,avg=0.011
-      sample=0.009,at=1793608858
-      sample=0.028,at=1793615283
-      sample=0.013,at=1793617536
-      sample=0.011,at=1793617543
-      sample=0.012,at=1793617769
-      sample=0.008,at=1793617776
-      sample=0.009,at=1793618823
-      sample=0.008,at=1793618829
-      sample=0.009,at=1793618890
-      sample=0.008,at=1793648658
-  step,dige:f65decd578adef02
-  step=2,desc:stand a Desk whose new Story runs AthePondRounds — held at ready,dige:fd7924fecaf05d8a
-  step=3,desc:click step 1 then step 2 on the strip — before the House thinks,dige:af43af3864cf7248
+    TimeTotal:beliefs,avg=0.025
+      sample=0.025,at=1793662277
+      sample=0.026,at=1793662281
+      sample=0.024,at=1793662287
+      sample=0.023,at=1793662335
+      sample=0.034,at=1793662343
+      sample=0.028,at=1793662348
+      sample=0.022,at=1793662362
+      sample=0.022,at=1793662371
+      sample=0.024,at=1793662385
+      sample=0.024,at=1793662694
+    TimeTotal:step,avg=0.008
+      sample=0.008,at=1793662277
+      sample=0.009,at=1793662281
+      sample=0.008,at=1793662287
+      sample=0.008,at=1793662335
+      sample=0.011,at=1793662343
+      sample=0.009,at=1793662348
+      sample=0.007,at=1793662362
+      sample=0.007,at=1793662371
+      sample=0.008,at=1793662385
+      sample=0.008,at=1793662694
+  step,dige:75dee01d7f2037cd
+  step=2,desc:stand a Desk whose new Story runs AthePondRounds — held at ready,dige:c1bc65a3e7e4da80
+  step=3,desc:click step 1 then step 2 on the strip — before the House thinks,dige:9265fa5492c5963f
     Assertion:two-clicks-before-a,sentence:two clicks before a think are one move of the strip — it ate both and kept the latest — Picked 2
     Assertion:the-strip-s-move,sentence:the strip’s move tells the inner Story — it opens step 2 — the click never wrote the Story itself

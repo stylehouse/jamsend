@@ -5,13 +5,15 @@ story:AthePondAttendMark
     For
   Stands:CoreTesting
   TimeSpool
-    TimeTotal:beliefs,avg=0.016
+    TimeTotal:beliefs,avg=0.017
       sample=0.014,at=1793604447
       sample=0.02,at=1793604630
       sample=0.02,at=1793604645
       sample=0.016,at=1793606238
       sample=0.012,at=1793607018
       sample=0.015,at=1793608227
+      sample=0.008,at=1793659539
+      sample=0.028,at=1793662432
     TimeTotal:step,avg=0.008
       sample=0.007,at=1793604447
       sample=0.01,at=1793604630
@@ -19,6 +21,8 @@ story:AthePondAttendMark
       sample=0.008,at=1793606238
       sample=0.006,at=1793607018
       sample=0.007,at=1793608227
+      sample=0.004,at=1793659539
+      sample=0.014,at=1793662432
   step,dige:289438c4c3214b74
   step=2,desc:a Desk attending think holds a Note and a pond attending run — an unmarked pond beside — poke the run pond’s clock,dige:3dc4cc660d88f812
     Assertion:an-a-held-by,sentence:an A held by a holder attending think is thought and watched — the beliefs walk reaches it and its channel is enrolled

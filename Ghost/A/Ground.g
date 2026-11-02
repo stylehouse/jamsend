@@ -154,6 +154,8 @@ Desk_pick(D, n):
     let sw = desk?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0]
     if (!sw) return false
     let hand = desk.oai({ A: 'Hand' })
+    // its w now, not by the think walk's procure (an A with no w gets one) — which landed before or after the strip's run rows by timing
+    hand.oai({ w: 'Hand' })
     if (!hand.o({ TheAAttend: 'run' }).length) hand.i({ TheAAttend: 'run' })
     let tw = hand.oai({ A: 'Strip' }).oai({ w: 'Desk_Strip' })
     tw.c.story = sw

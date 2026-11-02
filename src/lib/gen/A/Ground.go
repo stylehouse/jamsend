@@ -11,7 +11,7 @@ import { ground_closure, ground_loads, GROUND_CORE } from "$lib/A/ground"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_Ground(): string { return '164ccddf95ad6245~g1' },
+    Ghostmeta_Ghost_A_Ground(): string { return '138e9b3907799a29~g1' },
 
 // Ground.g — what a tab stands on, said as particles on the A that stands on it (spec/Aprac_todo.md §0.5).
 //
@@ -176,6 +176,8 @@ Desk_pick(D, n) {
     let sw = desk?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0]
     if (!sw) return false
     let hand = desk.oai({ A: 'Hand' })
+    // its w now, not by the think walk's procure (an A with no w gets one) — which landed before or after the strip's run rows by timing
+    hand.oai({ w: 'Hand' })
     if (!hand.o({ TheAAttend: 'run' }).length) hand.i({ TheAAttend: 'run' })
     let tw = hand.oai({ A: 'Strip' }).oai({ w: 'Desk_Strip' })
     tw.c.story = sw

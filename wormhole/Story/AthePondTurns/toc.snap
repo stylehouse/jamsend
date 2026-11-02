@@ -9,9 +9,7 @@ story:AthePondTurns
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.018
-      sample=0.027,at=1793155930
-      sample=0.008,at=1793167985
+    TimeTotal:beliefs,avg=0.022
       sample=0.015,at=1793168070
       sample=0.017,at=1793324203
       sample=0.014,at=1793328407
@@ -20,9 +18,9 @@ story:AthePondTurns
       sample=0.026,at=1793579930
       sample=0.021,at=1793603900
       sample=0.028,at=1793608798
-    TimeTotal:step,avg=0.003
-      sample=0.004,at=1793155930
-      sample=0.001,at=1793167985
+      sample=0.03,at=1793659792
+      sample=0.041,at=1793662647
+    TimeTotal:step,avg=0.004
       sample=0.003,at=1793168070
       sample=0.003,at=1793324203
       sample=0.002,at=1793328407
@@ -31,6 +29,8 @@ story:AthePondTurns
       sample=0.004,at=1793579930
       sample=0.003,at=1793603900
       sample=0.005,at=1793608798
+      sample=0.005,at=1793659792
+      sample=0.007,at=1793662647
   step,dige:e02906163baa1dda
   step=2,desc:stand a tank that keeps its last three Turns — and wake one clock pulse,dige:d733d00b89a421f1
   step=3,desc:3 clock pulses — woken together,dige:870b489fc058f457
