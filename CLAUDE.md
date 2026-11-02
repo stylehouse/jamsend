@@ -207,7 +207,7 @@ Show the arc, not just the diff.
     policy is the last `What` of Everything. Everything and the area Wafts are generated + validated by
      `scripts/wafts_everything.mjs` — edit THAT, re-run it, reload the editor; never hand-edit those tocs.
       **`wormhole/Credence/toc.snap` is the exception: it is EDITED BY HAND** (one `Funkcion:Storying,of_Book:…` row
-       per Book, beside its neighbours) — the script only points at it.  A new Book gets its row there.
+       per Book, beside its neighbours) — the script only points at it.  A new Book gets its row there, and `Stands:<Ground>` in its own toc.
 
 ## Docs: specs, todos, and the history/ shelf
 
@@ -295,6 +295,12 @@ Verify a Book by asking a LIVE runner to run it — not a headless boot.
   - `node scripts/runner_ask.mjs rungos`             — held runs, each addressable `@uid`
  Exit 1 when a `--watch` run finishes red, so it scripts. `story_repl.mjs` is the
   interactive twin (`@uid` addresses a held run).
+ **Many Books: `scripts/runner_sweep.mjs [--runner=<id>] [--reload] [--swap=a.g,b.g] [--quiet] <Book|Glob*>…`** — one line per
+  Book (✓ / ~ flake / ✗ with a capped digest: oath gaps, first failing step, its snap diff vs the fixture, that run's console warnings /
+   ∅ HOLLOW), a tally, exit 1 on a red.  Globs skip every Credence row carrying `unusual:<why>` (destinations, migrations, stale
+    fixtures, runner-killers); `--list` prints the selection and runs nothing.  ⚠ A Book runs HOLLOW (no `req:wrangle`, 0 sworn) when its toc lacks `Stands:<Ground>` —
+     a new Book's toc is born without it; add `  Stands:CoreTesting` (or its Ground) after `Opt/For` with its Credence row.  `--swap` only hot-swaps a
+      recompiled ghost into a tab without a reload; a reload already gets the fresh `.go`.
  **A REMOTE NODE** (another host's server) works the same way, with discovery off the wire
   instead of the local registry: `RUNNER_URL=https://box:9999 node scripts/runner_ask.mjs
    runners --live` (an https origin becomes `wss://…/relay`). `--live` is implied whenever

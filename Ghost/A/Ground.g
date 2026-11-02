@@ -138,6 +138,37 @@ Desk_leash_on(D, at, n):
     if (sw) this.Desk_leash_carry(w, sw)
     return w
 
+// THE STEP STRIP'S POCKET (AtheoryNexus_todo §0 item 3, §3.13 "Pockets") — Storica's click on a step, as an arrival.  The click
+//  is a pulse on A:Desk/A:Hand/A:Strip's w (A:Hand attends the run loop, so the House's think runs it), summed latest: two clicks
+//   before a think are one move.  The move keeps %Picked:<n> and sends the pick on to the Story as an elvis — Out, after the run;
+//    the Story is legacy think code and is told, not written.  Stood on the first click, so a Desk never clicked is unchanged
+//
+//      A:Desk  %TheABelieves
+//        A:Story / w:Story               ← told story_sel, by ref
+//        A:Hand  %TheAAttend:run
+//          A:Strip / w:Desk_Strip
+//            %TheASynapse:pick,sum:latest      ← its move is Desk_Strip_woken
+//            %Picked:2
+Desk_pick(D, n):
+    let desk = D.o({ A: 'Desk' })[0]
+    let sw = desk?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0]
+    if (!sw) return false
+    let hand = desk.oai({ A: 'Hand' })
+    if (!hand.o({ TheAAttend: 'run' }).length) hand.i({ TheAAttend: 'run' })
+    let tw = hand.oai({ A: 'Strip' }).oai({ w: 'Desk_Strip' })
+    tw.c.story = sw
+    let pick = tw.o({ TheASynapse: 'pick' })[0] || tw.i({ TheASynapse: 'pick', sum: 'latest' })
+    D.TheA_poke(pick, { open_at: n })
+    return true
+
+// Desk_Strip_woken — the strip's move (TheA_run wakes a w by <w>_woken): keep what was picked, and send it on to the Story
+//  it was stood for
+Desk_Strip_woken(w, synapse, pulse):
+    let n = pulse.sc.open_at
+    for (const row of w.o({ Picked: 1 })) w.drop(row)
+    w.i({ Picked: n })
+    if (w.c.story) this.i_elvisto(w.c.story, 'story_sel', { open_at: n })
+
 // Desk_leash_carry — the inner w's %StoryLeash made to say what w:Desk's %DeskLeash says (absent ⇒ absent)
 Desk_leash_carry(w, sw):
     let want = w.o({ DeskLeash: 1 })[0]

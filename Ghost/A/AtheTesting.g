@@ -3443,3 +3443,221 @@ AthePondIdentity_witness(w, n):
         this.story_swear(w, 'with the veto off the lookalike takes the old one’s D — resemblance is what the veto stops')
     }
 //#endregion
+//#region the test routine — Book AthePondAip
+// every standing thing has an id of its own (Housing.Aip_claim, Theory.g TheA_tree; AtheoryNexus_todo §3.10).  Two ponds each
+//  hold a Clock_A and a Tank — the same names twice.  Step 2: every A and compartment has an Aip, all different, each its holder's
+//   id and then a slot, and an Aip finds exactly its own A where the name finds only the nearest.  Step 3 drops Q's clock and
+//    stands one exactly like it: the new clock gets a new id, the old id finds nothing, and nothing else's id moved.  The ids
+//     are .c only, so the snap never shows them — the oaths compare them
+AthePondAip(A,w):
+    w oai %req:wrangle,eternal
+        await &AthePondAip_drive,w,req
+        req%ok = 1
+
+async AthePondAip_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 3
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) {
+            w.i({ desc: 'stand two ponds — each a Clock_A and a Tank — and give every standing thing its id' })
+            this.AthePondAip_stand()
+        }
+        if (n === 3) {
+            w.i({ desc: 'drop Q’s Clock_A and stand one exactly like it' })
+            this.AthePondAip_swap(w)
+        }
+        this.AthePondAip_witness(w, n)
+    }
+
+AthePondAip_clock(pond):
+    let c = this.TheA_stand(pond, 'Clock_A', [], null, 'Athe_Clock').i({ w: 'Athe_Clock' })
+    c.i({ TheASynapse: 'poke', wake: 'tick', sum: 'count' })
+    c.i({ TheAAxon: 'clock' })
+
+AthePondAip_stand():
+    for (const name of ['Aip_P', 'Aip_Q']) {
+        let old = this.o({ A: name })[0]
+        if (old) this.drop(old)
+        let pond = this.TheA_stand(this, name, ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Pond')
+        this.AthePondAip_clock(pond)
+        let t = this.TheA_stand(pond, 'Tank', [], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
+        t.i({ TheASynapse: 'clock', from: 'Clock_A', wake: 'turn', sum: 'count' })
+    }
+    this.TheA_tree()
+
+// the old clock's id and every id there was, kept on .c, so step 3 can say a slot was never given out twice
+AthePondAip_swap(w):
+    let Q = this.o({ A: 'Aip_Q' })[0]
+    let old = Q?.o({ A: 'Clock_A' })[0]
+    if (!old) return
+    w.c.was = { clock: old.c.Aip, all: this.AthePondAip_ids().map(x => x.n.c.Aip) }
+    Q.drop(old)
+    this.AthePondAip_clock(Q)
+    this.TheA_tree()
+
+// every A and compartment the two ponds stand, with its holder
+AthePondAip_ids():
+    let out = []
+    for (const name of ['Aip_P', 'Aip_Q']) {
+        let pond = this.o({ A: name })[0]
+        if (!pond) continue
+        out.push({ n: pond, up: this })
+        for (const A of pond.o({ A: 1 })) {
+            out.push({ n: A, up: pond })
+            for (const ww of A.o({ w: 1 })) out.push({ n: ww, up: A })
+        }
+    }
+    return out
+
+AthePondAip_witness(w, n):
+    let ids = this.AthePondAip_ids()
+    let aips = ids.map(x => x.n.c.Aip)
+    let all_have = ids.length === 10 && aips.every(a => this.TheA_is_aip(a))
+    let distinct = new Set(aips).size === aips.length
+    let nested = ids.every(x => x.n.c.Aip?.startsWith((x.up.c.Aip || '') + '.') && !x.n.c.Aip.slice(x.up.c.Aip.length + 1).includes('.'))
+    let P = this.o({ A: 'Aip_P' })[0]
+    let Q = this.o({ A: 'Aip_Q' })[0]
+    let cP = P?.o({ A: 'Clock_A' })[0]
+    let cQ = Q?.o({ A: 'Clock_A' })[0]
+    if (n === 2 && all_have && distinct && nested) {
+        this.story_swear(w, 'every A and compartment standing has an id — all different — each its holder’s id and then one slot')
+    }
+    if (n === 2 && cP && cQ && this.TheA_by(cQ.c.Aip) === cQ && this.TheA_by(cP.c.Aip) === cP
+        && this.TheA_at(cQ.c.Aip + '/Athe_Clock') === cQ.o({ w: 'Athe_Clock' })[0]) {
+        this.story_swear(w, 'an id finds exactly its own A — Q’s Clock_A by its id — where the name Clock_A finds only one of the two')
+    }
+    let was = w.c.was
+    if (n === 3 && was && cQ && distinct && cQ.c.Aip !== was.clock && !this.TheA_by(was.clock)
+        && !was.all.includes(cQ.c.Aip) && aips.filter(a => !was.all.includes(a)).length === 2) {
+        this.story_swear(w, 'a clock dropped and stood again alike gets a new id never given out before — the old id finds nothing — no other id moved')
+    }
+//#endregion
+//#region the test routine — Book AthePondAttendMark
+// one attention mark (Housing attends(); AtheoryNexus_todo §3.2).  A holder says which loop its As attend: %TheAAttend:think
+//  (what %TheABelieves always meant) — thought, pumped, findable, watched — or %TheAAttend:run — findable and watched only, moved
+//   by pulse.  A:Mark_Desk carries think and holds A:Mark_Note (a w with a %watched channel) and A:Mark_Run, which carries run and
+//    holds a Clock_A and a Tank (the clock's w with a %watched channel too).  A:Mark_Still beside the Desk holds the same, unmarked.
+//     Step 2 stands it all and pokes Mark_Run's clock; the oaths read the House's own walk, its finder and its watch list
+AthePondAttendMark(A,w):
+    w oai %req:wrangle,eternal
+        await &AthePondAttendMark_drive,w,req
+        req%ok = 1
+
+async AthePondAttendMark_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 2
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) {
+            w.i({ desc: 'a Desk attending think holds a Note and a pond attending run — an unmarked pond beside — poke the run pond’s clock' })
+            this.AthePondAttendMark_stand()
+            this.enroll_watched()
+            this.TheA_poke(this.AthePondAttendMark_clock('run')?.o({ w: 'Athe_Clock' })[0]?.o({ TheASynapse: 'poke' })[0])
+            this.AtheStoryInStory_hold(w, () => {
+                let turns = this.AthePondAttendMark_clock('run', 'Tank')?.o({ w: 'Athe_Tank' })[0]?.o({ Turns: 1 })[0]?.sc.count || 0
+                if (turns < 1 || !this.AthePondIdentity_D(this.AthePondAttendMark_note())) return false
+                this.AthePondAttendMark_witness(w)
+                return true
+            })
+        }
+    }
+
+AthePondAttendMark_stand():
+    for (const name of ['Mark_Desk', 'Mark_Still']) {
+        let old = this.o({ A: name })[0]
+        if (old) this.drop(old)
+    }
+    let desk = this.TheA_stand(this, 'Mark_Desk', ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Pond')
+    desk.i({ TheAAttend: 'think' })
+    this.TheA_stand(desk, 'Mark_Note', [], null, 'Athe_Pond').i({ w: 'Mark_Note' }).i({ watched: 'mark_note' })
+    let marked = this.TheA_stand(desk, 'Mark_Run', [], null, 'Athe_Pond')
+    marked.i({ TheAAttend: 'run' })
+    let still = this.TheA_stand(this, 'Mark_Still', ['Ghost/A/AtheFishTesting.g'], null, 'Athe_Pond')
+    for (const pond of [marked, still]) {
+        let c = this.TheA_stand(pond, 'Clock_A', [], null, 'Athe_Clock').i({ w: 'Athe_Clock' })
+        c.i({ TheASynapse: 'poke', wake: 'tick', sum: 'count' })
+        c.i({ TheAAxon: 'clock' })
+        c.i({ watched: 'mark_clock' })
+        let t = this.TheA_stand(pond, 'Tank', [], null, 'Athe_Tank').i({ w: 'Athe_Tank' })
+        t.i({ TheASynapse: 'clock', from: 'Clock_A', wake: 'turn', sum: 'count' })
+    }
+
+AthePondAttendMark_note():
+    return this.o({ A: 'Mark_Desk' })[0]?.o({ A: 'Mark_Note' })[0]
+
+// an A in the run pond ('run') or the unmarked one ('still')
+AthePondAttendMark_clock(which, name):
+    let pond = which === 'run' ? this.o({ A: 'Mark_Desk' })[0]?.o({ A: 'Mark_Run' })[0] : this.o({ A: 'Mark_Still' })[0]
+    return pond?.o({ A: name || 'Clock_A' })[0]
+
+AthePondAttendMark_watched(A, ww):
+    let C = A?.o({ w: ww })[0]?.o({ watched: 1 })[0]
+    return !!C && this.watched.some(x => x.C === C)
+
+AthePondAttendMark_witness(w):
+    let note = this.AthePondAttendMark_note()
+    let rc = this.AthePondAttendMark_clock('run')
+    let sc = this.AthePondAttendMark_clock('still')
+    let found = this._A_near(this, 'Clock_A', { house: this })?.A
+    if (this.AthePondIdentity_D(note) && this.AthePondAttendMark_watched(note, 'Mark_Note')) {
+        this.story_swear(w, 'an A held by a holder attending think is thought and watched — the beliefs walk reaches it and its channel is enrolled')
+    }
+    if (found === rc && this.AthePondAttendMark_watched(rc, 'Athe_Clock') && !this.AthePondAttendMark_watched(sc, 'Athe_Clock')) {
+        this.story_swear(w, 'an A in a pond attending run is findable and watched — a name from the House reaches it — the unmarked pond’s is neither')
+    }
+    if (rc && !this.AthePondIdentity_D(rc) && (rc.o({ w: 'Athe_Clock' })[0]?.o({ Ticks: 1 })[0]?.sc.count || 0) === 1) {
+        this.story_swear(w, 'an A in a pond attending run is not thought — the beliefs walk never reaches it — it moved once by its pulse')
+    }
+//#endregion
+//#region the test routine — Book AtheStoryPick
+// a click as an arrival (Ground.g Desk_pick; AtheoryNexus_todo §0 item 3, §3.13 "Pockets").  Storica's click on a step pokes the
+//  Desk's step-strip pocket — A:Desk/A:Hand (%TheAAttend:run)/A:Strip — and the House's own think moves it; the move tells the
+//   inner Story story_sel by ref.  Step 2 stands a Desk whose Story runs AthePondRounds, held at ready.  Step 3 clicks step 1 and
+//    then step 2 before the House thinks: one move, the latest wins, and the inner Story opens step 2
+AtheStoryPick(A,w):
+    w oai %req:wrangle,eternal
+        await &AtheStoryPick_drive,w,req
+        req%ok = 1
+
+async AtheStoryPick_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 3
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        let stale = w.o({ req: 'inner_run' })[0]
+        if (stale) w.drop(stale)
+        if (n === 2) {
+            w.i({ desc: 'stand a Desk whose new Story runs AthePondRounds — held at ready' })
+            this.Desk_leash(this, 'ready')
+            this.Desk_story(this, 'AthePondRounds')
+        }
+        if (n === 3) {
+            w.i({ desc: 'click step 1 then step 2 on the strip — before the House thinks' })
+            let D = this.AtheStoryInStory_desk()
+            this.Desk_pick(D, 1)
+            this.Desk_pick(D, 2)
+        }
+    }
+    if (n === 2) this.AtheStoryInStory_hold(w, sw => this.AtheStoryInStory_stands(sw, 'ready'))
+    if (n === 3) this.AtheStoryInStory_hold(w, sw => sw?.o({ run: 1 })[0]?.sc.open_at === 2)
+    let sw = this.AtheStoryInStory_inner(w)
+    this.AtheStoryInStory_fold(w, sw, null, [])
+    if (n === 3) this.AtheStoryPick_witness(w, sw)
+
+AtheStoryPick_strip():
+    return this.AtheStoryInStory_desk()?.o({ A: 'Desk' })[0]?.o({ A: 'Hand' })[0]?.o({ A: 'Strip' })[0]?.o({ w: 'Desk_Strip' })[0]
+
+AtheStoryPick_witness(w, sw):
+    let tw = this.AtheStoryPick_strip()
+    let woke = tw?.o({ TheASynapse: 'pick' })[0]?.o({ TheAWoke: 1 })[0]
+    if (woke?.sc.count === 1 && woke?.sc.pulses === 2 && tw.o({ Picked: 2 }).length && tw.o({ Picked: 1 }).length === 0) {
+        this.story_swear(w, 'two clicks before a think are one move of the strip — it ate both and kept the latest — Picked 2')
+    }
+    if (sw?.o({ run: 1 })[0]?.sc.open_at === 2) {
+        this.story_swear(w, 'the strip’s move tells the inner Story — it opens step 2 — the click never wrote the Story itself')
+    }
+//#endregion

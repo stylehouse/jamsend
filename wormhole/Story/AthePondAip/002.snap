@@ -1,0 +1,31 @@
+Snap:H
+  H:AthePondAip,Run
+    A:AthePondAip
+      self,round=2	{"mung":["age"]}
+      w:AthePondAip
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+    A:Aip_P
+      TheACode:Athe_Pond,variant:plain
+        TheALayer:Ghost/A/AtheFishTesting.g
+      A:Clock_A
+        TheACode:Athe_Clock,variant:plain
+        w:Athe_Clock
+          TheASynapse:poke,wake:tick,sum:count
+          TheAAxon:clock
+      A:Tank
+        TheACode:Athe_Tank,variant:plain
+        w:Athe_Tank
+          TheASynapse:clock,from:Clock_A,wake:turn,sum:count
+    A:Aip_Q
+      TheACode:Athe_Pond,variant:plain
+        TheALayer:Ghost/A/AtheFishTesting.g
+      A:Clock_A
+        TheACode:Athe_Clock,variant:plain
+        w:Athe_Clock
+          TheASynapse:poke,wake:tick,sum:count
+          TheAAxon:clock
+      A:Tank
+        TheACode:Athe_Tank,variant:plain
+        w:Athe_Tank
+          TheASynapse:clock,from:Clock_A,wake:turn,sum:count

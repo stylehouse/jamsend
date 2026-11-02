@@ -84,20 +84,26 @@ const json_after = (out, prefix) => {
 const sleep = (ms) => new Promise(r => setTimeout(r, ms))
 
 // ── setup ───────────────────────────────────────────────────────────────────
+// ready = 3 green pings in a row whose reply says the spine has landed (ghosts:'ready'; a tab that predates that field
+//  counts on pings alone) — a tab answers pings while its ghosts are still loading, and a Book run then finds half a machine
+const ready = async (why) => {
+    let green = 0
+    for (let i = 0; i < 60 && green < 3; i++) {
+        await sleep(2000)
+        const p = ask('ping')
+        green = p.code === 0 && !/"ghosts":"loading"/.test(p.out) ? green + 1 : 0
+    }
+    if (green < 3) { console.log(`✗ runner not ready ${why} (3 green pings, ghosts loaded)`); process.exit(1) }
+}
 if (flag('reload')) {
     ask('reload')
-    let green = 0
-    for (let i = 0; i < 40 && green < 3; i++) {
-        await sleep(2000)
-        green = ask('ping').code === 0 ? green + 1 : 0
-    }
-    if (green < 3) { console.log('✗ runner did not come back after reload (3 green pings)'); process.exit(1) }
+    await ready('after reload')
 }
 for (const g of (val('swap') || '').split(',').filter(Boolean)) {
     const r = ask('ghost_load', g, '--swap')
     if (r.code !== 0 || !/"ok":true/.test(r.out)) console.log(`✗ swap ${g}: ${r.out.trim().split('\n').pop()}`)
 }
-if (val('swap')) await sleep(5000)
+if (val('swap')) { await sleep(5000); await ready('after swap') }
 
 // ── one Book ────────────────────────────────────────────────────────────────
 const fixtures = (b) => readdirSync(join(STORY, b)).filter(f => /^\d{3}\.snap$/.test(f)).length
@@ -108,7 +114,14 @@ const once = (b) => {
     const last = polls[polls.length - 1]
     const out = last?.outcome || {}
     const gaps = r.out.split('\n').filter(l => /✗ assertion «/.test(l)).map(l => l.trim())
-    const dead = /runner DEAD|REFUSED|BLOCKED/.exec(r.out)?.[0]
+    let dead = /runner DEAD|REFUSED|BLOCKED/.exec(r.out)?.[0]
+    // never started: no poll ever showed this Book's run stepping — engaged by another client, refused, or the ask lost.
+    //  Not a test result; say what runner_ask last said instead of an empty digest
+    const ours = polls.filter(p => p.run?.book === b)
+    if (!dead && !ours.some(p => p.run?.n != null)) {
+        const tail = r.out.trim().split('\n').filter(l => l && !/^\s*(failing steps|one step snap|release:|⚠ run went RED|run settled)/.test(l.trim())).slice(-2).join(' / ')
+        dead = 'NEVER STARTED — ' + (tail || 'no reply').slice(0, 200)
+    }
     return { ok: r.code === 0 && !!out.ok, done: out.done ?? last?.run?.done ?? 0, total: last?.run?.total ?? 0, caveat: out.caveat || 0, gaps, dead }
 }
 
@@ -154,9 +167,17 @@ const digest = (b, r) => {
 
 // ── the sweep ───────────────────────────────────────────────────────────────
 const tally = { '✓': 0, '~': 0, '✗': 0, '∅': 0, '?': 0 }
+const SETTLE_MS = Number(process.env.RUNNER_SWEEP_SETTLE_MS || 3000)
+let first = true
 for (const b of books) {
+    if (!first) await sleep(SETTLE_MS)
+    first = false
     const fx = fixtures(b)
     let r = once(b)
+    // a run that never started (another client's run, a lost ask) is tried once more before it is reported
+    // a runner wants a beat between runs (memory fleet-sweep-measurement-confounds: release + settle) — back to back, one Book in
+    //  ~36 sat at phase:begun (trial 2026-11-02); a non-start waits longer before its one retry
+    if (r.dead?.startsWith('NEVER STARTED') && !flag('no-rerun')) { await sleep(12000); r = once(b) }
     let mark = '✓', note = ''
     if (r.dead) { mark = '✗'; note = r.dead }
     else if (!fx) { mark = '?'; note = `no fixtures — ran ${r.done}${r.gaps.length ? ', ' + r.gaps.length + ' oath gaps' : ''}` }

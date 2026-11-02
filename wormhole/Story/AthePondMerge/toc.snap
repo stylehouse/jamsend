@@ -9,8 +9,7 @@ story:AthePondMerge
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.025
-      sample=0.025,at=1792633927
+    TimeTotal:beliefs,avg=0.026
       sample=0.031,at=1792635944
       sample=0.029,at=1792650366
       sample=0.028,at=1792659839
@@ -20,8 +19,8 @@ story:AthePondMerge
       sample=0.025,at=1793573749
       sample=0.019,at=1793578566
       sample=0.02,at=1793579667
+      sample=0.039,at=1793603758
     TimeTotal:step,avg=0.005
-      sample=0.005,at=1792633927
       sample=0.006,at=1792635944
       sample=0.006,at=1792650366
       sample=0.006,at=1792659839
@@ -31,6 +30,7 @@ story:AthePondMerge
       sample=0.005,at=1793573749
       sample=0.004,at=1793578566
       sample=0.004,at=1793579667
+      sample=0.008,at=1793603758
   step,dige:57811e66bfee272b
   step=2,desc:stand M — turn it to 10 — mark it fork — and fork N from the mark,dige:f799380238c97c6b
   step=3,desc:both turn to 13 — then hands — perch 2 is caught from N — carp 3 is said born 11 in M and 12 in N,dige:2c55ea3da2641836

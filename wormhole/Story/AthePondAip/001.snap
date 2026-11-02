@@ -1,0 +1,7 @@
+Snap:H
+  H:AthePondAip,Run
+    A:AthePondAip
+      self,round	{"mung":["age"]}
+      w:AthePondAip
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

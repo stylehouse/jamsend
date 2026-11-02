@@ -1,0 +1,29 @@
+story:AthePondAip
+  Styles
+  Plan
+  Opt
+    For
+  Stands:CoreTesting
+  TimeSpool
+    TimeTotal:beliefs,avg=0.015
+      sample=0.014,at=1793603257
+      sample=0.014,at=1793603267
+      sample=0.017,at=1793603274
+      sample=0.026,at=1793603294
+      sample=0.013,at=1793603298
+      sample=0.01,at=1793603302
+      sample=0.008,at=1793603309
+    TimeTotal:step,avg=0.005
+      sample=0.005,at=1793603257
+      sample=0.005,at=1793603267
+      sample=0.006,at=1793603274
+      sample=0.009,at=1793603294
+      sample=0.004,at=1793603298
+      sample=0.003,at=1793603302
+      sample=0.003,at=1793603309
+  step,dige:c43d6c29306ca9ea
+  step=2,desc:stand two ponds — each a Clock_A and a Tank — and give every standing thing its id,dige:d57fec5ad1d787a2
+    Assertion:every-a-and-compartment,sentence:every A and compartment standing has an id — all different — each its holder’s id and then one slot
+    Assertion:an-id-finds-exactly,sentence:an id finds exactly its own A — Q’s Clock_A by its id — where the name Clock_A finds only one of the two
+  step=3,desc:drop Q’s Clock_A and stand one exactly like it,dige:6f95b50c19c23316
+    Assertion:a-clock-dropped-and,sentence:a clock dropped and stood again alike gets a new id never given out before — the old id finds nothing — no other id moved

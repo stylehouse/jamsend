@@ -238,6 +238,8 @@
     const at_n = () => stands?.at === 'step' ? (stands.n ?? 0) : stands?.at === 'ready' ? 0 : Object.keys(live).length
     function pick(n: number) {
         open_n = n
+        // < a Desk's Story: the click as an arrival on the Desk's step-strip pocket (Ground.g Desk_pick) — off until the Desk
+        //    House's run leg moves it (AtheoryNexus_todo §0, evening 2026-11-02)
         // to THIS Story's w — by name, 'Story/Story' found the page's Story first (the Desk's sits in A:Desk)
         if (sw) H.i_elvisto(sw, 'story_sel', { open_at: n })
     }

@@ -9,6 +9,7 @@
     collected carefully, so the foundation's drift is always readable in one place and every change can be taken back out.*
 3. *§3 — **where it's heading**: the future-thought gathered from the work, kept short, each line pointing at the doc that
     holds its detail.*
+4. *§4 — **pattern recognition**: the motifs that repeat, and the zoom table (one shape, many zooms).*
 
 *The working doc stays `Atheory_todo.md`: the owner's rulings (§0.1), the loop queue and how each slice was built (§0.2),
  the antipatterns (§0.4), and the case studies.  When this doc and the todo disagree about what is BUILT, this one is
@@ -99,6 +100,11 @@ Code compiles centrally and is pushed to the As that hold it.  `ghostsHaunt` ann
 A turn's order is declared on the world: `%TheASunpit:turn` holding `%TheAPass:<Kind>` rows, each "this handler over all of
  these, before the next".  Keys on the `%TheASunpit` line are its culture: `frontier:turn` (take every pass's rows once, at
   the turn's start) and `gone:skip` (pass over what has left since).  Order is data; which code runs for a kind is not.
+
+**A slight smell, kept (owner, 2026-11-02).**  With no Sunpit, `TheA_rows` takes "everything not `%TheA*`" — a name prefix
+ standing in for "machinery, not matter".  The `%TheA*` family is wide (synapses, pulses, waits, tapes, traces, runs) and its
+  members don't all nest under one idea, so the prefix is a convenience, not a kind.  Fine for now; if a row ever needs to be
+   machinery without the prefix (or matter with it), the cure is a declared mark, not a longer exclusion list.
 
 ### 1.5 Synapses, moves and the boundary — `AthePondSynapseSum`, `AthePondSynapseOrder`
 
@@ -525,10 +531,10 @@ A:Feeder
 ### 1.15 Still to design
 
 *From the todo's sketch, not yet built:* `%TheATurf` (a leased
- region), the spheres beyond Trace and Regard (a Was that outlives a reload, §1.12), the scheduler beyond the toy (§1.13 has it by hand, a clock, and a page), a synapse whose pulses go
+ region), the spheres beyond Trace and Regard (a Was that outlives a reload, §1.12), the scheduler beyond the toy (§1.13 has it by hand, a clock, and a page; since 2026-11-02 `beliefs()` runs it for As under `%TheAAttend:run` — ledger §2 — with no real duty marked yet), a synapse whose pulses go
   somewhere other than a tank woken by the same batch (across Houses; across a network), the
   manifest check (Electrode joined with Atlas).  From A\*\* (§1.11): what an A may READ or WRITE by where it stands (turfs),
-   `from:` resolved by nearness rather than a unique name, a Book's own routine running through its A, and whether the A\*\*
+   `from:` resolved by nearness (BUILT 2026-11-02 — R3 below), a Book's own routine running through its A, and whether the A\*\*
     tree maps onto relations (the owner's hunch).
 
 **Remaining conceptualisations** *(gathered 2026-10-30 — each is a question to think from the top, not a fix; patches made
@@ -600,6 +606,8 @@ No Atheory adjustments yet.
 
 | date | where | what | why | read by | to undo |
 |---|---|---|---|---|---|
+| 2026-11-02 | `Housing.svelte.ts` `attends(n)` (new) beside `believes`; `_A_near` and `enroll_watched` descend on `attends` (think or run); Theory `TheA_attend_runs` walks `%TheAAttend:think` too | ONE ATTENTION MARK: `%TheAAttend:think` (= `%TheABelieves`, still read) gives a holder's As all four legs; `%TheAAttend:run` gives findable + watched only | AtheoryNexus_todo §3.2 (ruled lean) | every `_A_near`; `enroll_watched`; Book `AthePondAttendMark` | `attends` back to `believes` in the two places |
+| 2026-11-02 | `Housing.svelte.ts` `Aip_claim(n, holder)` (new) + static `Housing.Aip_roots`; `attend` claims for each A (holder = its `c.up`) and each w (holder = its A).  Theory `TheA_tree` claims in tree order; `TheA_aip`, `TheA_by`, `TheA_say`, `TheA_is_aip` (new); `TheA_at`/`TheA_io`/`TheA_tape`/`TheA_refs` take an A, an Aip or a name | AIP: every standing H, A and w has `c.Aip`, a Dip path (holder's id + its next slot, `1.1.4.6`), never reused, never snapped — exact where a name finds the nearest | owner 2026-11-02: "a unique id for all the A … yeah to A.c.Aip"; AtheoryNexus_todo §3.10 | Theory's readers; Book `AthePondAip` | drop `Aip_claim` + the two calls in `attend`; Theory's readers back to `TheA_all(this).find(A => A.sc.A === name)` |
 | 2026-11-02 | `Housing.svelte.ts` `_A_near(from, Aname, opts)` — `opts.house` keeps the walk in one House, `opts.every` walks into every A's As, `opts.up(A)` names a holder in place of `c.up`; Theory `TheA_nearest` is now one call to it | ONE R3 resolver: the scheduler's `from:` and the elvis targeting walk the same rings | R3 said "one resolver"; Theory had grown a second walk (2026-11-02 morning) | every `i_elvisto` by name; every `TheA_boundary`; Books `AthePondNear`, `AthePondTwoClocks` | drop `opts` (the three uses) and restore Theory's own ring walk from git |
 | 2026-11-02 | `src/lib/Stuff.svelte.ts` `resolve()` takes `q.resolve_veto(oldn, n)` — a vetoed pair is never claimed in the resemblance pass; `src/lib/Selection.svelte.ts` `process` passes `Se_veto_A_H` (new) by default, `Se.c.resolve_veto` overriding (`false` = none) | IDENTITY FOR A AND H: a D tracing an A or an H continues only from the D that traced that very object — a lookalike in its place is goner + neu; a w keeps resemblance (agency_officing re-adds the same w objects, which pair by identity first anyway); an old D back from text (no Travel) may still pair | owner 2026-11-02: "if an A goes away and another takes its place that looks the same, we should be able to A !== A … a total negation if !==, if %A or %H" — the ground for Aip (AtheoryNexus_todo §3.10) | every Selection (beliefs organise, Cyto, Seem, Repli, LE, Voro, Story snap); Book `AthePondIdentity` | drop the `resolve_veto` line in `resolve()` and the `resolve_veto:` option in `process` |
 | 2026-11-02 | `Housing.svelte.ts` `beliefs()`: after `attend`, on a think (or no e), calls Theory `TheA_attend_runs` when loaded (atime part `<House>/runs`) | THE RUN LOOP: an A marked `%TheAAttend:run`, found from the House down through believing As, gives its As to `TheA_run` (scoped to it, its `%TheARun` on itself) whenever one has a pulse waiting; `TheA_poke` lands a pulse and wakes the House | THE MAP item 4 / AtheoryNexus_todo §3.5 step 2: the scheduler run by the House, not by hand; attention by mark (§3.2) | every House think; Book `AthePondAttend` | drop the block in `beliefs()` |
@@ -623,7 +631,7 @@ No Atheory adjustments yet.
 | 2026-10-28 | `src/lib/A/Pondland.svelte` (the board) | `%TheATendrils` on the House, a `%TheAWas,keep:1` + `%TheAReader:board` on every compartment; `board_read` after each run | §1.14's board.  Page only |
 | 2026-10-21 | `src/routes/Pondland/+page.svelte` + `src/lib/A/Pondland.svelte` (new) | a route whose page is a bare House driven by `TheA_run` (§1.13) — imports `gen/A/Theory.go` and `gen/A/AtheFishTesting.go` directly as components (`@ts-ignore`d: a .go has no type declarations); exposes `window.__pond()` for headless probes | the owner's "a replacement of Otro.svelte or something — minimal changes to Housing.svelte until we've got a lot of experience": nothing in Housing changed.  The first page to mount ghosts without GhostList |
 | 2026-10-21 | `src/lib/A/Pondland.svelte` (time as IO; tracing paper) | the timer no longer pokes `Clock`: it tells `Host` the real ms since it last spoke (`TheA_io`, tape `keep:12`), Host beats `Clock` every 500 ms; a pause stops the pond’s time; "One beat" says 500 ms.  Each tank wears a Seem (`eye`, Egg+Fish) with a Regard sphere; after a run only the tanks that moved are walked (queued — walks are async), the eye regards each point `seen:n`, and the page draws the sheet: rings, regard dots, a red ring for `TheABecame`, crosses for `TheAGoner` | design §1.13 "Time is IO"; todo §0.0 overnight plan item 3 (art school).  Page only — nothing in Housing |
-| 2026-10-22 | `src/lib/O/Hovercraft.svelte` `story_matching_rules()` (new) + its 4 readers; `src/lib/O/Storui.svelte` 1 reader | Story's default matching rules read through one helper that takes either shape — Story.svelte's data property or Ghost/O/Story.g's method (a .g has no data properties) | Aprac_todo §0 — Story ported onto TheACode; the port is per tab until the spine moves.  Behaviour unchanged with Story.svelte (helper returns the array) |
+| 2026-10-22 | `src/lib/O/Hovercraft.svelte` `story_matching_rules()` (new) + its 4 readers; `src/lib/O/Storui.svelte` 1 reader | Story's default matching rules read through one helper that takes either shape — Story.svelte's data property or Ghost/O/Story.g's (now StoryFu.g) method (a .g has no data properties) | Aprac_todo §0 — Story ported onto TheACode; the port is per tab until the spine moves.  Behaviour unchanged with Story.svelte (helper returns the array) |
 | 2026-10-22 | `scripts/ghost_svelte_to_g.mjs` (new) | ports a `.svelte` ghost to a `.g` and proves it: original vs `.go` per member (types stripped), every difference declared in `<name>.port.json`; the `.g`'s own text vs the `.go` (compiler faithful); module bindings unique.  `--allow-async=` names sync methods the compiler may make async | Aprac_todo §0 item 1.  Tooling only — nothing runs it at boot |
 | 2026-10-21 | `src/lib/Selection.svelte.ts`, `SelectionItself.process`'s `pairs_fn` (the `a && b` branch) | `a.c.T.sc.bD` → `a.c.T?.sc.bD`, and `z?.c.T.sc.bD` → `z?.c.T?.sc.bD` (the point two walks back) | a D sphere thawed from text (`TheA_thaw`, Book `AthePondReload`) has no Travel on `.c`, so the first walk after a reload threw in `pairs_fn` (and, with only the first `?`, the second walk did) and the Seem never walked again — Selection assumed every old D was walked in this session.  Read by every Selection (Seem, Repli, LE, Voro, Story's snap); the old behaviour for a walked D is unchanged.  To undo: drop the two `?` |
 | 2026-10-20 | `src/lib/O/Story.svelte`: the editor's pause-verify forgive (`run.sc.check_snap`) and the post-run forgive sweep (`run.sc.sweeping`) | each now sets `caveat` only when `entropy_forgive_muted` says the step needed more than `tol:same` | the two other places a step gets forgiven still caveated a digest-only move; `snap_step` already didn't.  Not yet exercised live (every Athe Book passes on the inline path) |
@@ -632,12 +640,12 @@ No Atheory adjustments yet.
 | 2026-10-22 | `Ghost/A/Stuffica.g` (`Stuffica_view` opts.deep; `Stuffica_walked`) | a view may be deep; a re-seat commits though its digest holds | the re-seat is what the screen glows by |
 | 2026-10-22 | `src/lib/O/Storica.svelte` (the snap panel) | the open step's snap as a deep view: recorded until the live run's arrives, then re-seated on it; lines keyed by Dip; a line glows what it just did (fit green on a re-seat, shift amber, neu fades in) via `el.animate`, so no element is remade | first answer to "how to tell the user about the latest wriggle of state" — unseen with eyes yet |
 | 2026-10-22 | 14 .g + `scripts/ghost_svelte_to_g.mjs` | the "must not end on a method-final brace" comments deleted (owner) | the dodge didn't reproduce; .go diffs only the comment |
-| 2026-10-25 | `src/lib/L/everything.js` (`ground_marks`, `grounds_derive`, `ground_toc`, `ground_manifest`; markers `Ground:`/`Stands:`; `What:the groundless`; new area `Ghost/Atheory/Theory`; `Ghost/O/Story.g` cited) + `scripts/wafts_everything.mjs` + `Ghost/L/Lagoon.g` (the verb writes the manifest too) | Ground tags on Waft:Everything's area Whats derive `wormhole/Ground/<Name>/toc.snap` (Stands/Load/Beside/Advice) and the baked `src/lib/A/grounds.gen.js` — 15 Grounds | the Ground (Aprac §0.5): what a tab stands on, derived not authored; a .g's home is the first Ground citing it, a second citer stands on it, tests go to `<Name>Testing` |
+| 2026-10-25 | `src/lib/L/everything.js` (`ground_marks`, `grounds_derive`, `ground_toc`, `ground_manifest`; markers `Ground:`/`Stands:`; `What:the groundless`; new area `Ghost/Atheory/Theory`; `Ghost/O/Story.g` (now `StoryFu.g`) cited) + `scripts/wafts_everything.mjs` + `Ghost/L/Lagoon.g` (the verb writes the manifest too) | Ground tags on Waft:Everything's area Whats derive `wormhole/Ground/<Name>/toc.snap` (Stands/Load/Beside/Advice) and the baked `src/lib/A/grounds.gen.js` — 15 Grounds | the Ground (Aprac §0.5): what a tab stands on, derived not authored; a .g's home is the first Ground citing it, a second citer stands on it, tests go to `<Name>Testing` |
 | 2026-10-25 | `src/lib/A/ground.ts` (new) — the floor: `ground_closure`, `ground_include` | loads a Ground's closure in order through `Lies_ghost_include` from the baked manifest, with no Theory and no wormhole | the chicken and the egg: Ground.g is itself in Core, so Core must load before Theory can stand anything |
 | 2026-10-25 | `Ghost/A/Ground.g` (new): `Ground_stand`, `Ground_closure`, `Ground_loads`, `Ground_fetch`, `Ground_firm`, `Ground_names` | an A stands on Grounds: `%GroundUsed[,via]`, `%TheACode:Ground/<Name>` per Ground (on `TheA_code_stand`), `%GroundRefused,why:unknown`; Firm = every Ground's code has its dige | "the floor loads and Theory says".  Book AthePondGround (AtheTesting.g), 5/5 green |
 | 2026-10-25 | `Ghost/A/Theory.g` `TheA_seem_source` | a deep Seem pointed at nothing reads an empty tree (`seem.c.nothing`), never its own compartment | Storica's snap view (deep, `from` null until a step opens) walked its own compartment — into the points it was making — and froze every runner at the start of every run |
 | 2026-10-25 | `src/lib/L/Hackarium.svelte` (`HACKER_GROUNDS`, `e_Hackarium_grounded`) | the room stands Ground/Land (+ Glass, Core) via the floor, then `Ground_stand(A:Hackarium)`; the hand list (Atlas Lagoon Workshop Vyto) is gone | Hackarium runs TheACode; now also loads Electrode (unarmed), Garden, Pond, Voro |
-| 2026-10-22 | `src/lib/O/Storica.svelte` (new), mounted by `Ghost/O/Story.g`'s Story_plan beside Storui (`%UI:Storica`) | Storui rebuilt on Stuffica views: the step strip is two views in the strip's own compartment — `plan` over The's %step (says dige, desc), `live` over This's %Step (says ok, caveat, accepted, dige) — refreshed after each settled flush, drawn only on a commit; `window.__storica_ledger()` | Aprac §0 "Next" 2.  Only on a tab that ghost_loaded Story.g until the spine swap |
+| 2026-10-22 | `src/lib/O/Storica.svelte` (new), mounted by `Ghost/O/Story.g` (now `StoryFu.g`)'s Story_plan beside Storui (`%UI:Storica`) | Storui rebuilt on Stuffica views: the step strip is two views in the strip's own compartment — `plan` over The's %step (says dige, desc), `live` over This's %Step (says ok, caveat, accepted, dige) — refreshed after each settled flush, drawn only on a commit; `window.__storica_ledger()` | Aprac §0 "Next" 2.  Only on a tab that ghost_loaded Story.g until the spine swap |
 | 2026-10-20 | EntropyArrest `tol:same` (`EntropyArrest.md` §11): `Text.svelte` (`spay_same_pairs`, `spay_graft`'s `same` arg, `spay_within`), `Hovercraft.svelte` (`entropy_forgive`, `entropy_same_of`, `entropy_same_note`, `entropy_forgive_muted`), `Story.svelte` (`story_drive` makes `w.c.dige_same`; `snap_step`'s inline check notes exact steps and mutes; the GhostList read rule's `dige:` spayer `any` → `same`) | a `dige:` may change only as a consistent substitution over the run; a step forgiven by that alone passes with no caveat | every code edit moved the toy's digest in every Athe snap, costing a hand re-baseline of every Athe Book; and `tol:any` let a real digest move pass as noise.  Touches EVERY Book (the spayer reaches every `dige:` line) |
 | 2026-10-20 | `src/lib/O/Story.svelte`, the step seam right after `run.c.step_n = n` (`TheA_code_pushes_let`) | at the start of every step, the As in the run take in any code pushed to them while they waited | Story mediates how code comes through a Book (owner): a push to an A in a run waits on it as `%TheACodePush` until the next step, so a snap shows exactly when code changes |
 | 2026-10-20 | `src/lib/O/Story.svelte` (`story_declare_one`, `story_declare_all`; called in accept-all and on a new recording's completion) | every sworn sentence is declared into the toc when a Book is recorded or accepted; the old "only the human clicks" rule is gone (owner: *"you just need to know what you're doing"*) | swears were sitting sworn but ungated, so a sentence that stopped turning up went unnoticed |
@@ -850,3 +858,57 @@ No Atheory adjustments yet.
 - **Two classes of traffic at the relay.**  Dev control (seat, asks, census, compile, gen) needs a FLOCK-key hello; music and Swarm
    stay open to friends and carry their own vouchers.  A tab joins the flock by holding a flock key — today via the 🪪 Id hatch
     (paste `.env.cluster-<role>`; `Lies_cluster_idento` signs the hello with it); next, read once from the repo through FSA.
+
+## 4. Pattern recognition — the motifs that repeat
+
+*Started 2026-11-02 (owner: "notice where it repeats motifs, and do that zoom table").  §1.13 tells the scheduler from the
+ inside; this is the view from the top.  Add a motif when the third instance turns up, not the first.*
+
+### 4.1 One shape, many zooms
+
+Every level is the same shape: **a holder; a snapshot taken as the unit starts; writes that land only at the seam after it;
+ a record of what landed.**  Read across a row for one zoom, down a column for one dimension.
+
+| zoom | the unit | held in (substrate) | holds still (identity) | sees as it starts | its writes land at | record of what landed | built? |
+|---|---|---|---|---|---|---|---|
+| **row** | an egg, a fish | a w's children (`sc`) | its name (`of:`) — resemblance is fine | — | the pass's end | the Turn's `%TheANeu`/`%TheAGoner` | yes |
+| **pass** | one handler over one kind | `%TheASunpit` › `%TheAPass:<Kind>` | the Kind | rows as of the pass (or the turn: `frontier:turn`) | the next pass | — | yes |
+| **move** | one compartment eats its pulses | `A` › `w:Athe_Tank` | the A **object** (`A.c.Aip` next) | its inbox | the boundary | `%TheATurn` | yes |
+| **batch** | moves, then one boundary | the House | — | every inbox at once | the boundary | `%TheASent` → synapses | yes |
+| **round** | batches until nothing is ready | the run loop (`TheA_run`) | — | the ready set (As) | the next round | `%TheARun,rounds` | yes |
+| **era** | everything under one code version | `House.ghost_versions` | the dige | the layers it names | a code push, between eras | `%TheACodeTaken`, `%TheALayer,dige` | yes |
+| **tick** | the think loop over every believed A | `H` (mutex) | the H object | frozen state (the mutex) | the next tick | — | yes (legacy) |
+| **step** | a Book's frame | `wormhole/Story/<Book>/NNN.snap` | step n | the snap of the step before | between steps (Story lets pushes through) | the snap, `%sworn` | yes |
+| **seat** | a House's turf on the network | the relay | `seat:<path>` | — | arrival through the door | the arrival tape (`%TheAHeard`) | one seat (`seat:editor`) |
+
+**Two loops over that ladder.**  The **think** loop (`tick`) walks everything believed, every tick, whether or not anything
+ changed.  The **run** loop (`round`) moves only what has a pulse waiting and goes quiet.  `%TheAAttend` is how a level picks.
+
+### 4.2 Motifs
+
+1. **Nobody sees a write from the same unit.**  Frontier (pass), boundary (batch), era (code), mutex (tick), step (Story).
+    The one principle §0 states at two scales; it holds at all of them.  A new level that lets a write leak sideways is the tell.
+2. **The holder declares; the sender is blind.**  Synapse (`from:`) vs axon; a Seem's `%TheAKind` rows; a reader's `at:`;
+    a Credence `unusual:` row; Receivers (§3).  Contrast the elvis, which is sender-addressed — the legacy shape.
+3. **Walk out, never sideways, never from the top.**  `TheA_seek_out` (served), `_A_near` (names, R3), code layers (ancestors
+    then own), Ground on Grounds (§3).  Nearness is the one resolver; a second walker is a smell.
+4. **Pair by what holds still.**  `resolve()` in Selection, `TheA_pair` (Trace by `of:name`), Story's snap diff.  What holds
+    still differs by zoom: a row by its name (resemblance is fine — `%w` is re-added each round); an A or H by the **object**
+     (the identity veto: `!==` is a total negation).  Aip is that object's address.
+5. **Record what landed, not what was asked.**  Turn Neu/Goner/Sent beside the elvis as provenance; the snap, not the code;
+    Story as a reader of Turns.  Replay of landed change needs no UI.
+6. **Keep until read; drop when served.**  A Turn stays until every reader has read it; an outbox exists only in flight; a
+    finished req is dropped (CLAUDE.md).  Leftover scaffolding in a snap is the tell.
+7. **A mark, not a prefix.**  Where a kind is decided by a name pattern (`TheA_rows` taking "not `%TheA*`", §1.4) it works
+    until the family stops nesting under one idea.  The cure each time is a declared mark (`%TheAAttend`, `unusual:`, `%TheAKind`).
+
+### 4.3 Words by zoom
+
+*Which word to reach for at which zoom — the confusions so far were mostly a word used one zoom off.*
+
+| zoom | it | goes in | comes out | is read by |
+|---|---|---|---|---|
+| row | row | — | — | a pass, a Seem (as a point, `%TheATrace`) |
+| compartment | A › w | pulse on a synapse | pulse down an axon (outbox) | a reader of its Turns |
+| House | H | elvis / arrival at the door | snap, Turns | Story, the board |
+| network | seat / turf | arrival (granted, e.g. `%Grant:Music`) | — | the relay |

@@ -9,8 +9,7 @@ story:AthePondStampMerge
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.03
-      sample=0.018,at=1792577592
+    TimeTotal:beliefs,avg=0.032
       sample=0.028,at=1792578816
       sample=0.04,at=1792633996
       sample=0.056,at=1792635965
@@ -20,8 +19,8 @@ story:AthePondStampMerge
       sample=0.019,at=1793573816
       sample=0.018,at=1793578632
       sample=0.018,at=1793579733
-    TimeTotal:step,avg=0.006
-      sample=0.004,at=1792577592
+      sample=0.039,at=1793603828
+    TimeTotal:step,avg=0.007
       sample=0.006,at=1792578816
       sample=0.008,at=1792633996
       sample=0.011,at=1792635965
@@ -31,6 +30,7 @@ story:AthePondStampMerge
       sample=0.004,at=1793573816
       sample=0.004,at=1793578632
       sample=0.004,at=1793579733
+      sample=0.008,at=1793603828
   step,dige:5602afeeadbdab62
   step=2,desc:stand M at 13 — declare how Fish merge — mark it fork — fork N,dige:25e216a771d1ed73
   step=3,desc:hands feed — carp 3 at 14 in M and 15 in N — trout 4 at 16 in M and 12 in N — perch 2 given food in N with no stamp,dige:8e5aa2b979ed764e

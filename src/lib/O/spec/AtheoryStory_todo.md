@@ -6,6 +6,12 @@
 
 ## 0. What to get on with next
 
+**2026-11-02 — read this first.**  The core moved under Story: Theory's scheduler addresses As by nearness, `beliefs()` runs
+ As marked `%TheAAttend:run`, an A is its object (`resolve()` veto) — `AtheoryNexus_todo.md` §0 has the order.  The Story-side
+  consequence is ruled there: **Storica's step strip becomes the first run-loop duty** (a click = one arrival, a pulse on the strip's
+   compartment).  AtheStoryShow and AtheStoryCode are `unusual:` in Credence (a destination; needs a tab that loaded StoryFu.g), so
+    sweeps skip them.  The list below is the older Story-side order.
+
 **Where it stands (end of 2026-10-29).**  Built and green in one day: code kept aside (`AthePondAside`), the House reaching a w and
  a req through its A, the Desk (Ground.g `Desk_*`, a House of its own with its own think), a Story inside a Story
   (`AtheStoryInStory`), StoryFu's nesting guards (`Story_nested`), the step explorer's lens (`Stuffica_focus`, `AthePondFocus`) and

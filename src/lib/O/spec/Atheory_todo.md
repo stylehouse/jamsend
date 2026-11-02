@@ -26,8 +26,10 @@ A capture doc, not yet a plan — the owner has reached for this three times in 
 4. **The scheduler for real** — `TheA_run` inside `beliefs()`, unwatched work costs nothing; reqs woken by pulse (`%TheAWait`); every
     call through its A.  The first Housing change — ledger row first.
     **Its ground is laid (2026-10-30): ADDRESSING R1–R3** (`Atheory_design.md` §1.15) — one name resolver by nearness
-     (`Housing._A_near`), a handle routed by identity (`e.c.to_A`), `A.c.up` the holder.  Book `AthePondNear`.  NEXT here: the
-      Seem `from:` onto R3, then `TheA_run` inside `beliefs()` for the Desk.
+     (`Housing._A_near`), a handle routed by identity (`e.c.to_A`), `A.c.up` the holder.  Book `AthePondNear`.
+    **BUILT 2026-11-02:** Theory's scheduler off names, synapse `from:` by the same resolver (`AthePondTwoClocks`); the run loop in
+     `beliefs()` for As under `%TheAAttend:run` (`AthePondAttend`); an A or H is its object (`AthePondIdentity`).  NEXT:
+      `AtheoryNexus_todo.md` §0 — Aip, one attention mark, Storica's strip as the first run-loop duty.
 5. **IO as compartments** — audio, WebRTC, disk, relay as `%TheAIO`; a replay mocks them; a Desk with no page in node (parallel
     testing, `AtheoryStory_todo.md` §0 item 6).
 6. **One real organ ported**, byte-identical Books — proves the fabric carries the app, not only ponds.

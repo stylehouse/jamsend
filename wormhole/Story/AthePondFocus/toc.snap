@@ -5,9 +5,7 @@ story:AthePondFocus
     For
   Stands:CoreTesting
   TimeSpool
-    TimeTotal:beliefs,avg=0.016
-      sample=0.017,at=1793323628
-      sample=0.013,at=1793323880
+    TimeTotal:beliefs,avg=0.019
       sample=0.017,at=1793328011
       sample=0.011,at=1793328457
       sample=0.015,at=1793329840
@@ -16,9 +14,9 @@ story:AthePondFocus
       sample=0.018,at=1793578523
       sample=0.013,at=1793578884
       sample=0.021,at=1793579630
-    TimeTotal:step,avg=0.003
-      sample=0.003,at=1793323628
-      sample=0.003,at=1793323880
+      sample=0.034,at=1793603501
+      sample=0.024,at=1793603966
+    TimeTotal:step,avg=0.004
       sample=0.003,at=1793328011
       sample=0.002,at=1793328457
       sample=0.003,at=1793329840
@@ -27,6 +25,8 @@ story:AthePondFocus
       sample=0.004,at=1793578523
       sample=0.003,at=1793578884
       sample=0.004,at=1793579630
+      sample=0.007,at=1793603501
+      sample=0.005,at=1793603966
   step,dige:921dcaad4ba02e53
   step=2,desc:seat a deep view on the recorded pond,dige:32e30c3d9429e323
   {"step":3,"desc":"re-seat it on the changed pond and focus — what moved, in context","dige":"ca11e5afb6489c2a"}

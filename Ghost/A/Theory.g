@@ -446,10 +446,11 @@ TheA_tendrils():
 TheA_addr(w):
     return (this.TheA_A(w)?.sc.A ?? '?') + '/' + w.sc.w
 
-// TheA_at — what an address names: the compartment, its Turn, or its Heard — or nothing, once trimmed
+// TheA_at — what an address names: the compartment, its Turn, or its Heard — or nothing, once trimmed.  The A part is a name
+//  (the nearest from this House) or an Aip (exactly that A)
 TheA_at(addr):
     let [a, wn, last] = String(addr).split('/')
-    let A = this.TheA_all(this).find(A => A.sc.A === a)
+    let A = this.TheA_by(a)
     let w = A?.o({ w: wn })[0]
     if (!w || !last) return w || null
     let m = /^(Turn|Heard)(\d+)$/.exec(last)
@@ -578,11 +579,44 @@ TheA_tree():
         for (const A of C.o({ A: 1 })) {
             all.push(A)
             up.set(A, C)
+            // its id (Housing.Aip_claim), and its compartments', claimed in tree order so a reload comes out the same
+            this.Aip_claim(A, C)
+            for (const w of A.o({ w: 1 })) this.Aip_claim(w, A)
             walk(A)
         }
     }
     walk(this)
     return { all, up }
+
+// AIP (AtheoryNexus_todo §3.10) — every standing H, A and w has an id of its own on .c.Aip: a Dip path, the holder's id then the
+//  slot it claimed there (1.1.4.6), never reused, never snapped.  A name is what you SAY and finds the nearest; an Aip is exact.
+//   TheA_tree claims them; the readers below take an A, an Aip or a name
+TheA_is_aip(x):
+    return typeof x === 'string' && /^\d+(\.\d+)*$/.test(x)
+
+// TheA_aip — what stands at an Aip in this House (an A, or one of its compartments), or nothing
+TheA_aip(aip, tree):
+    tree = tree || this.TheA_tree()
+    for (const A of tree.all) {
+        if (A.c.Aip === aip) return A
+        for (const w of A.o({ w: 1 })) {
+            if (w.c.Aip === aip) return w
+        }
+    }
+    return null
+
+// TheA_by — an A from an A, an Aip, or a name (the nearest from here, R3)
+TheA_by(x, tree):
+    if (!x || typeof x !== 'string') return x || null
+    if (!this.TheA_is_aip(x)) return this.TheA_nearest(null, x, tree)
+    let n = this.TheA_aip(x, tree)
+    return n?.sc.A != null ? n : null
+
+// TheA_say — an Aip with the name beside it, for reading (1.1.4.6 Clock_A); the name is never part of the id
+TheA_say(n):
+    if (!n) return ''
+    let name = n.sc.A ?? n.sc.w ?? n.name ?? ''
+    return (n.c.Aip || '?') + (name ? ' ' + name : '')
 
 // TheA_nearest — the A named name nearest from (an A, or nothing for this House): Housing's one resolver (_A_near, R3), kept
 //  inside this House, walking into every A (not only believing ones), holders read off the tree.  A tie takes the first and warns
@@ -591,12 +625,12 @@ TheA_nearest(from, name, tree):
     tree = tree || this.TheA_tree()
     return this._A_near(from || this, name, { house: this, every: true, up: (A) => tree.up.get(A) })?.A || null
 
-// TheA_refs — names at the edge, As inside: each name (asked from this House, so the shallowest answers) or A, as an A; what
-//  names nothing falls out
+// TheA_refs — names at the edge, As inside: each name (asked from this House, so the shallowest answers), Aip or A, as an A;
+//  what names nothing falls out
 TheA_refs(list, tree):
     let out = []
     for (const x of list || []) {
-        let A = typeof x === 'string' ? this.TheA_nearest(null, x, tree) : x
+        let A = this.TheA_by(x, tree)
         if (A && !out.includes(A)) out.push(A)
     }
     return out
@@ -699,7 +733,7 @@ TheA_attend_runs():
         for (const A of C.o({ A: 1 })) {
             if (A.o({ TheAAttend: 'run' }).length) {
                 holders.push(A)
-            } else if (A.o({ TheABelieves: 1 }).length) {
+            } else if (A.o({ TheABelieves: 1 }).length || A.o({ TheAAttend: 'think' }).length) {
                 walk(A)
             }
         }
@@ -733,10 +767,10 @@ TheA_poke(synapse, sc):
 //            %TheAHeard:3,take:2,ms:900
 //          %TheASynapse:outside,wake:hear,sum:count
 
-// TheA_io — the outside says something to a compartment's IO synapse (by the A's name).  Returns the Heard, or nothing if that
-//  A declares no such IO
+// TheA_io — the outside says something to a compartment's IO synapse (the A by ref, Aip or name).  Returns the Heard, or
+//  nothing if that A declares no such IO
 TheA_io(name, io, sc):
-    let A = this.TheA_all(this).find(A => A.sc.A === name)
+    let A = this.TheA_by(name)
     let w = A?.o({ w: 1 }).find(w => w.o({ TheAIO: io }).length)
     let synapse = w?.o({ TheASynapse: io })[0]
     if (!synapse) return null
@@ -751,7 +785,7 @@ TheA_io(name, io, sc):
 // TheA_tape — what an IO heard, as plain takes: [[sc, sc], [sc]], one list per move that ate them, oldest first.  Plain
 //  objects, so they outlive the compartment they came from
 TheA_tape(name, io):
-    let A = this.TheA_all(this).find(A => A.sc.A === name)
+    let A = this.TheA_by(name)
     let tape = A?.o({ w: 1 }).map(w => w.o({ TheAIO: io })[0]).find(t => t)
     let takes = []
     for (const heard of tape ? tape.o({ TheAHeard: 1 }) : []) {

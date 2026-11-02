@@ -3,6 +3,7 @@ story:AtheStorySabotage
   Plan
   Opt
     For
+  Stands:CoreTesting
   EntropyArrest
     Entcase:Self_round
       lematch,self,round

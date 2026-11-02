@@ -188,7 +188,14 @@ const organise_scheme = [
 //    be thought ambiently).  Ledger: Atheory_design.md §2.
 const A_LEVEL = organise_scheme[1]
 const W_LEVEL = organise_scheme[2]
-const believes = (n: any): boolean => !!n?.o?.({ TheABelieves: 1 })?.length
+// ATTENTION BY MARK (AtheoryNexus_todo §3.2, 2026-11-02): a holder says which loop the As standing in it attend.
+//  %TheAAttend:think — %TheABelieves is its first spelling, still read — gives them all four legs: thought (the walk), pumped
+//   (reqdo_sweep), findable (_A_near), watched (enroll_watched).  %TheAAttend:run gives them only findable and watched: they move
+//    by pulse (Theory TheA_attend_runs), never thought or pumped.
+const attends = (n: any): 'think' | 'run' | null =>
+    n?.o?.({ TheAAttend: 'run' })?.length ? 'run'
+        : (n?.o?.({ TheAAttend: 'think' })?.length || n?.o?.({ TheABelieves: 1 })?.length) ? 'think' : null
+const believes = (n: any): boolean => attends(n) === 'think'
 
 //#endregion
 
@@ -377,6 +384,24 @@ abstract class Housing extends TheC {
     }
 
     // -------------------------------------------------------------------------
+    // Aip_claim: the id of one standing thing (an H, an A, a w), a Dip path like 1.1.4.6 —
+    //  the holder's id, then the slot it claimed there.  Kept on n.c.Aip, never snapped.
+    //   The holder keeps its slot counter on its .c and never reuses a slot, so a dropped
+    //    thing's id can't turn up on a stranger.  Claimed in walk order (attend, TheA_tree),
+    //     so a reload that re-stands the same tree comes out with the same ids.
+    //  holder: what n stands in — an A or a House for an A, the A for a w, .up for an H.
+    // -------------------------------------------------------------------------
+    static Aip_roots = 0
+    Aip_claim(n: TheC, holder?: TheC | null): string {
+        if (n.c.Aip) return n.c.Aip
+        if (holder === undefined) holder = (n instanceof Housing ? n.up : n.c.up) ?? null
+        if (!holder) return n.c.Aip = String(++Housing.Aip_roots)
+        const base = this.Aip_claim(holder)
+        holder.c.Aip_slots = (holder.c.Aip_slots ?? 0) + 1
+        return n.c.Aip = `${base}.${holder.c.Aip_slots}`
+    }
+
+    // -------------------------------------------------------------------------
     // every_House: return all Houses reachable from this Housing.
     // Default: walk .up to the root House, return [that].
     // Override in eg PeeringSharing to include all peer/feature Houses.
@@ -451,7 +476,7 @@ abstract class Housing extends TheC {
                     go(up, up)
                 }
                 else {
-                    if (opts.every || n.o({ TheABelieves: 1 }).length) for (const B of n.o({ A: 1 }) as TheC[]) go(B, h)
+                    if (opts.every || attends(n)) for (const B of n.o({ A: 1 }) as TheC[]) go(B, h)
                     // its holder: an A it stands in, or its House (attend keeps A.c.up the holder; unset, the House it was met in)
                     const up = opts.up ? opts.up(n) : n.c.up
                     go(up && !(up instanceof Housing) && up.sc?.A != null ? up : h, h)
@@ -1665,6 +1690,7 @@ export class House extends StorableHousing {
             // its holder: the A it stands in (one that believes it), else this House — so a nested A's chain climbs by c.up
             const holder = (AT.sc.up as Travel | undefined)?.sc.n as TheC | undefined
             A.c.up = holder && !(holder instanceof Housing) && holder.sc.A != null ? holder : this as House
+            this.Aip_claim(A, A.c.up)
 
             await this.self_timekeeping(A)
 
@@ -1694,6 +1720,7 @@ export class House extends StorableHousing {
                 // < make this object Work, perhaps in .i() because sc?
                 const w = wT.sc.n as TheC
                 w.c.up = A
+                this.Aip_claim(w, A)
 
                 await this.self_timekeeping(w)
                 const t0 = performance.now()
@@ -2124,7 +2151,7 @@ export class House extends StorableHousing {
         const targets: TheC[] = [this]
         const collect = (A: TheC) => {
             for (const w of A.o({ w: 1 }) as TheC[]) targets.push(w)
-            if (believes(A)) for (const B of A.o({ A: 1 }) as TheC[]) collect(B)   // A in A (%TheABelieves)
+            if (attends(A)) for (const B of A.o({ A: 1 }) as TheC[]) collect(B)   // A in A: think or run, both are watched
         }
         for (const A of this.o({ A: 1 }) as TheC[]) collect(A)
         for (const H of targets) {

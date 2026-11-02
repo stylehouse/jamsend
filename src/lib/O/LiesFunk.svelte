@@ -2737,6 +2737,9 @@ await M.eatfunc({
                         role:    H.Lies_is_runner(w) ? 'runner' : (H.Lies_is_hacker(w) ? 'hacker' : 'editor'),
                         channel: H.Lies_channel_live(w) ? 'up' : 'down',
                         running: sr ? { book: sr.sc.Storyrun, phase: sr.sc.phase, uid: sr.sc.uid } : null,
+                        // the spine still loading (Creduler_pending) — a tab answers pings before its ghosts land; runner_sweep
+                        //  --reload waits for 'ready' rather than run a Book on half a machine (2026-11-02)
+                        ghosts:  H.oa({ Creduler_pending: 1 }) ? 'loading' : 'ready',
                         favourite_client: (H.top_House().c.favourite_client as string) ?? '',
                         engagement: H.Lies_engagement(w) ?? null,   // who holds the lease (don't-steal)
                         // identity + advertise diagnostics.  self = the ADDRESSABLE prepub we advertise as
