@@ -5,7 +5,6 @@ story:RepliSplit
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.018
-      sample=0.011,at=1786069794
       sample=0.024,at=1789115996
       sample=0.02,at=1789118057
       sample=0.015,at=1789118563
@@ -15,8 +14,8 @@ story:RepliSplit
       sample=0.014,at=1792136727
       sample=0.014,at=1792136939
       sample=0.01,at=1792136949
+      sample=0.016,at=1793622130
     TimeTotal:step,avg=0.004
-      sample=0.002,at=1786069794
       sample=0.005,at=1789115996
       sample=0.004,at=1789118057
       sample=0.003,at=1789118563
@@ -26,6 +25,7 @@ story:RepliSplit
       sample=0.003,at=1792136727
       sample=0.003,at=1792136939
       sample=0.002,at=1792136949
+      sample=0.003,at=1793622130
   step,dige:60ef9808456910e1
   step=2,dige:5cb54eeceaa8482e
     Assertion:spine-crosses-whole,sentence:the fragment climbed in whole — one mag one cloud one card stand at the mirror

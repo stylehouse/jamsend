@@ -4,10 +4,7 @@ story:MusuHeard
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.169
-      sample=0.131,at=1791362708
-      sample=0.11,at=1791362841
-      sample=0.485,at=1791363254
+    TimeTotal:beliefs,avg=0.121
       sample=0.146,at=1791363280
       sample=0.162,at=1791363370
       sample=0.14,at=1791363390
@@ -15,10 +12,10 @@ story:MusuHeard
       sample=0.067,at=1791363416
       sample=0.234,at=1791964162
       sample=0.134,at=1792469637
-    TimeTotal:step,avg=0.019
-      sample=0.015,at=1791362708
-      sample=0.012,at=1791362841
-      sample=0.054,at=1791363254
+      sample=0.082,at=1793620204
+      sample=0.093,at=1793620372
+      sample=0.065,at=1793624768
+    TimeTotal:step,avg=0.013
       sample=0.016,at=1791363280
       sample=0.018,at=1791363370
       sample=0.016,at=1791363390
@@ -26,6 +23,9 @@ story:MusuHeard
       sample=0.007,at=1791363416
       sample=0.026,at=1791964162
       sample=0.015,at=1792469637
+      sample=0.009,at=1793620204
+      sample=0.01,at=1793620372
+      sample=0.007,at=1793624768
   step,dige:9fad2f0a72efe108
   step=2,dige:d915f20899e00145
     Assertion:a-track-the-radio,sentence:a track the radio played leaves one card wearing nothing but its id and whose it was — hearing it again is that same card — and the whole sitting shares one page under a Mag that never crosses to anyone

@@ -1422,8 +1422,8 @@
     //          null rather than 0: absent is honest, zero is a measurement nobody took.
     Cred_run_outcome(): { ok: boolean, ok_pct: number | null, done: number, caveat: number, mode: string, gaps?: { slug: string, sentence: string, n: number }[] } | null {
         const H = this as House
-        const story = H.o({ H: 'Story' })[0] as House | undefined
-        const stW   = story?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] as TheC | undefined
+        // the runner's run — the page's H:Story, or a Desk's inner Story (LiesFunk Lies_runner_story_w)
+        const stW   = ((H as any).Lies_runner_story_w?.() ?? (H.o({ H: 'Story' })[0] as House | undefined)?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0]) as TheC | undefined
         const thisC = stW?.c.This as TheC | undefined
         if (!thisC) return null
         const steps = thisC.o({ Step: 1 }) as TheC[]

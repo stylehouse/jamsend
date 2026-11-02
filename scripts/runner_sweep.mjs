@@ -109,7 +109,7 @@ if (val('swap')) { await sleep(5000); await ready('after swap') }
 const fixtures = (b) => readdirSync(join(STORY, b)).filter(f => /^\d{3}\.snap$/.test(f)).length
 
 const once = (b) => {
-    const r = ask('run', b, '--watch')
+    const r = ask('run', b, '--watch', ...(flag('desk') ? ['--desk'] : []))
     const polls = r.out.split('\n').filter(l => l.startsWith('… {')).map(l => { try { return JSON.parse(l.slice(2)) } catch { return null } }).filter(Boolean)
     const last = polls[polls.length - 1]
     const out = last?.outcome || {}

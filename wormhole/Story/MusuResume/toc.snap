@@ -4,28 +4,28 @@ story:MusuResume
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.023
-      sample=0.017,at=1784618013
-      sample=0.017,at=1785856429
-      sample=0.015,at=1785966416
-      sample=0.015,at=1785966728
+    TimeTotal:beliefs,avg=0.025
       sample=0.008,at=1785979677
       sample=0.015,at=1785996379
       sample=0.017,at=1786005404
       sample=0.015,at=1786005485
       sample=0.032,at=1788500619
       sample=0.078,at=1789114362
-    TimeTotal:step,avg=0.003
-      sample=0.002,at=1784618013
-      sample=0.002,at=1785856429
-      sample=0.002,at=1785966416
-      sample=0.002,at=1785966728
+      sample=0.028,at=1793621498
+      sample=0.02,at=1793621510
+      sample=0.019,at=1793621519
+      sample=0.021,at=1793625715
+    TimeTotal:step,avg=0.004
       sample=0.001,at=1785979677
       sample=0.002,at=1785996379
       sample=0.002,at=1786005404
       sample=0.002,at=1786005485
       sample=0.005,at=1788500619
       sample=0.011,at=1789114362
+      sample=0.004,at=1793621498
+      sample=0.003,at=1793621510
+      sample=0.003,at=1793621519
+      sample=0.003,at=1793625715
   step,dige:ff28bdbb0aa846ab
   step=2,dige:0859c8efee3e6e70
   step=3,dige:fdf85980101371f1

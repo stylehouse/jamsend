@@ -4,10 +4,7 @@ story:MusuLossy
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=1.028
-      sample=0.129,at=1785044404
-      sample=0.846,at=1785044573
-      sample=0.522,at=1785044724
+    TimeTotal:beliefs,avg=0.925
       sample=0.522,at=1785044774
       sample=0.078,at=1785044786
       sample=0.053,at=1785044817
@@ -15,10 +12,10 @@ story:MusuLossy
       sample=0.058,at=1785856416
       sample=0.141,at=1785999179
       sample=7.756,at=1789549678
-    TimeTotal:step,avg=0.257
-      sample=0.032,at=1785044404
-      sample=0.212,at=1785044573
-      sample=0.13,at=1785044724
+      sample=0.165,at=1793620192
+      sample=0.205,at=1793620261
+      sample=0.102,at=1793624802
+    TimeTotal:step,avg=0.231
       sample=0.13,at=1785044774
       sample=0.02,at=1785044786
       sample=0.013,at=1785044817
@@ -26,6 +23,9 @@ story:MusuLossy
       sample=0.014,at=1785856416
       sample=0.035,at=1785999179
       sample=1.939,at=1789549678
+      sample=0.041,at=1793620192
+      sample=0.051,at=1793620261
+      sample=0.025,at=1793624802
   step,dige:5b3c49ef84cdf079
   step=2,dige:c907722f4c940a09
   step=3,dige:9d4e8abc56b8149d

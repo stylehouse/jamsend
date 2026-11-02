@@ -30,8 +30,7 @@ story:Snaptesting
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.009
-      sample=0.009,at=1781080161
+    TimeTotal:beliefs,avg=0.011
       sample=0.012,at=1781610196
       sample=0.007,at=1781980340
       sample=0.015,at=1781982836
@@ -41,7 +40,8 @@ story:Snaptesting
       sample=0.012,at=1783255985
       sample=0.004,at=1785996808
       sample=0.007,at=1789116028
-    TimeTotal:step,avg=0.009
+      sample=0.022,at=1793622145
+    TimeTotal:step,avg=0.011
       sample=0.007,at=1781980340
       sample=0.015,at=1781982836
       sample=0.008,at=1781982880
@@ -50,4 +50,5 @@ story:Snaptesting
       sample=0.012,at=1783255985
       sample=0.004,at=1785996808
       sample=0.007,at=1789116028
+      sample=0.022,at=1793622145
   step,dige:9457325c53440d8c

@@ -4,9 +4,7 @@ story:InvWalk
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.176
-      sample=0.116,at=1788408939
-      sample=0.431,at=1788779982
+    TimeTotal:beliefs,avg=0.138
       sample=0.06,at=1788871015
       sample=0.224,at=1789108477
       sample=0.201,at=1789109966
@@ -15,9 +13,9 @@ story:InvWalk
       sample=0.123,at=1790728114
       sample=0.06,at=1790746967
       sample=0.207,at=1792466562
-    TimeTotal:step,avg=0.022
-      sample=0.015,at=1788408939
-      sample=0.054,at=1788779982
+      sample=0.083,at=1793619465
+      sample=0.081,at=1793619472
+    TimeTotal:step,avg=0.017
       sample=0.007,at=1788871015
       sample=0.028,at=1789108477
       sample=0.025,at=1789109966
@@ -26,6 +24,8 @@ story:InvWalk
       sample=0.015,at=1790728114
       sample=0.008,at=1790746967
       sample=0.026,at=1792466562
+      sample=0.01,at=1793619465
+      sample=0.01,at=1793619472
   step,dige:05626b6f4eb6c08a
   step=2,dige:7ff36402e37cec95
   step=3,dige:245c260e2d72959d

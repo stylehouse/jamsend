@@ -231,6 +231,7 @@
             const row = w.o({ StoryLeash: 1 })[0]
             if (row) w.drop(row)
             if (at) w.i(n != null ? { StoryLeash: at, n } : { StoryLeash: at })
+            h.i_elvisto?.(w, 'story_unleash')   // the move is news to a drive parked on it (StoryFu e_story_unleash)
         }
         h.main?.(true)
     }

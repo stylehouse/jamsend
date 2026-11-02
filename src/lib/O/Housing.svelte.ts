@@ -224,6 +224,9 @@ abstract class Housing extends TheC {
     _hangup_cbs: Array<() => void> = []
     on_hangup(cb: () => void) { this._hangup_cbs.push(cb) }
     stop() {
+        // diag: who stopped which House — a stopped Mundo still drains elvises and fns but never thinks again (ponder_now,
+        //  main) — the shape of the 2026-11-03 begun-wedge, where a settled toc read was never handed on
+        try { (this as any).diag?.(`stop() H:${(this as any).name} ← ${String(new Error().stack ?? '').split('\n').slice(2, 5).map(l => l.trim().replace(/^at /, '').replace(/\(.*\/(\w+\.\w+)[^)]*\)/, '$1')).join(' ← ')}`) } catch (er) {}
         this.stopped = true
         this.#cleanup()
         for (const cb of this._hangup_cbs) {
@@ -1106,6 +1109,46 @@ export class House extends StorableHousing {
         if (H._push_log.length > 60) H._push_log.shift()
         H.todo.push(e)
         H.todo_version++
+        // the drain dog (2026-11-03): one timer per House, armed by a push.  A Book sat at begun because a House's todo stopped
+        //  draining — the item ahead drained, then nothing came back for the rest (HohoLocate on Mundo; the Desk runner's H:Desk).
+        //   It only speaks when the head has waited 2s with no drain since and the mutex is free — then says why and drives it
+        if (!H.c.drain_dog) H.c.drain_dog = setTimeout(() => { H.c.drain_dog = undefined; H._drain_dog() }, 2000)
+    }
+    _drain_dog() {
+        const H = this
+        const head = H.todo[0]
+        if (H.stopped || !head) return
+        const now = Date.now()
+        const top = H.top_House()
+        const held = top.mutex_held?.('beliefs')
+        const waited = now - Number(head.c.push_t ?? now)
+        const since_drain = now - Number(H.c.drain_at ?? 0)
+        if (!H.started && waited >= 5000 && !H.c.drain_dog_told_unstarted) {
+            // a House whose todo waits on its own start ($effect: _all_checks_pass) — said once, never driven (the drain refuses it)
+            H.c.drain_dog_told_unstarted = 1
+            const line = `🐕 todo waits on an UNSTARTED H:${H.name} — head ${head.c.push_tag ?? '?'} waited ${waited}ms, ${H.todo.length} queued`
+            H.diag(line)
+            console.warn(line)
+            const ring = ((top as any).c.drain_stuck ??= []) as string[]
+            ring.push(`${line} @${now % 100000}`)
+        }
+        if (held || !H.started || waited < 2000 || since_drain < 2000) {
+            // busy, or moving — look again
+            H.c.drain_dog = setTimeout(() => { H.c.drain_dog = undefined; H._drain_dog() }, 2000)
+            return
+        }
+        const why_line = `🐕 todo stuck on H:${H.name} — head ${head.c.push_tag ?? '?'} waited ${waited}ms, ${H.todo.length} queued · since push calls=${H._ac_calls - Number(head.c.push_calls ?? 0)} gated=${H._ac_gated - Number(head.c.push_gated ?? 0)} tries=${H._ac_tries - Number(head.c.push_tries ?? 0)} · waiting=${H.answer_calls_waiting} pending=${H.answer_calls_pending} · why=${H.c.drain_why ?? '—'} · began=${H.c.began_run ?? '—'} finished=${H.c.finished_run ?? '—'}`
+        H.diag(why_line)
+        console.warn(why_line + ' — driving the drain')
+        // its own ring (runner_ask world prints it): the question is how OFTEN this rescues, and where
+        const M = top as any
+        M.c.drain_stuck_n = (M.c.drain_stuck_n ?? 0) + 1
+        const ring = (M.c.drain_stuck ??= []) as string[]
+        ring.push(`${why_line} @${now % 100000}`)
+        if (ring.length > 20) ring.splice(0, ring.length - 20)
+        H.answer_calls_waiting = false
+        H.answer_calls()
+        if (H.todo.length) H.c.drain_dog = setTimeout(() => { H.c.drain_dog = undefined; H._drain_dog() }, 2000)
     }
 
     // ELECTRODE (2026-08-07) — see _push_todo.  Plain fields, no reactivity, monotonic.
@@ -1192,7 +1235,7 @@ export class House extends StorableHousing {
     //   to keep ambient chatter out of its cadence, but a settled disk reply is the very thing the
     //    run is waiting for — gating it there would hang every Book that reads a file.
     ponder_now() {
-        if (this.stopped) return
+        if (this.stopped) { this.diag(`ponder_now refused — H:${this.name} is stopped`); return }
         this._push_todo(new TheC({ c: {}, sc: { elvis: 'think', Aw: '' } }))
     }
 

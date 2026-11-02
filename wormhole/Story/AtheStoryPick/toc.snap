@@ -5,24 +5,28 @@ story:AtheStoryPick
     For
   Stands:CoreTesting
   TimeSpool
-    TimeTotal:beliefs,avg=0.032
-      sample=0.022,at=1793607040
-      sample=0.022,at=1793607047
-      sample=0.024,at=1793607058
-      sample=0.024,at=1793607069
-      sample=0.03,at=1793607542
-      sample=0.024,at=1793607584
+    TimeTotal:beliefs,avg=0.034
       sample=0.026,at=1793608858
       sample=0.085,at=1793615283
+      sample=0.038,at=1793617536
+      sample=0.032,at=1793617543
+      sample=0.036,at=1793617769
+      sample=0.023,at=1793617776
+      sample=0.027,at=1793618823
+      sample=0.025,at=1793618829
+      sample=0.027,at=1793618890
+      sample=0.023,at=1793648658
     TimeTotal:step,avg=0.011
-      sample=0.007,at=1793607040
-      sample=0.007,at=1793607047
-      sample=0.008,at=1793607058
-      sample=0.008,at=1793607069
-      sample=0.01,at=1793607542
-      sample=0.008,at=1793607584
       sample=0.009,at=1793608858
       sample=0.028,at=1793615283
+      sample=0.013,at=1793617536
+      sample=0.011,at=1793617543
+      sample=0.012,at=1793617769
+      sample=0.008,at=1793617776
+      sample=0.009,at=1793618823
+      sample=0.008,at=1793618829
+      sample=0.009,at=1793618890
+      sample=0.008,at=1793648658
   step,dige:f65decd578adef02
   step=2,desc:stand a Desk whose new Story runs AthePondRounds — held at ready,dige:fd7924fecaf05d8a
   step=3,desc:click step 1 then step 2 on the strip — before the House thinks,dige:af43af3864cf7248

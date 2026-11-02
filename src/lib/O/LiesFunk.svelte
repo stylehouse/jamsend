@@ -26,6 +26,7 @@ import { _C, REACTAP, type TheC } from "$lib/Stuff.svelte"
 import { Selection, Travel } from "$lib/Selection.svelte"
 import { type House } from "$lib/O/Housing.svelte"
 import { FUNK_KINDS } from "$lib/O/Funk/kinds"
+import { ground_include } from "$lib/A/ground"   // the Desk runner stands Core when a tab has none (Lies_desk_book)
 import { storying_run } from "$lib/O/Funk/Storying.svelte"
 import { SoundSystem } from "$lib/O/Audio.svelte"
 import { mint_grant, verify_grant, type GrantAtom } from "$lib/O/Funk/Grant"
@@ -2072,7 +2073,7 @@ await M.eatfunc({
         //  land here).  When the authority says this Book needAC (from Waft:Credence), SECURE the real
         //   voice FIRST — before the run begins — so the AC-wait is never inside a step's clock.  Then
         //    open the durable run-record, stash awaiting_verdict{book}, and resetStory onto it.
-        async Lies_become_book_drive(w: TheC, book: string, needAC = false, needsFSA = false, ledger_dige?: string, pins?: { name: string, dige: string }[]) {
+        async Lies_become_book_drive(w: TheC, book: string, needAC = false, needsFSA = false, ledger_dige?: string, pins?: { name: string, dige: string }[], desk = false) {
             const H = this as House
             // DUPLICATE-DISPATCH GUARD (the begun-wedge root cause, 2026-07-30 — see Vyto_todo THE PIN
             //  BUILD LOG): runner_ask.mjs retries the SAME `run` ask on a lost/delayed ack (its own
@@ -2141,7 +2142,11 @@ await M.eatfunc({
             w.c.awaiting_verdict = { book }
             w.c.becoming_book = undefined   // the real record (below) is the guard from here on
             H.Lies_runner_begin(w, book)   // open the durable run-record (the become_book twin of rungo)
-            H.top_House().i_elvisto('Auto/Auto', 'resetStory', { Book: book })
+            if (desk) await H.Lies_desk_book(book)
+            else {
+                H.top_House().c.desk_running = undefined
+                H.top_House().i_elvisto('Auto/Auto', 'resetStory', { Book: book })
+            }
             H.Lies_runner_phase(w, 'story_begun', { book })   // blip: Run kicked (Book sweep / cell click)
             H.tlog(`🎬 become_book drive → ${book}`)
         },
@@ -3029,7 +3034,8 @@ await M.eatfunc({
                     // TEMPORARY checkpoint trace (H.diag) — the begun-wedge hunt, 2026-07-30.  .c-only,
                     //  never snapped; pinpoints exactly which link in resetStory→story_drive→do_step fired.
                     const diag_trace = ((H.top_House().c as any).diag_trace as string[]) ?? []
-                    result = { self: String((H as any).Lies_self?.(w)?.prepub ?? ident?.sc?.prepub ?? '').slice(0, 16), sealed_piers: piers.filter((p: any) => p.mutual).length, piers, supply_trace, xfer, err_ring, creduler, diag_trace, world_snap, resident_snap, crate_census }
+                    const drain_stuck = { n: (H.top_House().c as any).drain_stuck_n ?? 0, last: ((H.top_House().c as any).drain_stuck as string[]) ?? [] }
+                    result = { self: String((H as any).Lies_self?.(w)?.prepub ?? ident?.sc?.prepub ?? '').slice(0, 16), sealed_piers: piers.filter((p: any) => p.mutual).length, piers, supply_trace, xfer, err_ring, creduler, diag_trace, drain_stuck, world_snap, resident_snap, crate_census }
                 } else if (op === 'run') {
                     // engage the runner for THIS client first (the don't-steal gate): refuse if another
                     //  client holds a live lease; else stamp our lease (GC'ing any prior client's runs) and
@@ -3045,7 +3051,7 @@ await M.eatfunc({
                             if (!chk.ok) { ok = false; result = { error: chk.reason, engagement: H.Lies_engagement(w) ?? null } }
                             else {
                                 H.Lies_engage(w, client, ask.book)
-                                H.Lies_become_book_drive(w, ask.book, !!ask.needAC, !!ask.needsFSA)   // CLI-carried caps → secure AC / gate FSA pre-run (it read Credence for us)
+                                H.Lies_become_book_drive(w, ask.book, !!ask.needAC, !!ask.needsFSA, undefined, undefined, !!ask.desk)   // CLI-carried caps → secure AC / gate FSA pre-run (it read Credence for us)
                                 result = { accepted: true, book: ask.book, uid: H.Lies_rungo_record(w)?.sc.uid ?? null, engaged: client, needAC: !!ask.needAC, needsFSA: !!ask.needsFSA }
                             }
                         })
@@ -3870,10 +3876,51 @@ await M.eatfunc({
         // Lies_runner_story_w — the live w:Story world (where This/Steps + the run state live, the same
         //  nav Cred_run_outcome walks).  null before any run.  Long-lived (survives resetStory), so
         //   keep_snaps rides here.  for runner_ask retain/state/steps/snap.
+        //  A run stood in a Desk (Lies_desk_book) answers from the Desk's inner Story instead — the one place a runner finds its run.
         Lies_runner_story_w(): TheC | undefined {
             const H     = this as House
-            const story = H.o({ H: 'Story' })[0] as House | undefined
+            const top   = H.top_House() as House
+            if (top.c.desk_running) {
+                const D = top.o({ H: 'Desk' })[0] as House | undefined
+                return D?.o({ A: 'Desk' })[0]?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] as TheC | undefined
+            }
+            const story = top.o({ H: 'Story' })[0] as House | undefined
             return story?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] as TheC | undefined
+        },
+
+        // Lies_desk_book — the Desk runner (AtheoryNexus_todo §0, the pure Atheory runner's first slice): the Book runs in a Desk
+        //  (Ground.g) holding the new Story (StoryFu.g, aside — on no House), instead of the page's H:Story.  The page Story is
+        //   torn down; the last Desk is stopped and dropped and a fresh one asked for this Book.  %DeskRunner on w:Desk says
+        //    its Story reports up: StoryFu Story_finished tells Auto storyFinished, so the verdict, Credence spool and run_result
+        //     land as for any run.  Unleashed — no %DeskLeash — so it runs straight through
+        async Lies_desk_book(book: string) {
+            const H   = this as House
+            const top = H.top_House() as any
+            // the Desk is Ground.g's, in Core — flat on a tab only once some Book stood on it; stand it here otherwise
+            if (typeof top.Desk_story !== 'function') {
+                const r = await ground_include(top, ['Core'])
+                if (r.unknown.length || r.failed.length || typeof top.Desk_story !== 'function') {
+                    console.warn(`⛔ desk_book ${book}: Core would not stand (${[...r.unknown, ...r.failed].join(' ') || 'Desk_story missing'})`)
+                    return
+                }
+            }
+            top.auto_teardown_story?.()
+            // each job a FRESH Desk: what a Book stands beside its run lands on the Run House's up — the Desk House here, as H:Story
+            //  on the page (VytoStaple's glass, A:Vyto) — so a reused Desk handed the next run the last one's glass (VytoStaple
+            //   saw its board at step 1, then sat at step 2).  The old Desk's Story stopped (Desk_reset), its House stopped and dropped
+            const old = top.o({ H: 'Desk' })[0] as House | undefined
+            if (old) {
+                top.Desk_reset(old)
+                old.stop()
+                top.drop(old)
+            }
+            const D = top.Desk_house(top)
+            const dw = D.oai({ A: 'Desk' }).oai({ w: 'Desk' })
+            dw.oai({ DeskRunner: 1 })
+            top.c.desk_running = book
+            top.Desk_story(top, book)
+            D.main(true)
+            H.diag(`desk_book stood ${book} in H:Desk`)
         },
 
         // Lies_runner_this — the live Story This container (where each Step's got_snap/ok lands).  Read-only.

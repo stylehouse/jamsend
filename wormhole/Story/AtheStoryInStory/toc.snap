@@ -9,28 +9,28 @@ story:AtheStoryInStory
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.054
-      sample=0.034,at=1793325216
-      sample=0.031,at=1793325225
-      sample=0.039,at=1793328444
-      sample=0.035,at=1793329819
-      sample=0.052,at=1793573926
-      sample=0.037,at=1793578872
-      sample=0.084,at=1793603948
+    TimeTotal:beliefs,avg=0.069
       sample=0.094,at=1793606262
       sample=0.068,at=1793606984
       sample=0.065,at=1793608849
-    TimeTotal:step,avg=0.008
-      sample=0.005,at=1793325216
-      sample=0.004,at=1793325225
-      sample=0.006,at=1793328444
-      sample=0.005,at=1793329819
-      sample=0.007,at=1793573926
-      sample=0.005,at=1793578872
-      sample=0.012,at=1793603948
+      sample=0.092,at=1793617363
+      sample=0.062,at=1793617708
+      sample=0.085,at=1793617721
+      sample=0.059,at=1793618845
+      sample=0.062,at=1793618858
+      sample=0.054,at=1793648617
+      sample=0.046,at=1793648631
+    TimeTotal:step,avg=0.01
       sample=0.013,at=1793606262
       sample=0.01,at=1793606984
       sample=0.009,at=1793608849
+      sample=0.013,at=1793617363
+      sample=0.009,at=1793617708
+      sample=0.012,at=1793617721
+      sample=0.008,at=1793618845
+      sample=0.009,at=1793618858
+      sample=0.008,at=1793648617
+      sample=0.007,at=1793648631
   step,dige:5baf55d7ac1a2524
   step=2,desc:stand a Desk holding the new Story — kept aside — give it a Book — AthePondRounds — leashed — and wait till it stands ready,dige:3132b02a85a5c021
     Assertion:a-desk-stands-the,sentence:a Desk stands the new Story kept aside — its code on the A — on no House

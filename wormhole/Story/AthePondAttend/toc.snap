@@ -5,10 +5,7 @@ story:AthePondAttend
     For
   Stands:CoreTesting
   TimeSpool
-    TimeTotal:beliefs,avg=0.049
-      sample=0.023,at=1793579078
-      sample=0.015,at=1793579085
-      sample=0.016,at=1793579093
+    TimeTotal:beliefs,avg=0.056
       sample=0.034,at=1793579594
       sample=0.058,at=1793603333
       sample=0.058,at=1793604288
@@ -16,10 +13,10 @@ story:AthePondAttend
       sample=0.112,at=1793606231
       sample=0.054,at=1793607012
       sample=0.049,at=1793608220
-    TimeTotal:step,avg=0.016
-      sample=0.008,at=1793579078
-      sample=0.005,at=1793579085
-      sample=0.005,at=1793579093
+      sample=0.041,at=1793617551
+      sample=0.046,at=1793618897
+      sample=0.045,at=1793648603
+    TimeTotal:step,avg=0.019
       sample=0.011,at=1793579594
       sample=0.019,at=1793603333
       sample=0.019,at=1793604288
@@ -27,6 +24,9 @@ story:AthePondAttend
       sample=0.037,at=1793606231
       sample=0.018,at=1793607012
       sample=0.016,at=1793608220
+      sample=0.014,at=1793617551
+      sample=0.015,at=1793618897
+      sample=0.015,at=1793648603
   step,dige:326fb498d09f4152
   step=2,dige:1db1015083c51b61,desc:a Desk believing a pond marked to attend the run loop — and a pond beside it unmarked — poke both clocks once
     Assertion:a-pulse-poked-into,sentence:a pulse poked into a pond marked to attend the run loop moves it on the House’s own think — nobody called a run

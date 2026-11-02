@@ -11,7 +11,7 @@ import { ground_closure, ground_loads, GROUND_CORE } from "$lib/A/ground"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_Ground(): string { return '9a00574f49138f7a~g1' },
+    Ghostmeta_Ghost_A_Ground(): string { return '164ccddf95ad6245~g1' },
 
 // Ground.g — what a tab stands on, said as particles on the A that stands on it (spec/Aprac_todo.md §0.5).
 //
@@ -198,8 +198,17 @@ Desk_leash_carry(w, sw) {
     let want = w.o({ DeskLeash: 1 })[0]
     let have = sw.o({ StoryLeash: 1 })[0]
     if (want && have && have.sc.StoryLeash === want.sc.DeskLeash && have.sc.n === want.sc.n) return
+    if (!want && !have) return
     if (have) sw.drop(have)
     if (want) sw.i(want.sc.n != null ? { StoryLeash: want.sc.DeskLeash, n: want.sc.n } : { StoryLeash: want.sc.DeskLeash })
+    // the move is news to a drive parked on the leash: its resume, called here (an elvis to sw failed — a w stood this think has no
+    //  route yet, 'no House has A:[object Object]').  Storica's hand, on a page Story, sends StoryFu e_story_unleash instead
+    let run = sw.o({ run: 1 })[0]
+    let resume = run?.c.leash_resume
+    if (resume) {
+        run.c.leash_resume = undefined
+        resume()
+    }
 
 },
 // Desk_reset — the Desk's Story, rebuilt: a nested Story is its holder's to reset, as the page's is Auto's (StoryFu story_reset
@@ -244,6 +253,10 @@ Desk(A, w) {
     let S = A.oai({ A: 'Story' })
     S.c.up = A
     let sw = S.oai({ w: 'Story' }, { Book: book })
+    // a runner's Desk (LiesFunk Lies_desk_book): its Story reports up to the page's Auto when it finishes (StoryFu Story_finished)
+    if (w.o({ DeskRunner: 1 }).length) {
+        sw.c.report_up = 1
+    }
     this.Desk_leash_carry(w, sw)
 
 },

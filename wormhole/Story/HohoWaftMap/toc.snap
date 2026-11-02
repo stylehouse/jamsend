@@ -5,26 +5,26 @@ story:HohoWaftMap
     no_gallop
     For
   TimeSpool
-    TimeTotal:beliefs,avg=1.379
-      sample=0.532,at=1783416326
-      sample=0.287,at=1783416330
-      sample=0.287,at=1783416668
-      sample=1.695,at=1785994646
+    TimeTotal:beliefs,avg=3.859
       sample=4.248,at=1785994703
       sample=0.018,at=1785995642
       sample=2.186,at=1785995795
       sample=0.353,at=1789110910
       sample=1.196,at=1789563779
       sample=2.988,at=1792491313
-    TimeTotal:step,avg=1.379
-      sample=0.532,at=1783416326
-      sample=0.287,at=1783416330
-      sample=0.287,at=1783416668
-      sample=1.695,at=1785994646
+      sample=0.251,at=1793619341
+      sample=16.16,at=1793619397
+      sample=6.482,at=1793624034
+      sample=4.704,at=1793624051
+    TimeTotal:step,avg=3.859
       sample=4.248,at=1785994703
       sample=0.018,at=1785995642
       sample=2.186,at=1785995795
       sample=0.353,at=1789110910
       sample=1.196,at=1789563779
       sample=2.988,at=1792491313
+      sample=0.251,at=1793619341
+      sample=16.16,at=1793619397
+      sample=6.482,at=1793624034
+      sample=4.704,at=1793624051
   step,dige:a0fb53b7637a9603

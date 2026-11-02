@@ -90,7 +90,7 @@ const FRONTIER_COLOR = '#c55'
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_O_StoryFu(): string { return '512d12714a954286~g1' },
+    Ghostmeta_Ghost_O_StoryFu(): string { return '1f483974a8523382~g1' },
 
 // Ghost: StoryFu — the Atheory fork of Story (working title; renamed from Story.g 2026-10-29, spec/AtheoryStory_todo.md).
 //  Ported from src/lib/O/Story.svelte, which the spine still mounts; a Story fix lands in both until the old one retires.
@@ -866,6 +866,16 @@ story_analysis(w: TheC) {
         ave.bump_version()
 
 },
+// the leash moved (Ground.g Desk_leash_carry, Storica's hand) — a drive parked on it is posted again.  The news is the wake;
+//  a parked drive used to ask again every 200ms (AtheoryNexus_todo §0 overnight queue 2)
+async e_story_unleash(A: TheC, w: TheC, e?: TheC) {
+        const run = w.o({ run: 1 })[0]
+        const resume = run?.c.leash_resume as (() => void) | undefined
+        if (!resume) return
+        run.c.leash_resume = undefined
+        resume()
+
+},
 async e_story_sel(A: TheC, w: TheC, e?: TheC) {
         const run = w.o({ run: 1 })[0]
         if (run) run.sc.open_at = e?.sc.open_at ?? null
@@ -1557,6 +1567,8 @@ Story_finished(w: TheC, mode: string) {
                 w.i({ see: `${w.sc.Book} ${run.sc.done} [${run.sc.mode}]${run.sc.paused ? ' ⏸' : ''}` })
             }
             base.up?.main?.(true)
+            // a runner's Desk (Ground.g %DeskRunner): the page's Auto hears it too — the verdict, Credence and run_result ride that
+            if (w.c.report_up) this.top_House().i_elvisto('Auto/Auto', 'storyFinished', { Book: w.sc.Book, mode })
             return
         }
         this.top_House().i_elvisto('Auto/Auto', 'storyFinished', { Book: w.sc.Book, mode })
@@ -1574,6 +1586,16 @@ Story_at(w: TheC, at: string, n?: number) {
         if (row) w.drop(row)
         w.i(n != null ? { StoryAt: at, n } : { StoryAt: at })
         base.up?.main?.(true)
+
+},
+// Story_hollow — the Book's Run has nothing to run: no Run_A_<Book> recipe stood its actors, and the default A:<Book>/w:<Book>
+//  resolves no handler (the same do_fn_for the belief loop dispatches with)
+Story_hollow(Run: House, book: string) {
+        if (typeof (Run as any)[`Run_A_${book}`] === 'function') return false
+        const A = Run.o({ A: book })[0] as TheC | undefined
+        const bw = A?.o({ w: book })[0] as TheC | undefined
+        if (!A || !bw) return false
+        return !Run.do_fn_for(bw, { ark: 'w', A }).handler
 
 },
 // Story_leashed — true when the leash forbids beginning step n.  ready: nothing begins.  step,n: up to n.  red: on until a step
@@ -2511,7 +2533,7 @@ async story_drive(Run: House, w: TheC, run: TheC) {
                 run.c.adv_t0 = undefined
             }
             // the leash (Story_leashed): a nested Story held here stands at ready or step,n-1 — before even finishing, so the
-            //  last step is a stop too — and asks again next tick
+            //  last step is a stop too — and parks: the leash moving is news (e_story_unleash posts it again), not a 200ms ask
             if (H.Story_leashed(w, n)) {
                 if (n === 1) {
                     H.Story_at(w, 'ready')
@@ -2519,7 +2541,18 @@ async story_drive(Run: House, w: TheC, run: TheC) {
                 else {
                     H.Story_at(w, 'step', n - 1)
                 }
-                schedule(true); return
+                const resume = () => schedule(true)
+                run.c.leash_resume = resume
+                // the fallback: a leash moved by a writer that sent no news.  It warns — every one is a missed wake to go fix
+                const fallback = () => {
+                    if (!run.c.driving || run.c.leash_resume !== resume) return
+                    if (H.Story_leashed(w, n)) { setTimeout(fallback, 5000); return }
+                    console.warn(`⛓ leash moved with no news — step ${n} resumed by the 5s fallback`)
+                    run.c.leash_resume = undefined
+                    resume()
+                }
+                setTimeout(fallback, 5000)
+                return
             }
             ;V.Story && console.log(`▷ do_step n=${n} mode=${run.sc.mode}`)
             ;V.Story && console.log(`The at n=${n}:`, (w.c.The)?.o({step:1}).map((s:any)=>s.sc.step+'→'+(s.sc.dige?s.sc.dige.slice(0,6):'no-dige')).join(', '))
@@ -2578,6 +2611,21 @@ async story_drive(Run: House, w: TheC, run: TheC) {
             if (n === 1 && !run.c.settled_off) {
                 run.c.settled_off = true
                 H.Story_settingoff(w, Run, run)
+            }
+            // nothing recorded from nothing: a RECORDING whose Book has no method (no Run_A_<Book>, no handler for its w) would
+            //  bake the Book's bare A/w as its fixture — the hollow first run of a toc born without Stands:<Ground>
+            //   (AtheoryNexus_todo §0 overnight queue 3).  Refused before step 1, so no NNN.snap is written
+            if (n === 1 && run.sc.mode === 'new' && H.Story_hollow(Run, w.sc.Book as string)) {
+                const why = `no method for ${w.sc.Book} — its toc lacks Stands:<Ground>?`
+                run.c.driving = false; run.sc.paused = 2
+                run.sc.failed_at = 1
+                run.sc.hollow = 1
+                H.Story_release_clock(Run)
+                console.warn(`∅ Story: refusing to record ${w.sc.Book} — ${why}`)
+                H.Story_error?.('error', 'Story', `refused a hollow recording: ${why}`)
+                await update_status(`∅ hollow — ${why}`, 'stop')
+                H.Story_finished(w, 'new')
+                return
             }
             // reset so ===0 detection below only fires for THIS step's alleviation
             Run.c.leave_running_until = null

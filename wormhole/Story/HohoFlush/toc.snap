@@ -42,28 +42,28 @@ story:HohoFlush
     quiesce_snap_time=0.4
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=0.372
-      sample=0.33,at=1793183897
-      sample=0.382,at=1793183945
-      sample=0.382,at=1793184082
-      sample=0.382,at=1793184083
-      sample=0.382,at=1793184083
-      sample=0.309,at=1793184106
-      sample=0.318,at=1793184183
+    TimeTotal:beliefs,avg=0.596
       sample=0.318,at=1793184234
       sample=0.399,at=1793184263
       sample=0.517,at=1793324352
-    TimeTotal:step,avg=0.053
-      sample=0.047,at=1793183897
-      sample=0.055,at=1793183945
-      sample=0.055,at=1793184082
-      sample=0.055,at=1793184083
-      sample=0.055,at=1793184083
-      sample=0.044,at=1793184106
-      sample=0.045,at=1793184183
+      sample=0.71,at=1793618671
+      sample=0.593,at=1793618792
+      sample=0.489,at=1793619144
+      sample=0.639,at=1793623637
+      sample=0.663,at=1793623651
+      sample=0.931,at=1793623898
+      sample=0.696,at=1793648962
+    TimeTotal:step,avg=0.085
       sample=0.045,at=1793184234
       sample=0.057,at=1793184263
       sample=0.074,at=1793324352
+      sample=0.101,at=1793618671
+      sample=0.085,at=1793618792
+      sample=0.07,at=1793619144
+      sample=0.091,at=1793623637
+      sample=0.095,at=1793623651
+      sample=0.133,at=1793623898
+      sample=0.099,at=1793648962
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   step,dige:14b7c11f25f97eb8
   step=2,dige:aed45f6885e73cb3

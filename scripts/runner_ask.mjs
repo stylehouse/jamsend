@@ -569,7 +569,7 @@ const CLIENT = clientId()
 
 // once: the same logical ask across insisting re-sends — a tab still working on it joins rather than runs twice
 const ask = { op, client: CLIENT, once: `${stamp}-${op}` }
-if (op === 'run')  { ask.book = arg; if (bookNeedsAC(arg)) ask.needAC = 1; if (bookNeedsFSA(arg)) ask.needsFSA = 1 }   // Credence-read → runner secures AC / routes to an FSA runner pre-run
+if (op === 'run')  { ask.book = arg; if (bookNeedsAC(arg)) ask.needAC = 1; if (bookNeedsFSA(arg)) ask.needsFSA = 1; if (process.argv.includes('--desk')) ask.desk = 1 }   // --desk: the Book runs in a Desk (StoryFu, the new Story) — AtheoryNexus_todo §0 the Desk runner   // Credence-read → runner secures AC / routes to an FSA runner pre-run
 if (op === 'snap' || op === 'trace') ask.n = Number(arg)
 if (op === 'declare') ask.sentence = arg   // the explorer button's CLI twin (e_story_declare)
 if (op === 'socklog') { ask.on = arg === 'off' ? 0 : 1; if (flags.has('--reload')) ask.reload = 1 }   // arm the tab's trace dump remotely (was: 🪪 hatch only)
@@ -1149,6 +1149,8 @@ else if (op === 'snap' && reply.result?.got_snap) {
 		if (cd.pending) console.log(`\n⛔ Creduler_pending STUCK — ${cd.unmet.length}/${cd.total} ghost(s) never went live:\n${cd.unmet.map(u => `    ${u}`).join('\n')}`)
 		else console.log(`\n✓ Creduler ready — all ${cd.total} ghosts live`)
 	}
+	// the drain watchdog (Housing ponder_now, 2026-11-03): each time a queued ponder think sat 2s and had to be driven
+	if (r.drain_stuck?.n) { console.log(`\n🐕 drain watchdog rescued ${r.drain_stuck.n}× this tab-life (last ${r.drain_stuck.last.length}):`); for (const d of r.drain_stuck.last) console.log(`  ${d}`) }
 	// TEMPORARY checkpoint trace (H.diag) — the begun-wedge hunt, 2026-07-30.
 	const dt = Array.isArray(r.diag_trace) ? r.diag_trace : []
 	if (dt.length) { console.log(`\ndiag trace (last ${dt.length}):`); for (const d of dt) console.log(`  · ${d}`) }

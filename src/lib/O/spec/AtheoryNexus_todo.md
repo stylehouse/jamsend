@@ -53,6 +53,55 @@
 - **ReactiveWaft kept**: the only guard on the gated-vs-ungated read that once tore down KeepFace for weeks (subagent stopped
    short of deleting).  Re-record its fixtures, don't delete — owner to confirm.
 
+**The night of 2026-11-02/03 — where it got to (read this first):**
+- **The begun-wedge is a LOST DRAIN, not the disk.**  ~8% of Book starts (12 of 149 in the non-Athe sweep, at random) sat at
+   `phase:begun` forever: the toc read settles in ~20ms, `ponder_now` pushes a think onto Mundo — *second* in the todo — the drain
+    takes the item ahead of it, and Mundo's todo is never drained again (diag, HohoLocate: `ponder_now pushed … todo 2 waiting=true
+     pending=true` → `drain took an item before it … todo now 1` → nothing).  Mundo is NOT stopped.  Suspect: the drain's own
+      come-back timer and the gate timer that clears `answer_calls_waiting` fire at the same gate ms; when come-back loses, the
+       next drain rests on the `todo_version` $effect re-bump, which Housing's own 2026-08-08 comment says can fail.  **Watchdog
+        built** (Housing `ponder_now`): a ponder think still queued 2s on is logged with the drain counters (calls/gated/tries,
+         drain_why, waiting/pending, mutex) and driven; `runner_ask world` prints "🐕 drain watchdog rescued N×".  Next: read a 🐕
+          line, fix the re-arm at its root, keep the watchdog as the alarm.  (diag lines in `stop()`, `ponder_now`, Wormhole_park
+           are TEMPORARY — take them out with the fix.)
+- **The leash by news — built, re-gate owed.**  A held drive parks (`run.c.leash_resume`); `Desk_leash_carry` calls it when the
+   leash moves; Storica's no-Desk hand sends `story_unleash`; a 5s fallback warns `⛓ leash moved with no news`.  The first cut
+    elvised the inner w and broke every AtheStory* Book (`no House has A:[object Object]` — a w stood that same think has no
+     route); fixed by calling the resume.  One mixed run after the fix (the owner was running Books on the same tab): Walk/Sabotage/
+      Pick green, AtheStoryInStory red with its inner run snapping `open_at=2` — re-run it clean before believing.
+- **Refuse a hollow recording — built (StoryFu only; Story.svelte left to drift, owner 2026-11-03).**  `Story_hollow`: no
+   `Run_A_<Book>` and no handler for the Book's w ⇒ a new-mode run stops before step 1 with `∅ hollow`.
+- **Another way to record from nothing:** a run that picks `mode:new` BEFORE its toc read lands (a slow read, or a diskless tab —
+   the headless eye recorded AthePondAttend that way) records over a Book that has fixtures.  The mode must wait for the read.
+- **The Desk runner, slice 1 — built, untested** (the pure Atheory runner, below).  `runner_ask run <Book> --desk` /
+   `runner_sweep --desk`: `Lies_desk_book` stands Core if the tab lacks it, tears down H:Story, resets the tab's H:Desk and asks it
+    for the Book (`%DeskRunner` on w:Desk → the Story's `w.c.report_up` → StoryFu `Story_finished` tells Auto, so verdict,
+     Credence spool and run_result land as for any run).  `Lies_runner_story_w()` and `Cred_run_outcome` read the Desk's inner
+      Story while `top.c.desk_running`.  First trial: the Athe Ponds, a few Hoho/Vyto/Swarm, then one normal run to see H:Story return.
+- **The Desk runner, 2026-11-03 morning:** AthePond*, the AtheStory* re-gate (normal) and VytoStaple green; then after one fix
+   **63 of 71** of Hoho*/Vyto*/AthePond* green with `--desk`.  The fix was the predicted class: Lang found the Story by
+    `top.o({H:'Story'})` — none at the top under a Desk, so w:Lang grew its own `Styles` (HohoKeep/HohoFlush's only diff); Lang
+     now walks up from its own House (page H:Story, a Desk's A:Desk/A:Story, or Mundo's own H:Story).  Left: HohoTiles, HohoWaftMap,
+      VytoBunch, VytoMitosis, VytoSeek, VytoStaple (1–2 `see:` lines each), VytoFreeze (`⏱ timeout step 3`), and HohoKeep/VytoFoam
+       NEVER STARTED at begun once each — the drain watchdog was ponder-only then; it is now **general** (`_drain_dog`, one timer per
+        House armed by any push: the head waited 2s, no drain since, mutex free ⇒ say why + drive).  Not yet seen firing.
+- **e747 twice failed to come back from an agent's `runner_ask reload`** ("refused (busy)" for an hour; a headless cold boot of the
+   same code is fine both times; the owner's manual reload cured the first).  Until understood: after a reload, if 3 pings fail within
+    3 min, stop and ask the owner — don't loop reloads.
+- **The non-Athe census:** 0 `⏱ timeout` steps across ~149 Books — the timeout caveat costs nothing outside Athe.  Reds: MusuPier
+   (order flake), MusuRaStream (wall-clock `now=` in sc), MusuReco (body_hash), MusuSmuggle/MusuMag (more steps than fixture),
+    MusuRadio (needs AudioContext), SwarmGot (redeeming→sealed timing), PortPain (∅ — toc lacks `Stands:`); InvFerry/Seal/Walk
+     "more steps than fixture" once, unverified.  Runner-killers this night: MundaneStaying, MusuRaChase (each wedged twice).
+- **Diffmatication**'s committed toc said `c5c6…` while its own 001.snap hashes `539f…`; the toc now says `539f…`.
+- **Sweep agents and tokens:** a Monitor that reports every poll wakes the agent AND the parent every few seconds — one batch cost
+   ~25 double wakes.  Sweep prompts now say: emit only on batch-exit or a 60s wedge.
+
+**The pure Atheory runner — the plan (owner 2026-11-03: "the next generation of this sit there and run every job that comes along
+ thing … with the runner role on the editor").**  1. The Desk runner on today's spine (slice 1 above) — reds there are where StoryFu
+  still assumes it is alone (its 22 `top_House()` reaches).  2. Jobs as arrivals: a relay `run` becomes a pulse on an A:Runner
+   compartment, each job its own Desk, ending a job drops its Desk — no Auto teardown, no `stop()` cascade.  3. The editor's runner
+    role through the same door.  4. Story.svelte retires when the fleet is green on Desk runners.
+
 **Overnight queue (2026-11-02 night, owner leaving it running after a compact — no Book runs inline, a Sonnet agent per sweep):**
 1. Sweep the music/Hoho/other non-Athe families for `⏱ timeout` (runner_sweep, unusual rows skipped) — the count decides whether a
     timeout caveats (§0 "a step that outlives its ttlilt").  Report per family; fix only Book-side holds that wait for nothing.
@@ -100,7 +149,14 @@
        headline (Story_future §19) is the human half of it.
 3. **The poke's wake rule is a patch on a missing door.**  `TheA_poke` now asks `c.runtime === undefined` to decide how to wake — a
     House-level fact read off a Story field.  The door (§3.4: a per-House arrival queue, its own qualities) is where "wake this House
-     for this arrival" belongs; Story's between-steps freeze becomes the door being shut, not a flag every poker must read.
+     for this arrival" belongs.
+    *Checked 2026-11-02 (owner asked):* Story's between-steps freeze is **not** a shut door yet — it is half of one.  Between
+     steps `Run.c.runtime = false` (StoryFu.g ~2688, Story.svelte ~2672) makes `feebly_ponder` (Housing.svelte.ts ~1177)
+      return: the **knock is dropped**, not queued.  The **letter survives** — `TheA_poke` writes `%TheAPulse` onto the synapse
+       before it knocks — and the next step's blanket `setTimeout(() => Run.i_elvisto(Run, 'think'), 1)` (StoryFu.g ~2520) is the
+        hand that checks the mat: a whole-House think that finds it.  Meanwhile `main(true)` / `ponder_now` / `i_elvisto` walk
+         straight past (Story_at, disk settles, Desk_pick).  So the door is: a queue of knocks held while shut, opened at step start
+          in place of that blanket think, with the bypassers either going through it or named as exceptions.
 
 **What that orders.**  (a) the waits onto the run loop, one by one, each with its Book faster and timeout-free; (b) "nothing from
  nothing" in the recorder (refuse hollow saves, refuse timeout greens — after the music/Hoho count); (c) the door, small: an arrival

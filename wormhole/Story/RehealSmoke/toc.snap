@@ -7,7 +7,9 @@ story:RehealSmoke
     TimeTotal:beliefs,avg=0.002
       sample=0.002,at=1786439127
       sample=0.001,at=1789115857
+      sample=0.002,at=1793622115
     TimeTotal:step,avg=0.002
       sample=0.002,at=1786439127
       sample=0.001,at=1789115857
+      sample=0.002,at=1793622115
   step,dige:e69951575ede1697

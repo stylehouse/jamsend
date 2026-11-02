@@ -1,15 +1,15 @@
 story:WorkshopStaple
-  Stands:LandTesting
   Styles
   Plan
   Opt
     For
+  Stands:LandTesting
   EntropyArrest
     Entcase:Self_round
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.041
+    TimeTotal:beliefs,avg=0.043
       sample=0.029,at=1791500526
       sample=0.023,at=1791500541
       sample=0.024,at=1791500549
@@ -18,6 +18,7 @@ story:WorkshopStaple
       sample=0.022,at=1791500603
       sample=0.025,at=1791501243
       sample=0.153,at=1792466533
+      sample=0.058,at=1793623503
     TimeTotal:step,avg=0.007
       sample=0.005,at=1791500526
       sample=0.004,at=1791500541
@@ -27,6 +28,7 @@ story:WorkshopStaple
       sample=0.004,at=1791500603
       sample=0.004,at=1791501243
       sample=0.026,at=1792466533
+      sample=0.01,at=1793623503
   step,dige:014dbce8783be880
   step=2,desc:load the Workshop and the Garden — stand the garden on this run,dige:a8fe148557b850ef
     Assertion:a-creation-is-a,sentence:a creation is a ghost with one world — the Workshop loads it and stands its world

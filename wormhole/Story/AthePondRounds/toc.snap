@@ -11,7 +11,6 @@ story:AthePondRounds
         means,drop
   TimeSpool
     TimeTotal:beliefs,avg=0.021
-      sample=0.011,at=1793578871
       sample=0.011,at=1793578904
       sample=0.012,at=1793579718
       sample=0.022,at=1793603811
@@ -21,8 +20,8 @@ story:AthePondRounds
       sample=0.019,at=1793607004
       sample=0.02,at=1793607032
       sample=0.025,at=1793608458
+      sample=0.017,at=1793618912
     TimeTotal:step,avg=0.005
-      sample=0.003,at=1793578871
       sample=0.003,at=1793578904
       sample=0.003,at=1793579718
       sample=0.005,at=1793603811
@@ -32,6 +31,7 @@ story:AthePondRounds
       sample=0.005,at=1793607004
       sample=0.005,at=1793607032
       sample=0.006,at=1793608458
+      sample=0.004,at=1793618912
   step,dige:acc822a82c0f14d0
   step=2,desc:stand P nine turns ahead streaming into Q — and R with a clock and nothing on it,dige:9994865185e9847b
   step=3,desc:thirteen pulses on P’s clock — run until quiet,dige:7cfc92dce34f82fc

@@ -4,26 +4,26 @@ story:MusuRaStock
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.001
-      sample=0.001,at=1786063803
-      sample=0.001,at=1786111720
-      sample=0.001,at=1786117486
-      sample=0.001,at=1786121688
+    TimeTotal:beliefs,avg=0.002
       sample=0.001,at=1786121976
       sample=0.001,at=1786168851
       sample=0.001,at=1786279078
       sample=0.002,at=1789113711
       sample=0.001,at=1789435426
       sample=0.001,at=1792135312
-    TimeTotal:step,avg=0.001
-      sample=0.001,at=1786063803
-      sample=0.001,at=1786111720
-      sample=0.001,at=1786117486
-      sample=0.001,at=1786121688
+      sample=0.002,at=1793620800
+      sample=0.002,at=1793620847
+      sample=0.003,at=1793620913
+      sample=0.002,at=1793625189
+    TimeTotal:step,avg=0.002
       sample=0.001,at=1786121976
       sample=0.001,at=1786168851
       sample=0.001,at=1786279078
       sample=0.002,at=1789113711
       sample=0.001,at=1789435426
       sample=0.001,at=1792135312
+      sample=0.002,at=1793620800
+      sample=0.002,at=1793620847
+      sample=0.003,at=1793620913
+      sample=0.002,at=1793625189
   step,dige:caa06a2f917226aa

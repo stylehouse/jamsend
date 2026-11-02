@@ -191,16 +191,22 @@
 
         // ── Styles bucket for Cyto ──────────────────────────────────
         // Share Story's bucket when the full machine is up (same swatches Story persists).
-        //  Standalone (Editron|runner) has no H:Story → own a {Styles:1} on w:Lang, which
+        //  Standalone (Editron|runner) has no Story above it → own a {Styles:1} on w:Lang, which
         //   The_Styles' contract sanctions, so Cyto gets real swatches not a palette-fallback.
-        const topH    = H.top_House()
+        // The Story is found by NEARNESS, walking up from this House: the page's H:Story/A:Story, or a Desk's A:Desk/A:Story
+        //  (the Desk runner, 2026-11-03 — reaching for the top's H:Story found none there, and w:Lang grew its own Styles)
         let stylesC: TheC | null = null
-        const storyH = topH.o({ H: 'Story' })[0] as TheC | undefined
-        if (storyH) {
+        let storyW: TheC | undefined
+        for (let h: any = H; h && !storyW; h = h.up) {
+            storyW = h.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0]
+                ?? h.o({ A: 'Desk' })[0]?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0]
+                ?? h.o({ H: 'Story' })[0]?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0]   // a top Lang (Mundo's) shares the page Story's, as before
+        }
+        if (storyW) {
             // Full machine: share Story's. A throw here is the transient "Story up but its
             //  .c.The not stamped yet" race — leave null so Cyto palette-falls-back this pass.
-            try { stylesC = H.The_Styles((storyH as any).Awo('Story', 'Story')) }
-            catch { console.warn(`Lang: H:Story present but no The yet — Cyto palette-fallback`) }
+            try { stylesC = H.The_Styles(storyW) }
+            catch { console.warn(`Lang: a Story above but no The yet — Cyto palette-fallback`) }
         } else {
             stylesC = w.oai({ Styles: 1 }) as TheC
         }

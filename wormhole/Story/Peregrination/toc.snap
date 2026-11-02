@@ -4,16 +4,20 @@ story:Peregrination
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.001
+    TimeTotal:beliefs,avg=0.002
       sample=0.001,at=1784407700
       sample=0.002,at=1784418095
       sample=0.001,at=1784616715
       sample=0.001,at=1785826102
       sample=0.001,at=1789115544
-    TimeTotal:step,avg=0.001
+      sample=0.003,at=1793622059
+      sample=0.002,at=1793622060
+    TimeTotal:step,avg=0.002
       sample=0.001,at=1784407700
       sample=0.002,at=1784418095
       sample=0.001,at=1784616715
       sample=0.001,at=1785826102
       sample=0.001,at=1789115544
+      sample=0.003,at=1793622059
+      sample=0.002,at=1793622060
   step,dige:9316741246d04d65

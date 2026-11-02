@@ -4,28 +4,28 @@ story:MusuBerth
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=2.128
-      sample=1.922,at=1788919317
-      sample=5.062,at=1788922958
-      sample=1.706,at=1788945412
-      sample=0.666,at=1788949421
+    TimeTotal:beliefs,avg=1.302
       sample=2.102,at=1788958700
       sample=1.49,at=1789000069
       sample=2.684,at=1789117400
       sample=1.54,at=1792469592
       sample=1.292,at=1792551639
       sample=2.815,at=1792551657
-    TimeTotal:step,avg=0.304
-      sample=0.275,at=1788919317
-      sample=0.723,at=1788922958
-      sample=0.244,at=1788945412
-      sample=0.095,at=1788949421
+      sample=0.241,at=1793619847
+      sample=0.209,at=1793619857
+      sample=0.363,at=1793619949
+      sample=0.288,at=1793624652
+    TimeTotal:step,avg=0.186
       sample=0.3,at=1788958700
       sample=0.213,at=1789000069
       sample=0.383,at=1789117400
       sample=0.22,at=1792469592
       sample=0.185,at=1792551639
       sample=0.402,at=1792551657
+      sample=0.034,at=1793619847
+      sample=0.03,at=1793619857
+      sample=0.052,at=1793619949
+      sample=0.041,at=1793624652
   step,dige:12e0cf54a0772eb6
   step=2,dige:493f1482e12fc6dc
   step=3,dige:1c804c33fdc60282

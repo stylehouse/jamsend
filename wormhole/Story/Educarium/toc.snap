@@ -5,9 +5,7 @@ story:Educarium
     For
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=4.025
-      sample=0.83,at=1788842201
-      sample=3.571,at=1788846244
+    TimeTotal:beliefs,avg=5.138
       sample=1.052,at=1788851193
       sample=2.016,at=1788853494
       sample=8.797,at=1789108181
@@ -16,9 +14,9 @@ story:Educarium
       sample=1.651,at=1789563996
       sample=13.352,at=1789564889
       sample=5.417,at=1789564976
-    TimeTotal:step,avg=4.025
-      sample=0.83,at=1788842201
-      sample=3.571,at=1788846244
+      sample=2.656,at=1793618169
+      sample=12.883,at=1793619010
+    TimeTotal:step,avg=5.138
       sample=1.052,at=1788851193
       sample=2.016,at=1788853494
       sample=8.797,at=1789108181
@@ -27,4 +25,6 @@ story:Educarium
       sample=1.651,at=1789563996
       sample=13.352,at=1789564889
       sample=5.417,at=1789564976
+      sample=2.656,at=1793618169
+      sample=12.883,at=1793619010
   step,dige:0000000000000000
