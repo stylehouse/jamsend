@@ -11,6 +11,7 @@
 //                                  [--lines=40] [--quiet] <Book | Glob*> ...
 //      AthePond* AtheStory* LeafFarm        globs match wormhole/Story/<dir>
 //      --reload        runner_ask reload first, then wait for 3 green pings
+//      --reload-every=N  reload again every N Books (same wait)
 //      --swap=…        runner_ask ghost_load <g> --swap for each (a LocalGen'd .go is NOT picked up by a reload —
 //                       memory new-book-hollow-first-runs); done after --reload
 //      --no-rerun      a red is reported as is (default: rerun once; green the second time prints ~)
@@ -173,9 +174,19 @@ const say = (line, loud) => { full.push(line); if (loud) console.log(line); if (
 const tally = { '✓': 0, '~': 0, '✗': 0, '∅': 0, '?': 0 }
 const SETTLE_MS = Number(process.env.RUNNER_SWEEP_SETTLE_MS || 3000)
 let first = true
+// --reload-every=N: a fresh tab every N Books (owner 2026-11-03: keep the runner fresher) — reload, then 3 green pings
+const RELOAD_EVERY = Number(val('reload-every') || 0)
+let since_reload = 0
 for (const b of books) {
     if (!first) await sleep(SETTLE_MS)
     first = false
+    if (RELOAD_EVERY && since_reload >= RELOAD_EVERY) {
+        ask('reload')
+        await ready(`after reload (every ${RELOAD_EVERY})`)
+        say(`↻ reloaded the runner after ${since_reload} Books`, !quiet)
+        since_reload = 0
+    }
+    since_reload++
     const fx = fixtures(b)
     let r = once(b)
     // a run that never started (another client's run, a lost ask) is tried once more before it is reported

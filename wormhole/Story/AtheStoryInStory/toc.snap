@@ -9,8 +9,7 @@ story:AtheStoryInStory
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.063
-      sample=0.056,at=1793662246
+    TimeTotal:beliefs,avg=0.066
       sample=0.058,at=1793662262
       sample=0.057,at=1793662357
       sample=0.052,at=1793662381
@@ -20,8 +19,8 @@ story:AtheStoryInStory
       sample=0.052,at=1793669978
       sample=0.081,at=1793670295
       sample=0.071,at=1793670783
+      sample=0.085,at=1793676597
     TimeTotal:step,avg=0.009
-      sample=0.008,at=1793662246
       sample=0.008,at=1793662262
       sample=0.008,at=1793662357
       sample=0.007,at=1793662381
@@ -31,6 +30,7 @@ story:AtheStoryInStory
       sample=0.007,at=1793669978
       sample=0.012,at=1793670295
       sample=0.01,at=1793670783
+      sample=0.012,at=1793676597
   step,dige:5baf55d7ac1a2524
   step=2,desc:stand a Desk holding the new Story — kept aside — give it a Book — AthePondRounds — leashed — and wait till it stands ready,dige:3132b02a85a5c021
     Assertion:a-desk-stands-the,sentence:a Desk stands the new Story kept aside — its code on the A — on no House

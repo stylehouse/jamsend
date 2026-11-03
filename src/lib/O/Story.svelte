@@ -3209,6 +3209,12 @@
     async story_ui(this: House, Run: House, w: TheC, run: TheC) {
         const wa = this.o({ watched: 'actions' })[0]
         if (!wa) return
+        // a PAUSED run is a human holding it (or a finished run), not a snap window: its door stands open, so what they poke lands and
+        //  Resnap shows it — the door shuts only between a step's end and the next step's start while driving (Housing, the door)
+        if (run.sc.paused && Run.c.runtime === false) {
+            const rows = Run.door_open()
+            if (rows.length) Run.main(true)
+        }
         const paused = run.sc.paused
         const mode   = run.sc.mode ?? 'new'
 

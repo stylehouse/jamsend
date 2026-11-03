@@ -52,9 +52,7 @@ story:HohoSurprise
         nogen
         nopush
   TimeSpool
-    TimeTotal:beliefs,avg=0.822
-      sample=0.738,at=1793619309
-      sample=0.776,at=1793623982
+    TimeTotal:beliefs,avg=0.827
       sample=0.79,at=1793667582
       sample=1.112,at=1793667596
       sample=0.767,at=1793669034
@@ -63,9 +61,9 @@ story:HohoSurprise
       sample=0.716,at=1793669900
       sample=0.675,at=1793670010
       sample=0.915,at=1793670118
+      sample=0.76,at=1793676653
+      sample=0.805,at=1793676669
     TimeTotal:step,avg=0.075
-      sample=0.067,at=1793619309
-      sample=0.071,at=1793623982
       sample=0.072,at=1793667582
       sample=0.101,at=1793667596
       sample=0.07,at=1793669034
@@ -74,6 +72,8 @@ story:HohoSurprise
       sample=0.065,at=1793669900
       sample=0.061,at=1793670010
       sample=0.083,at=1793670118
+      sample=0.069,at=1793676653
+      sample=0.073,at=1793676669
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   step,dige:506274595e2f7c21
   step=2,dige:07b6a3120e1cf9d9
