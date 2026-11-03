@@ -55,6 +55,11 @@
     //    `h.c.role = 'hacker'`, which every duty gate misses because they test for equality.
     const hacker_book = boot_param('H')
     const on_grid     = boot_param('I')   // ?I=<tag> ALONE (no ?E/?B) — an idle runner-on-the-grid
+    // ?G=<Ground> — the tab stands on a Ground (AtheoryNexus_todo §0.0 E, /Desk?I=…&G=Runner): the Ground says what runs and as what
+    //  role.  Its toc is on the wormhole, which isn't up yet — so the role boots as the default the toc may only confirm, the
+    //   Ground's name lowercased (Runner → runner); Auto reads the toc once it can and stamps %Page on Mundo.  Only a Ground whose
+    //    name lowercases to a machine role (runner|daemon) boots from the URL alone for now.
+    const ground      = boot_param('G')
     // &remoteWormhole=1: this tab has NO local tree — it acquires a method:remoteWormhole backend,
     //  begging a trusted editor to proxy its disk (a headless flock runner; see Cluster_spec "beg
     //   through the Brink").  Stamped on the LOCAL h (never read $state H inside the effect — the
@@ -71,7 +76,7 @@
     //  ARMED opt-in ONLY: ?socklog (or implied by ?watch), never a plain tab.  OFF by default the tap never
     //   installs, sockcap stays empty, and Lies_dump_socklog early-returns — so no _socklog files and no
     //    rw-req blob every ~10s (which is what an always-on capture was parking in the snap).  Browser-guarded.
-    if ((editor_book || hacker_book || book || on_grid) && (boot_param('socklog') != null || socklog_armed() || watch_min > 0)) sockcap_install()
+    if ((editor_book || hacker_book || book || on_grid || ground) && (boot_param('socklog') != null || socklog_armed() || watch_min > 0)) sockcap_install()
     // The CONSOLE ring — UNCONDITIONAL on any cluster boot (runner|editor|grid), no arm, no reload.
     //  Unlike the socket tap it is pure in-memory (bounded, never persisted, never snapped), so it is
     //   always ready when a bug happens and a human never has to pre-arm + reload to catch it.  Pulled
@@ -80,7 +85,7 @@
     //   (`/?I=`) never ran this line and its ring stayed empty.  Kept here as an idempotent no-op so a
     //    direct /Otro mount without the layout still has a ring.
     concap_install()
-    if (typeof window !== 'undefined' && (editor_book || hacker_book || book || on_grid) && watch_min > 0) {
+    if (typeof window !== 'undefined' && (editor_book || hacker_book || book || on_grid || ground) && watch_min > 0) {
         onMount(() => {
             const id = setInterval(() => { try { location.reload() } catch {} }, watch_min * 60_000)
             return () => clearInterval(id)
@@ -96,6 +101,12 @@
         //  NO H.c.book — so no Story starts at boot; the tab idles connected until the editor hands it
         //   a become_book.  /Otro?I=new is the whole on-ramp; the identity layer (Auto) does the rest.
         //  (?E=/?B= still win: an editor or booked runner that ALSO carries ?I just gains an identity.)
+        else if (ground) {
+            h.c.ground = ground
+            const role = ground.toLowerCase()
+            if (role === 'runner' || role === 'daemon') h.c.boot_role = role
+            else console.warn(`⛔ ?G=${ground}: only a runner|daemon Ground boots from the URL yet — booting bare`)
+        }
         else if (on_grid) {                        h.c.boot_role = 'runner' }
         if (remote_wormhole) h.c.remote_wormhole = true
         H = h

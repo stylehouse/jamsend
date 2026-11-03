@@ -14,6 +14,33 @@
 //    include shelf already says how its load went, and a layer with no dige says it on the A.
 import { GROUNDS } from './grounds.gen.js'
 
+// THE READ GROUNDS (AtheoryNexus_todo §0.0 E, 2026-11-03).  The bake is the bootstrap — Core is hard-wired because nothing can read
+//  a toc before Core stands — and every other Ground may instead be READ from its hand-kept wormhole/Ground/<Name>/toc.snap once a
+//   tab has a wormhole (Auto, for ?G=).  A read Ground is learned here and wins over the bake.  A composition carries how to run
+//    as well as what to load: Main (the A the page runs from, repeatable), Role (default: its name lowercased), Face.
+export type GroundRead = { stands: string[], load: string[], main: string[], role?: string, face?: string }
+const LEARNED: Record<string, GroundRead> = {}
+export function ground_learn(name: string, g: GroundRead) { LEARNED[name] = g }
+export function ground_read(name: string): GroundRead | undefined {
+    if (LEARNED[name]) return LEARNED[name]
+    const b = (GROUNDS as Record<string, { stands: string[], load: string[] }>)[name]
+    return b ? { stands: b.stands, load: b.load, main: [] } : undefined
+}
+// ground_role — the role a Ground boots a tab as: its own Role:, else its name lowercased (Runner → runner)
+export function ground_role(name: string): string {
+    return ground_read(name)?.role || name.toLowerCase()
+}
+// ground_from_toc — a decoded Ground toc (the C its toc.snap decodes to, %Ground:<Name> with Stands/Load/Main/Role/Face rows)
+//  as a GroundRead.  Duck-typed on o()/sc so this file stays free of Stuff.
+export function ground_from_toc(G: any): GroundRead {
+    const vals = (k: string) => (G?.o?.({ [k]: 1 }) ?? []).map((n: any) => String(n.sc[k]))
+    const g: GroundRead = { stands: vals('Stands'), load: vals('Load'), main: vals('Main') }
+    const role = vals('Role')[0], face = vals('Face')[0]
+    if (role) g.role = role
+    if (face) g.face = face
+    return g
+}
+
 export const GROUND_CORE = 'Core'
 
 export type GroundStep = { name: string, via?: string }
@@ -23,16 +50,16 @@ export type GroundStep = { name: string, via?: string }
 //  `via` is the Ground that pulled one in (absent for one that was asked for).  An unknown name is returned, not thrown:
 //   whoever asked decides what refusing looks like.
 export function ground_closure(names: string[]): { order: GroundStep[], unknown: string[] } {
-    const G = GROUNDS as Record<string, { stands: string[], load: string[] }>
     const order: GroundStep[] = []
     const seen = new Set<string>()
     const unknown: string[] = []
     const visit = (name: string, via?: string) => {
         if (seen.has(name)) return
-        if (!G[name]) { if (!unknown.includes(name)) unknown.push(name); return }
+        const g = ground_read(name)
+        if (!g) { if (!unknown.includes(name)) unknown.push(name); return }
         seen.add(name)
         if (name !== GROUND_CORE) visit(GROUND_CORE, name)
-        for (const s of G[name].stands) visit(s, name)
+        for (const s of g.stands) visit(s, name)
         order.push(via ? { name, via } : { name })
     }
     for (const n of names) visit(n)
@@ -43,7 +70,7 @@ export function ground_closure(names: string[]): { order: GroundStep[], unknown:
 
 // ground_loads — one Ground's .g, in the order it loads them
 export function ground_loads(name: string): string[] {
-    return (GROUNDS as Record<string, { load: string[] }>)[name]?.load ?? []
+    return ground_read(name)?.load ?? []
 }
 
 // ground_include — the floor: load every .g the closure of `names` needs, in order, through the include door.  A file

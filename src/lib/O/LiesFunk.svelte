@@ -3051,7 +3051,7 @@ await M.eatfunc({
                             if (!chk.ok) { ok = false; result = { error: chk.reason, engagement: H.Lies_engagement(w) ?? null } }
                             else {
                                 H.Lies_engage(w, client, ask.book)
-                                H.Lies_become_book_drive(w, ask.book, !!ask.needAC, !!ask.needsFSA, undefined, undefined, !!ask.desk)   // CLI-carried caps → secure AC / gate FSA pre-run (it read Credence for us)
+                                H.Lies_become_book_drive(w, ask.book, !!ask.needAC, !!ask.needsFSA, undefined, undefined, !!ask.desk || H.Lies_page_runs('Runner'))   // CLI-carried caps → secure AC / gate FSA pre-run (it read Credence for us)
                                 result = { accepted: true, book: ask.book, uid: H.Lies_rungo_record(w)?.sc.uid ?? null, engaged: client, needAC: !!ask.needAC, needsFSA: !!ask.needsFSA }
                             }
                         })
@@ -3886,6 +3886,13 @@ await M.eatfunc({
             }
             const story = top.o({ H: 'Story' })[0] as House | undefined
             return story?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] as TheC | undefined
+        },
+
+        // Lies_page_runs — does this tab's page (a /Desk?G= Ground, Auto auto_ground's %Page on Mundo) run this Main?  A page on
+        //  Ground/Runner runs every Book it is told in a Desk, --desk or not (AtheoryNexus_todo §0.0 E)
+        Lies_page_runs(main: string): boolean {
+            const page = ((this as House).top_House() as House).o({ Page: 1 })[0] as TheC | undefined
+            return !!page?.o({ Main: main }).length
         },
 
         // Lies_desk_book — the Desk runner (AtheoryNexus_todo §0, the pure Atheory runner's first slice): the Book runs in a Desk

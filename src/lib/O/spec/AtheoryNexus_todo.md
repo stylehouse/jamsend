@@ -47,7 +47,7 @@
 | **B** | **Disk replies are rows** | a Wormhole settle lands as a pulse on the asker, not a `ponder_now` | the 📭 guard; the 48s class | AthePondTendril + a cold sweep with 0 📭 |
 | **C** | **Story waits by news** (§0.1 item 1) | gate holds → `%TheAWait` answered by `Story_at`; the leash a pulse; a ttlilt that runs out alarms | most of StoryFu's 20 timers; `⏱ timeout` greens | AtheStory* faster, 0 timeouts |
 | **D** | **Jobs as arrivals** (pure runner, step 2) | a relay `run` is a pulse on A:Runner; each job its own Desk; ending it drops the Desk | Auto teardown, `stop()` cascade, the reload wedge | `runner_sweep --desk` = normal sweep |
-| **E** | **The Desk is the page** (THE MAP 1) | `/Desk?B=` runners; Story.svelte, Otro, Auto retire | the twin tax; everything.js | the fleet green on Desk runners |
+| **E** | **A page is an Identity standing on a Ground** (THE MAP 1, reworded — owner 2026-11-03: no `?B=`, a runner is told its Books) | `?I=` says who; the Ground says what it stands on — `Ground/Runner` = Core + Story + Runner, whose `A:Runner` takes `%Job` arrivals (D) in place of Auto's pick/teardown/rebuild; the Story's buttons become pokes on the Desk's Hand (like the step strip). RULED: `/Desk?I=…&G=Runner` — the Ground names the role (default: its name lowercased); see *E thought through* below | the twin tax; Auto; everything.js | the fleet green on Ground/Runner tabs |
 | **F** | **Reqs by pulse** (Hovercraft) | one req held by `%TheAWait` instead of a ttlilt, then the rest | 56 ttlilts | its Book byte-identical |
 | **G** | **The pile as a landscape** (owner 2026-11-03, replaces porting a music organ) | a filesystem listing (local FSA or remote mount) drawn as a floaty space; then a Heist setup that shows what is already where it goes and offers the user's OWN categories; then a merge page: a second FSA's download pile listened through and dialled into the collection, a long workflow kept over sessions | — (the first app built on the fabric) | a Book per rung |
 
@@ -65,6 +65,60 @@
            Storys — the live 'gave up' leaked in); MusuRaStream did run all 40 on the Desk (its known `now=` red) — the sweep called it
             NEVER STARTED because the Desk run's phase sat at `begun` while every step went red (a reporting gap, owed); HohoWaftMap is
              stale.  So **the Desk runner is at parity** with the page Story: E (the Desk is the page) is unblocked.
+
+**E thought through (2026-11-03 evening, owner: "/Desk?I=...&G=Runner should do it! lowercase that for a role name, but allow
+ Ground to define its own, as well as lots else").**  One page, `/Desk`, two knobs: `?I=` WHO (an Identity), `?G=` WHAT it stands on
+  (a Ground).  Everything else a tab is told, or its Ground declares.
+
+ *What the knobs replace* — today a tab's kind is smeared over 9 knobs: route (`/Otro` `/BigSoundland` `/BigWordland` `/BigShapeland`),
+  `?A=` toplevel, `?B=` `?E=` `?H=` (the letter IS the role), `?I=` alone (= idle runner), and five `H.c` stamps (`boot_role` editor|runner|daemon,
+   `role:hacker`, `id_role` word|sound, `humdinger`, `book`).  The ack's role (runner|player) is derived from those.  The map:
+
+ | today | on a Ground |
+ |---|---|
+ | `/Otro?I=x` (idle runner), `?B=Book` | `/Desk?I=x&G=Runner`; Books arrive as `%Job` (D) — no `?B=` |
+ | `/Otro?E=Editron` | `G=Editor` (later; the frozen spine rides it — last to move) |
+ | `?H=`, `/BigWordland` | `G=Land` (role hacker) |
+ | `/BigSoundland`, `/` | `G=Music` (role player); `/` stays a mount of it for the invite links |
+ | `/BigShapeland` | `G=Glass` |
+ | daemon | `G=Daemon` — a runner that claims no role (Auto's own comment: creduler without the seat) |
+
+ *The Ground's toc carries it.*  `wormhole/Ground/<Name>/toc.snap` already is a row shape (`Ground:Music … / Load:… / Beside:…`).  Add:
+  `Role:<r>` (default: the name lowercased — Runner→runner), `Main:<A>` (the A the page runs from — Runner's is `A:Runner`, the one D built),
+   `Face:<svelte>` (what the page mounts), and the knobs that are now `H.c` stamps (`Seat:none` for a humdinger/daemon, `Audio:aim`).
+    Mundo then holds ONE row, `%Page,I:<prepub>,G:<Name>,role:<r>`, and every `boot_role ===` check reads it.  HAND-KEPT (owner: "shouldn't you be hand editing the Waft-like structure of the Ground? these generate-the-list scripts are quick to become obsoleted"): `wormhole/Ground/Runner/toc.snap` is written by hand — `Stands:Story`, `Main:Runner`, `Role:runner`, nothing else; every Book's code comes in by that Book's own `Stands:` when its Job runs.  The floor keeps reading Core from the bake (it has no wormhole yet); every other Ground is read from its toc.  everything.js only writes the Grounds it derives and never deletes one, so a hand toc survives it — its Ground half retires as the derived tocs get hand-kept one by one.
+
+ *Two kinds of Ground, one shape* (owner: "many Ground/* are partitions of code we might load separately, but they are also whatever we
+  might pack into a single executable|interpretable|docker-compose-but-for-this-paradigm").  A **partition** (Music, Glass, Swarm, Wire) only
+   loads code.  A **composition** stands on partitions and says how to RUN: `Main:` (repeatable — a daemon might run `Main:Runner` and
+    `Main:Music` side by side, like compose services), `Role:`, `Face:`, `Seat:`.  Having a `Main:` is what makes a Ground bootable;
+     `?G=` refuses one without.  Its closure (`ground_closure`) IS the pack — the list of code plus the run rows — so the same toc that a
+      tab boots from is what you'd bake into one interpretable bundle (`grounds.gen.js` is a first, code-only bake of it).  Naming habit
+       open: compositions named for what runs (Runner, Daemon, Player), partitions for what the code is.
+
+ *Running from a Ground*: `/Desk` boots a bare Mundo, the floor (`ground.ts`) loads Core + the closure of `G`, `Ground_stand` says it as
+  particles, then stands the `Main:` A — and the page is that A's think.  Auto splits along its own regions: identity (`?I=` ensure / arrest /
+   adopt / mirror) → an `A:Identity` every Ground stands under Main; the Creduler Lies + Supervisor + keep-awake → `Ground/Runner`; the Library →
+    `Ground/Music` (or nowhere).  Auto stays for `/Otro` until the fleet is green on `/Desk` tabs, then retires.
+
+ *Slice 1 (proposed)*: `src/routes/Desk` + `wormhole/Ground/Runner/toc.snap` (`Role:runner`, `Main:Runner`, stands on Story) + `%Page` on
+  Mundo; Auto still runs underneath for identity + Creduler, but reads role from `%Page`.  Gate: `runner_sweep --desk` on a `/Desk` tab at
+   parity with today's 127/137.  Slice 2: identity out of Auto into `A:Identity`.  Slice 3: Creduler/Supervisor into Ground/Runner; Auto off
+    `/Desk`.
+
+ *Slice 1 BUILT 2026-11-03 (unverified live)*: `src/routes/Desk` (mounts Otro); Otro reads `?G=` → `H.c.ground`, boot_role = the name
+  lowercased when that is runner|daemon (the bootstrap: Core stays hard-wired in the bake until a toc is readable); `ground.ts` learns read
+   Grounds over the bake (`ground_learn`/`ground_read`/`ground_role`/`ground_from_toc`); Auto `auto_ground` reads
+    `wormhole/Ground/<G>/toc.snap`, stamps `%Page,G,role,I` + `%Main` rows on Mundo, includes Core, stands each Main's A; LiesFunk
+     `Lies_page_runs('Runner')` makes every Book on such a page a Desk run (as `--desk`).  The Ground's `Stands:` is NOT included on the
+      page — Story stands aside in each Desk (Desk_story), and each Book's own `Stands:` brings its code.  Gate: `runner_sweep` on a
+       `/Desk?I=…&G=Runner` tab at parity with `--desk` 127/137.
+
+ *Off to the side — one Identity in two tabs* (owner: "should be possible and sane somewhere around here").  Not sane today: the relay's
+  `bind()` is additive and `deliverLocal` fans out, so two tabs on one prepub each get every frame, and both answer (the "two of you" hazard,
+   memory doorkeeper-and-two-of-you).  The sane shape is the Crew one: the Identity is the soul, a tab is a **seat** — `%Seat:<n>` under the
+    Identity, addressed `<prepub>/<n>`, the relay delivering `to:<prepub>` to the seat that claimed it (or the Crew's choice) and `to:<prepub>/<n>`
+     to exactly one.  Needs a relay change, so its own slice after E; E only must not assume one tab per Identity (put the seat in `%Page`).
 
 A→B→C is the "decide from rows" migration (disk replies, Story steps, clicks, then the ambient tick — that last step is where
  Housing's wake paths get deleted).  D and E ride on it; F is the same move in Hovercraft; G is the app the fabric is for: explore a pile, then merge a giant download folder into the collection with guided, mechanical moves.

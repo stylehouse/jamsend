@@ -55,6 +55,7 @@
     import { now_in_seconds, now_in_seconds_with_ms } from "$lib/Common";
     import { APP_DATA_DIR } from "$lib/app_data_dir"
     import { boot_param }   from "$lib/boot"
+    import { ground_from_toc, ground_learn, ground_role, ground_include } from "$lib/A/ground"
     import { Idento }       from "$lib/Common"
     import { prepubOf }     from "$lib/cluster_trust"
     import { crew_keys, crew_keys_home } from "$lib/O/Funk/Crewkeys"
@@ -1030,6 +1031,10 @@
         //        correctness by anything below; a failed mirror costs durability, never this boot.
         await (H as any).Clustation_mirror_account?.(H)
 
+        // ?G=<Ground> — read the Ground's toc, say the page as %Page on Mundo, stand its Main (AtheoryNexus_todo §0.0 E).  Never
+        //  holds the rest of this think: a run's storyFinished must still land while the toc is on its way.
+        if (H.c.ground && !w.c.ground_done) H.auto_ground(w)
+
 
         // ── Library page region (book browser + disk-backed Library) ──────────
         //   Wholly skipped on the `run` page (any ?B/?E boot): a runner runs the one Book it was
@@ -1216,6 +1221,66 @@
         } else {
             w.i({ see: `▶ runner — ${(H.c.book as string) ?? '?'}` })
         }
+    },
+
+//#region the Ground a page stands on
+
+    // auto_ground — a /Desk?G=<Ground> page (AtheoryNexus_todo §0.0 E): the URL booted its role as the Ground's name lowercased (Otro);
+    //  here, once the wormhole answers, its hand-kept toc is read and learned (ground.ts — the bake stays the bootstrap for Core), the
+    //   page is said as ONE row on Mundo — %Page,G,role,I with a %Main per Main: — and each Main A is stood, Core first (Ground.g holds
+    //    the Mains' code).  A toc whose Role: disagrees with the booted role is said, not obeyed: the role can't change after boot.
+    //  Called each Auto think until done; each pass does one step and returns.
+    auto_ground(w: TheC) {
+        const H = this as House
+        const G = String(H.c.ground)
+        if (!w.c.ground_read) {
+            const rw  = w.oai({ rw_queue: 1 })
+            const req = rw.o({ req: 'ground_read' })[0] || rw.i({ req: 'ground_read', rw_name: `wormhole/Ground/${G}/toc.snap`, rw_op: 'read' })
+            if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })) return
+            const reply = req.sc.reply as any
+            rw.drop(req)
+            if (reply?.error) return                 // storage not up yet — ask again next think
+            if (reply?.not_found || !(reply?.content ?? '').trim()) {
+                w.c.ground_done = true
+                console.warn(`⛔ ?G=${G}: no wormhole/Ground/${G}/toc.snap — the page stands on nothing`)
+                return
+            }
+            const { C, errors } = H.decode_wh_lines(reply.content)
+            const top = (C as TheC | undefined)?.o({ Ground: G })[0] as TheC | undefined
+            if (errors.length || !top) {
+                w.c.ground_done = true
+                console.warn(`⛔ ?G=${G}: its toc won't read as %Ground:${G}`, errors)
+                return
+            }
+            ground_learn(G, ground_from_toc(top))
+            w.c.ground_read = true
+            const role = ground_role(G)
+            const page = H.oai({ Page: 1 })
+            page.sc.G = G
+            page.sc.role = role
+            const I = boot_param('I')
+            if (I) page.sc.I = I
+            for (const m of top.o({ Main: 1 }) as TheC[]) page.oai({ Main: String(m.sc.Main) })
+            if (role !== H.c.boot_role) console.warn(`⚠ Ground/${G} says Role:${role} but the tab booted as ${H.c.boot_role ?? 'nothing'} — a role can't change after boot`)
+            console.log(`⛰ page stands on Ground/${G} as ${role}`)
+        }
+        // the Mains' code is Core's (Ground.g); stand it once the include door is up and the spine has loaded
+        if (typeof (H as any).Lies_ghost_include !== 'function' || H.oa({ Creduler_pending: 1 })) return
+        if (typeof (H as any).Runner_job !== 'function') {
+            if (w.c.ground_core_asked) return
+            w.c.ground_core_asked = true
+            void ground_include(H, ['Core']).then(r => {
+                if (r.unknown.length || r.failed.length) console.warn(`⛔ Ground/${G}: Core would not stand (${[...r.unknown, ...r.failed].join(' ')})`)
+                H.main()
+            })
+            return
+        }
+        const page = H.o({ Page: 1 })[0] as TheC
+        for (const m of page.o({ Main: 1 }) as TheC[]) {
+            const name = String(m.sc.Main)
+            H.oai({ A: name }).oai({ w: name })
+        }
+        w.c.ground_done = true
     },
 
 //#region Library encode / decode
