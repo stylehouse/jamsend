@@ -9,8 +9,7 @@ story:HohoFunk
         dontSnapGhostList
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=0.046
-      sample=0.051,at=1789108565
+    TimeTotal:beliefs,avg=0.044
       sample=0.073,at=1789110238
       sample=0.07,at=1789564710
       sample=0.022,at=1789564723
@@ -20,8 +19,8 @@ story:HohoFunk
       sample=0.036,at=1793619151
       sample=0.03,at=1793623658
       sample=0.025,at=1793623905
-    TimeTotal:step,avg=0.046
-      sample=0.051,at=1789108565
+      sample=0.029,at=1793667464
+    TimeTotal:step,avg=0.044
       sample=0.073,at=1789110238
       sample=0.07,at=1789564710
       sample=0.022,at=1789564723
@@ -31,4 +30,5 @@ story:HohoFunk
       sample=0.036,at=1793619151
       sample=0.03,at=1793623658
       sample=0.025,at=1793623905
+      sample=0.029,at=1793667464
   step,dige:909481834381755b

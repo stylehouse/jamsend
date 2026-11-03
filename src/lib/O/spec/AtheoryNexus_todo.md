@@ -7,6 +7,73 @@
     parked it leaves for the doc named.  Older lists it gathers: `Atheory_design.md` §1.15 "Remaining conceptualisations" and §3
      "Where it's heading".*
 
+## 0.0 The land — where the work is (2026-11-03, owner: "a big lay-of-the-Atheory-land picture … so I can direct you to the actual frontier")
+
+**The spine of it.**  A thing should run because a row is WAITING for it (a pulse on a synapse, a knock kept at a door, a
+ `%TheAWait` answered), never because a wake-up signal happened to fire (a timer, an `$effect`, a throttle, a ttlilt).  Rows
+  can't be lost; signals can, and every stall of the last month was a lost or swallowed signal (the begun-wedge drain, the
+   48s think-merge, the 90s hold that woke nothing, the Storui `$effect` that steered a Book).  So the map is two countries.
+
+```
+ relay / runner_ask ──▶ Otro · Auto · GhostList spine · everything.js(479)          OLD — the gate, retiring
+                            │
+                            ├─ H:Story ── Story.svelte(3329) ◀── twin tax ──▶ StoryFu.g(3401)   on A:Story in a Desk
+                            │     waits: setTimeout 18 · ttlilt 28                waits: setTimeout 20 · ttlilt 30 · top_House() 22
+                            │
+                            ├─ Hovercraft reqs(1245) ── ttlilt 56, feebly_ponder 5
+                            ├─ Storui/Storica ── $effect 18 / 3  (the UI used to steer Books from here)
+                            │
+ ═══════ Housing(3660) — the shared floor ══════════════════════════════════════════════════════════
+   wakes by SIGNAL: main(true) · ponder_now · i_elvisto('think') · feebly_ponder(41 in Ghost/) · the todo_version $effect
+                    · drain come-back + gate timers · stuffing_heartbeat 3s
+   scaffolding over those (delete when the signals go): _drain_dog 🐕 · Wormhole 📭 hand-on guard · stop() diag (temp)
+   the door, slice 1: knock / door_open / door_shut (a count, not rows yet)
+ ═══════════════════════════════════════════════════════════════════════════════════════════════════
+                            │
+                            ├─ Desk (Ground.g 245) ── A:Desk / A:Story / A:Hand(%TheAAttend:run) / A:Strip
+                            └─ Theory.g(1326) ── TheA_run · synapse · axon · Turn · tape · %TheAWait · tendrils     NEW — runs on ROWS
+                                  run loop inside beliefs() for As under %TheAAttend:run · Stuffica views · /Pondland
+```
+
+**Already runs on rows** (the new country, 44 Athe Books green): the ponds and `TheA_run`; the run loop in `beliefs()`; the Desk
+ strip (a click is a pulse); `%TheAWait` holds (toy only); time as a taped IO (`TheA_io`, toy only).
+**Still runs on signals** (the old country, where the hours go): Housing's todo and drain; Wormhole disk replies; Story's drive
+ (per-step blanket think, gate holds by ttlilt); Hovercraft reqs; the UI `$effect`s; runner_ask's `stop()` cascade and reloads.
+
+**The frontiers — each is one country moving, biggest payoff first (my order):**
+| | frontier | what moves | deletes | proof |
+|---|---|---|---|---|
+| **A** | **The door finished** (§3.4) | knocks as ROWS `{what,by,from,corr,at}`; `feebly_ponder`, `main(true)`, `ponder_now`, `i_elvisto` enter through it; the step's blanket think becomes the door's own | the drain dog's reason to exist; feebly_ponder's Story gate | Athe* green, `door` trace on every step, 🐕 never fires |
+| **B** | **Disk replies are rows** | a Wormhole settle lands as a pulse on the asker, not a `ponder_now` | the 📭 guard; the 48s class | AthePondTendril + a cold sweep with 0 📭 |
+| **C** | **Story waits by news** (§0.1 item 1) | gate holds → `%TheAWait` answered by `Story_at`; the leash a pulse; a ttlilt that runs out alarms | most of StoryFu's 20 timers; `⏱ timeout` greens | AtheStory* faster, 0 timeouts |
+| **D** | **Jobs as arrivals** (pure runner, step 2) | a relay `run` is a pulse on A:Runner; each job its own Desk; ending it drops the Desk | Auto teardown, `stop()` cascade, the reload wedge | `runner_sweep --desk` = normal sweep |
+| **E** | **The Desk is the page** (THE MAP 1) | `/Desk?B=` runners; Story.svelte, Otro, Auto retire | the twin tax; everything.js | the fleet green on Desk runners |
+| **F** | **Reqs by pulse** (Hovercraft) | one req held by `%TheAWait` instead of a ttlilt, then the rest | 56 ttlilts | its Book byte-identical |
+| **G** | **The pile as a landscape** (owner 2026-11-03, replaces porting a music organ) | a filesystem listing (local FSA or remote mount) drawn as a floaty space; then a Heist setup that shows what is already where it goes and offers the user's OWN categories; then a merge page: a second FSA's download pile listened through and dialled into the collection, a long workflow kept over sessions | — (the first app built on the fabric) | a Book per rung |
+
+**Progress 2026-11-03 (afternoon).**  **A BUILT** — every think for a shut House is kept at the door as a row (`c.door_rows`), both
+ Storys open/shut it, Run trace `door think×N`.  **B's root BUILT** — the drain drives itself (a push microtasks `answer_calls`, the gate
+  timer comes back while rows wait); 🐕 and 📭 stay as alarms and fired 0× across ~280 runs.  Found on the way: the morning's merge fix
+   merged no aimed think (a named elvis always carries `to_A`) — HohoWaftMap piled 1480 thinks; corrected.  **C, first part BUILT** —
+    `Story_at`/`story_sel` knock their holder unthrottled; a step that ends on its ttlilt is ok WITH A CAVEAT (1 of 139 Books: VytoMemo
+     step 4).  **D slice 2 BUILT** — `runner_ask run --desk` lands as `%Job:<Book>,n` on Mundo's `A:Runner/w:Runner`; the Runner's think
+      stands a fresh Desk and releases the last (Ground.g `Runner`).  Sweeps: Athe* 42/42 normal; `--desk` 127/137 — red on both paths:
+       SwarmGot, MusuMag, MusuReco, and MusuBuddy/Ogg/Reap/MusuMag's Preview `cid`s (every chunk hash moved, deterministic — the
+        browser's encoder or /music, not timing); red only on `--desk`: MusuRadioAim (friends "did not come online"), HohoWaftMap and
+         MusuRaStream NEVER STARTED.  HohoWaftMap's fixture is stale anyway (lists src/lib dirs culled 2026-09-16).  HohoNets/HohoSurprise
+          re-accepted (a `see:lies` line the fixtures caught mid-drop).  Then the `--desk`-only reds: MusuRadioAim FIXED (`Story_replaying` now looks in a Desk too, both
+           Storys — the live 'gave up' leaked in); MusuRaStream did run all 40 on the Desk (its known `now=` red) — the sweep called it
+            NEVER STARTED because the Desk run's phase sat at `begun` while every step went red (a reporting gap, owed); HohoWaftMap is
+             stale.  So **the Desk runner is at parity** with the page Story: E (the Desk is the page) is unblocked.
+
+A→B→C is the "decide from rows" migration (disk replies, Story steps, clicks, then the ambient tick — that last step is where
+ Housing's wake paths get deleted).  D and E ride on it; F is the same move in Hovercraft; G is the app the fabric is for: explore a pile, then merge a giant download folder into the collection with guided, mechanical moves.
+
+**Loose ends, small, any time** (none blocks a frontier): the `stop()` diag in Housing (temp); the drain-wedge root (the dog stays
+ the alarm until A); `mode:new` picked before the toc read lands; Stands inferred from the Credence row; the 8 Desk-runner reds
+  (HohoTiles, HohoWaftMap, Vyto Bunch/Mitosis/Seek/Staple/Freeze); `%Clock` in place of `w.sc.now`; HohoNets' verdict; TimeSpool
+   and Credulation churn.  *Checked 2026-11-03:* MusuOgg has no revert damage (no diff).
+
 ## 0. What to get on with next
 
 **Built 2026-11-02** (THE MAP item 4, the scheduler for real, §3.5): Theory's scheduler addresses As, not names (`AthePondTwoClocks`);

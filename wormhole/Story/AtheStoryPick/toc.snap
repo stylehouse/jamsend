@@ -9,28 +9,28 @@ story:AtheStoryPick
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.025
-      sample=0.025,at=1793662277
-      sample=0.026,at=1793662281
-      sample=0.024,at=1793662287
-      sample=0.023,at=1793662335
-      sample=0.034,at=1793662343
-      sample=0.028,at=1793662348
+    TimeTotal:beliefs,avg=0.027
       sample=0.022,at=1793662362
       sample=0.022,at=1793662371
       sample=0.024,at=1793662385
       sample=0.024,at=1793662694
-    TimeTotal:step,avg=0.008
-      sample=0.008,at=1793662277
-      sample=0.009,at=1793662281
-      sample=0.008,at=1793662287
-      sample=0.008,at=1793662335
-      sample=0.011,at=1793662343
-      sample=0.009,at=1793662348
+      sample=0.031,at=1793665634
+      sample=0.029,at=1793665968
+      sample=0.029,at=1793669965
+      sample=0.033,at=1793670311
+      sample=0.022,at=1793670791
+      sample=0.032,at=1793673150
+    TimeTotal:step,avg=0.009
       sample=0.007,at=1793662362
       sample=0.007,at=1793662371
       sample=0.008,at=1793662385
       sample=0.008,at=1793662694
+      sample=0.01,at=1793665634
+      sample=0.01,at=1793665968
+      sample=0.01,at=1793669965
+      sample=0.011,at=1793670311
+      sample=0.007,at=1793670791
+      sample=0.011,at=1793673150
   step,dige:75dee01d7f2037cd
   step=2,desc:stand a Desk whose new Story runs AthePondRounds — held at ready,dige:c1bc65a3e7e4da80
   step=3,desc:click step 1 then step 2 on the strip — before the House thinks,dige:9265fa5492c5963f

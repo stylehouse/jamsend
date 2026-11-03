@@ -14,6 +14,7 @@ story:MusuRaTerm
       sample=0.003,at=1793621013
       sample=0.002,at=1793621126
       sample=0.002,at=1793625293
+      sample=0.002,at=1793668742
     TimeTotal:step,avg=0.002
       sample=0.001,at=1786064133
       sample=0.004,at=1786070079
@@ -24,4 +25,5 @@ story:MusuRaTerm
       sample=0.003,at=1793621013
       sample=0.002,at=1793621126
       sample=0.002,at=1793625293
+      sample=0.002,at=1793668742
   step,dige:77f5c0dda91a23f3

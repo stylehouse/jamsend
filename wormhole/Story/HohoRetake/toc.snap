@@ -13,10 +13,7 @@ story:HohoRetake
       w:Lies
         dontSnapGhostList
   TimeSpool
-    TimeTotal:beliefs,avg=0.22
-      sample=0.308,at=1793324296
-      sample=0.245,at=1793324582
-      sample=0.145,at=1793324596
+    TimeTotal:beliefs,avg=0.312
       sample=0.142,at=1793324606
       sample=0.191,at=1793328538
       sample=0.163,at=1793328545
@@ -24,10 +21,10 @@ story:HohoRetake
       sample=0.155,at=1793578978
       sample=0.275,at=1793619277
       sample=0.374,at=1793623950
-    TimeTotal:step,avg=0.22
-      sample=0.308,at=1793324296
-      sample=0.245,at=1793324582
-      sample=0.145,at=1793324596
+      sample=0.621,at=1793667539
+      sample=0.369,at=1793667543
+      sample=0.634,at=1793669009
+    TimeTotal:step,avg=0.312
       sample=0.142,at=1793324606
       sample=0.191,at=1793328538
       sample=0.163,at=1793328545
@@ -35,6 +32,9 @@ story:HohoRetake
       sample=0.155,at=1793578978
       sample=0.275,at=1793619277
       sample=0.374,at=1793623950
+      sample=0.621,at=1793667539
+      sample=0.369,at=1793667543
+      sample=0.634,at=1793669009
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   step,dige:0e0504209ffb1115
     Assertion:a-waft-that-moves,sentence:a Waft that moves on disk under a live tab takes disk — the fresh tree swaps in through one place so the roster never gaps

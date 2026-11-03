@@ -4,8 +4,7 @@ story:SwarmHelm
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.156
-      sample=0.252,at=1790335701
+    TimeTotal:beliefs,avg=0.137
       sample=0.054,at=1790546397
       sample=0.061,at=1790546821
       sample=0.367,at=1790655346
@@ -15,8 +14,8 @@ story:SwarmHelm
       sample=0.107,at=1793622511
       sample=0.09,at=1793622519
       sample=0.089,at=1793624546
-    TimeTotal:step,avg=0.031
-      sample=0.05,at=1790335701
+      sample=0.069,at=1793668210
+    TimeTotal:step,avg=0.027
       sample=0.011,at=1790546397
       sample=0.012,at=1790546821
       sample=0.073,at=1790655346
@@ -26,6 +25,7 @@ story:SwarmHelm
       sample=0.021,at=1793622511
       sample=0.018,at=1793622519
       sample=0.018,at=1793624546
+      sample=0.014,at=1793668210
   step,dige:0f22bab5b3fb3d23
   step=2,dige:c497559343f5d9ba
     Assertion:every-crewmate-carries-the,sentence:every crewmate carries the whole ledger and the soul secret — a Cave still hellos as its own key — held not wielded — the Captain alone signs as the soul and a friend admits every mate by its cert

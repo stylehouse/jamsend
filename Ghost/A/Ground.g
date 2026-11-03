@@ -243,3 +243,46 @@ Desk_pushes_covered(A):
     for (const push of A.o({ TheACodePush: 1 })) {
         if (!push.sc.dige && !push.sc.variant) A.drop(push)
     }
+
+// THE RUNNER (AtheoryNexus_todo §0.0 frontier D — jobs as arrivals, slice 2): a job a runner is asked for is a row, %Job:<Book>,n
+//  on A:Runner/w:Runner of the House it runs under (LiesFunk Lies_desk_book), and the Runner's own think stands it — a fresh Desk
+//   holding the new Story for that Book, the last job's Desk released (its Story reset, its House stopped and dropped).  A job
+//    ends when the next one arrives; the last 5 rows are kept to read.  Only the newest unstood job stands: two asks before a
+//     think are one run, the older marked skipped
+//
+//      A:Runner / w:Runner
+//        %Job:AthePondRounds,n=1,stood
+//        %Job:HohoKeep,n=2,stood          ← its Desk is the H:Desk standing now
+Runner_job(H, book):
+    let w = H.oai({ A: 'Runner' }).oai({ w: 'Runner' })
+    let n = (w.c.jobs_n = (w.c.jobs_n || 0) + 1)
+    w.i({ Job: book, n })
+    let jobs = w.o({ Job: 1 })
+    for (const old of jobs.slice(0, Math.max(0, jobs.length - 5))) w.drop(old)
+    H.knock?.('job', book, true)
+    return w
+
+Runner(A, w):
+    let H = A.c.up
+    if (!H) return
+    let waiting = w.o({ Job: 1 }).filter(j => !j.sc.stood && !j.sc.skipped)
+    let job = waiting.pop()
+    if (!job) return
+    for (const j of waiting) j.sc.skipped = 1
+    job.sc.stood = 1
+    this.Runner_stand(H, job.sc.Job)
+
+// Runner_stand — a fresh Desk for this Book on H, the last one released.  Each job a FRESH Desk: what a Book stands beside its
+//  run lands on the Run House's up — the Desk House here, as H:Story on the page (VytoStaple's glass, A:Vyto) — so a reused Desk
+//   handed the next run the last one's glass (VytoStaple saw its board at step 1, then sat at step 2)
+Runner_stand(H, book):
+    let old = H.o({ H: 'Desk' })[0]
+    if (old) {
+        this.Desk_reset(old)
+        old.stop()
+        H.drop(old)
+    }
+    let D = this.Desk_house(H)
+    D.oai({ A: 'Desk' }).oai({ w: 'Desk' }).oai({ DeskRunner: 1 })
+    this.Desk_story(H, book)
+    D.main(true)

@@ -4,7 +4,7 @@ story:SwarmSteal
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.034
+    TimeTotal:beliefs,avg=0.042
       sample=0.018,at=1789116523
       sample=0.036,at=1789271641
       sample=0.024,at=1789271733
@@ -12,7 +12,8 @@ story:SwarmSteal
       sample=0.065,at=1790655289
       sample=0.016,at=1793622626
       sample=0.022,at=1793624628
-    TimeTotal:step,avg=0.006
+      sample=0.104,at=1793668296
+    TimeTotal:step,avg=0.007
       sample=0.003,at=1789116523
       sample=0.006,at=1789271641
       sample=0.004,at=1789271733
@@ -20,6 +21,7 @@ story:SwarmSteal
       sample=0.011,at=1790655289
       sample=0.003,at=1793622626
       sample=0.004,at=1793624628
+      sample=0.017,at=1793668296
   step,dige:e4469f33b30ab529
   step=2,dige:a60cd0a23681b096
     Assertion:alice-stands-alone,sentence:Alice stands alone — her key-derived name is her one address

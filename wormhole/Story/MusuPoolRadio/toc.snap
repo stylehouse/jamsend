@@ -4,8 +4,7 @@ story:MusuPoolRadio
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.075
-      sample=0.076,at=1791239443
+    TimeTotal:beliefs,avg=0.072
       sample=0.109,at=1791964279
       sample=0.067,at=1792134700
       sample=0.051,at=1792231452
@@ -15,8 +14,8 @@ story:MusuPoolRadio
       sample=0.091,at=1793324367
       sample=0.066,at=1793620569
       sample=0.041,at=1793625027
+      sample=0.052,at=1793668609
     TimeTotal:step,avg=0.008
-      sample=0.008,at=1791239443
       sample=0.012,at=1791964279
       sample=0.007,at=1792134700
       sample=0.006,at=1792231452
@@ -26,6 +25,7 @@ story:MusuPoolRadio
       sample=0.01,at=1793324367
       sample=0.007,at=1793620569
       sample=0.005,at=1793625027
+      sample=0.006,at=1793668609
   step,dige:a9ab66df494fe28f
   step=2,dige:48264edc8859c454
     {"Assertion":"a-radio-pool-does","sentence":"a radio pool does not choose — it keeps what the dial already chose and I already heard — as the same Heist intent the keep button mints, wearing into:pool"}

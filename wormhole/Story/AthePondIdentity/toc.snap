@@ -5,9 +5,7 @@ story:AthePondIdentity
     For
   Stands:CoreTesting
   TimeSpool
-    TimeTotal:beliefs,avg=0.038
-      sample=0.054,at=1793603742
-      sample=0.033,at=1793608387
+    TimeTotal:beliefs,avg=0.036
       sample=0.036,at=1793609082
       sample=0.036,at=1793609102
       sample=0.036,at=1793609103
@@ -16,9 +14,9 @@ story:AthePondIdentity
       sample=0.039,at=1793609146
       sample=0.019,at=1793659604
       sample=0.035,at=1793662498
-    TimeTotal:step,avg=0.01
-      sample=0.014,at=1793603742
-      sample=0.008,at=1793608387
+      sample=0.031,at=1793665764
+      sample=0.04,at=1793670586
+    TimeTotal:step,avg=0.009
       sample=0.009,at=1793609082
       sample=0.009,at=1793609102
       sample=0.009,at=1793609103
@@ -27,6 +25,8 @@ story:AthePondIdentity
       sample=0.01,at=1793609146
       sample=0.005,at=1793659604
       sample=0.009,at=1793662498
+      sample=0.008,at=1793665764
+      sample=0.01,at=1793670586
   step,dige:4eede4bffbc7d670
   step=2,dige:795b0cc213f160f8,desc:stand two As — Twin_Keep and Twin_Swap — and let the House walk them
   step=3,dige:24d04ffb2a0bf0a8,desc:drop Twin_Swap and stand one exactly like it

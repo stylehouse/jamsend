@@ -9,9 +9,7 @@ story:AthePondSynapseSum
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.026
-      sample=0.034,at=1792650609
-      sample=0.018,at=1793324175
+    TimeTotal:beliefs,avg=0.028
       sample=0.016,at=1793328247
       sample=0.02,at=1793573853
       sample=0.024,at=1793578799
@@ -20,9 +18,9 @@ story:AthePondSynapseSum
       sample=0.036,at=1793608517
       sample=0.024,at=1793659722
       sample=0.034,at=1793662618
-    TimeTotal:step,avg=0.004
-      sample=0.006,at=1792650609
-      sample=0.003,at=1793324175
+      sample=0.032,at=1793665889
+      sample=0.038,at=1793670711
+    TimeTotal:step,avg=0.005
       sample=0.003,at=1793328247
       sample=0.003,at=1793573853
       sample=0.004,at=1793578799
@@ -31,6 +29,8 @@ story:AthePondSynapseSum
       sample=0.006,at=1793608517
       sample=0.004,at=1793659722
       sample=0.006,at=1793662618
+      sample=0.005,at=1793665889
+      sample=0.006,at=1793670711
   step,dige:05436eaa123aec1d
   step=2,desc:stand two joined tanks that differ only in how their fish synapse sums — and wake one clock pulse,dige:0adb6cd53269bb98
   step=3,desc:3 clock pulses wait on each tank,dige:0f146cec1a7e965b

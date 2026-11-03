@@ -5,9 +5,7 @@ story:AthePondTwoClocks
     For
   Stands:CoreTesting
   TimeSpool
-    TimeTotal:beliefs,avg=0.018
-      sample=0.011,at=1793603905
-      sample=0.034,at=1793606244
+    TimeTotal:beliefs,avg=0.02
       sample=0.012,at=1793607024
       sample=0.014,at=1793608805
       sample=0.013,at=1793617683
@@ -16,9 +14,9 @@ story:AthePondTwoClocks
       sample=0.023,at=1793659798
       sample=0.012,at=1793660745
       sample=0.014,at=1793662652
-    TimeTotal:step,avg=0.006
-      sample=0.004,at=1793603905
-      sample=0.011,at=1793606244
+      sample=0.013,at=1793665925
+      sample=0.054,at=1793670748
+    TimeTotal:step,avg=0.007
       sample=0.004,at=1793607024
       sample=0.005,at=1793608805
       sample=0.004,at=1793617683
@@ -27,6 +25,8 @@ story:AthePondTwoClocks
       sample=0.008,at=1793659798
       sample=0.004,at=1793660745
       sample=0.005,at=1793662652
+      sample=0.004,at=1793665925
+      sample=0.018,at=1793670748
   step,dige:7d5b953c0a44cd87
   step=2,dige:d0fb3038c853121a,desc:stand two ponds — each a Clock_A and a Tank hearing from:Clock_A — poke P’s clock once and run from it
     Assertion:a-synapse-hears-the,sentence:a synapse hears the Clock_A nearest it — P’s clock ticks and turns P’s tank — the tank in Q is not visited

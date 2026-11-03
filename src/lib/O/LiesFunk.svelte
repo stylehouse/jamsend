@@ -3905,22 +3905,11 @@ await M.eatfunc({
                 }
             }
             top.auto_teardown_story?.()
-            // each job a FRESH Desk: what a Book stands beside its run lands on the Run House's up — the Desk House here, as H:Story
-            //  on the page (VytoStaple's glass, A:Vyto) — so a reused Desk handed the next run the last one's glass (VytoStaple
-            //   saw its board at step 1, then sat at step 2).  The old Desk's Story stopped (Desk_reset), its House stopped and dropped
-            const old = top.o({ H: 'Desk' })[0] as House | undefined
-            if (old) {
-                top.Desk_reset(old)
-                old.stop()
-                top.drop(old)
-            }
-            const D = top.Desk_house(top)
-            const dw = D.oai({ A: 'Desk' }).oai({ w: 'Desk' })
-            dw.oai({ DeskRunner: 1 })
+            // the job is an arrival (AtheoryNexus_todo §0.0 frontier D): a %Job row on A:Runner, stood by the Runner's own think
+            //  (Ground.g Runner — a fresh Desk per job, the last released)
             top.c.desk_running = book
-            top.Desk_story(top, book)
-            D.main(true)
-            H.diag(`desk_book stood ${book} in H:Desk`)
+            top.Runner_job(top, book)
+            H.diag(`desk_book asked A:Runner for ${book}`)
         },
 
         // Lies_runner_this — the live Story This container (where each Step's got_snap/ok lands).  Read-only.

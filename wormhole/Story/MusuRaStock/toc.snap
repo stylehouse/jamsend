@@ -5,7 +5,6 @@ story:MusuRaStock
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.002
-      sample=0.001,at=1786121976
       sample=0.001,at=1786168851
       sample=0.001,at=1786279078
       sample=0.002,at=1789113711
@@ -15,8 +14,8 @@ story:MusuRaStock
       sample=0.002,at=1793620847
       sample=0.003,at=1793620913
       sample=0.002,at=1793625189
+      sample=0.002,at=1793668640
     TimeTotal:step,avg=0.002
-      sample=0.001,at=1786121976
       sample=0.001,at=1786168851
       sample=0.001,at=1786279078
       sample=0.002,at=1789113711
@@ -26,4 +25,5 @@ story:MusuRaStock
       sample=0.002,at=1793620847
       sample=0.003,at=1793620913
       sample=0.002,at=1793625189
+      sample=0.002,at=1793668640
   step,dige:caa06a2f917226aa

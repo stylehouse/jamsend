@@ -833,7 +833,7 @@ async e_story_sel(A: TheC, w: TheC, e?: TheC):
         if (run) run.sc.open_at = e?.sc.open_at ?? null
         // nested, the holder is told it changed, as Story_at tells it: a ttlilt holds a step, it never wakes one, so a holder
         //  waiting on open_at slept out its whole ttlilt (AtheStoryPick step 3, 2026-11-02)
-        ;(this as any).TheA_base?.up?.main?.(true)
+        ;(this as any).TheA_base?.up?.knock?.('story_sel', String(w.sc.Book ?? ''), true)
         // …and says its status line now, as Story_finished does nested: whether the Story's next think landed to write it before the
         //  holder snapped was a race (AtheStoryPick step 3 flipped with it, 2026-11-03)
         if (run && (this as any).TheA_base) {
@@ -1528,7 +1528,8 @@ Story_at(w: TheC, at: string, n?: number):
         if (row && row.sc.StoryAt === at && row.sc.n === n) return
         if (row) w.drop(row)
         w.i(n != null ? { StoryAt: at, n } : { StoryAt: at })
-        base.up?.main?.(true)
+        // news, through the holder's door, unthrottled: its held step is waiting on exactly this
+        base.up?.knock?.('story_at', String(w.sc.Book ?? ''), true)
 
 // Story_hollow — the Book's Run has nothing to run: no Run_A_<Book> recipe stood its actors, and the default A:<Book>/w:<Book>
 //  resolves no handler (the same do_fn_for the belief loop dispatches with)
@@ -2269,9 +2270,13 @@ async e_Cyto_animation_done(A, w, e):
 //  Cheap by construction: a handful of particles, and `false` after one `o()` when no Story
 //   world is up at all, which is every music tab that never ran a Book.
 Story_replaying(): boolean:
-        const S = (this.top_House() as House).o({ H: 'Story' })[0] as TheC | undefined
-        if (!S) return false
-        for (const A of S.o({ A: 1 }) as TheC[])
+        const top = this.top_House() as House
+        // the page's H:Story › A › w › run, and a Desk runner's H:Desk › A:Desk › A:Story › w › run (the page Story is torn down
+        //  then — MusuRadioAim read the tab's live 'gave up' under --desk, 2026-11-03)
+        const As: TheC[] = []
+        for (const S of top.o({ H: 'Story' }) as TheC[]) As.push(...(S.o({ A: 1 }) as TheC[]))
+        for (const D of top.o({ H: 'Desk' }) as TheC[]) for (const AD of D.o({ A: 'Desk' }) as TheC[]) As.push(...(AD.o({ A: 'Story' }) as TheC[]))
+        for (const A of As)
             for (const w2 of A.o({ w: 1 }) as TheC[])
                 for (const run of w2.o({ run: 1 }) as TheC[])
                     if (run.c?.driving) return true
@@ -2552,10 +2557,10 @@ story_drive(Run: House, w: TheC, run: TheC):
             }
             // reset so ===0 detection below only fires for THIS step's alleviation
             Run.c.leave_running_until = null
-            const knocks = Run.door_open()     // feebly_ponder and ponder are now live; knocks kept while shut ride this step's think
+            const knocks = Run.door_open()     // feebly_ponder and ponder are now live; the thinks kept while shut (rows) ride this step's think
             Run.trace_enable()
             Run.trace('step', String(n))
-            if (knocks) Run.trace('door', String(knocks))
+            if (knocks.length) Run.trace('door', Run.door_says(knocks))
             // Pre-Story hygiene: opt-in, once at Story-beginning.  NON-BLOCKING — armed through expecting()
             //  so the sweep runs OFF the Atime mutex.  A bare `await` here would freeze the belief loop for
             //   the sweep's whole extent — and Atime is exactly what the Wormhole needs to think and get
@@ -2817,8 +2822,8 @@ story_drive(Run: House, w: TheC, run: TheC):
                                    //   as the truthy string "false" and inverts the flag).  Latent until a
                                    //    Step got snapped — Vyto_spool_capture is the first thing to snap one.
             // a step that ENDED ON A TIMEOUT (its ttlilt ran out, or leave_running did) says so — its verdict is a snap of whatever
-            //  stood when time ran out, and a recording took that as the truth (AtheStoryPick, 2026-11-02).  Surfaced, not yet red:
-            //   steps / runner_sweep show it; which Books time out on purpose is to be counted before it caveats
+            //  stood when time ran out, and a recording took that as the truth (AtheStoryPick, 2026-11-02).  A checked step that
+            //   timed out is ok WITH A CAVEAT (the verdict below), counted first: 1 of 139 Books (VytoMemo step 4)
             if (run.c.step_timed_out) {
                 step.sc.timeout = 1
             } else {
@@ -2919,6 +2924,9 @@ story_drive(Run: House, w: TheC, run: TheC):
                     //  in one place and not another — not noise (EntropyArrest.md §11)
                     ok = false
                 }
+                // nothing recorded from nothing (AtheoryNexus_todo §0.1): a step that ENDED ON A TIMEOUT matched by what stood when
+                //  time ran out, not by its work — ok with a caveat, never a clean green (sweep 2026-11-03: 1 of 139 Books does it)
+                if (ok && run.c.step_timed_out) step.sc.caveat = true
                 if (ok) {
                     step.sc.ok = true
                 } else {

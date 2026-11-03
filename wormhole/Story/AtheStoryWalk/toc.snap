@@ -9,10 +9,7 @@ story:AtheStoryWalk
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.019
-      sample=0.022,at=1793660782
-      sample=0.02,at=1793660944
-      sample=0.019,at=1793660992
+    TimeTotal:beliefs,avg=0.02
       sample=0.016,at=1793661031
       sample=0.016,at=1793661084
       sample=0.018,at=1793661189
@@ -20,10 +17,10 @@ story:AtheStoryWalk
       sample=0.017,at=1793661889
       sample=0.022,at=1793662366
       sample=0.02,at=1793662714
+      sample=0.018,at=1793665988
+      sample=0.025,at=1793670302
+      sample=0.023,at=1793670811
     TimeTotal:step,avg=0.01
-      sample=0.011,at=1793660782
-      sample=0.01,at=1793660944
-      sample=0.01,at=1793660992
       sample=0.008,at=1793661031
       sample=0.008,at=1793661084
       sample=0.009,at=1793661189
@@ -31,6 +28,9 @@ story:AtheStoryWalk
       sample=0.009,at=1793661889
       sample=0.011,at=1793662366
       sample=0.01,at=1793662714
+      sample=0.009,at=1793665988
+      sample=0.012,at=1793670302
+      sample=0.012,at=1793670811
   step,dige:d710eee46e884455
   step=2,desc:stand a Desk whose new Story is held at ready — and leave it there for a hand,dige:2f98d0df6a054176
     Assertion:the-inner-story-stands,sentence:the inner Story stands ready and held — waiting for a hand on its leash

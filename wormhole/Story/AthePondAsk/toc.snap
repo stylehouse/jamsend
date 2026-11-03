@@ -9,9 +9,7 @@ story:AthePondAsk
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.021
-      sample=0.02,at=1792650303
-      sample=0.016,at=1793323845
+    TimeTotal:beliefs,avg=0.028
       sample=0.017,at=1793327976
       sample=0.023,at=1793573677
       sample=0.029,at=1793578364
@@ -20,9 +18,9 @@ story:AthePondAsk
       sample=0.021,at=1793608214
       sample=0.013,at=1793659528
       sample=0.021,at=1793662421
-    TimeTotal:step,avg=0.005
-      sample=0.005,at=1792650303
-      sample=0.004,at=1793323845
+      sample=0.021,at=1793665686
+      sample=0.08,at=1793670507
+    TimeTotal:step,avg=0.007
       sample=0.004,at=1793327976
       sample=0.006,at=1793573677
       sample=0.007,at=1793578364
@@ -31,6 +29,8 @@ story:AthePondAsk
       sample=0.005,at=1793608214
       sample=0.003,at=1793659528
       sample=0.005,at=1793662421
+      sample=0.005,at=1793665686
+      sample=0.02,at=1793670507
   step,dige:5c65fc80a8a8f1cf
   step=2,desc:stand Clock_A — a Feeder that serves two ticks after an order — K_P who asks it — K_P gets hungry and runs,dige:4e60066ead253a46
     Assertion:an-ask-holds-a,sentence:an ask holds a wait on the asker — the run goes quiet but is not settled while an answer is owed

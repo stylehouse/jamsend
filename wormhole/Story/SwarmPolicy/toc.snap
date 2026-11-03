@@ -4,18 +4,20 @@ story:SwarmPolicy
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.083
+    TimeTotal:beliefs,avg=0.079
       sample=0.08,at=1789116401
       sample=0.074,at=1790679460
       sample=0.146,at=1792469746
       sample=0.061,at=1793622560
       sample=0.053,at=1793624562
+      sample=0.059,at=1793668226
     TimeTotal:step,avg=0.01
       sample=0.01,at=1789116401
       sample=0.009,at=1790679460
       sample=0.018,at=1792469746
       sample=0.008,at=1793622560
       sample=0.007,at=1793624562
+      sample=0.007,at=1793668226
   step,dige:e5c5f344a350825c
   step=2,dige:c4039260a17f4fc5
   step=3,dige:d6453f50bf65d266

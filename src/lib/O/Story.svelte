@@ -2237,9 +2237,13 @@
     //  Cheap by construction: a handful of particles, and `false` after one `o()` when no Story
     //   world is up at all, which is every music tab that never ran a Book.
     Story_replaying(): boolean {
-        const S = (this.top_House() as House).o({ H: 'Story' })[0] as TheC | undefined
-        if (!S) return false
-        for (const A of S.o({ A: 1 }) as TheC[])
+        const top = this.top_House() as House
+        // the page's H:Story › A › w › run, and a Desk runner's H:Desk › A:Desk › A:Story › w › run (the page Story is torn down
+        //  then — MusuRadioAim read the tab's live 'gave up' under --desk, 2026-11-03)
+        const As: TheC[] = []
+        for (const S of top.o({ H: 'Story' }) as TheC[]) As.push(...(S.o({ A: 1 }) as TheC[]))
+        for (const D of top.o({ H: 'Desk' }) as TheC[]) for (const AD of D.o({ A: 'Desk' }) as TheC[]) As.push(...(AD.o({ A: 'Story' }) as TheC[]))
+        for (const A of As)
             for (const w2 of A.o({ w: 1 }) as TheC[])
                 for (const run of w2.o({ run: 1 }) as TheC[])
                     if (run.c?.driving) return true
@@ -2485,9 +2489,10 @@
             }
             // reset so ===0 detection below only fires for THIS step's alleviation
             Run.c.leave_running_until = null
-            Run.c.runtime = true          // feebly_ponder and ponder are now live
+            const door_rows = Run.door_open()   // the door (Housing): thinks kept while shut ride this step's think
             Run.trace_enable()
             Run.trace('step', String(n))
+            if (door_rows.length) Run.trace('door', Run.door_says(door_rows))
             // Pre-Story hygiene: opt-in, once at Story-beginning.  NON-BLOCKING — armed through expecting()
             //  so the sweep runs OFF the Atime mutex.  A bare `await` here would freeze the belief loop for
             //   the sweep's whole extent — and Atime is exactly what the Wormhole needs to think and get
@@ -2669,7 +2674,7 @@
             // on_step_ending: called once at quiescence, before the snap.
             run.c.step_timed_out = timed_out   // snap_step stamps it on the Step: a step ended by its ttlilt running out, not by its work
             Run.c.on_step_ending?.(timed_out ? 'timeout' : 'causal')
-            Run.c.runtime = false         // feebly_ponder is now no-op; ponder throws
+            Run.door_shut()               // thinks are kept at the door until the next step; ponder throws
             H.post_do(snap_step, { see: 'story_snap' })
         }
 
@@ -2848,6 +2853,9 @@
                     //  in one place and not another — not noise (EntropyArrest.md §11)
                     ok = false
                 }
+                // nothing recorded from nothing (AtheoryNexus_todo §0.1): a step that ENDED ON A TIMEOUT matched by what stood when
+                //  time ran out, not by its work — ok with a caveat, never a clean green (sweep 2026-11-03: 1 of 139 Books does it)
+                if (ok && run.c.step_timed_out) step.sc.caveat = true
                 if (ok) step.sc.ok = true
                 else delete step.sc.ok
                 step.bump_version()   // verdict (ok/caveat) settled — wake the pip now, this step

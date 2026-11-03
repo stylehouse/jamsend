@@ -4,10 +4,7 @@ story:SwarmWire
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.09
-      sample=0.059,at=1788328062
-      sample=0.077,at=1788328236
-      sample=0.153,at=1788328765
+    TimeTotal:beliefs,avg=0.085
       sample=0.036,at=1788328779
       sample=0.09,at=1789116537
       sample=0.056,at=1789118214
@@ -15,10 +12,10 @@ story:SwarmWire
       sample=0.2,at=1790655586
       sample=0.086,at=1793622636
       sample=0.09,at=1793624636
-    TimeTotal:step,avg=0.018
-      sample=0.012,at=1788328062
-      sample=0.015,at=1788328236
-      sample=0.031,at=1788328765
+      sample=0.067,at=1793668310
+      sample=0.085,at=1793668317
+      sample=0.092,at=1793669334
+    TimeTotal:step,avg=0.017
       sample=0.007,at=1788328779
       sample=0.018,at=1789116537
       sample=0.011,at=1789118214
@@ -26,6 +23,9 @@ story:SwarmWire
       sample=0.04,at=1790655586
       sample=0.017,at=1793622636
       sample=0.018,at=1793624636
+      sample=0.013,at=1793668310
+      sample=0.017,at=1793668317
+      sample=0.018,at=1793669334
   step,dige:707011a29fe51dc1
   step=2,dige:914770443b3ecb97
     Assertion:stations-stand,sentence:two stations stand on the spine — the swarm frame kinds armed on the world

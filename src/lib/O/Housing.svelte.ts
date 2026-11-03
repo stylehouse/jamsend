@@ -224,9 +224,6 @@ abstract class Housing extends TheC {
     _hangup_cbs: Array<() => void> = []
     on_hangup(cb: () => void) { this._hangup_cbs.push(cb) }
     stop() {
-        // diag: who stopped which House — a stopped Mundo still drains elvises and fns but never thinks again (ponder_now,
-        //  main) — the shape of the 2026-11-03 begun-wedge, where a settled toc read was never handed on
-        try { (this as any).diag?.(`stop() H:${(this as any).name} ← ${String(new Error().stack ?? '').split('\n').slice(2, 5).map(l => l.trim().replace(/^at /, '').replace(/\(.*\/(\w+\.\w+)[^)]*\)/, '$1')).join(' ← ')}`) } catch (er) {}
         this.stopped = true
         this.#cleanup()
         for (const cb of this._hangup_cbs) {
@@ -1084,6 +1081,11 @@ export class House extends StorableHousing {
     // -------------------------------------------------------------------------
     _push_todo(e: TheC) {
         const H = this
+        // THE DOOR (AtheoryNexus_todo §3.4, slice 2, 2026-11-03): a THINK for a House whose door is shut (a Story's Run House
+        //  between steps, c.runtime false) is kept as a row, not queued — main(true), ponder_now, feebly_ponder, knock and an
+        //   i_elvisto(X,'think') all land here, so nothing thinks between a snap and the next step.  door_open() hands the rows
+        //    to the step, whose own think delivers them.  A letter (a named method elvis) and a post_do fn still pass.
+        if (H.c.runtime === false && e.sc.elvis === 'think') { H._door_keep(`${e.sc.Aw ? 'think/' + e.sc.Aw : 'think'}`, String(e.sc.Aw ?? '')); return }
         V.organise && console.log(`_push_todo e%${keyser(e.sc)} onto H:${H.name} (todo was ${H.todo.length})`)
         const tag = e.sc.fn
             ? `fn:${e.sc.see ?? '?'}`
@@ -1113,6 +1115,10 @@ export class House extends StorableHousing {
         //  draining — the item ahead drained, then nothing came back for the rest (HohoLocate on Mundo; the Desk runner's H:Desk).
         //   It only speaks when the head has waited 2s with no drain since and the mutex is free — then says why and drives it
         if (!H.c.drain_dog) H.c.drain_dog = setTimeout(() => { H.c.drain_dog = undefined; H._drain_dog() }, 2000)
+        // SELF-DRIVING (2026-11-03): a push drives the drain itself — through a microtask, never re-entering the caller's stack.
+        //  It used to rest on the todo_version $effect, a signal that can be lost (the begun-wedge); a row waiting is enough now.
+        //   A gate already open (answer_calls_waiting) comes back for it on its own timer, which looks at the rows (answer_calls)
+        if (!H.answer_calls_waiting && H.started && !H.stopped) queueMicrotask(() => { try { H.answer_calls() } catch (er) {} })
     }
     _drain_dog() {
         const H = this
@@ -1217,8 +1223,9 @@ export class House extends StorableHousing {
     // feebly_ponder: bypasses no_ambient but respects Runtime.
     //   background timers (heartbeat, per-req recheck) use this — they want a think
     //   but must not interleave with Story snapping or advancing between steps.
+    //   A House with a door (a Run House) keeps it while shut (_push_todo); a doorless one (c.runtime never set) drops it, as ever.
     feebly_ponder() {
-        if (!this.c.runtime) return
+        if (this.c.runtime === undefined) return
         this.main(true)
     }
 
@@ -1227,17 +1234,33 @@ export class House extends StorableHousing {
     //   (feebly_ponder's old silence, which the next step's blanket think covered by luck); door_open() counts the kept
     //    knocks in, and the step's own think delivers them.  A House that never had a door (c.runtime undefined — a page's,
     //     a Desk's) is woken outright.
-    knock() {
-        if (this.c.runtime === false) { this.c.knocks = (this.c.knocks || 0) + 1; return }
-        this.main(true)
+    //  Slice 2 (2026-11-03): every think goes through the door (_push_todo), and what was kept is ROWS in the arrival shape
+    //   {what, from, at} — c.door_rows, runtime only, never snapped.  door_open() returns them; the Run traces a summary.
+    //   `now`: a real event someone is waiting on (an inner Story saying where it stands) skips the 200ms ambient throttle
+    knock(what = 'knock', from = '', now = false) {
+        if (this.c.runtime === false) { this._door_keep(what, from); return }
+        if (now) this.ponder_now()
+        else this.main(true)
     }
-    door_open(): number {
+    _door_keep(what: string, from: string) {
+        const rows = (this.c.door_rows ??= []) as Array<{ what: string, from: string, at: number }>
+        if (rows.length < 200) rows.push({ what, from, at: Date.now() })
+        else this.c.door_spilt = Number(this.c.door_spilt ?? 0) + 1
+    }
+    door_open(): Array<{ what: string, from: string, at: number }> {
         this.c.runtime = true
-        const k = this.c.knocks || 0
-        this.c.knocks = 0
-        return k
+        const rows = (this.c.door_rows ?? []) as Array<{ what: string, from: string, at: number }>
+        this.c.door_rows = []
+        this.c.door_spilt = 0
+        return rows
     }
     door_shut() { this.c.runtime = false }
+    // door_says: one line for a trace — "think×3 knock×1"
+    door_says(rows: Array<{ what: string }>): string {
+        const n: Record<string, number> = {}
+        for (const r of rows) n[r.what] = (n[r.what] ?? 0) + 1
+        return Object.entries(n).map(([k, v]) => `${k}×${v}`).join(' ')
+    }
 
     // ponder_now: an UNTHROTTLED think push, for a real event that must not wait out the ambient
     //  throttle.  main()/feebly_ponder()/ponder() all funnel through main_throttle at
@@ -1371,11 +1394,11 @@ export class House extends StorableHousing {
         this._really_answer_calls();
         setTimeout(() => {
             this.answer_calls_waiting = false;
-            if (this.answer_calls_pending) {
-                this.answer_calls_pending = false;
-                // < have to go through that $effect() again if
-                this.todo_version++
-            }
+            // come back if a ROW waits (2026-11-03), not only when a call bounced (answer_calls_pending): the trailing
+            //  todo_version bump this used to rely on could be lost inside the $effect's own stack — the begun-wedge
+            const pending = this.answer_calls_pending
+            this.answer_calls_pending = false;
+            if ((pending || this.todo.length) && this.started && !this.stopped) this.answer_calls()
         }, this._gallop_gate_ms());
     }
 
@@ -1505,7 +1528,9 @@ export class House extends StorableHousing {
             //    queued behind it — a disk reply's ponder_now — and the Wormhole never got the pass that hands the reply on:
             //     read_toc settled in 5ms, handed on 48.9s later (AthePondTendril NEVER STARTED; the 📭 guard's "thinks since 1")
             const aimed = (t: TheC) => !!(t.sc.Aw || t.c.target || t.c.to_A)
-            const covers = (t: TheC) => !aimed(e) || (!t.c.target && !t.c.to_A && !e.c.target && !e.c.to_A && t.sc.Aw === e.sc.Aw)
+            //  The same aim = the same Aw AND the same refs, by identity — a named i_elvisto always carries e%to_A, so requiring none
+            //   (the first cut) merged no aimed think at all: a w that re-thinks itself piled 1480 deep (HohoWaftMap, 2026-11-03)
+            const covers = (t: TheC) => !aimed(e) || (t.sc.Aw === e.sc.Aw && t.c.target === e.c.target && t.c.to_A === e.c.to_A && t.c.to_w === e.c.to_w)
             while (this.todo[0]?.sc.elvis == 'think' && covers(this.todo[0])) this.todo.shift()
             if (0) {
                 // skip to the final thought! everything more specific will be done first

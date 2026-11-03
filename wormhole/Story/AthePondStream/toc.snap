@@ -9,9 +9,7 @@ story:AthePondStream
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.022
-      sample=0.019,at=1792650572
-      sample=0.015,at=1793324145
+    TimeTotal:beliefs,avg=0.031
       sample=0.017,at=1793328217
       sample=0.021,at=1793573823
       sample=0.018,at=1793578639
@@ -20,9 +18,9 @@ story:AthePondStream
       sample=0.029,at=1793608483
       sample=0.019,at=1793659692
       sample=0.031,at=1793662587
-    TimeTotal:step,avg=0.004
-      sample=0.003,at=1792650572
-      sample=0.002,at=1793324145
+      sample=0.032,at=1793665858
+      sample=0.089,at=1793670679
+    TimeTotal:step,avg=0.005
       sample=0.003,at=1793328217
       sample=0.004,at=1793573823
       sample=0.003,at=1793578639
@@ -31,6 +29,8 @@ story:AthePondStream
       sample=0.005,at=1793608483
       sample=0.003,at=1793659692
       sample=0.005,at=1793662587
+      sample=0.005,at=1793665858
+      sample=0.015,at=1793670679
   step,dige:537b29f4e2c92cf2
   step=2,desc:stand P nine turns ahead with Q downstream of it — and wake both,dige:e32b2460e0602e0b
   step=3,desc:11 clock pulses each — one batch,dige:b46bb9dda457e1e8

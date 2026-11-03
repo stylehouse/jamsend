@@ -67,44 +67,44 @@ story:HohoNets
     quiesce_snap_time=0.4
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=0.524
-      sample=0.475,at=1793184460
-      sample=0.475,at=1793184461
-      sample=0.435,at=1793184489
-      sample=0.427,at=1793184530
-      sample=0.43,at=1793184611
-      sample=0.43,at=1793184618
-      sample=0.43,at=1793184618
-      sample=0.597,at=1793184647
-      sample=0.806,at=1793619269
-      sample=0.739,at=1793623944
-    TimeTotal:step,avg=0.04
-      sample=0.037,at=1793184460
-      sample=0.037,at=1793184461
-      sample=0.033,at=1793184489
-      sample=0.033,at=1793184530
-      sample=0.033,at=1793184611
-      sample=0.033,at=1793184618
-      sample=0.033,at=1793184618
-      sample=0.046,at=1793184647
-      sample=0.062,at=1793619269
-      sample=0.057,at=1793623944
+    TimeTotal:beliefs,avg=0.88
+      sample=0.703,at=1793669924
+      sample=0.732,at=1793669944
+      sample,at=1793670030
+      sample,at=1793670034
+      sample,at=1793670035
+      sample=1.026,at=1793670076
+      sample=0.829,at=1793670098
+      sample=0.709,at=1793670143
+      sample=0.709,at=1793670152
+      sample=1.092,at=1793670177
+    TimeTotal:step,avg=0.068
+      sample=0.054,at=1793669924
+      sample=0.056,at=1793669944
+      sample=0.077,at=1793670030
+      sample=0.077,at=1793670034
+      sample=0.077,at=1793670035
+      sample=0.079,at=1793670076
+      sample=0.064,at=1793670098
+      sample=0.055,at=1793670143
+      sample=0.055,at=1793670152
+      sample=0.084,at=1793670177
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
     Entcase:wants_want
       lematch,req:wants
         lematch,want,kind
           means,spayer,re:want={INT}.kind,tol:band,factor=1.5
-  step,dige:32814f9c6e095647
-  step=2,dige:35701a0088e0061d
-  step=3,dige:c2d41512c491f4a7
-  step=4,dige:85cfbb2ea06aea77
-  step=5,dige:e51f24d391d8a661
-  step=6,dige:8d7f19e6ef13d555
-  step=7,dige:ced1227509e0d9fa
-  step=8,dige:d23712ab3526174f
-  step=9,dige:59ec87748e78d4a8
-  step=10,dige:a65da264ffa5db58
-  step=11,dige:991e62a9ba651ac7
-  step=12,dige:a29006c8a53dfde4
-  step=13,dige:6f231d1f3caee3e6
+  step,dige:3a5bcd9732bbf37a
+  step=2,dige:824477e899304673
+  step=3,dige:9cf9a2fd18b90d38
+  step=4,dige:faf284f91e084114
+  step=5,dige:4acb46c5142788d7
+  step=6,dige:d01d99b651f48c7f
+  step=7,dige:0b1cd8521314f304
+  step=8,dige:f5ad79b5ec56383c
+  step=9,dige:1ec6226dd473dbd6
+  step=10,dige:f6d8595775c3872a
+  step=11,dige:e67dd700835644fd
+  step=12,dige:af34f58420cf3174
+  step=13,dige:68b5758cc51a7054

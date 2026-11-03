@@ -36,8 +36,7 @@ story:HohoTiles
         dontSnapGhostList
         wantPantheate
   TimeSpool
-    TimeTotal:beliefs,avg=1.021
-      sample=0.833,at=1793190328
+    TimeTotal:beliefs,avg=1.185
       sample=1.165,at=1793190574
       sample=0.772,at=1793190596
       sample=0.92,at=1793190863
@@ -47,8 +46,8 @@ story:HohoTiles
       sample=0.801,at=1793191161
       sample=1.671,at=1793619329
       sample=1.494,at=1793624002
-    TimeTotal:step,avg=0.113
-      sample=0.093,at=1793190328
+      sample=2.473,at=1793667619
+    TimeTotal:step,avg=0.132
       sample=0.129,at=1793190574
       sample=0.086,at=1793190596
       sample=0.102,at=1793190863
@@ -58,6 +57,7 @@ story:HohoTiles
       sample=0.089,at=1793191161
       sample=0.186,at=1793619329
       sample=0.166,at=1793624002
+      sample=0.275,at=1793667619
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
     Entcase:Ting_Point-last

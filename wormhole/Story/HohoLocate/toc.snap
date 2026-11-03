@@ -9,10 +9,7 @@ story:HohoLocate
         dontSnapGhostList
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=0.042
-      sample=0.066,at=1789108606
-      sample=0.073,at=1789110416
-      sample=0.048,at=1789563401
+    TimeTotal:beliefs,avg=0.036
       sample=0.031,at=1789563418
       sample=0.014,at=1789563427
       sample=0.015,at=1789563436
@@ -20,10 +17,10 @@ story:HohoLocate
       sample=0.036,at=1793619247
       sample=0.064,at=1793623806
       sample=0.048,at=1793623922
-    TimeTotal:step,avg=0.042
-      sample=0.066,at=1789108606
-      sample=0.073,at=1789110416
-      sample=0.048,at=1789563401
+      sample=0.039,at=1793665640
+      sample=0.032,at=1793667481
+      sample=0.051,at=1793673156
+    TimeTotal:step,avg=0.036
       sample=0.031,at=1789563418
       sample=0.014,at=1789563427
       sample=0.015,at=1789563436
@@ -31,4 +28,7 @@ story:HohoLocate
       sample=0.036,at=1793619247
       sample=0.064,at=1793623806
       sample=0.048,at=1793623922
+      sample=0.039,at=1793665640
+      sample=0.032,at=1793667481
+      sample=0.051,at=1793673156
   step,dige:6facec7eda2d4d9f
