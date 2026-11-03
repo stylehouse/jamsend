@@ -40,6 +40,10 @@ story:Sounditron
     report
     For
     trickle
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   EntropyArrest
     Entcase:Session_alive
       lematch,w:Sounditron

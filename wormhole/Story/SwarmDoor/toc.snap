@@ -3,6 +3,10 @@ story:SwarmDoor
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.058
       sample=0.038,at=1788306244

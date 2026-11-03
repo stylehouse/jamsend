@@ -3,6 +3,10 @@ story:MusuRecast
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.09
       sample=0.069,at=1785906347

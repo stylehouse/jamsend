@@ -3,6 +3,10 @@ story:MusuQuarter
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.025
       sample=0.002,at=1789622229

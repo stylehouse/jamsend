@@ -3,6 +3,10 @@ story:MusuBerth
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=1.131
       sample=1.49,at=1789000069

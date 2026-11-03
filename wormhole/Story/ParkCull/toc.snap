@@ -3,6 +3,10 @@ story:ParkCull
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.033
       sample=0.04,at=1786757078

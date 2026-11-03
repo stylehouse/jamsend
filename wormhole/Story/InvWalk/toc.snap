@@ -3,6 +3,10 @@ story:InvWalk
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.138
       sample=0.06,at=1788871015

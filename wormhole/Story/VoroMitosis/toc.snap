@@ -41,6 +41,7 @@ story:VoroMitosis
     dontSnapCyto
     For
     trickle
+  Stands:GlassTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.501
       sample=0.307,at=1788942704

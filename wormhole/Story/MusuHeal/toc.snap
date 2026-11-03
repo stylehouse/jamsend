@@ -3,6 +3,10 @@ story:MusuHeal
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.023
       sample=0.014,at=1784274988

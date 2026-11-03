@@ -3,6 +3,7 @@ story:VytoCell
   Plan
   Opt
     For
+  Stands:GlassTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.052
       sample=0.029,at=1788900856

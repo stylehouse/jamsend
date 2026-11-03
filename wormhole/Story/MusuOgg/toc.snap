@@ -3,6 +3,10 @@ story:MusuOgg
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=1.938
       sample=1.807,at=1788501815

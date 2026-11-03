@@ -3,6 +3,10 @@ story:MusuPier
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.06
       sample=0.035,at=1785996307

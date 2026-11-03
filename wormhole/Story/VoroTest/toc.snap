@@ -55,6 +55,7 @@ story:VoroTest
   Plan
   Opt
     For
+  Stands:GlassTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.187
       sample=0.144,at=1784025836

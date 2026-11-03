@@ -3,6 +3,10 @@ story:MusuLossy
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.89
       sample=0.078,at=1785044786

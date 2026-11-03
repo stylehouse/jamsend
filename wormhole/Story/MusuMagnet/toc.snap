@@ -3,6 +3,10 @@ story:MusuMagnet
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.064
       sample=0.078,at=1791330835

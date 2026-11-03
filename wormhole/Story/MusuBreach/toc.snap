@@ -3,6 +3,10 @@ story:MusuBreach
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=3.609
       sample=0.297,at=1786262271

@@ -3,6 +3,7 @@ story:VytoNest
   Plan
   Opt
     For
+  Stands:GlassTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.029
       sample=0.02,at=1790211097

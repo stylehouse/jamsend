@@ -3,6 +3,10 @@ story:MusuGenerateTestsMusic
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.435
       sample=0.395,at=1783859075

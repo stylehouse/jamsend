@@ -3,6 +3,10 @@ story:MusuSmuggle
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.017
       sample=0.002,at=1792469331

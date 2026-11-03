@@ -1739,7 +1739,10 @@
     //     lives on the TOP House (like supply_trace), reachable from any ghost's catch via this.top_House().
     Story_error(kind: string, where: string, msg: any) {
         try {
-            const M: any = this.top_House ? this.top_House() : null
+            // the ring of the run this House is in: the nearest House a run marked (err_run) at its start — a Desk's nested
+            //  Story keeps its ring on its own House (StoryFu Story_err_home), so a Book's throw lands where that run drains it
+            let M: any = this
+            while (M && !M.c?.err_run && M.up) M = M.up
             if (!M) return
             const k  = String(kind || 'error')
             const wh = String(where || '?').slice(0, 40)

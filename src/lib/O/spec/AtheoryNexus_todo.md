@@ -127,6 +127,38 @@
        (Atheory_design §1.2–1.3) — two ledgers of "what code is live" that a Ground/Runner page should keep as one.  Supervisor is
         rewritten, not copied, in Atheory's terms (a Seem over the runs? its roster as rows) — design pass with the owner.  Keep-awake
          copies as is.
+  *Slice 3a BUILT + LIVE (2026-11-03 night) — the spine is the Ground's.*  `wormhole/Ground/Runner/toc.snap` carries hand-kept
+   `Spine:` rows (WireTesting MusicTesting CaveTesting SwarmTesting GlassTesting + two lone .g no Ground wears yet: ErrchannelTesting,
+    Supervisor).  On a `?G` page the Creduler loads THAT (LiesLies `Creduler_ghosts` → ground.ts `ground_spine_paths`: closures, Core
+     first), holding pending until `auto_ground` has read the toc and woken it; elsewhere it is still `CREDULER_GHOSTS`.  Once loaded,
+      A:Runner stands those Grounds (Ground.g `Runner_spine`), so what's live reads as `%TheACode:Ground/<Name>,dige` on A:Runner — the
+       rows a Desk's A carries — beside the per-file `%GhostInclude` rows on the Creduler's w:Lies (which ARE the include door's shelf:
+        already one per-file ledger).  33 includes live; 12/12 runs green across the Grounds.  **The arc:** the Spine shrinks as Books
+         say their own `Stands:` (171 tocs still don't) until Runner points at one Ground and the run-Book verb brings the rest.
+   Found on the way: on a Desk, a Book's `this.Story_error` (flat Story.svelte) rang on Mundo while the nested StoryFu drained its
+    own House — ErrChannel red.  The flat door now homes on the nearest House a run marked (`err_run`); page runs unchanged.
+   *Same night, owner "yes" to Credulate + "Stands would say which test code .g it uses right? so we can stop including all that
+    everywhere?"*: **106 Book tocs gained `Stands:<X>Testing`** (recipe file → its Ground; scratchpad `stands_map.mjs`).  **Credulate
+     records the Book's code as Grounds**: `%TheACode:Ground/<Name>,dige` per Ground in closure(Story + its Stands), digested as Theory
+      does (Auto `Cred_book_code`; the diges match A:Runner's rows), and its `%GhostInclude` rows narrow to those Grounds' files; the
+       trail's runs and `last_ok` carry the Ground rows too.  Off a Ground page (no Theory) it records every ghost, as before.
+   **Test Grounds still to make (owner: "a few different test Grounds … containing fairly huge piles of code — like anything Radioey,
+    anything Appey, anything Voroey")**: the Books whose recipe isn't in a `.g` — Hoho*, Leaf*, Understand*, Snap*, Stuff*, Engage
+     (`test/Machinery.svelte`), Educarium — ride `.svelte` test ghosts every tab mounts; and the big app-side piles (Radios.svelte & the
+      radio UI, the App/Big*land page code, the Voro svelte side) are mounted everywhere too.  Each pile wants a test Ground the Books
+       that need it say they stand on, so a tab mounts it only then.  Needs: the floor loading a `.svelte` ghost (today `ground_include`
+        loads gen `.go` only), and a hand-kept Ground being readable by Story's loader (today only the bake + what auto_ground learns —
+         why ErrchannelTesting still rides the Spine as a lone .g).
+   **The Spine trimmed to `Wire` + the two lone .g** (10 files flat, was 33) — every other Ground now comes by a Book's Stands.
+    It showed the test Grounds are TANGLED: Music/Cave/Swarm/Wire Testing call into each other (MusuPier needs PeerTesting's `Lake_link`;
+     scratchpad `xref.mjs` lists every cross-Ground `this.X`), while Glass/Core/Land Testing need only Story.  So the 80 Books of those
+      four stand on all four (`Stands:WireTesting` `MusicTesting` `CaveTesting` `SwarmTesting`) — the first "huge pile" test Ground,
+       spelt out per Book until a hand-kept Ground is readable by Story's loader (then one `Stands:Musu`-ish line).
+   **Low need, left here (owner 2026-11-03):** the recipes — each makes its own `A:<Book>/w:<Book>` (one name said twice) and
+    defines the `<Book>(A, w)` method the w runs — could be reimagined: how a Book's actor comes to stand, and where its think lives.
+   **Next (3b):** stand the Creduler Lies, keep-awake, Supervisor and the storyFinished → `Cred_spool`/verdict from A:Runner instead of
+    Auto on a `?G` page (the Lies stand is floor work — it precedes Core); Credulate records the Desk's `%TheACode` Ground diges
+     beside its per-ghost rows (churns every Credulate file — owner's call); Book tocs gain `Stands:` (mechanical: recipe file → Ground).
   *Sweep on the /Desk tab, 2026-11-03 evening*: 139 Books — 125 ✓, 3 flake, 11 ✗, 0 hollow, 0 never-started (was `--desk` 127/137).  Baseline reds now
    green: HohoTiles, VytoBunch/Mitosis/Seek/Staple/Freeze.  Still red, known: SwarmGot, MusuMag/Reco/Buddy/Ogg/Reap (cid drift), MusuRaStream
     (`now=`), HohoWaftMap.  New: SwarmWire (its witness ran before the Piers' inbox reqs landed beat 4's frames — now witnessed in a post_do

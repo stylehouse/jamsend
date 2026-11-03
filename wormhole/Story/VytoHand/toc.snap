@@ -3,6 +3,7 @@ story:VytoHand
   Plan
   Opt
     For
+  Stands:GlassTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.05
       sample=0.049,at=1790974564

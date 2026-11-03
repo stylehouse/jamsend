@@ -3,6 +3,10 @@ story:MusuPoolRandom
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.042
       sample=0.035,at=1790746998

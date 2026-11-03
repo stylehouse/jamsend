@@ -31,6 +31,7 @@ story:VoroScape
     useVoroCyto
     dontSnapCyto
     For
+  Stands:GlassTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.029
       sample=0.031,at=1789116751

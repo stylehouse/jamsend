@@ -3,6 +3,7 @@ story:VytoFoam
   Plan
   Opt
     For
+  Stands:GlassTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.037
       sample=0.026,at=1789116967

@@ -3,6 +3,10 @@ story:SwarmSpread
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.117
       sample=0.546,at=1789897693

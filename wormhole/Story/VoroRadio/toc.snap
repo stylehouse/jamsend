@@ -36,6 +36,7 @@ story:VoroRadio
   Opt
     useCyto
     For
+  Stands:GlassTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.174
       sample=0.12,at=1784435361

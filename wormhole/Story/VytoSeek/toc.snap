@@ -3,6 +3,7 @@ story:VytoSeek
   Plan
   Opt
     For
+  Stands:GlassTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.036
       sample=0.05,at=1789099529

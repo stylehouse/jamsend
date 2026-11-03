@@ -3,6 +3,10 @@ story:MusuVend
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.064
       sample=0.046,at=1786116780

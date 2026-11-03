@@ -3,6 +3,10 @@ story:RepliUpsert
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.019
       sample=0.017,at=1786021091

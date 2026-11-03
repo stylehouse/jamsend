@@ -4,14 +4,14 @@
     import { onMount } from "svelte"
 
 import { GROUNDS } from "$lib/A/grounds.gen.js"
-import { ground_closure, ground_loads, GROUND_CORE } from "$lib/A/ground"
+import { ground_closure, ground_loads, ground_read, GROUND_CORE } from "$lib/A/ground"
 
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_Ground(): string { return '00fdb3e0875fa9e6~g1' },
+    Ghostmeta_Ghost_A_Ground(): string { return '315f819fcbdd91d3~g1' },
 
 // Ground.g — what a tab stands on, said as particles on the A that stands on it (spec/Aprac_todo.md §0.5).
 //
@@ -294,12 +294,34 @@ Runner_job(H, book) {
 Runner(A, w) {
     let H = A.c.up
     if (!H) return
+    if (!w.c.spine_firm) this.Runner_spine(A, w)
     let waiting = w.o({ Job: 1 }).filter(j => !j.sc.stood && !j.sc.skipped)
     let job = waiting.pop()
     if (!job) return
     for (const j of waiting) j.sc.skipped = 1
     job.sc.stood = 1
     this.Runner_stand(H, job.sc.Job)
+
+},
+// Runner_spine — say what the page loaded flat as the A's own code (AtheoryNexus_todo §0.0 E slice 3): the Creduler loads the
+//  Ground's Spine: rows (LiesLies Creduler_ghosts), and once it is done A:Runner stands those Grounds, so the "what code is live"
+//   ledger reads as %TheACode:Ground/<Name>,dige here — the same rows a Desk's A carries — beside the per-file %GhostInclude rows
+//    on the Creduler's w:Lies.  A lone .g in the Spine (one no Ground wears yet) is said only by its %GhostInclude row
+//
+//      A:Runner
+//        %GroundUsed:MusicTesting
+//        %GroundUsed:Music,via:MusicTesting
+//        %TheACode:Ground/Music,dige:…
+Runner_spine(A, w) {
+    let H = A.c.up
+    if (H.oa({ Creduler_pending: 1 })) return
+    let G = H.o({ Page: 1 })[0]?.sc.G
+    let g = G ? ground_read(G) : null
+    let grounds = (g?.spine || []).filter(s => !s.endsWith('.g'))
+    if (!grounds.length) return
+    if (this.Ground_stand(A, grounds)) {
+        w.c.spine_firm = 1
+    }
 
 },
 // Runner_stand — a fresh Desk for this Book on H, the last one released.  Each job a FRESH Desk: what a Book stands beside its

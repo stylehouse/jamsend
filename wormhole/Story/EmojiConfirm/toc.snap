@@ -3,6 +3,10 @@ story:EmojiConfirm
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.011
       sample=0.007,at=1789085659

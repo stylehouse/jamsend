@@ -3,6 +3,10 @@ story:SwarmBody
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.225
       sample=0.074,at=1789625435

@@ -3,6 +3,7 @@ story:VytoCrest
   Plan
   Opt
     For
+  Stands:GlassTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.02
       sample=0.011,at=1790211081

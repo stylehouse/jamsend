@@ -18,6 +18,7 @@ story:VoroClinic
     useCyto
     useVoroCyto
     For
+  Stands:GlassTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.078
       sample=0.092,at=1788875401

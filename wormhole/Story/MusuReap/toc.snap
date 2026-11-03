@@ -3,6 +3,10 @@ story:MusuReap
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.961
       sample=0.813,at=1788500078

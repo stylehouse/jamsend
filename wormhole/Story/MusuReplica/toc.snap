@@ -64,6 +64,10 @@ story:MusuReplica
     dontSnapVoronoiology
     waitCyto
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.251
       sample=0.377,at=1788923267

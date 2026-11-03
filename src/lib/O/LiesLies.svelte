@@ -43,6 +43,7 @@
     import { SLUGGISH_MS, DEAD_MS, LIVE_MS, PIER_CULL_MS } from "$lib/O/runner_liveness.mjs"
     import { sockcap_lines, sockcap_count, SOCKCAP_BOOT, socklog_armed } from "$lib/O/sockcap"   // TEMP: relay-socket dump
     import { ghost_ledger_of } from "$lib/O/lang/compile"   // GhostLedger version identity (become_book version-gate)
+    import { ground_read, ground_spine_paths } from "$lib/A/ground"   // a ?G page's spine is its Ground's Spine: rows
 
     let { M } = $props()
 
@@ -1534,6 +1535,26 @@
             }
         },
 
+        // Creduler_ghosts — what the Creduler loads.  On a Ground page (?G=, AtheoryNexus_todo §0.0 E slice 3) it is the Ground's
+        //  hand-kept Spine: rows — Grounds by name, closed over what they stand on, Core first — so the "what code is live" ledger
+        //   is the Ground's, said on A:Runner as %TheACode:Ground/<Name>,dige (Ground.g Runner).  Undefined while the page has not
+        //    read its Ground yet (Auto auto_ground writes %Page): the Creduler holds, pending, until it has.  Elsewhere (/, Big*land,
+        //     ?B=) it is CREDULER_GHOSTS, until those pages stand on Grounds too.
+        Creduler_ghosts(): string[] | undefined {
+            const H = (this as House).top_House()
+            if (!H.c.ground) return CREDULER_GHOSTS
+            const G = H.o({ Page: 1 })[0]?.sc.G as string | undefined
+            if (!G) return undefined
+            const g = ground_read(G)
+            if (!g?.spine?.length) return CREDULER_GHOSTS
+            if (!H.c.spine_paths) {
+                const sp = ground_spine_paths(g.spine)
+                if (sp.unknown.length) console.warn(`⛔ Ground/${G} Spine: names no Ground: ${sp.unknown.join(' ')}`)
+                H.c.spine_paths = sp.paths
+            }
+            return H.c.spine_paths as string[]
+        },
+
         // Creduler_ensure — the runner's bootstrap, driven by the Creduler (the Mundo runner
         //  Lies, outside Story).  Loads CREDULER_GHOSTS live onto H so the editor's compiled
         //   code is present before any Story begins, riding %Creduler_pending on H while it
@@ -1541,23 +1562,30 @@
         //     not yet live; clears the flag once all are.  Called on H:Mundo with the runner Lies w.
         async Creduler_ensure(w: TheC) {
             const H = this as House
+            const spine = H.Creduler_ghosts()
+            if (!spine) {
+                H.oai({ Creduler_pending: 1 })
+                w.oai({ see: '⏳ Creduler waits for the page to read its Ground' })
+                return
+            }
+            for (const s of w.o({ see: '⏳ Creduler waits for the page to read its Ground' }) as TheC[]) w.drop(s)
             // The GhostInclude ledger — one w/%GhostInclude:<gen>,dige per CREDULER_GHOST, so the
             //  runner's snap shows exactly what it's running and at what version.  Refreshed every
             //   tick: a just-acquired dige (the Creduler's own load, or an HMR/rungo push) drifts
             //    onto the SAME particle (oai merges in place — no duplicate), and an absent dige
             //     means enrolled-but-not-yet-live.  This is the read-out behind the "method missing
             //      until rungo pushes a version, then found" symptom.
-            for (const p of CREDULER_GHOSTS) {
+            for (const p of spine) {
                 const gen  = H.Lies_gen_path(p)
                 if (!gen) continue
                 const dige = H.Lies_ghost_get(p)
                 w.oai({ GhostInclude: gen }, dige ? { dige } : {})
             }
-            const unmet = CREDULER_GHOSTS.filter(p => !H.Lies_ghost_get(p))
+            const unmet = spine.filter(p => !H.Lies_ghost_get(p))
             if (!unmet.length) {
                 if (H.oa({ Creduler_pending: 1 })) {
                     for (const c of H.o({ Creduler_pending: 1 }) as TheC[]) H.drop(c)
-                    H.tlog(`🧪 Creduler ready — ${CREDULER_GHOSTS.length} ghost(s) live`)
+                    H.tlog(`🧪 Creduler ready — ${spine.length} ghost(s) live`)
                     H.main()   // wake the pass so Auto starts the held Story now the spine is live
                 }
                 if (w.c.creduler_trickle) { clearTimeout(w.c.creduler_trickle as any); w.c.creduler_trickle = undefined }
@@ -1717,7 +1745,7 @@
             //       nothing on disk moved, only the way we asked.
             const etags = served ? ((w.c.reswap_diges ??= {}) as Record<string, string>)
                                  : ((w.c.reswap_etags ??= {}) as Record<string, string>)
-            for (const p of CREDULER_GHOSTS) {
+            for (const p of H.Creduler_ghosts() ?? []) {
                 const gen = H.Lies_gen_path(p)
                 if (!gen) continue
                 const url = `/src/lib/${gen}`
@@ -1771,8 +1799,9 @@
         //    include component never mounts, this reads stuck forever with no error anywhere.
         Creduler_diag(): { pending: boolean, unmet: string[], total: number } {
             const H = this as House
-            const unmet = CREDULER_GHOSTS.filter(p => !H.Lies_ghost_get(p))
-            return { pending: !!H.oa({ Creduler_pending: 1 }), unmet, total: CREDULER_GHOSTS.length }
+            const spine = H.Creduler_ghosts() ?? []
+            const unmet = spine.filter(p => !H.Lies_ghost_get(p))
+            return { pending: !!H.oa({ Creduler_pending: 1 }), unmet, total: spine.length }
         },
 
         // Lies_deliver_soon — coalesce inbound frames into ONE Atime drain instead of one post_do per

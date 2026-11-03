@@ -9,8 +9,9 @@
 ## 0. What to get on with next
 
 1. Read §2 (Atheory in one sitting) and `CLAUDE.md`; then `AtheoryNexus_todo.md` §0.0 (the land map) and its *E thought through*.
-2. **Rung 1 — the landscape** (§4): a `Ground/Pile` composition and a Book that walks a folder (a fixture tree, then a real FSA or
-    the remote `/music` mount) into rows, and a view that draws them as a floaty landscape.  No Mag, no typewriter yet.
+2. **Rung 1 — the listing as a Mag, drawn as squares** (§4): a `Ground/Pile` composition and a Book that streams a folder's
+    listing (a fixture tree, then a real FSA handle) into a `Mag**` held under a Seem, and a new Stuffica-era view that draws it
+     as plain squares in scrolly panes.  No Stuffing fold, no Waft, no typewriter yet — the basic square shape first (owner).
 3. Every rung is a Book first (`Stands:<Ground>` in its toc, a Credence row), sworn with `story_swear`, run on the live runner.
 4. Ask the owner the §5 questions as they become load-bearing — not up front.
 
@@ -31,6 +32,14 @@
   that and can make Mag**, here or there, directly in the filesystem or superimposed and shared with others, so one can make cave
    systems across other Mag**, all presented like a magazine, with language as an artform, in a space made for music... Stuffing's whole
     idea is compression and expression in a sort of structured space."
+
+*2026-11-03, third:* "Pile B is another FSA handle to some pile of music in a directory somewhere. we're going to be presenting a
+ collection as landscape. ah! I forgot to say that FSA directory listings shall stream into a Mag** somehow! that's a Seem. stuff can
+  hang out in there, and should notice being moved around. this is a nice careful reversible file manager, via being put into a Mag**
+   that represents the filesystem, to give us some basic CRUD, and movings... I think Mag are presented as Waft are but more
+    advanced... we'll just make another Stuffica era UI for now, to avoid touching Waft directly, but you get the idea of just racks
+     of atoms... different scrolly panes that can vector-graphique between each other to show the webbing of sameness or movement or
+      so... drawing the albums and bunches... kind of forget Stuffing initially, lets get the basic square-shape working first"
 
 ---
 
@@ -81,7 +90,18 @@
 
 ## 3. The shape
 
-**Two hemispheres, A and B.**  A is the collection (the main pile, its own folder structure — the user's *extant* categories, read
+**The listing is a Mag\*\*, kept by a Seem.**  An FSA directory listing streams into a `Mag**` that *represents* the
+ filesystem — a Mag per directory (nesting is `Mag**`, walked recursively the way `Ra_recs_deep` already does), a row per
+  file.  The Mag is held on an A and controlled by a **Seem** (`Atheory_design.md` §0: a controller over a compartment that
+   walks the rows of the kinds it holds and keeps a **point** per row, paired walk to walk by what holds still).  That pairing is
+    what lets a thing **notice being moved**: re-walk after a move, and the point that lost its old place pairs with the row in
+     its new one — a move, not a delete-plus-create.  And a Seem is the one controller that can **roll back** (`%TheAMark`,
+      `TheA_seem_rollback`), which is what makes this a **careful, reversible file manager**: CRUD and moves are proposed on
+       the Mag, carried to disk as Jobs, and every one has a mark to return to.  Things can also just *hang out* in the Mag —
+        notes, relations, pointers — superimposed on the listing without touching a file.
+
+**Two hemispheres, A and B.**  B is another FSA handle (a second directory picker in the same browser) to some pile of music
+ somewhere; it streams into its own Mag the same way.  A is the collection (the main pile, its own folder structure — the user's *extant* categories, read
  off the tree, never a given taxonomy); B is the incoming pile (another FSA: a giant downloads folder, a friend's mount).  Each is an
   A holding rows read from its tree.  The work is making **relations** between them: "this B album belongs under that A folder", "this
    is already in A", "this B track is the better copy".
@@ -90,8 +110,12 @@
  ids — never a copy of either side.  A pointer into a pile's contents is a `%Card`-like referring row.  The tell you got this wrong:
   two different shapes under one mainkey.
 
-**The landscape.**  The listing drawn as a floaty space — folders as regions, depth as altitude, the dense places dense — on the glass
- (Voro/Vyto), with Stuffing's fold: a folder of 400 alike files reads as one row saying so until attended.  Top-down, the exact pile.
+**The view: racks of atoms, panes webbed together.**  A Mag is presented the way a Waft is, but more advanced — and for now
+ we **don't touch Waft**: Pile gets a new Stuffica-era UI of its own.  First shape, deliberately plain: **squares**.  A
+  directory is a rack, a file is an atom (a square), albums and bunches drawn as the racks they are.  Several **scrolly panes**
+   side by side (A's racks, B's racks, a destination), and **vector lines between panes** draw the webbing — *sameness* (this B
+    file is that A file) and *movement* (this went from there to here).  **Stuffing's fold comes later** (a folder of 400 alike
+     files reading as one row until attended), and so does the floaty landscape on the glass (Voro/Vyto) — square shape first.
 
 **Listening is the instrument.**  You walk the pile by ear: a track plays (the radio and the pool exist), and while it plays you dial
  in where it goes.  The Heist setup shows *what is already where it's going* — the destination's reality, not a form.
@@ -114,8 +138,8 @@
 
 | rung | what | Book proves |
 |---|---|---|
-| 1 | **The landscape**: `Ground/Pile` (hand toc: stands on Music + Glass; `Main:Pile`); a folder walked into rows on an A (a fixture tree in the wormhole first, then a real FSA or `/music`); drawn on the glass with Stuffing's fold | the rows of a fixture tree, the fold counts, the walk is arrivals (one `%Job` per directory read), no timer |
-| 2 | **Two hemispheres**: A (collection) and B (incoming), each its own A; "already in A" found by id/hash and said as a relation row | relations minted for a fixture pair; nothing copied |
+| 1 | **The listing as a Mag, as squares**: `Ground/Pile` (hand toc; `Main:Pile`); a directory listing streamed into `Mag**` on an A under a Seem (a fixture tree in the wormhole first, then a real FSA handle); a Stuffica-era view of plain squares in a scrolly pane | the Mag rows of a fixture tree; the walk is arrivals (one `%Job` per directory read), no timer; a file moved on disk, re-walked, is seen as a **move** (its point re-pairs) |
+| 2 | **Two hemispheres, webbed**: B a second FSA handle streamed into its own Mag; two panes; "already in A" found and said as a relation row, drawn as a line between panes | relations minted for a fixture pair; nothing copied |
 | 3 | **Listen and dial in**: play a B track, choose an A destination from A's own folders; a `%Move` proposal row | proposals; the destination's existing contents shown |
 | 4 | **Carry out**: proposals become Jobs that really move (or copy) on disk, each undoable; resumable across reloads | a fixture move done, undone, resumed after a reload |
 | 5 | **The typewriter**: text knowing the playing track makes a `Mag**` page — in the folder, superimposed, or shared | a Mag written all three ways |
@@ -127,6 +151,8 @@
 
 ## 5. Open — ask the owner when a rung needs it
 
+- What does a Seem pair a file's point on, so a move is noticed: its **name** (survives a move, breaks on rename), its
+   **content hash** (survives both, costs a read of every file), or size+name as a cheap first guess confirmed by hash?
 - Is B's merge a **move** or a **copy** by default, and where does an undone move go?
 - The remote mount: is B usually another FSA in the same browser, or a friend's/daemon's pile over the wire?
 - Do the user's categories live only in folder names, or also in tags inside files?

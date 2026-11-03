@@ -3,6 +3,10 @@ story:PereProof
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.238
       sample=0.175,at=1785906327

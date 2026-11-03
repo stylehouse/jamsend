@@ -18,7 +18,9 @@ import { GROUNDS } from './grounds.gen.js'
 //  a toc before Core stands — and every other Ground may instead be READ from its hand-kept wormhole/Ground/<Name>/toc.snap once a
 //   tab has a wormhole (Auto, for ?G=).  A read Ground is learned here and wins over the bake.  A composition carries how to run
 //    as well as what to load: Main (the A the page runs from, repeatable), Role (default: its name lowercased), Face.
-export type GroundRead = { stands: string[], load: string[], main: string[], role?: string, face?: string }
+//  A runner composition also carries its SPINE: what the page loads flat before any Book — Grounds by name, or a lone .g path
+//   that no Ground wears yet.  It shrinks as Books say their own Stands (AtheoryNexus_todo §0.0 E slice 3).
+export type GroundRead = { stands: string[], load: string[], main: string[], spine?: string[], role?: string, face?: string }
 const LEARNED: Record<string, GroundRead> = {}
 export function ground_learn(name: string, g: GroundRead) { LEARNED[name] = g }
 export function ground_read(name: string): GroundRead | undefined {
@@ -35,6 +37,8 @@ export function ground_role(name: string): string {
 export function ground_from_toc(G: any): GroundRead {
     const vals = (k: string) => (G?.o?.({ [k]: 1 }) ?? []).map((n: any) => String(n.sc[k]))
     const g: GroundRead = { stands: vals('Stands'), load: vals('Load'), main: vals('Main') }
+    const spine = vals('Spine')
+    if (spine.length) g.spine = spine
     const role = vals('Role')[0], face = vals('Face')[0]
     if (role) g.role = role
     if (face) g.face = face
@@ -42,6 +46,18 @@ export function ground_from_toc(G: any): GroundRead {
 }
 
 export const GROUND_CORE = 'Core'
+
+// ground_spine_paths — a spine (Ground names and lone .g paths) as the .g a page loads, in order: each Ground's closure (Core
+//  first), then the lone paths.  Unknown Ground names come back to be refused by whoever asked.
+export function ground_spine_paths(spine: string[]): { paths: string[], grounds: string[], unknown: string[] } {
+    const grounds = spine.filter(s => !s.endsWith('.g'))
+    const lone    = spine.filter(s => s.endsWith('.g'))
+    const { order, unknown } = ground_closure(grounds)
+    const paths: string[] = []
+    for (const step of order) for (const p of ground_loads(step.name)) if (!paths.includes(p)) paths.push(p)
+    for (const p of lone) if (!paths.includes(p)) paths.push(p)
+    return { paths, grounds, unknown }
+}
 
 export type GroundStep = { name: string, via?: string }
 

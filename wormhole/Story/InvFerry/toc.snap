@@ -3,6 +3,10 @@ story:InvFerry
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=110.931
       sample=0.066,at=1788871024

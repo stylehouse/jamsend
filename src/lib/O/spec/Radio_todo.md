@@ -154,9 +154,8 @@ Every `Ghost/M/*.g` is Jamsend's own: the app foundation (crew, wire, trust) liv
 | doc | what's budding |
 |---|---|
 | `Pile_todo.md` | the pile: a music collection walked as a landscape, an incoming pile merged into it by ear, and a typewriter that writes `Mag**`. The first app on Atheory (`?G=Pile`) |
-| `Station_future.md` | a flock herded onto a few live Records: a station is a schedule (`seq` from the wall clock, joining mid-track for free), pecks queue or become stations, chunks served as immutable HTTP behind a dumb cache (TURN is the wrong relay) |
-| `Radio_future.md` | the imagination ledger of listening: what we already record, and what a reinvented listening UI could do with it |
-| `Radio_multicast_todo.md` | the WebRTC swarm: advertise, discover and serve held chunks peer to peer. Parked behind `Station_future.md`'s HTTP cache |
+| `Radio_future.md` | the imagination ledger of listening: what we already record, and what a reinvented listening UI could do with it. §16 is the **station**: a flock herded onto a few live Records (a station is a schedule, joining mid-track for free; chunks as immutable HTTP behind a dumb cache; TURN is the wrong relay) |
+| `Radio_multicast_todo.md` | the WebRTC swarm: advertise, discover and serve held chunks peer to peer. Parked behind `Radio_future.md` §16's HTTP cache |
 
 ---
 

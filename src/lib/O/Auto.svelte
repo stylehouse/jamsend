@@ -55,7 +55,7 @@
     import { now_in_seconds, now_in_seconds_with_ms } from "$lib/Common";
     import { APP_DATA_DIR } from "$lib/app_data_dir"
     import { boot_param }   from "$lib/boot"
-    import { ground_from_toc, ground_learn, ground_role, ground_include } from "$lib/A/ground"
+    import { ground_from_toc, ground_learn, ground_role, ground_include, ground_closure, ground_loads } from "$lib/A/ground"
     import { Idento }       from "$lib/Common"
     import { prepubOf }     from "$lib/cluster_trust"
     import { crew_keys, crew_keys_home } from "$lib/O/Funk/Crewkeys"
@@ -1297,6 +1297,9 @@
             for (const m of top.o({ Main: 1 }) as TheC[]) page.oai({ Main: String(m.sc.Main) })
             if (role !== H.c.boot_role) console.warn(`⚠ Ground/${G} says Role:${role} but the tab booted as ${H.c.boot_role ?? 'nothing'} — a role can't change after boot`)
             console.log(`⛰ page stands on Ground/${G} as ${role}`)
+            // the Creduler holds until it can read this Ground's Spine (LiesLies Creduler_ghosts) — wake it now it can
+            const lies_w = H.o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] as TheC | undefined
+            if (lies_w) H.i_elvisto(lies_w, 'think')
         }
         // the Mains' code is Core's (Ground.g); stand it once the include door is up and the spine has loaded
         if (typeof (H as any).Lies_ghost_include !== 'function' || H.oa({ Creduler_pending: 1 })) return
@@ -1476,6 +1479,26 @@
         return out
     },
 
+    // Cred_book_code — the code a Book ran, in TheACode's terms (AtheoryNexus_todo §0.0 E slice 3): the Grounds of Story (every
+    //  run's driver) and of the Book's own Stands:, closed, Core first — each digested exactly as Theory's TheA_code_stand digests
+    //   A:Runner's and a Desk's rows (no enclosing A) — and the ghost names of the files under them.  A Ground with a layer not
+    //    loaded has no dige.  Null where Theory isn't on the tab (a page off a Ground): the spool then records every ghost, as before.
+    Cred_book_code(): { grounds: { name: string, dige?: string }[], files: Set<string> } | null {
+        const H = this as any
+        if (typeof H.TheA_digest !== 'function' || typeof H.TheA_loaded !== 'function') return null
+        const stW = (H.Lies_runner_story_w?.() ?? (H.o({ H: 'Story' })[0] as House | undefined)?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0]) as TheC | undefined
+        const stands = ((stW?.c.The as TheC | undefined)?.o({ Stands: 1 }) ?? []).map(s => String(s.sc.Stands))
+        const grounds: { name: string, dige?: string }[] = []
+        const files = new Set<string>()
+        for (const step of ground_closure(['Story', ...stands]).order) {
+            const paths = ground_loads(step.name)
+            const diges = paths.map(p => H.TheA_loaded(p))
+            for (const p of paths) files.add(String(H.TheA_meta(p)).replace(/^Ghostmeta_/, ''))
+            grounds.push(diges.every(d => d) ? { name: step.name, dige: H.TheA_digest(diges.join(' ')) } : { name: step.name })
+        }
+        return { grounds, files }
+    },
+
     // Cred_assertion_gaps — the contract-vs-evidence verdict (Seen_split rulings 2026-07-18):
     //  for each declared %Assertion, did a matching %sworn actually latch this run?
     //   CONTRACT: `The/step=N/%Assertion:slug,sentence:…` — a child of its toc step; the hosting
@@ -1588,7 +1611,11 @@
         const outcome = (H as any).Cred_run_outcome() as { ok: boolean, ok_pct: number | null, done: number, caveat: number, mode?: string, gaps?: any[] } | null
         if (!outcome) return
         ;(H as any).Cred_report_wild(book, outcome)
-        const versions = (H as any).Cred_ghost_versions() as { name: string, dige: string }[]
+        // a Book's inputs are its Grounds (Story's + its own Stands:) where Theory can say them; else every ghost on the tab
+        const code = (H as any).Cred_book_code() as { grounds: { name: string, dige?: string }[], files: Set<string> } | null
+        const every = (H as any).Cred_ghost_versions() as { name: string, dige: string }[]
+        const versions = code ? every.filter(v => code.files.has(v.name)) : every
+        const grounds = (code?.grounds ?? []).reduce((m: any, g) => (g.dige && (m[g.name] = g.dige), m), {})
         const at = now_in_seconds_with_ms()
         const hc = H.c as any
         if (!hc.cred?.books) hc.cred = { books: {} }   // (re)shape; tolerate a stale pre-per-Book soul across HMR
@@ -1596,27 +1623,31 @@
         const bk   = (cred.books[book] ??= { runs: [], last_ok: null }) as any
         // trail: one run + the exact version-set it used (flattened)
         const uses = versions.reduce((m: any, v) => (m[v.name] = v.dige, m), {})
-        bk.runs.push({ at, ok: outcome.ok, ok_pct: outcome.ok_pct, mode, uses })
+        bk.runs.push({ at, ok: outcome.ok, ok_pct: outcome.ok_pct, mode, uses, grounds })
         // whittle the trail to 20 (the default whittled-list length): keep only the RECENT tries
         if (bk.runs.length > 20) bk.runs.splice(0, bk.runs.length - 20)
         // last-OK tagged to the versions it used (the credible HEAD)
-        if (outcome.ok) bk.last_ok = { at, ok_pct: outcome.ok_pct, uses }
+        if (outcome.ok) bk.last_ok = { at, ok_pct: outcome.ok_pct, uses, grounds }
         // `ok_pct` is null on a recording run (nothing to compare against) — `NaN%` is what the old
         //  template printed there, so say `recording` and keep the percentage for real check runs.
         const grade = outcome.ok ? 'OK' : outcome.ok_pct == null ? 'recording' : Math.round(outcome.ok_pct * 100) + '%'
         console.log(`🧪 Cred spool: ${book} ${grade} — ${versions.length} ghosts, ${bk.runs.length} runs`)
-        H.Cred_persist(w, `wormhole/Story/${book}/Credulate/toc.snap`,   H.Cred_head_C(book, versions, bk))
+        H.Cred_persist(w, `wormhole/Story/${book}/Credulate/toc.snap`,   H.Cred_head_C(book, versions, bk, grounds))
         H.Cred_persist(w, `wormhole/Story/${book}/Credulation/toc.snap`, H.Cred_trail_C(book, bk))
     },
 
     // Cred_head_C — the HEAD soul (Credulate) for one Book as a C tree: a %GhostInclude per
     //  included ghost (its live dige — these ARE the Book's inputs) and, if any run has passed,
     //   a %last_ok carrying the exact version-set it ran (a %uses per ghost).
-    Cred_head_C(book: string, versions: { name: string, dige: string }[], bk: any): TheC {
+    //  Each Ground the Book stood leads, as %TheACode:Ground/<Name>,dige — the row A:Runner and a Desk's A carry (one ledger).
+    Cred_head_C(book: string, versions: { name: string, dige: string }[], bk: any, grounds: Record<string, string> = {}): TheC {
         const root = _C({ Credulate: 1, of_Book: book })
+        for (const [name, dige] of Object.entries(grounds)) root.i({ TheACode: 'Ground/' + name, dige })
         for (const { name, dige } of versions) root.i({ GhostInclude: name, dige })
         if (bk.last_ok) {
             const lo = root.i({ last_ok: 1, at: bk.last_ok.at, ok_pct: bk.last_ok.ok_pct })
+            for (const [name, dige] of Object.entries(bk.last_ok.grounds ?? {}) as [string, string][])
+                lo.i({ TheACode: 'Ground/' + name, dige })
             for (const [name, dige] of Object.entries(bk.last_ok.uses) as [string, string][])
                 lo.i({ uses: name, dige })
         }
@@ -1630,6 +1661,8 @@
         const root = _C({ Credulation: 1, of_Book: book })
         bk.runs.forEach((r: any, i: number) => {
             const run = root.i({ run: i, at: r.at, ok: r.ok ? 1 : 0, ok_pct: r.ok_pct, mode: r.mode })
+            for (const [name, dige] of Object.entries(r.grounds ?? {}) as [string, string][])
+                run.i({ TheACode: 'Ground/' + name, dige })
             for (const [name, dige] of Object.entries(r.uses) as [string, string][])
                 run.i({ uses: name, dige })
         })

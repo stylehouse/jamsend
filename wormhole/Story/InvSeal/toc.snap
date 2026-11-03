@@ -3,6 +3,10 @@ story:InvSeal
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.07
       sample=0.099,at=1788326830

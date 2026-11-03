@@ -3,6 +3,10 @@ story:MusuFreeze
   Plan
   Opt
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.081
       sample=0.037,at=1788498766

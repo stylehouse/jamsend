@@ -51,6 +51,10 @@ story:MusuReco
     waitCyto
     dontSnapCyto
     For
+  Stands:WireTesting
+  Stands:MusicTesting
+  Stands:CaveTesting
+  Stands:SwarmTesting
   TimeSpool
     TimeTotal:beliefs,avg=0.646
       sample=0.719,at=1792135007

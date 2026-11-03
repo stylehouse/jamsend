@@ -2,3 +2,6 @@ Ground:Runner,desc:a tab that runs Books it is told — each Job stands a Desk a
   Stands:Story
   Main:Runner
   Role:runner
+  Spine:Wire
+  Spine:Ghost/Story/ErrchannelTesting.g
+  Spine:Ghost/O/Supervisor.g
