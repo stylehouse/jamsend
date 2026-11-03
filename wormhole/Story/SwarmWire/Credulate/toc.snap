@@ -19,7 +19,7 @@ Credulate,of_Book:SwarmWire
   GhostInclude:Ghost_Story_BerthTesting,dige:25d25e655deaa666~g1
   GhostInclude:Ghost_Story_ErrchannelTesting,dige:55f4a7dd9c9193f1~g1
   GhostInclude:Ghost_S_Swarm,dige:5238a4f8314c2f9e~g1
-  GhostInclude:Ghost_Story_SwarmTesting,dige:d59c792bb5d695a3~g1
+  GhostInclude:Ghost_Story_SwarmTesting,dige:5dfa1e42dc3daac3~g1
   GhostInclude:Ghost_Story_InvSeal,dige:3be936ab81f63e26~g1
   GhostInclude:Ghost_Story_InvFerry,dige:25d7e048c292e562~g1
   GhostInclude:Ghost_Story_InvWalk,dige:e3dd6a1629d67c5c~g1
@@ -31,10 +31,10 @@ Credulate,of_Book:SwarmWire
   GhostInclude:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
   GhostInclude:Ghost_A_Theory,dige:804ebab235555f08~g1
   GhostInclude:Ghost_A_Stuffica,dige:1f0ec09474696daa~g1
-  GhostInclude:Ghost_A_Ground,dige:138e9b3907799a29~g1
+  GhostInclude:Ghost_A_Ground,dige:00fdb3e0875fa9e6~g1
   GhostInclude:Ghost_A_AtheTesting,dige:a6411eebb38ab117~g1
   GhostInclude:Ghost_A_AtheFishTesting,dige:3d13bf77d88a5d90~g1
-  last_ok,at=1793671917.625,ok_pct
+  last_ok,at=1793683750.372,ok_pct
     uses:Ghost_N_Peeroleum,dige:ee39d52bb1441684~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:a3d82cb8e0a8910f~g1
@@ -55,7 +55,7 @@ Credulate,of_Book:SwarmWire
     uses:Ghost_Story_BerthTesting,dige:25d25e655deaa666~g1
     uses:Ghost_Story_ErrchannelTesting,dige:55f4a7dd9c9193f1~g1
     uses:Ghost_S_Swarm,dige:5238a4f8314c2f9e~g1
-    uses:Ghost_Story_SwarmTesting,dige:d59c792bb5d695a3~g1
+    uses:Ghost_Story_SwarmTesting,dige:5dfa1e42dc3daac3~g1
     uses:Ghost_Story_InvSeal,dige:3be936ab81f63e26~g1
     uses:Ghost_Story_InvFerry,dige:25d7e048c292e562~g1
     uses:Ghost_Story_InvWalk,dige:e3dd6a1629d67c5c~g1
@@ -67,6 +67,6 @@ Credulate,of_Book:SwarmWire
     uses:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
     uses:Ghost_A_Theory,dige:804ebab235555f08~g1
     uses:Ghost_A_Stuffica,dige:1f0ec09474696daa~g1
-    uses:Ghost_A_Ground,dige:138e9b3907799a29~g1
+    uses:Ghost_A_Ground,dige:00fdb3e0875fa9e6~g1
     uses:Ghost_A_AtheTesting,dige:a6411eebb38ab117~g1
     uses:Ghost_A_AtheFishTesting,dige:3d13bf77d88a5d90~g1

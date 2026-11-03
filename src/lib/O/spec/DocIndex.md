@@ -58,13 +58,14 @@ Cello (#21) is owned by this section too: it's the app foundation's cells and Do
 
 | # | topic | front door | what the field is | companions |
 |---|---|---|---|---|
-| 13 | **Radio** | `Radio_todo.md` §0 | listening together: the Stoker conveyor, the dial, the ♥, all on `Ghost/M/*.g` | `Radio_spec.md` (stage map), `Radio_design.md`, `Radio_todo.md` §0.d (every `Ghost/M` ghost in one sentence, and what was cut), `Radio_circuit_todo.md` + `Love_todo.md` (the ♥ and the heard Mag), `Supervisor_todo.md` (knowing when to give up and reload), `Radio_lowlevel.md` + `Radiobuddies_handover.md` (kept archaeology) |
+| 13 | **Radio** | `Radio_todo.md` §0 | the department for all of Jamsend's music; listening together: the Stoker conveyor, the dial, the ♥, all on `Ghost/M/*.g`. Its buds (pile, station, …) are listed in §0.e *Developing* | `Radio_spec.md` (stage map), `Radio_design.md`, `Radio_todo.md` §0.d (every `Ghost/M` ghost in one sentence, and what was cut), `Radio_circuit_todo.md` + `Love_todo.md` (the ♥ and the heard Mag), `Supervisor_todo.md` (knowing when to give up and reload), `Radio_lowlevel.md` + `Radiobuddies_handover.md` (kept archaeology) |
 | 14 | **The magazine** | `Mag_todo.md` §0 | what's been heard and liked: `%Mag:heard` of `%Card`s, one Card two roads, the referring-particle rule. Foundation-ended (a Mag is a Waft of Clouds), but it lives in this app | `Radio_circuit_todo.md` |
 | 15 | **Acquiring music** | `Heist_todo.md` §0 | ♥ → the whole album on disk: the pump, the window, landing, the Haul | `RemoteHeist_todo.md` (heisting on another body, `Heist_defaults`), `Heist_design.md` |
 | 16 | **The pool** | `SoundPooling_todo.md` | what played is kept and re-circulated; the pool holders; lofi copies for folderless bodies | |
 | 17 | **The collection** | `Wander_todo.md` | a library too big to enumerate: fair shuffling, the foggy map of what's there, whole tracks carried in your pocket | `Census_todo.md` |
-| 18 | **Ways of listening** | `Radio_future.md` | the imagination ledger of listening, and the shapes it takes: alone, following a DJ, many at once, the phone as instrument | `Solo_todo.md` (the lonely Radio), `Radio_multicast_todo.md` (following a DJ and the phone as instrument are one line each in `Radio_future.md` §13) |
+| 18 | **Ways of listening** | `Radio_future.md` | the imagination ledger of listening, and the shapes it takes: alone, following a DJ, many at once, the phone as instrument | `Solo_todo.md` (the lonely Radio), `Station_future.md` (a flock on a few live Records, served from disk), `Radio_multicast_todo.md` (following a DJ and the phone as instrument are one line each in `Radio_future.md` §13) |
 | 19 | **The daemon** | `Daemon_todo.md` | jamserve: the headless resident body that serves the music; its weight, its loop, its HTTP introspection. (A resident body is a foundation idea; this one is Jamsend's) | `Perf_todo.md` §7 |
+| 19b | **The pile** | `Pile_todo.md` §0 | the showroom for Atheory: a music pile walked as a landscape, two hemispheres (collection + incoming) related by pointers, listened through and merged over sessions, and a typewriter that writes `Mag**` — frontier G | `AtheoryNexus_todo.md` §0.0, `Mag_todo.md`, `Wander_todo.md` |
 
 ## IV. The visual end
 

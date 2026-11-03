@@ -145,6 +145,19 @@ Every `Ghost/M/*.g` is Jamsend's own: the app foundation (crew, wire, trust) liv
 - **Docs**: `Follow_todo` (the DJ-monitor follower) and `Phone_instrument_todo` (the phone as an instrument), deleted
    outright as easy to reinvent (one line each in `Radio_future.md`); `Siphon_todo` → `history/`.
 
+### 0.e Developing — what Radio is growing into
+
+*Radio is the department name for all of Jamsend's music (owner, 2026-11-03: "by Radio we really mean Jamsend, but
+ there isn't one of them yet"). As new tools crop up they bud off here first and divide into their own departments
+  when they have enough to stand on. This shelf lists the buds.*
+
+| doc | what's budding |
+|---|---|
+| `Pile_todo.md` | the pile: a music collection walked as a landscape, an incoming pile merged into it by ear, and a typewriter that writes `Mag**`. The first app on Atheory (`?G=Pile`) |
+| `Station_future.md` | a flock herded onto a few live Records: a station is a schedule (`seq` from the wall clock, joining mid-track for free), pecks queue or become stations, chunks served as immutable HTTP behind a dumb cache (TURN is the wrong relay) |
+| `Radio_future.md` | the imagination ledger of listening: what we already record, and what a reinvented listening UI could do with it |
+| `Radio_multicast_todo.md` | the WebRTC swarm: advertise, discover and serve held chunks peer to peer. Parked behind `Station_future.md`'s HTTP cache |
+
 ---
 
 ## 0.1 log

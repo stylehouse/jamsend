@@ -49,7 +49,7 @@
 | **D** | **Jobs as arrivals** (pure runner, step 2) | a relay `run` is a pulse on A:Runner; each job its own Desk; ending it drops the Desk | Auto teardown, `stop()` cascade, the reload wedge | `runner_sweep --desk` = normal sweep |
 | **E** | **A page is an Identity standing on a Ground** (THE MAP 1, reworded — owner 2026-11-03: no `?B=`, a runner is told its Books) | `?I=` says who; the Ground says what it stands on — `Ground/Runner` = Core + Story + Runner, whose `A:Runner` takes `%Job` arrivals (D) in place of Auto's pick/teardown/rebuild; the Story's buttons become pokes on the Desk's Hand (like the step strip). RULED: `/Desk?I=…&G=Runner` — the Ground names the role (default: its name lowercased); see *E thought through* below | the twin tax; Auto; everything.js | the fleet green on Ground/Runner tabs |
 | **F** | **Reqs by pulse** (Hovercraft) | one req held by `%TheAWait` instead of a ttlilt, then the rest | 56 ttlilts | its Book byte-identical |
-| **G** | **The pile as a landscape** (owner 2026-11-03, replaces porting a music organ) | a filesystem listing (local FSA or remote mount) drawn as a floaty space; then a Heist setup that shows what is already where it goes and offers the user's OWN categories; then a merge page: a second FSA's download pile listened through and dialled into the collection, a long workflow kept over sessions | — (the first app built on the fabric) | a Book per rung |
+| **G** | **The pile as a landscape** (owner 2026-11-03, replaces porting a music organ) — **its own doc now: `Pile_todo.md`** (the showroom for Atheory, with the intro) | a filesystem listing (local FSA or remote mount) drawn as a floaty space; then a Heist setup that shows what is already where it goes and offers the user's OWN categories; then a merge page: a second FSA's download pile listened through and dialled into the collection, a long workflow kept over sessions | — (the first app built on the fabric) | a Book per rung |
 
 **Progress 2026-11-03 (afternoon).**  **A BUILT** — every think for a shut House is kept at the door as a row (`c.door_rows`), both
  Storys open/shut it, Run trace `door think×N`.  **B's root BUILT** — the drain drives itself (a push microtasks `answer_calls`, the gate
@@ -106,13 +106,31 @@
    parity with today's 127/137.  Slice 2: identity out of Auto into `A:Identity`.  Slice 3: Creduler/Supervisor into Ground/Runner; Auto off
     `/Desk`.
 
- *Slice 1 BUILT 2026-11-03 (unverified live)*: `src/routes/Desk` (mounts Otro); Otro reads `?G=` → `H.c.ground`, boot_role = the name
+ *Slice 1 BUILT + LIVE 2026-11-03* (the owner's tab `/Desk?I=e747…&G=Runner`: Mundo holds `%Page,G:Runner,role:runner,I:e747…/%Main:Runner`, `A:Runner` stood at boot; AthePondRounds, AtheStoryInStory, HohoKeep green with NO `--desk`, each a `%Job`.  Found on the way: a Desk run never reported `step_done` — StoryFu `runner_phase` dropped every phase of a nested Story, the runner's own Desk Story included — so `runner_ask` gave up on any Desk run longer than RUNNER_BEGUN_MS (MusuRaStream's 'NEVER STARTED'); fixed by `w.c.report_up`, MusuRaStream now runs 40/40 (red only on its stale `now=`)): `src/routes/Desk` (mounts Otro); Otro reads `?G=` → `H.c.ground`, boot_role = the name
   lowercased when that is runner|daemon (the bootstrap: Core stays hard-wired in the bake until a toc is readable); `ground.ts` learns read
    Grounds over the bake (`ground_learn`/`ground_read`/`ground_role`/`ground_from_toc`); Auto `auto_ground` reads
     `wormhole/Ground/<G>/toc.snap`, stamps `%Page,G,role,I` + `%Main` rows on Mundo, includes Core, stands each Main's A; LiesFunk
      `Lies_page_runs('Runner')` makes every Book on such a page a Desk run (as `--desk`).  The Ground's `Stands:` is NOT included on the
       page — Story stands aside in each Desk (Desk_story), and each Book's own `Stands:` brings its code.  Gate: `runner_sweep` on a
        `/Desk?I=…&G=Runner` tab at parity with `--desk` 127/137.
+
+ *Slice 2 BUILT + LIVE 2026-11-03*: Auto's whole who-am-I region (?I= ensure, arrest, legacy adopt, role default, mirror) is one method,
+  `identity_settle` (Auto.svelte); on a `?G=` page it is `A:Identity/w:Identity`'s own think, which says `%Who:<prepub>` (or `%Arrested` while
+   the IdHatch waits), and Auto holds the rest of its think until `%Who` stands; every other page runs it inline as before.  The owner's tab:
+    `Who:e747cbed6a9ca919`, 3/3 green.  Next (slice 3): the Creduler Lies + Supervisor + keep-awake out of Auto into Ground/Runner — then Auto
+     has nothing left to do on a /Desk page.
+  *Slice 3, re-aimed (owner 2026-11-03: "shall we sublate Auto into something else? leaving it behind until the Music app at / is
+   ported, then it can delete. but copy Credular etc out … perhaps Supervisor wants writing in the light of Atheory")*: don't move out of
+    Auto — COPY out.  Auto stays as it is for `/`, `/Otro` and the Big*land pages until the Music app at `/` is ported onto a Ground;
+     then it is deleted, not refactored.  Ground/Runner gets its own Creduler — and the Creduler and TheACode must sync up first: the
+      Creduler loads the spine through its Lies and keeps `%GhostInclude` rows, while an A holds its code as `%TheACode`/versions
+       (Atheory_design §1.2–1.3) — two ledgers of "what code is live" that a Ground/Runner page should keep as one.  Supervisor is
+        rewritten, not copied, in Atheory's terms (a Seem over the runs? its roster as rows) — design pass with the owner.  Keep-awake
+         copies as is.
+  *Sweep on the /Desk tab, 2026-11-03 evening*: 139 Books — 125 ✓, 3 flake, 11 ✗, 0 hollow, 0 never-started (was `--desk` 127/137).  Baseline reds now
+   green: HohoTiles, VytoBunch/Mitosis/Seek/Staple/Freeze.  Still red, known: SwarmGot, MusuMag/Reco/Buddy/Ogg/Reap (cid drift), MusuRaStream
+    (`now=`), HohoWaftMap.  New: SwarmWire (its witness ran before the Piers' inbox reqs landed beat 4's frames — now witnessed in a post_do
+     after the pass, 4/4 green); MusuRadio + MusuTune REFUSED — the tab's AudioContext lost its gesture to my reloads (environment).
 
  *Off to the side — one Identity in two tabs* (owner: "should be possible and sane somewhere around here").  Not sane today: the relay's
   `bind()` is additive and `deliverLocal` fans out, so two tabs on one prepub each get every frame, and both answer (the "two of you" hazard,

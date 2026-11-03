@@ -31,10 +31,10 @@ Credulate,of_Book:HohoNets
   GhostInclude:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
   GhostInclude:Ghost_A_Theory,dige:804ebab235555f08~g1
   GhostInclude:Ghost_A_Stuffica,dige:1f0ec09474696daa~g1
-  GhostInclude:Ghost_A_Ground,dige:138e9b3907799a29~g1
+  GhostInclude:Ghost_A_Ground,dige:00fdb3e0875fa9e6~g1
   GhostInclude:Ghost_A_AtheTesting,dige:a6411eebb38ab117~g1
   GhostInclude:Ghost_A_AtheFishTesting,dige:3d13bf77d88a5d90~g1
-  last_ok,at=1793671371.815,ok_pct
+  last_ok,at=1793681657.847,ok_pct
     uses:Ghost_N_Peeroleum,dige:ee39d52bb1441684~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:a3d82cb8e0a8910f~g1
@@ -67,6 +67,6 @@ Credulate,of_Book:HohoNets
     uses:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
     uses:Ghost_A_Theory,dige:804ebab235555f08~g1
     uses:Ghost_A_Stuffica,dige:1f0ec09474696daa~g1
-    uses:Ghost_A_Ground,dige:138e9b3907799a29~g1
+    uses:Ghost_A_Ground,dige:00fdb3e0875fa9e6~g1
     uses:Ghost_A_AtheTesting,dige:a6411eebb38ab117~g1
     uses:Ghost_A_AtheFishTesting,dige:3d13bf77d88a5d90~g1

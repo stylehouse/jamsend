@@ -2382,8 +2382,10 @@ story_drive(Run: House, w: TheC, run: TheC):
         const story_total = () => (run.sc.total as number | undefined)
             ?? ((w.c.The as TheC | undefined)?.o({ step: 1 }) ?? []).length
         const runner_phase = (phase: string, extra?: any) => {
-            // a NESTED Story is not the runner's run: its phases must not reach the runner's Lies (runner_ask state, the editor)
-            if (H.Story_nested()) return
+            // a NESTED Story is not the runner's run: its phases must not reach the runner's Lies (runner_ask state, the editor) —
+            //  unless it IS the runner's run: a Desk runner's Story (w.c.report_up, Ground.g Desk).  Without this a Desk run sat at
+            //   `begun` with no n until all_done, and runner_ask gave up on any run longer than RUNNER_BEGUN_MS (MusuRaStream)
+            if (H.Story_nested() && !w.c.report_up) return
             const Mundo = H.top_House()
             const liesW = Mundo.o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] as TheC | undefined
             // Invoke ON Mundo, not on this Run House: Lies_role's inside-story guard returns

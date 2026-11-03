@@ -15,7 +15,7 @@ import { sas_transcript, sas_row, sas_agree } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_SwarmTesting(): string { return 'd59c792bb5d695a3~g1' },
+    Ghostmeta_Ghost_Story_SwarmTesting(): string { return '5dfa1e42dc3daac3~g1' },
 
 // SwarmTesting.g — né Swarmation.g (the `<Name>Testing.g` convention, owner ruling 2026-09-09;
 //  src/lib/L/testing.ts is the one predicate).  Book NAMES did not move with the file.
@@ -279,6 +279,10 @@ async SwarmWire_drive(w, req) {
     }
     await this.Lake_pump_handshakes(w)
     await this.SwarmWire_order(w)
+    // …and witness AFTER this pass: the Piers' inbox reqs (which land the frames) run after this drive and after the witness req,
+    //  and beat 4's last frame can land in the step's last pass — nothing thinks w again, so the oaths went absent (red 8/9 on a
+    //   /Desk runner, red-then-green before).  A post_do runs after the pass, still inside the step (ahead of its snap)
+    if (req.c.did_step != null) this.post_do(() => this.SwarmWire_witness(w), { see: 'swarmwire_witness' })
 
 },
 // beat 2 — the stations: the same fixed selves as the staple, then ONE Lake_link between their

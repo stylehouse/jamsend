@@ -251,6 +251,10 @@ async SwarmWire_drive(w, req):
     }
     await this.Lake_pump_handshakes(w)
     await this.SwarmWire_order(w)
+    // …and witness AFTER this pass: the Piers' inbox reqs (which land the frames) run after this drive and after the witness req,
+    //  and beat 4's last frame can land in the step's last pass — nothing thinks w again, so the oaths went absent (red 8/9 on a
+    //   /Desk runner, red-then-green before).  A post_do runs after the pass, still inside the step (ahead of its snap)
+    if (req.c.did_step != null) this.post_do(() => this.SwarmWire_witness(w), { see: 'swarmwire_witness' })
 
 // beat 2 — the stations: the same fixed selves as the staple, then ONE Lake_link between their
 //  prepubs (each side a %Peering,name flock with a mock carrier), the step-boundary whittle armed

@@ -979,57 +979,13 @@
         //      the any-interaction AC unlock + the self-clearing Mundo "keep awake" button.  (§keep-awake)
         await (H as any).keep_awake_tick(w)
 
-        // ?I=<tag> cluster identity — stand up the Clustation Identity layer on the top House: the
-        //  switchable, persisted %Identity (→ %Peering = our pub address) the relay `hello` signs
-        //   with. ?I=new mints fresh, ?I=<tag> resumes. Absent ⇒ the legacy .stashed/.env key path,
-        //    so this is inert until a peer is booted with ?I=. Editor or runner — anyone who
-        //     declares an Id. Awaited: the mint|peek is async, but settles before the channel needs
-        //      the key (Lies_channel_up's hello reads Lies_cluster_idento live each open).
-        if (boot_param('I') && !H.c.identity_up) {
-            // Latch only on success — ensure reports false if the Thangs helpers aren't mounted yet,
-            //  so a boot tick that raced the ghost mount retries next pass instead of latching empty.
-            if (await (H as any).Clustation_ensure_identity(H)) H.c.identity_up = true
+        // WHO this page is (?I= ensure / arrest / legacy adopt / role default / mirror) — identity_settle, below.  On a Ground page
+        //  (?G=) it is A:Identity's own think (AtheoryNexus_todo §0.0 E slice 2) and Auto waits for its %Who; elsewhere Auto runs it.
+        if (H.c.ground) {
+            const iw = H.oai({ A: 'Identity' }).oai({ w: 'Identity' })
+            if (!iw.o({ Who: 1 }).length) return w.i({ see: '⏳ waiting for A:Identity to say who' })
         }
-        // ARREST (2026-08-04): a named ?I=<tag> this browser can't resume leaves the top House flagged
-        //  identity_pending (Clustation_ensure_identity, above). Nothing past this point runs — no
-        //   Creduler-driven Story, no Library page — until a human resolves it via the IdHatch the miss
-        //    already popped (paste the real key, or Generate a new identity). Re-checked every tick, so
-        //     resolving it (either path clears identity_pending) resumes normal boot on the very next
-        //      pass — no reload needed. Lies_channel_up carries the matching gate so the wire itself
-        //       stays silent too (no hello signs with a wrong/missing key).
-        if (((H as any).top_House?.() ?? H).c.identity_pending) return
-
-        // Legacy migration (Robustness_plan Organ 4, the 9→2 collapse): a peer holding only a bare
-        //  .stashed.cluster_idento (the pre-%Identity home — a 🪪-hatch paste that skipped adopt, or an
-        //   older session) has a signing key Clustation_self can't see.  Lies_self derives its address from
-        //    Lies_cluster_idento so ROUTING is already correct, but the roster / IdHatch / registry only
-        //     surface first-class %Identity objects — so adopt the stashed key into one, ONCE, so an
-        //      un-migrated editor/runner stops looking identity-less.  Skip when a ?I= identity is already
-        //       active (it wins); retry next pass if Thangs persistence isn't mounted yet (don't latch empty).
-        if (!boot_param('I') && !H.c.identity_adopted) {
-            const legacy = ((H.top_House?.() as House | undefined)?.stashed as any)?.cluster_idento
-            if (legacy?.pub && legacy?.key && !(H as any).Clustation_active_identity?.(H)) {
-                if (await (H as any).Clustation_adopt(legacy, H)) H.c.identity_adopted = true
-            } else H.c.identity_adopted = true   // nothing to adopt (or a ?I= is active) — don't re-scan
-        }
-
-        // "This page always has an identity" — a boot_qualand toplevel (H.c.assume_identity) with no ?I=
-        //  and nothing adopted above resumes|mints its ROLE identity (H.c.id_role).  ?I= and the legacy
-        //   adopt both win (they leave an active identity, which Clustation_ensure_default then skips);
-        //    this only fills a bare page's gap.  Latch on success only (retry if Thangs raced the tick).
-        if ((H.c as any).assume_identity && !boot_param('I') && !H.c.identity_default) {
-            if (await (H as any).Clustation_ensure_default(H)) H.c.identity_default = true
-        }
-
-        // Mirror the account to .jamsend (Identity_persist_todo §6.1, "gap 1" — the write side that
-        //  nothing in the app ever called, which is why the read side kept arresting beside an account
-        //   dir that was never created).  HERE, after every identity path above has had its say, so we
-        //    mirror whoever actually ended up active — ?I=, legacy adopt or role default alike — and
-        //     after the identity_pending gate, so an ARRESTED boot never writes.  Self-throttling on a
-        //      version bump and self-guarding on the nav, so calling it every tick is the intended use:
-        //       it is a no-op until something about the account actually changes.  Not awaited for
-        //        correctness by anything below; a failed mirror costs durability, never this boot.
-        await (H as any).Clustation_mirror_account?.(H)
+        else if (await H.identity_settle() === 'arrested') return
 
         // ?G=<Ground> — read the Ground's toc, say the page as %Page on Mundo, stand its Main (AtheoryNexus_todo §0.0 E).  Never
         //  holds the rest of this think: a run's storyFinished must still land while the toc is on its way.
@@ -1225,6 +1181,84 @@
 
 //#region the Ground a page stands on
 
+    // identity_settle — WHO this page is, settled once per think: 'arrested' while a named ?I= can't be resumed (IdHatch is up),
+    //  else 'ready'.  Lifted whole out of Auto's think (AtheoryNexus_todo §0.0 E slice 2), so a Ground page runs it as A:Identity.
+    async identity_settle(): Promise<'ready' | 'arrested'> {
+        const H = this as House
+        // ?I=<tag> cluster identity — stand up the Clustation Identity layer on the top House: the
+        //  switchable, persisted %Identity (→ %Peering = our pub address) the relay `hello` signs
+        //   with. ?I=new mints fresh, ?I=<tag> resumes. Absent ⇒ the legacy .stashed/.env key path,
+        //    so this is inert until a peer is booted with ?I=. Editor or runner — anyone who
+        //     declares an Id. Awaited: the mint|peek is async, but settles before the channel needs
+        //      the key (Lies_channel_up's hello reads Lies_cluster_idento live each open).
+        if (boot_param('I') && !H.c.identity_up) {
+            // Latch only on success — ensure reports false if the Thangs helpers aren't mounted yet,
+            //  so a boot tick that raced the ghost mount retries next pass instead of latching empty.
+            if (await (H as any).Clustation_ensure_identity(H)) H.c.identity_up = true
+        }
+        // ARREST (2026-08-04): a named ?I=<tag> this browser can't resume leaves the top House flagged
+        //  identity_pending (Clustation_ensure_identity, above). Nothing past this point runs — no
+        //   Creduler-driven Story, no Library page — until a human resolves it via the IdHatch the miss
+        //    already popped (paste the real key, or Generate a new identity). Re-checked every tick, so
+        //     resolving it (either path clears identity_pending) resumes normal boot on the very next
+        //      pass — no reload needed. Lies_channel_up carries the matching gate so the wire itself
+        //       stays silent too (no hello signs with a wrong/missing key).
+        if (((H as any).top_House?.() ?? H).c.identity_pending) return 'arrested'
+
+        // Legacy migration (Robustness_plan Organ 4, the 9→2 collapse): a peer holding only a bare
+        //  .stashed.cluster_idento (the pre-%Identity home — a 🪪-hatch paste that skipped adopt, or an
+        //   older session) has a signing key Clustation_self can't see.  Lies_self derives its address from
+        //    Lies_cluster_idento so ROUTING is already correct, but the roster / IdHatch / registry only
+        //     surface first-class %Identity objects — so adopt the stashed key into one, ONCE, so an
+        //      un-migrated editor/runner stops looking identity-less.  Skip when a ?I= identity is already
+        //       active (it wins); retry next pass if Thangs persistence isn't mounted yet (don't latch empty).
+        if (!boot_param('I') && !H.c.identity_adopted) {
+            const legacy = ((H.top_House?.() as House | undefined)?.stashed as any)?.cluster_idento
+            if (legacy?.pub && legacy?.key && !(H as any).Clustation_active_identity?.(H)) {
+                if (await (H as any).Clustation_adopt(legacy, H)) H.c.identity_adopted = true
+            } else H.c.identity_adopted = true   // nothing to adopt (or a ?I= is active) — don't re-scan
+        }
+
+        // "This page always has an identity" — a boot_qualand toplevel (H.c.assume_identity) with no ?I=
+        //  and nothing adopted above resumes|mints its ROLE identity (H.c.id_role).  ?I= and the legacy
+        //   adopt both win (they leave an active identity, which Clustation_ensure_default then skips);
+        //    this only fills a bare page's gap.  Latch on success only (retry if Thangs raced the tick).
+        if ((H.c as any).assume_identity && !boot_param('I') && !H.c.identity_default) {
+            if (await (H as any).Clustation_ensure_default(H)) H.c.identity_default = true
+        }
+
+        // Mirror the account to .jamsend (Identity_persist_todo §6.1, "gap 1" — the write side that
+        //  nothing in the app ever called, which is why the read side kept arresting beside an account
+        //   dir that was never created).  HERE, after every identity path above has had its say, so we
+        //    mirror whoever actually ended up active — ?I=, legacy adopt or role default alike — and
+        //     after the identity_pending gate, so an ARRESTED boot never writes.  Self-throttling on a
+        //      version bump and self-guarding on the nav, so calling it every tick is the intended use:
+        //       it is a no-op until something about the account actually changes.  Not awaited for
+        //        correctness by anything below; a failed mirror costs durability, never this boot.
+        await (H as any).Clustation_mirror_account?.(H)
+        return 'ready'
+    },
+
+    // Identity — A:Identity/w:Identity on a Ground page's Mundo: settles who the page is and says it as one row, %Who:<prepub>
+    //  (or %Who:nobody — a page with no ?I= and no legacy key still boots, as it always has), or %Arrested while the IdHatch
+    //   waits on a human.  Auto holds the rest of its think until %Who stands.
+    async Identity(A: TheC, w: TheC) {
+        const H = this as House
+        const s = await H.identity_settle()
+        if (s === 'arrested') {
+            if (!w.o({ Arrested: 1 }).length) w.i({ Arrested: 1 })
+            return
+        }
+        for (const a of w.o({ Arrested: 1 }) as TheC[]) w.drop(a)
+        const who = String((H as any).Clustation_self?.(H)?.prepub || 'nobody')
+        const row = w.o({ Who: 1 })[0] as TheC | undefined
+        if (row?.sc.Who !== who) {
+            if (row) w.drop(row)
+            w.i({ Who: who })
+            H.main()
+        }
+    },
+
     // auto_ground — a /Desk?G=<Ground> page (AtheoryNexus_todo §0.0 E): the URL booted its role as the Ground's name lowercased (Otro);
     //  here, once the wormhole answers, its hand-kept toc is read and learned (ground.ts — the bake stays the bootstrap for Core), the
     //   page is said as ONE row on Mundo — %Page,G,role,I with a %Main per Main: — and each Main A is stood, Core first (Ground.g holds
@@ -1246,7 +1280,7 @@
                 return
             }
             const { C, errors } = H.decode_wh_lines(reply.content)
-            const top = (C as TheC | undefined)?.o({ Ground: G })[0] as TheC | undefined
+            const top = C?.sc.Ground === G ? C : undefined   // the toc's root line IS %Ground:<G>
             if (errors.length || !top) {
                 w.c.ground_done = true
                 console.warn(`⛔ ?G=${G}: its toc won't read as %Ground:${G}`, errors)
