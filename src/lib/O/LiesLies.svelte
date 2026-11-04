@@ -1361,10 +1361,22 @@
             const H   = this as House
             const seq = frame?.header?.seq as number | undefined
             // demands: the new shape; fall back to the single {path, ghost_version} form.
-            const demands = (Array.isArray(frame?.demands) ? frame.demands
+            let demands = (Array.isArray(frame?.demands) ? frame.demands
                 : (frame?.path && frame?.ghost_version ? [{ path: frame.path, dige: frame.ghost_version }] : []))
                 .filter((d: any) => d?.path && d?.dige) as Array<{ path: string, dige: string }>
             if (seq == null || !demands.length) return false
+            // REFUSE a rungo for code this runner doesn't hold (2026-11-04): a rungo re-runs the Book this runner stands, so a
+            //  demand for a ghost it never loaded (outside its Spine and the Book's Stands) can only time out — and the editor
+            //   compiling Ra.g, then Peeroleum.g, wedged the runner on exactly that.  Refused, nothing tried, said by name.
+            const absent = demands.filter(d => H.Lies_ghost_get(d.path) === undefined)
+            if (absent.length === demands.length) {
+                const why = `${absent.map(d => d.path).join(', ')} not loaded on this runner — nothing here runs it`
+                H.Lies_book_refuse(w, demands[0].path, why)
+                H.tlog(`⌛ rungo seq=${seq} refused — ${why}`)
+                return false
+            }
+            if (absent.length) H.tlog(`📥 rungo seq=${seq}: not waiting on ${absent.map(d => d.path).join(', ')} (not loaded here)`)
+            demands = demands.filter(d => !absent.includes(d))
             // Clear spent Rungos so they don't accumulate (each seq is one-shot, not permanent):
             //  a finished one (already fired/failed) is dropped; a still-waiting lower-seq one is
             //   superseded — the editor has moved past it — then dropped.

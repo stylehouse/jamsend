@@ -1,30 +1,46 @@
 // Pile.g — a music pile kept as a Mag** you can walk, move around in, and undo (spec/Pile_todo.md).
 //
-//  A pile is a directory somewhere (an FSA handle on a page, a fixture tree in a Book) read into a %Mag:Pile, FLAT: one row
-//   per entry, a file or a directory, each saying the directory it's `in` by path.  Flat because a real filesystem is deep and
-//    the encoder cuts deep children with no error (max_child_depth); the tree is a relation between rows, not a nesting.
-//  A Seem (Theory.g "Seem") stands over the Mag's rows.  Each walk mints the rows fresh from what the disk says, and the Seem
-//   pairs them with last walk's points by whatever holds still (resolve(): the least ambiguous key:value) — a name for a
-//    move, `ms` (size + modified) for a rename, `kids` (what a directory holds) for a renamed directory.  So the IDENTITY of an
-//     entry is not its path: it's an id minted once and kept as a Regard on its point, which rides the pairing walk to walk.
-//  What a walk noticed is said twice, kept apart (Pile_todo §3 "Two memories"):
-//   - the Mag remembers the FILESYSTEM: a %Moved row per rename or move, by id;
-//   - the %Mag:Trail remembers the SESSION: a %Moment per walk, saying what it noticed, by id.
+//  A pile is three kinds of Mag, each stored in its own file (Store.g, the storage reflex; Pile_todo §3 "The Mag** of a Pile"):
+//   - %Mag:Pile, the enclosing one, all we're up to: it holds the others, and its file is only their lines (references), plus
+//      %Ask:fsa — the add-another-FSA control, answered by a picker on the page;
+//   - one fs Mag per side, %Mag:<the folder's name>,side:A — the directory projected into being, rebuilt from disk by walking;
+//   - %Mag:Trail, the session: a %Moment per walk, saying what it noticed, by id.
+//  The fs Mag IS the directory tree: a %Dir holds its %Dir and %File rows as the disk does.  A container (the fs Mag or a Dir)
+//   holding more than `most` rows (900; a Book sets less) holds PARTITIONS instead — %Mag:A-G for the names under A to G, and
+//    when that is full a serial %Mag:A-G (2) — each its own file.  A row stays in the partition it was in while its name stays in
+//     range, so a full partition is never reshuffled and a split rewrites nothing already stored.  Partitioning is storage, not
+//      identity: a row's place is the Dir above it, whatever partition holds it.
+//  A Dir is loosely content-versioned: its `v` is a digest of what it holds (names, file sizes, each sub-Dir's v), so a change
+//   anywhere shows in every v above it.
+//  IDENTITY rides on the rows: an `id`, minted once.  There is no Seem kept beside the data — a walk springs up a pairing per
+//   directory (Theory.g TheA_pair: resolve(), the least ambiguous key:value) between what the disk lists and the rows the Dir
+//    held, carries each paired row's id onto its new self, and leaves.  A file renamed pairs by `ms` (size + modified), a Dir
+//     renamed by `v`; what left one directory and turned up in another is matched across the whole walk by the same keys, and
+//      a moved Dir brings its insides' ids with it.
+//  What a walk noticed is said twice, kept apart (Pile_todo §3 "Two memories"): the fs Mag remembers the FILESYSTEM (a %Moved
+//   row per rename or move, by id), the Trail remembers the SESSION.
 //
 //      A:Pile / w:Pile
-//        Mag:Pile,side:A,minted=7,moves=1
-//          Dir:Album X,in:.,kids:…,id:2             ← a row: what the disk says, plus its id
-//          File:01 a.flac,in:Album X,size:1000,mod:5,ms:1000.5,id:3
-//          TheASeem:pile,walks=2
-//            TheATrace:File,of:01 a.flac,…          ← a point
-//              TheARegard:pile,id:3                 ← its id, riding the pairing
-//          Moved:1,of:3,how:rename,from:Album X/01 a.flac,to:Album X/01 A.flac
-//        Mag:Trail,moments=2
-//          Moment:2,about:look again,saw:6
-//            Noticed:rename,of:3
+//        Mag:Pile
+//          TheAStore:Pile
+//          Mag:Collection,side:A,most=900,minted=17,moves=1
+//            TheAStore:Pile/Collection
+//            Dir:Album X,v:…,id:1                       ← a row: what the disk says, and its id
+//              File:01 a.flac,size=1000,mod=5,ms:1000.5,id:6
+//            Dir:Singles,v:…,id:4
+//              Mag:O-T                                   ← a partition: too many rows for one container
+//                TheAStore:Pile/Collection/4/O-T
+//                File:s1.flac,…
+//              Mag:O-T (2)
+//            Moved:1,of:6,how:rename,from:Album X/01 a.flac,to:Album X/01 A.flac
+//          Mag:Trail,moments=2
+//            TheAStore:Pile/Trail
+//            Moment:2,about:look again,side:A,saw=11
+//              Noticed:rename,of:6
+//          Ask:fsa,side:B
 //
-//  The lister is runtime, on the Mag's .c: { list(path) → [{ name, dir:1 } | { name, size, mod }] }.  `path` is '.' for the top,
-//   else the entry's path joined with '/'.
+//  The lister is runtime, on the fs Mag's .c: { list(path) → [{ name, dir:1 } | { name, size, mod }] }.  `path` is '.' for the
+//   top, else the entry's path joined with '/'.  The nav the Mags are stored through is runtime too, on w's .c.
 
 IMPORT()
 
@@ -33,138 +49,317 @@ Pile_stand(H, name):
     let A = H.oai({ A: name })
     return A.oai({ w: name })
 
-// Pile_mag — one side's Mag (A: the collection, B: an incoming pile), with its Seem and the sphere ids live in
-Pile_mag(w, side):
-    let mag = w.oai({ Mag: 'Pile', side })
-    if (!mag.o({ TheASeem: 'pile' }).length) {
-        let seem = this.TheA_seem(mag, 'pile', ['Dir', 'File'])
-        this.TheA_sphere(seem, 'pile', 'Regard')
+// Pile_home — the enclosing %Mag:Pile, stored at Pile/
+Pile_home(w):
+    let home = w.o({ Mag: 'Pile' })[0]
+    if (home) return home
+    return this.Store_keep(w.i({ Mag: 'Pile' }), 'Pile')
+
+// Pile_side — one side's fs Mag (A: the collection, B: an incoming pile), or null
+Pile_side(w, side):
+    return this.Pile_home(w).o({ Mag: 1, side })[0] ?? null
+
+// Pile_mag — one side's fs Mag, made if it isn't there: named for its folder (but never Pile or Trail, nor another side's
+//  name), stored under the home.  Making one asks for the next side
+Pile_mag(w, side, name, most):
+    let home = this.Pile_home(w)
+    let mag = this.Pile_side(w, side)
+    if (!mag) {
+        name = String(name || side)
+        if (name === 'Pile' || name === 'Trail' || home.o({ Mag: name }).length) {
+            name = name + '_' + side
+        }
+        mag = this.Store_keep(home.i({ Mag: name, side, most: most || 900 }), 'Pile/' + name)
+        this.Pile_trail(w)
+        this.Pile_ask(w)
     }
     return mag
 
 Pile_trail(w):
-    return w.oai({ Mag: 'Trail' })
+    let home = this.Pile_home(w)
+    let trail = home.o({ Mag: 'Trail' })[0]
+    if (trail) return trail
+    return this.Store_keep(home.i({ Mag: 'Trail' }), 'Pile/Trail')
 
-// a row's path: where it's in, and its name
-Pile_path(sc):
-    let k = Object.keys(sc)[0]
-    return sc.in === '.' ? String(sc[k]) : sc.in + '/' + sc[k]
-
-// a point's id, or null for one not yet minted
-Pile_id_of(seem, point):
-    return this.TheA_regard_of(seem, point, 'pile')?.sc.id ?? null
-
-// Pile_places — every id's place, read off the Seem's points: id → { path, in, name, up } where up is the id of the directory
-//  it's in ('.' at the top).  Read before a walk and after, the two say what moved
-Pile_places(mag):
-    let seem = mag.o({ TheASeem: 'pile' })[0]
-    let places = {}
-    let by_path = { '.': '.' }
-    let points = seem ? seem.o({ TheATrace: 1 }) : []
-    for (const point of points) {
-        let id = this.Pile_id_of(seem, point)
-        if (id == null) continue
-        let sc = { [point.sc.TheATrace]: point.sc.of, in: point.sc.in }
-        let path = this.Pile_path(sc)
-        places[id] = { path, in: point.sc.in, name: String(point.sc.of), kind: point.sc.TheATrace }
-        if (point.sc.TheATrace === 'Dir') by_path[path] = id
+// Pile_ask — the add-another-FSA control: a row asking for a handle for the next free side, answered by a picker on the page
+Pile_ask(w):
+    let home = this.Pile_home(w)
+    let side = 'ABCDEFGH'.split('').find(s => !home.o({ Mag: 1, side: s }).length)
+    if (side) {
+        home.oai({ Ask: 'fsa' }, { side })
     }
-    for (const id of Object.keys(places)) places[id].up = by_path[places[id].in] ?? null
-    return places
+    return home.o({ Ask: 'fsa' })[0]
 
-// Pile_read — what the disk says now, as fresh rows on the Mag: breadth first, a directory at a time, each listing sorted by
-//  name so the rows come out in one order every time.  A directory's `kids` is a digest of what it holds (names, and sizes for
-//   files), so one renamed with the same insides pairs by it; an empty one has no kids and can't pair that way
-async Pile_read(mag):
-    let lister = mag.c.lister
-    for (const row of mag.o()) {
-        let k = Object.keys(row.sc)[0]
-        if (k === 'File' || k === 'Dir') mag.drop(row)
+// Pile_range_of — which partitions a name belongs in: its first character's range.  The one place the rule lives
+Pile_range_of(name):
+    let c = String(name).charAt(0).toUpperCase()
+    for (const range of ['A-G', 'H-N', 'O-T', 'U-Z']) {
+        if (c >= range[0] && c <= range[2]) return range
     }
-    let queue = [['.', null]]
-    let n = 0
-    while (queue.length) {
-        let [path, dir_row] = queue.shift()
-        let ents = (await lister.list(path)) || []
-        ents = [...ents].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
-        let said = []
-        for (const ent of ents) {
-            n++
-            if (ent.dir) {
-                let row = mag.i({ Dir: ent.name, in: path })
-                queue.push([path === '.' ? ent.name : path + '/' + ent.name, row])
-                said.push(ent.name + '/')
-            }
-            else {
-                mag.i({ File: ent.name, in: path, size: ent.size, mod: ent.mod, ms: ent.size + '.' + ent.mod })
-                said.push(ent.name + ':' + ent.size)
+    return c >= '0' && c <= '9' ? '0-9' : 'etc'
+
+Pile_kind(row):
+    return row.sc.Dir !== undefined ? 'Dir' : row.sc.File !== undefined ? 'File' : null
+
+// the rows a container (the fs Mag, or a Dir) holds, whatever partition holds them
+Pile_kids(C):
+    let rows = []
+    for (const kid of C.o()) {
+        if (this.Pile_kind(kid)) {
+            rows.push(kid)
+        }
+        else if (kid.sc.Mag !== undefined) {
+            for (const row of kid.o()) {
+                if (this.Pile_kind(row)) rows.push(row)
             }
         }
-        if (dir_row && said.length) dir_row.sc.kids = this.TheA_digest(said.join('\n'))
     }
-    return n
+    return rows
 
-// Pile_walk — read the pile again and let the Seem pair it with the last walk; mint ids for the new, carry them for the rest,
-//  and say what changed: a rename (same directory, new name), a move (another directory), something new, something gone.
-//   A path that changed only because a directory above it was renamed is not a change to it — its directory's id is the same.
-//    Returns the %Moment it wrote on the Trail
+// every row under a container, to any depth
+Pile_rows(C):
+    if (!C) return []
+    let out = []
+    for (const row of this.Pile_kids(C)) {
+        out.push(row)
+        if (row.sc.Dir !== undefined) out.push(...this.Pile_rows(row))
+    }
+    return out
+
+// Pile_places — every id's place in an fs Mag: id → { path, up, name, kind, row }, where up is the id of the Dir it's in ('.'
+//  at the top).  Read before a walk and after, the two say what moved
+Pile_places(mag):
+    let places = {}
+    let go = (C, up, at) => {
+        for (const row of this.Pile_kids(C)) {
+            let kind = this.Pile_kind(row)
+            let name = String(row.sc[kind])
+            let path = at ? at + '/' + name : name
+            if (row.sc.id) places[row.sc.id] = { path, up, name, kind, row }
+            if (kind === 'Dir') go(row, row.sc.id, path)
+        }
+    }
+    go(mag, '.', '')
+    return places
+
+// Pile_disk — what the disk says now, as a plain tree (not particles yet): each directory's entries sorted by name, each Dir's
+//  `v` worked out from what it holds.  An empty Dir has no v.  A .jamsend directory is the app's own (a listener's app tree may
+//   live in the very folder being merged) and is never part of the pile
+async Pile_disk(lister, path):
+    let ents = ((await lister.list(path)) || []).filter(ent => ent.name !== '.jamsend')
+    ents = [...ents].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
+    let out = []
+    for (const ent of ents) {
+        let at = path === '.' ? ent.name : path + '/' + ent.name
+        if (ent.dir) {
+            let kids = await this.Pile_disk(lister, at)
+            let sc = { Dir: ent.name }
+            let said = kids.map(k => (k.sc.Dir !== undefined ? k.sc.Dir + '/' + (k.sc.v || '') : k.sc.File + ':' + k.sc.size))
+            if (said.length) sc.v = this.TheA_digest(said.join('\n'))
+            out.push({ sc, kids })
+        }
+        else {
+            out.push({ sc: { File: ent.name, size: ent.size, mod: ent.mod, ms: ent.size + '.' + ent.mod } })
+        }
+    }
+    return out
+
+// what a goner or a newcomer is matched across directories by: a file's size + modified, a Dir's contents
+Pile_match_key(sc):
+    if (sc.File !== undefined) return 'F' + sc.ms
+    return sc.v ? 'D' + sc.v : null
+
+// Pile_pair_dir — one directory's listing paired with the rows it held (a pairing that springs up and leaves): returns the
+//  plan of its new rows, each { sc, kids, old, id }, carrying a paired row's id; what nothing paired goes to the walk's goners
+//   (with all it held) and newcomers
+async Pile_pair_dir(olds, disk, walk):
+    let news = disk.map(ent => ({ sc: ent.sc, ent }))
+    let stand_ins = olds.map(row => {
+        let sc = { ...row.sc }
+        delete sc.id
+        return { sc, row }
+    })
+    let plan = []
+    for (const [o, n] of await this.TheA_pair(stand_ins, news)) {
+        let old = o?.row
+        if (old && n && this.Pile_kind(old) !== Object.keys(n.sc)[0]) {
+            walk.goners.push(old, ...this.Pile_rows(old))
+            old = null
+        }
+        else if (old && !n) {
+            walk.goners.push(old, ...this.Pile_rows(old))
+            continue
+        }
+        let node = { sc: n.sc, old, id: old?.sc.id }
+        if (!node.id) walk.neus.push(node)
+        if (n.ent.kids) node.kids = await this.Pile_pair_dir(old ? this.Pile_kids(old) : [], n.ent.kids, walk)
+        plan.push(node)
+    }
+    plan.sort((a, b) => {
+        let x = String(a.sc[Object.keys(a.sc)[0]])
+        let y = String(b.sc[Object.keys(b.sc)[0]])
+        return x < y ? -1 : x > y ? 1 : 0
+    })
+    return plan
+
+// Pile_place — a container's rows made from its plan.  Few enough, and never partitioned: the rows sit in it.  Otherwise in
+//  partitions: a row stays in the one it was in while its name is still in that range; the rest fill the first partition of
+//   their range with room, and a full range grows a serial partition.  Partitions the container had are kept (and carried
+//    from the old Dir to its new self), so a stored one keeps its file
+Pile_place(mag, container, plan, old):
+    let most = Number(mag.sc.most || 900)
+    let parts = old ? old.o({ Mag: 1 }) : []
+    let was_in = {}
+    for (const part of parts) {
+        for (const row of part.o()) {
+            if (!this.Pile_kind(row)) continue
+            if (row.sc.id) was_in[row.sc.id] = part.sc.Mag
+            part.drop(row)
+        }
+        if (old !== container) container.i(part)
+    }
+    if (old === container) {
+        for (const row of container.o()) {
+            if (this.Pile_kind(row)) container.drop(row)
+        }
+    }
+    let rows = plan.map(node => this.Pile_make(mag, node))
+    if (!parts.length && plan.length <= most) {
+        for (const row of rows) container.i(row)
+        return
+    }
+    let count = {}
+    let range_of_part = (name) => String(name).split(' (')[0]
+    let into = plan.map((node, i) => {
+        let range = this.Pile_range_of(node.sc[Object.keys(node.sc)[0]])
+        let was = node.id && was_in[node.id]
+        if (was && range_of_part(was) === range && container.o({ Mag: was }).length) {
+            count[was] = (count[was] || 0) + 1
+            return was
+        }
+        return null
+    })
+    for (let i = 0; i < plan.length; i++) {
+        if (into[i]) continue
+        let range = this.Pile_range_of(plan[i].sc[Object.keys(plan[i].sc)[0]])
+        let k = 1
+        let name = range
+        while (container.o({ Mag: name }).length && (count[name] || 0) >= most) {
+            k++
+            name = range + ' (' + k + ')'
+        }
+        if (!container.o({ Mag: name }).length) {
+            let base = this.Store_path(mag)
+            this.Store_keep(container.i({ Mag: name }), container === mag ? base + '/' + name : base + '/' + container.sc.id + '/' + name)
+        }
+        count[name] = (count[name] || 0) + 1
+        into[i] = name
+    }
+    for (let i = 0; i < plan.length; i++) container.o({ Mag: into[i] })[0].i(rows[i])
+
+// one planned row made: its sc and id, and for a Dir everything it holds
+Pile_make(mag, node):
+    let row = new TheC({ c: {}, sc: { ...node.sc, id: node.id } })
+    if (node.kids) this.Pile_place(mag, row, node.kids, node.old)
+    return row
+
+// Pile_walk — read the pile again and lay it into the fs Mag, every row keeping its id: paired in its directory, or matched
+//  across the walk (moved), or minted (new).  Says what changed — a rename (same Dir, new name), a move (another Dir), something
+//   new, something gone — as %Moved rows and one %Moment on the Trail.  A path that changed only because a Dir above it was
+//    renamed is no change to it: its Dir's id is the same.  Returns the Moment
 async Pile_walk(w, side, about):
-    let mag = this.Pile_mag(w, side)
-    if (!mag.c.lister) return null
-    let seem = mag.o({ TheASeem: 'pile' })[0]
+    let mag = this.Pile_side(w, side)
+    if (!mag?.c.lister) return null
+    let home = this.Pile_home(w)
     let before = this.Pile_places(mag)
-    let saw = await this.Pile_read(mag)
-    await this.TheA_seem_walk(mag, 'pile')
-    let minted = mag.sc.minted || 0
+    let disk = await this.Pile_disk(mag.c.lister, '.')
+    let walk = { goners: [], neus: [] }
+    let plan = await this.Pile_pair_dir(this.Pile_kids(mag), disk, walk)
+    // what left one place and turned up in another: the same key, once each
+    let pool = {}
+    for (const old of walk.goners) {
+        let key = this.Pile_match_key(old.sc)
+        if (key && old.sc.id) {
+            pool[key] = pool[key] || []
+            pool[key].push(old.sc.id)
+        }
+    }
+    let minted = Number(mag.sc.minted || 0)
     let neu = 0
-    for (const point of seem.o({ TheATrace: 1 })) {
-        if (this.Pile_id_of(seem, point) != null) continue
-        minted++
-        neu++
-        this.TheA_regard(seem, point, 'pile', { id: String(minted) })
+    for (const node of walk.neus) {
+        let key = this.Pile_match_key(node.sc)
+        let id = key && pool[key]?.shift()
+        if (!id) {
+            minted++
+            neu++
+            id = String(minted)
+        }
+        node.id = id
     }
-    w.oai({ Mag: 'Pile', side }, { minted })
-    // the ids go onto the rows too, so anything holding a row can name it
-    for (const point of seem.o({ TheATrace: 1 })) {
-        if (point.c.C) point.c.C.sc.id = this.Pile_id_of(seem, point)
-    }
+    this.Pile_place(mag, mag, plan, mag)
+    home.oai({ Mag: mag.sc.Mag, side }, { minted })
     let after = this.Pile_places(mag)
     let noticed = []
     for (const id of Object.keys(after)) {
         let was = before[id]
         let now = after[id]
         if (!was) continue
-        if (was.up !== now.up) noticed.push({ how: 'move', id, from: was.path, to: now.path })
-        else if (was.name !== now.name) noticed.push({ how: 'rename', id, from: was.path, to: now.path })
+        if (was.up !== now.up) {
+            noticed.push({ how: 'move', id, from: was.path, to: now.path })
+        }
+        else if (was.name !== now.name) {
+            noticed.push({ how: 'rename', id, from: was.path, to: now.path })
+        }
     }
     let gone = Object.keys(before).filter(id => !after[id])
-    let moves = mag.sc.moves || 0
+    let moves = Number(mag.sc.moves || 0)
     for (const it of noticed) {
         moves++
         mag.i({ Moved: String(moves), of: it.id, how: it.how, from: it.from, to: it.to })
     }
-    if (noticed.length) w.oai({ Mag: 'Pile', side }, { moves })
+    if (noticed.length) home.oai({ Mag: mag.sc.Mag, side }, { moves })
     let trail = this.Pile_trail(w)
-    let k = (trail.sc.moments || 0) + 1
-    w.oai({ Mag: 'Trail' }, { moments: k })
-    let moment = trail.i({ Moment: String(k), about, side, saw, ...this.TheA_nonzero({ neu: before && Object.keys(before).length ? neu : 0, gone: gone.length }) })
+    let k = Number(trail.sc.moments || 0) + 1
+    home.oai({ Mag: 'Trail' }, { moments: k })
+    let saw = Object.keys(after).length
+    let moment = trail.i({ Moment: String(k), about, side, saw, ...this.TheA_nonzero({ neu: Object.keys(before).length ? neu : 0, gone: gone.length }) })
     for (const it of noticed) moment.i({ Noticed: it.how, of: it.id })
     for (const id of gone) moment.i({ Noticed: 'gone', of: id })
     return moment
 
+// a row's path in its fs Mag, or null
+Pile_path_of(w, side, row):
+    let places = this.Pile_places(this.Pile_side(w, side))
+    return row?.sc.id ? places[row.sc.id]?.path ?? null : null
+
 // Pile_row — the row with this id, on one side
 Pile_row(w, side, id):
-    let mag = w.o({ Mag: 'Pile', side })[0]
-    return mag ? mag.o().find(row => row.sc.id === String(id)) ?? null : null
+    return this.Pile_places(this.Pile_side(w, side))[String(id)]?.row ?? null
 
 // Pile_row_at — the row at this path, on one side
 Pile_row_at(w, side, path):
-    let mag = w.o({ Mag: 'Pile', side })[0]
-    if (!mag) return null
-    return mag.o().find(row => (row.sc.File !== undefined || row.sc.Dir !== undefined) && this.Pile_path(row.sc) === path) ?? null
+    let places = this.Pile_places(this.Pile_side(w, side))
+    return Object.values(places).find(p => p.path === path)?.row ?? null
+
+// Pile_settle — write each of the pile's Mags whose text changed (Store.g), through the nav on w's .c.  After a walk, until a
+//  walk is a run whose tail does it
+async Pile_settle(w):
+    return this.Store_settle(w, w.c.nav)
+
+// Pile_open — stand a pile again from what's stored: the home, and through its reference lines every side's fs Mag (each
+//  partition from its own file) and the Trail, ids and all.  A lister doesn't come back (a handle is re-granted on a page), so
+//   the caller hangs one on before walking.  Returns the w, or null when nothing was stored
+async Pile_open(H, name, nav):
+    let old = H.o({ A: name })[0]
+    if (old) H.drop(old)
+    let w = this.Pile_stand(H, name)
+    w.c.nav = nav
+    let home = await this.Store_open(w, 'Pile', nav)
+    return home ? w : null
 
 // Pile_fsa_lister — a lister over a real FileSystemDirectoryHandle: a directory's entries, with each file's size and
-//  lastModified.  (A page's; a Book drives a fixture lister instead — a runner can't pick a folder.)
+//  lastModified.  ⚠ The .g compiler makes it async (awaits in its arrows), so a caller awaits it (Pile_grant).  Book PilePage
+//   drives it over a fake handle.
 Pile_fsa_lister(root):
     let dir_at = async (path) => {
         let here = root

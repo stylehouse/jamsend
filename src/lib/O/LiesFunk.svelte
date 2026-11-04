@@ -2196,6 +2196,15 @@ await M.eatfunc({
                 return false
             }
             if (!ledger_dige || !pins?.length) return true   // nothing pinned → nothing to gate
+            // gate only on what this runner HOLDS (2026-11-04): a pinned ghost it never loaded (the editor compiled Ra.g, a
+            //  ghost outside this runner's Spine and the Book's Stands) can never go live here, and held every become_book to
+            //   `ledger_timeout` until a reload.  Whatever loads it later (a Desk's Stands) loads the shipped .go off disk.
+            const absent = pins.filter(p => H.Lies_ghost_get(p.name) === undefined)
+            if (absent.length) {
+                H.diag(`Lies_ledger_secure book=${book} not gating on ${absent.length} ghost(s) not loaded here: ${absent.map(p => String(p.name).split('/').pop()).join(', ')}`)
+                pins = pins.filter(p => !absent.includes(p))
+                if (!pins.length) return true
+            }
             let unmet = H.Lies_ledger_check(pins)
             if (!unmet.length) return true
             H.diag(`Lies_ledger_secure ENTERING 20s poll book=${book} unmet=${unmet.length}`)

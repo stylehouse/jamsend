@@ -24,14 +24,30 @@
     const looks: Record<string, Look> = { plan: new Look(), live: new Look(), snap: new Look(), hand: new Look() }
     const Wv = new TheC({ c: {}, sc: { w: 'Storica' } })
     let stood = false
-    // the step open in the strip
-    let open_n = $state<number | null>(null)
+    // the step open in the strip — not a $state: where the screen stands is a row on the snap view's Seem (%TheAAt), put there by an
+    //  arrival at the door (Stuffica_arrive) and read on the view's commit.  So are the pins (%TheAPin).  The lenses stay $state
+    const seem_of = (name: string) => Wv.o({ TheASeem: name })[0] as TheC | undefined
+    let open_n = $derived.by(() => {
+        void looks.snap.v
+        const at = untrack(() => seem_of('snap')?.o({ TheAAt: 1 })[0]?.sc.TheAAt)
+        return at == null ? null : Number(at)
+    })
+    const arrive = (sc: Record<string, string>) => (H as any).Stuffica_arrive?.(Wv, { view: 'snap', ...sc })
     // the step explorer's lens (spec/AtheoryStory_todo.md §3): focus — draw only what the last re-seat moved, with its parents, the
     //  rest folded (Stuffica_focus); since — opening step n seats step n−1 first, so that re-seat IS "what this step changed";
     //   pins — points kept in view by their Dip name, which a re-seat keeps, so a pin follows its particle from step to step
-    let focus = $state(false)
-    let since = $state(false)
-    let pins = $state<Record<string, 1>>({})
+    //  Both are asks on the snap view, like the open step: %TheAOpen:focus / %TheAOpen:since, put there by an arrival
+    const lens_on = (name: string) => {
+        void looks.snap.v
+        return untrack(() => !!seem_of('snap')?.o({ TheAOpen: name }).length)
+    }
+    let focus = $derived(lens_on('focus'))
+    let since = $derived(lens_on('since'))
+    const flip = (name: string, on: boolean) => arrive(on ? { shut: name } : { open: name })
+    let pins = $derived.by(() => {
+        void looks.snap.v
+        return Object.fromEntries(untrack(() => seem_of('snap')?.o({ TheAPin: 1 }).map((r: TheC) => [String(r.sc.TheAPin), 1]) ?? [])) as Record<string, 1>
+    })
     let seated = ''
     // the debugger (spec/AtheoryStory_todo.md §6 item 1): a human holds the leash.  The Story's w (raw: a particle, not a proxy) is
     //  where a click goes; where it stands (%StoryAt) and how far it may go (%StoryLeash) come back as a view, like the rest
@@ -101,14 +117,18 @@
             const prev = by_step && n != null && key !== seated ? snap_source(w, This, n - 1) : null
             seated = key
             if (snap.from !== snap_from) snap_from = snap.from
-            refreshing = refreshing.then(async () => {
+            // In, through the door (Stuffica_door: UItime) — the House holds still while the views read This and The and walk
+            const seat = async () => {
                 if (prev?.tree) {
                     H.Stuffica_from(Wv, 'snap', prev.tree)
                     await H.Stuffica_refresh(Wv, ['snap'])
                 }
                 H.Stuffica_from(Wv, 'snap', snap.tree)
                 return H.Stuffica_refresh(Wv, ['plan', 'live', 'snap', 'hand'])
-            }).catch(e => console.warn('Storica refresh', e))
+            }
+            const door = (H as any).Stuffica_door
+            refreshing = refreshing.then(() => (door ? (H as any).Stuffica_door(Wv, 'settle', seat) : seat()))
+                .catch(e => console.warn('Storica refresh', e))
         })
     })
 
@@ -201,11 +221,10 @@
     // a line clicked pins (or unpins) its point, by name
     function pin(key: string | undefined) {
         if (!key) return
-        const next = { ...pins }
-        if (next[key]) delete next[key]
-        else next[key] = 1
-        pins = next
+        arrive(pins[key] ? { unpin: key } : { pin: key })
     }
+    // every pin off: one burst, one take
+    const unpin_all = () => { for (const key of Object.keys(pins)) arrive({ unpin: key }) }
     let hand_rows = $derived.by(() => {
         const by: Record<string, { at: string, n?: number }> = {}
         if (!ready) return by
@@ -218,7 +237,7 @@
     // at each stop, open the step it stopped after: its live snap seats over what was showing (with since, over the step before)
     $effect(() => {
         const k = stands?.at === 'step' ? stands.n : null
-        if (leash && k != null) untrack(() => { if (open_n !== k) open_n = k })
+        if (leash && k != null) untrack(() => { if (open_n !== k) arrive({ at: String(k) }) })
     })
     // move the leash.  A Desk's Story is leashed through the Desk — it carries %DeskLeash over %StoryLeash on every think, so a
     //  write straight onto the w would be undone; a Story with no Desk holds its own.  at undefined ⇒ unleashed (continue)
@@ -238,7 +257,7 @@
     // the step it stands after (0 at ready), and how far a run has got when no leash holds it
     const at_n = () => stands?.at === 'step' ? (stands.n ?? 0) : stands?.at === 'ready' ? 0 : Object.keys(live).length
     function pick(n: number) {
-        open_n = n
+        arrive({ at: String(n) })
         // a Desk's Story: the click is an arrival on the Desk's step-strip pocket (Ground.g Desk_pick) — its move tells the Story
         const h = H as any
         if (H.o({ A: 'Desk' })[0] && typeof h.Desk_pick === 'function' && h.Desk_pick(H, n)) return
@@ -287,9 +306,9 @@
                 <div class="sc-snap-head">
                     <span>snap · {snap_from ?? 'none yet'}</span>
                     {#if snap.walk.reseat}<span class="sc-tally">seated — {snap.walk.fit ?? 0} fit{snap.walk.shift ? ` · ${snap.walk.shift} changed` : ''}{snap.walk.neu ? ` · ${snap.walk.neu} new` : ''}{snap.walk.gone ? ` · ${snap.walk.gone} gone` : ''}</span>{/if}
-                    <button class="sc-lens" class:on={focus} onclick={() => (focus = !focus)} title="draw only what the last re-seat moved, with its parents — the rest folded">focus</button>
-                    <button class="sc-lens" class:on={since} onclick={() => (since = !since)} title="opening a step seats the one before it first — so what glows is what this step changed">since prev</button>
-                    {#if Object.keys(pins).length}<button class="sc-lens on" onclick={() => (pins = {})} title="unpin all">{Object.keys(pins).length} pinned ×</button>{/if}
+                    <button class="sc-lens" class:on={focus} onclick={() => flip('focus', focus)} title="draw only what the last re-seat moved, with its parents — the rest folded">focus</button>
+                    <button class="sc-lens" class:on={since} onclick={() => flip('since', since)} title="opening a step seats the one before it first — so what glows is what this step changed">since prev</button>
+                    {#if Object.keys(pins).length}<button class="sc-lens on" onclick={unpin_all} title="unpin all">{Object.keys(pins).length} pinned ×</button>{/if}
                     <span class="sc-commits">{looks.snap.v}</span>
                 </div>
                 <div class="sc-lines">

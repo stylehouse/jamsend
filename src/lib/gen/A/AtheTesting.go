@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheTesting(): string { return 'a6411eebb38ab117~g1' },
+    Ghostmeta_Ghost_A_AtheTesting(): string { return '09a0b6e58d0f2ca0~g1' },
 
 // AtheTesting.g — Atheory's proof (Ghost/A/Theory.g; spec/Atheory_todo.md §0.2 "The first Atheory tests").
 //
@@ -2528,6 +2528,86 @@ AthePondGlass_witness(w) {
     }
     if (n === 5 && even && !points('menu').length && commits('menu') === 3 && walks('tally') === 3 && commits('tally') === 3) {
         this.story_swear(w, 'pointed at nothing, a view lets every point go — one commit — and its neighbour is not walked')
+    }
+},
+//#endregion
+//#region the test routine — Book AthePondMush
+// Stuffmush (Stuffica.g): a deep view that walks below a point only when its gate opens it (%TheADeep,open: a kind that opens by
+//  itself, or the screen asking by path), and the door a screen's clicks arrive at (Stuffica_arrive → one take).  A pond held on the
+//   glass: two Tanks of fish (the chub has fins) and a Heron; Tanks open by themselves.  Step 2 stands the view — the Tanks are open,
+//    the chub shut says it has 2 fins; step 3 three clicks (open the chub, shut Q, pin the Heron) are one take; step 4 shuts P while
+//     a tench lands in it — P's fish go, P says 4; step 5 opens P again — the chub is still open, its fins back
+AthePondMush(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.AthePondMush_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async AthePondMush_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 5
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.AthePondMush_stand(w)
+        if (n === 3) await this.AthePondMush_click(w, 'three clicks — open the chub, shut Q, pin the Heron — one take', [{ open: 'Tank:P/Fish:chub' }, { shut: 'Tank:Q' }, { pin: 'Heron:grey' }])
+        if (n === 4) await this.AthePondMush_click(w, 'shut P while a tench lands in it', [{ shut: 'Tank:P' }], 'tench')
+        if (n === 5) await this.AthePondMush_click(w, 'open P again', [{ open: 'Tank:P' }])
+    }
+    this.AthePondMush_witness(w)
+
+},
+async AthePondMush_stand(w) { const H = this;
+    w.i({ desc: 'a glass with an open-gated deep view of a pond held on the glass — Tanks open by themselves' })
+    let glass = w.oai({ w: 'Athe_Glass' })
+    let text = ['Snap:H', '  Tank:P', '    Fish:chub,age=2', '      Fin:left', '      Fin:right', '    Fish:roach,age=1', '    Weed', '  Tank:Q', '    Fish:dace,age=3', '  Heron:grey'].join('\n')
+    glass.c.pond = this.decode_wh_lines(text).C
+    this.Stuffica_view(glass, 'mush', ['*'], { bumps: 0, commit() { this.bumps++ } }, { from: glass.c.pond, deep: 1, open: 1, auto: ['Tank'] })
+    await this.Stuffica_refresh(glass)
+
+},
+async AthePondMush_click(w, desc, clicks, fish) {
+    w.i({ desc })
+    let glass = w.o({ w: 'Athe_Glass' })[0]
+    if (!glass) return
+    if (fish) glass.c.pond.o({ Tank: 'P' })[0]?.i({ Fish: fish, age: 1 })
+    for (const click of clicks) this.Stuffica_arrive(glass, { view: 'mush', ...click })
+    await this.Stuffica_take(glass)
+
+},
+AthePondMush_witness(w) {
+    let n = this.c.run?.c.step_n ?? 0
+    let glass = w.o({ w: 'Athe_Glass' })[0]
+    if (!glass) return
+    let view = glass.o({ TheAView: 'mush' })[0]
+    let commits = view?.sc.commits || 0
+    let even = commits === (view?.c.ui?.bumps || 0)
+    let tops = this.Stuffica_points(glass, 'mush')
+    let top = (of) => tops.find(p => p.sc.of === of)
+    let kids = (point) => point?.o({ TheATrace: 1 }).length || 0
+    let chub = top('P')?.o({ TheATrace: 1 }).find(p => p.sc.of === 'chub')
+    let tape = glass.o({ TheAIO: 'screen' })[0]
+    let heard = tape?.o({ TheAHeard: 1 }) || []
+    let tree = this.Stuffmush_tree(glass, 'mush')
+    let tanks = tree.find(g => g.kind === 'Tank')
+    if (n === 2 && even && commits === 1 && tops.length === 3 && kids(top('P')) === 3 && kids(top('Q')) === 1 && !kids(chub) && chub?.c.kids === 2) {
+        this.story_swear(w, 'a kind told to open opens by itself — the Tanks hold their fish — a shut chub says it has 2 fins')
+    }
+    if (n === 2 && tree.length === 2 && tanks?.rows.length === 2 && tanks.columns[0]?.values.length === 2 && !tanks.columns[0].fact) {
+        this.story_swear(w, 'Stuffmush groups rows as Stuffing did — the two Tanks are one group and their names a spread')
+    }
+    if (n === 3 && even && commits === 2 && tape?.sc.takes === 1 && heard.length === 3 && heard.every(h => h.sc.take === 1) && kids(chub) === 2 && !kids(top('Q')) && top('Q')?.c.kids === 1) {
+        this.story_swear(w, 'three clicks arrive as one take — on the tape — one walk opens the chub and shuts Q though Tanks open by themselves')
+    }
+    if (n === 3 && tree.find(g => g.kind === 'Heron')?.rows[0]?.pin) {
+        this.story_swear(w, 'a pin is said on the tree by path — the Heron lit')
+    }
+    if (n === 4 && even && commits === 3 && !kids(top('P')) && top('P')?.c.kids === 4) {
+        this.story_swear(w, 'shut a row and its points go — it says it now holds 4')
+    }
+    if (n === 5 && even && commits === 4 && kids(top('P')) === 4 && kids(chub) === 2) {
+        this.story_swear(w, 'opened again a row shows what was open inside it — the chub still shows its fins')
     }
 },
 //#endregion

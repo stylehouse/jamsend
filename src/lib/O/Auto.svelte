@@ -55,7 +55,7 @@
     import { now_in_seconds, now_in_seconds_with_ms } from "$lib/Common";
     import { APP_DATA_DIR } from "$lib/app_data_dir"
     import { boot_param }   from "$lib/boot"
-    import { ground_from_toc, ground_learn, ground_role, ground_include, ground_closure, ground_loads } from "$lib/A/ground"
+    import { ground_from_toc, ground_learn, ground_read, ground_role, ground_include, ground_closure, ground_loads } from "$lib/A/ground"
     import { Idento }       from "$lib/Common"
     import { prepubOf }     from "$lib/cluster_trust"
     import { crew_keys, crew_keys_home } from "$lib/O/Funk/Crewkeys"
@@ -890,7 +890,8 @@
         //    anything to browse or persist.  Only the plain app (no boot_role) is the `library`
         //     page: the disk-backed book browser below.  The Library is just a region lit by its
         //      page, the same way the Creduler region is lit by the runner role.
-        const page = H.c.boot_role ? 'run' : 'library'
+        //  A Ground page with no booted role (?G=Pile) is neither: its Ground's Mains are the page (auto_ground).
+        const page = H.c.boot_role ? 'run' : H.c.ground ? 'ground' : 'library'
 
         // ── shared setup (both pages) ─────────────────────────────────────────
         if (!w.c.Auto_setup) {
@@ -1301,13 +1302,16 @@
             const lies_w = H.o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] as TheC | undefined
             if (lies_w) H.i_elvisto(lies_w, 'think')
         }
-        // the Mains' code is Core's (Ground.g); stand it once the include door is up and the spine has loaded
+        // the Mains' code: Core's (Ground.g holds Runner), and the Ground's own Load: files (Ground/Pile's Pile.g holds Pile).  Stood
+        //  once the include door is up and the spine has loaded; a file already loaded (by the spine) is left alone
         if (typeof (H as any).Lies_ghost_include !== 'function' || H.oa({ Creduler_pending: 1 })) return
-        if (typeof (H as any).Runner_job !== 'function') {
+        if (!w.c.ground_loaded) {
             if (w.c.ground_core_asked) return
             w.c.ground_core_asked = true
-            void ground_include(H, ['Core']).then(r => {
-                if (r.unknown.length || r.failed.length) console.warn(`⛔ Ground/${G}: Core would not stand (${[...r.unknown, ...r.failed].join(' ')})`)
+            const lone = (ground_read(G)?.load ?? []).filter(p => p.endsWith('.g'))
+            void ground_include(H, ['Core', ...lone]).then(r => {
+                if (r.unknown.length || r.failed.length) console.warn(`⛔ Ground/${G}: would not stand (${[...r.unknown, ...r.failed].join(' ')})`)
+                w.c.ground_loaded = true
                 H.main()
             })
             return

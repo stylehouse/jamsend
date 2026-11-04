@@ -11,7 +11,7 @@ import { Selection } from "$lib/Selection.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_Theory(): string { return '804ebab235555f08~g1' },
+    Ghostmeta_Ghost_A_Theory(): string { return 'bc1f5fad74703498~g1' },
 
 // Theory.g — Atheory's first organ: an A says which code it runs (spec/Atheory_todo.md §0.1 and §0.2).
 //
@@ -1073,6 +1073,7 @@ async TheA_seem_walk(w, name) {
     let kinds = this.TheA_seem_kinds(seem)
     let says = this.TheA_seem_says(seem)
     let deep = seem.o({ TheADeep: 1 }).length
+    let gate = deep && seem.o({ TheADeep: 1 })[0].sc.open ? this.TheA_seem_gate(seem) : null
     let walks = (seem.sc.walks || 0) + 1
     let source = this.TheA_seem_source(w, seem)
     let reseat = deep && seem.c.walked_from !== undefined && seem.c.walked_from !== source
@@ -1088,7 +1089,7 @@ async TheA_seem_walk(w, name) {
     seem.c.T = null
     // a Seem holding %TheAOver walks the As standing in its world's A, and their rows: a pond's view of its tanks
     let over = seem.o({ TheAOver: 1 }).length
-    let rows_of = (v) => (v ? v.o().filter(row => kinds.includes('*') || kinds.includes(Object.keys(row.sc)[0])) : [])
+    let rows_of = (v) => (v ? v.o().filter(row => row !== w && (kinds.includes('*') || kinds.includes(Object.keys(row.sc)[0]))) : [])
     let row_depth = over ? 2 : 1
     let became = []
     let neus = []
@@ -1104,7 +1105,22 @@ async TheA_seem_walk(w, name) {
             let depth = T.c.path.length - 1
             if (depth === 0) T.sc.more = over ? n.o({ A: 1 }) : rows_of(n)
             if (over && depth === 1) T.sc.more = rows_of(n.o({ w: 1 })[0])
-            if (deep && depth >= 1) T.sc.more = n.o()
+            // a deep Seem never walks its own compartment (the points it is making — see TheA_seem_source).  One holding
+            //  %TheADeep,open walks below a point only when its gate says so (TheA_seem_opened: Stuffica's Stuffmush, the screen
+            //   asking for more); a shut point keeps how many it holds on .c.kids, which the view says.  A point's .c.where is its
+            //    path of keys from the top — what the gate is asked by, the same walk after walk (a Dip is new for a new point)
+            if (deep && depth >= 1) {
+                let kids = n.o().filter(kid => kid !== w)
+                let up = depth > 1 ? T.c.path[T.c.path.length - 2]?.sc.D : null
+                D.c.where = (up?.c.where ? up.c.where + '/' : '') + this.TheA_point_key(D)
+                if (gate && !this.TheA_seem_opened(gate, D.c.where, Object.keys(n.sc)[0])) {
+                    D.c.kids = kids.length
+                    T.sc.more = []
+                } else {
+                    if (D) D.c.kids = null
+                    T.sc.more = kids
+                }
+            }
         },
         trace_fn: async (uD, n, T) => uD.i(this.TheA_trace_sc(n.sc, says)),
         traced_fn: async (D, bD, n, T) => {
@@ -1165,6 +1181,20 @@ TheA_dip(seem, D, T) {
     let value = up.sc.value + '_' + i
     D.i({ Dip: 'seem', value })
     return value
+
+},
+// a gated Seem's asks, read once a walk: %TheAOpen:<where> opens a point, %TheAShut:<where> keeps it shut, %TheAAuto:<kind> opens
+//  every row of that kind nobody shut.  Sets — a Seem holds a point for every row it walked, so asking it per point is quadratic
+TheA_seem_gate(seem) {
+    let set = (k) => new Set(seem.o({ [k]: 1 }).map(row => String(row.sc[k])))
+    return { open: set('TheAOpen'), shut: set('TheAShut'), auto: set('TheAAuto') }
+
+},
+// is the point at where (of this kind) open, by a gate
+TheA_seem_opened(gate, where, kind) {
+    if (gate.open.has(where)) return true
+    if (gate.shut.has(where)) return false
+    return gate.auto.has(kind)
 
 },
 // TheA_seem_limbo — atoms that move in the structure.  resolve() pairs a point only among its siblings, so a row that leaves one

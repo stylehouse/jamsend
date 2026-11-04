@@ -8,32 +8,65 @@
 
 ## 0. What to get on with next
 
-### 0.0 Where rung 1 stands (2026-11-04)
+### 0.0 Where rung 1 stands (2026-11-04, night)
 
-**Built, Book-proven: the listing and its identity.**  `Ghost/P/Pile.g` reads a pile into `Mag:Pile,side:A`, flat (one row per
- entry, `in:<parent path>`), and a Seem pairs each walk with the last.  The id is minted once and rides the pairing as
-  `TheARegard:pile,id` on the point (stamped onto the row too).  A walk tells **rename** (same parent id, new name) from **move**
-   (another parent id), and ignores a path that changed only because a directory above it was renamed.  The Mag keeps a
-    `%Moved:<n>,of:<id>,how,from,to` per change; `%Mag:Trail` gets a `%Moment` per walk with `%Noticed:<how>,of:<id>` under it.
-     Pairing keys: a file's `ms` (size.modified) survives a rename, its name survives a move; a directory's `kids` (a digest of
-      what it holds) survives its rename.  **Book `PileWalk`** (`Ghost/P/PileTesting.g`, a fixture tree in memory that "the world"
-       changes between walks): 5 steps, 5 oaths, all sworn — 11 flat rows with ids; a renamed file, a moved file and a renamed
-        directory each keep their ids; one Trail moment per walk.
-- **Floor change:** a Book's `Stands:` now takes a lone `.g` path beside Ground names (`src/lib/A/ground.ts` `ground_include`),
-   so `PileWalk` stands on `Core` + `Ghost/P/Pile.g` + `Ghost/P/PileTesting.g`.  `Cred_book_code` (Auto) still digests Grounds
-    only, so a lone file isn't in a Book's Credence code digest yet.
-- `Pile_fsa_lister(handle)` is written (a real directory's entries with size + lastModified) but nothing calls it yet.
+**Built, Book-proven: the tree, its identity, partitions, the three Mags, and their storage.**
+- **The fs Mag is the directory tree** (§3 "Treeing, overflow, cursors"): `Dir` holds its `Dir`s and `File`s.  Each `Dir`
+   carries `v`, a digest of what it holds (names, file sizes, sub-`Dir` `v`s); an empty one has none.
+- **Identity rides on the rows (owner: a Seem is never kept beside the data).**  Each row carries an `id` minted once.  A walk
+   reads the disk into a plain tree first (`Pile_disk`), then for each directory springs up a pairing (`TheA_pair`) between
+    its listing and the rows it held.  Paired rows keep their id; a renamed file pairs by `ms`, a renamed `Dir` by `v`.
+     What nothing paired is matched across the whole walk by the same keys (a move; a moved `Dir` brings its insides' ids);
+      the rest get new ids.  No `TheASeem` in Pile any more.
+- **Overflow anywhere**: a container (fs Mag or `Dir`) over `most` rows (fs Mag's `most`, 900; the Book uses 4) holds
+   partitions `Mag:A-G`, then `Mag:A-G (2)` when full.  A row stays in its partition while its name is in range, newcomers
+    fill the first partition with room, so a full one is never reshuffled or rewritten.  Each partition is its own file at
+     `Pile/<fs Mag>/<range>` (top) or `Pile/<fs Mag>/<Dir id>/<range>`: by id, so a renamed `Dir` keeps its files.
+- **Three Mags**: `w:Pile/Mag:Pile` holds `Mag:<folder>,side:A`, `Mag:Trail`, `%Ask:fsa,side:B` (unanswered yet).  Its file is
+   only reference lines (mainkey + words, never numbers), so it is written once.
+- **Storage reflex `Ghost/A/Store.g`**: `%TheAStore:<path>` marks a stored particle; `Store_settle(w, nav)` writes each whose
+   text digest changed (`%TheAStoring` pending / with `why`; `%TheAStored:<path>,writes` ledger on w); `Store_open` reads and
+    fills reference lines from their files (numbers too), recording what it read so an unchanged Mag isn't rewritten.
+     `Store_memory_nav()` for Books; Pile uses `Pile_settle(w)` (nav on `w.c.nav`) and `Pile_open(H, name, nav)`.
+- **Book `PileWalk`** — 8 steps, 13 oaths, 3/3 green in check mode: the tree with ids; three Mags + partitions + a serial one;
+   each Mag in its own file; rename, move, `Dir` rename across ranges (insides come along) keep ids; untouched Mags written once;
+    reload from files keeps every id and move with nothing noticed or rewritten; a rename after the reload keeps its id; three
+     newcomers into a full partition fill `(2)` and spill into `(3)` without touching the full one.
+- **Floor change**: a Book's `Stands:` takes a lone `.g` (`src/lib/A/ground.ts`).  `Cred_book_code` (Auto) still digests
+   Grounds only — lone files aren't in a Book's Credence code digest yet.
+
+- **The page, `/Desk?I=<who>&G=Pile`** (built 2026-11-04, owner-untested): `wormhole/Ground/Pile/toc.snap` (`Load:` Store.g,
+   Pile.g, PilePage.g; `Main:Pile`; `Role:pile`).  Auto: a Ground page with no machine role is page `ground` (no Library), and
+    `auto_ground` now loads Core plus the Ground's `Load:` files before standing the Mains (Runner Desk re-checked live: still stands
+     `A:Runner`).  `Ghost/P/PilePage.g` is `Pile(A,w)`: registers `src/lib/O/ui/PileFace.svelte`, stores through the page's
+      Wormhole nav under `.jamsend/pile/<who>/` (App_todo §0.5: a person's app data lives in `.jamsend/`), opens what's stored, walks a side when asked.  The face: "add a
+       folder" answers `%Ask:fsa` (showDirectoryPicker, read-only), the handle kept in the House's Dexie `Handle` table as
+        `Pile:<who>:<side>`, "open X again" re-grants after a reload, racks (`Dir`) of squares (`File`) per side, "look again".
+         **Book `PilePage`** (3 steps, 2 oaths) drives `Pile(A,w)` with a fake directory handle (so `Pile_fsa_lister` is exercised)
+          and a memory nav: grant → walk → stored; reload → the pile is there before re-grant → re-granted walk notices nothing.
+           PilePage + PileWalk 3/3 green interleaved on one tab.
+- **Where the page reads its wormhole**: a role-less page uses the folder share remembered for Mundo, else the GitHub-seeded OPFS
+   cloud — which only has *committed and pushed* files, so `Ground/Pile`'s toc must be pushed before a share-less browser finds it.
+- **Dispatch by name**: a runner that has loaded PilePage.g thinks any `w:Pile` as the page, so Books stand theirs as `w:PileW` /
+   `w:PileP`.
+
+**Known limits:**
+- A walk reads the whole disk before pairing (`v` needs the insides first); fine for now, but rung 2 (walk as Jobs) must stream.
+   A `Dir` whose insides changed AND was moved loses its id (its insides keep theirs, each noticed as a move).
+- An emptied partition stays; a `Dir` that shrinks back under `most` stays partitioned.  A moved `Dir`'s partitions are rebuilt
+   at the same id path (rewritten, not orphaned).
+- Two files with the same `ms` are matched first-come (sabotage still unrun).
+- Cursors (`%Cursor`, `%Passed:<id>,v` on the Trail) are designed (§3) but not built.
 
 **Still owed for rung 1, in order:**
-0. **Reshape to the three Mags** (§3, owner 2026-11-04): `%Mag:Pile` referencing a fs Mag per side and the Trail; the fs Mag
-    partitioned by name range as Mags in Mags (`Mag:<fsa>/Mag:A-G/…`), the Seem pairing the logical tree across partitions.  PileWalk's five oaths carry over unchanged; their snaps
-     re-record.  Storing each Mag is the storage reflex (§3), a prototype `Ghost/A/Store.g` — no Berth.
-1. **The squares view + the page**: `wormhole/Ground/Pile/toc.snap` (hand-kept, `Main:Pile`), `/Desk?I=…&G=Pile`, a directory
-    picker into `Pile_fsa_lister`, re-grant on reload, and plain squares in a scrolly pane (a Stuffica view over the Mag's rows).
-2. **The walk as Jobs**: today a walk is one awaited breadth-first loop.  Make each directory read a `%Job` arrival, dropped
-    once served, so a giant folder fills as it lands (§5.1 "Big directories stream").
-3. **The partial-hash confirm Job** (§5.1): today a pairing is trusted on `ms`/name/`kids` alone.
-4. **Sabotages still unrun**: two files with the same size+modified; an emptied directory renamed (no `kids` — say so).
+1. **The owner opens the page** in Chrome on :9091 (`/Desk?I=<pub>&G=Pile`), picks a music folder, reloads, re-grants.  Then: the
+    face's look (racks of squares is the plainest first cut), a stall-free walk for a big folder (see 3).
+2. **Cursors**: `%Cursor:<name>,at:<id>` wandering the sorted tree, `%Passed:<id>,v` on the Trail, "snuck in behind" = a passed
+    `Dir` whose `v` moved.
+3. **The walk as Jobs**: each directory read a `%Job` arrival, dropped once served, so a giant folder fills as it lands; settle
+    as the run's tail.
+4. **The partial-hash confirm Job** (§5.1): today a pairing is trusted on `ms`/name/`v` alone.
+5. **Sabotages still unrun**: two files with the same size+modified; an emptied directory renamed (no `v` — say so).
 
 1. Read §2 (Atheory in one sitting) and `CLAUDE.md`; then `AtheoryNexus_todo.md` §0.0 (the land map) and its *E thought through*.
 2. **Rung 1 — the listing as a Mag, drawn as squares** (§4): a `Ground/Pile` composition and a Book that streams a folder's
@@ -172,6 +205,26 @@
 
 *The prototype's rows*: `%TheAStore:<path>` on a Mag says it's stored and where; `.c` holds the last-written digest; a
  `%TheAStoring` Job per pending write, dropped once landed (or kept with `why` when it failed — never silent).
+
+**Treeing, overflow, cursors (owner, 2026-11-04 evening — supersedes the flat rows and fixed ranges below).**
+- **The Mag\*\* is the directory tree.**  `Dir` holds its `Dir`s and `File`s, as the disk does.  (Flat was a mistake: it
+   guarded against the encoder's `max_child_depth`, which only cuts when a caller passes it — enWaft's default is unbounded.)  A
+    directory renamed with the same insides then keeps its insides for free: they never moved.
+- **Overflow, anywhere in the tree.**  A container (the fs Mag, or any `Dir`) over ~900 kids holds partition Mags instead —
+   `Mag:A-G`, and when that fills, a serial `Mag:A-G (2)` — never reshuffling a full one, so a split rewrites nothing that
+    was already stored.  Each partition is its own file; a small `Dir` is part of its parent's file.  This is the general fix
+     for the ~6000-kids "giant stuff" ceiling: no container, rows or Seem points, ever gets near it.
+- **Partitions are passed through** by identity: a row's place is the `Dir` above it, whatever partition holds it, so a
+   rename that crosses a range moves the row between partitions and is still one rename.
+- **Loosely content-versioned.**  Every `Dir` carries `v`, a digest of what it holds (today's `kids`, generalised: names,
+   sizes, and each sub-`Dir`'s `v`), so a change anywhere shows in every `v` above it.
+- **No Seem kept beside the data (owner).**  A Seem springs up, pairs, and leaves its traces ON the rows (the `id`, as a Dip is
+   kept on a point) — it never holds a second copy of the tree.  Everything resumes from the rows.  (Built: Pile pairs per
+    directory with `TheA_pair`; the earlier flat Seem with `TheARegard:pile,id` points is gone.)
+- **Cursors.**  A cursor wanders the tree in its one sorted order and is a row (`%Cursor:<name>,at:<id>`, on the Trail).
+   The Trail remembers each `Dir` the cursor passed and the `v` it had then (`%Passed:<id>,v`), dirs only, not files.
+    **Snuck in behind** = a passed `Dir` whose `v` is no longer the one remembered; that is also "not seen since", so seen /
+     unseen falls out of the same rows.
 
 **Partitioned by name, as Mags in Mags (owner, 2026-11-04).**  `Mag**` is a freely partitionable `Mag/Mag/Mag/…/rows`, so
  nothing piles up in one place.  A wide layer splits by **name range**: `%Mag:<the FSA you loaded>/%Mag:A-G` is the first

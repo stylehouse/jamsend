@@ -4,30 +4,50 @@ story:PileWalk
   Opt
     For
   Stands:Core
+  Stands:Ghost/A/Store.g
   Stands:Ghost/P/Pile.g
   Stands:Ghost/P/PileTesting.g
   TimeSpool
-    TimeTotal:beliefs,avg=0.027
-      sample=0.039,at=1793755562
-      sample=0.026,at=1793755769
-      sample=0.026,at=1793755779
-      sample=0.026,at=1793755791
-      sample=0.022,at=1793755795
-      sample=0.023,at=1793755799
-    TimeTotal:step,avg=0.005
-      sample=0.008,at=1793755562
-      sample=0.005,at=1793755769
-      sample=0.005,at=1793755779
-      sample=0.005,at=1793755791
-      sample=0.004,at=1793755795
-      sample=0.005,at=1793755799
+    TimeTotal:beliefs,avg=0.062
+      sample=0.08,at=1793779055
+      sample=0.073,at=1793779062
+      sample=0.108,at=1793779068
+      sample=0.066,at=1793780698
+      sample=0.048,at=1793780705
+      sample=0.054,at=1793780713
+      sample=0.067,at=1793780782
+      sample=0.044,at=1793780796
+      sample=0.041,at=1793780805
+      sample=0.042,at=1793780815
+    TimeTotal:step,avg=0.008
+      sample=0.01,at=1793779055
+      sample=0.009,at=1793779062
+      sample=0.014,at=1793779068
+      sample=0.008,at=1793780698
+      sample=0.006,at=1793780705
+      sample=0.007,at=1793780713
+      sample=0.008,at=1793780782
+      sample=0.006,at=1793780796
+      sample=0.005,at=1793780805
+      sample=0.005,at=1793780815
   step,dige:5147eac85e16c66a
-  step=2,desc:stand pile A over a fixture tree — walk it,dige:c1d7eaba8d5a3452
-    Assertion:every-entry-of-the,sentence:every entry of the pile is one flat row with its own id — a file names its directory by path
-  step=3,desc:the world renames a file — walk again,dige:3ac5d8fbaaec878a
+  step=2,desc:stand pile A over a fixture tree — walk it — store its Mags,dige:faefd893099ffd97
+    Assertion:the-pile-is-the,sentence:the pile is the directory tree — a Dir holds its files and Dirs — every entry has its own id
+    Assertion:the-pile-is-three,sentence:the pile is three Mags — Mag:Pile holds the side’s Mag and the Trail and asks for another folder — a container with too many rows holds partitions by name range — a full one is followed by a serial one
+    Assertion:each-mag-is-written,sentence:each Mag is written to its own file — Mag:Pile’s file holds only the lines of the Mags it holds — each partition holds its own rows
+  step=3,desc:the world renames a file — walk again,dige:29911d8f1eae174c
     Assertion:a-file-renamed-by,sentence:a file renamed by the world keeps its id — the walk says rename — not a vanish and an arrival
-  step=4,desc:the world moves a file into another directory — walk again,dige:ef42cb7f1e45a6e2
+  step=4,desc:the world moves a file into another directory — walk again,dige:b2fd22bf22695607
     Assertion:a-file-moved-by,sentence:a file moved by the world into another directory keeps its id — the walk says move
-  step=5,desc:the world renames a directory — its insides the same — walk again,dige:2c8b7ba08d1db3db
+  step=5,desc:the world renames a directory — its insides the same — into another name range — walk again,dige:94935fec76b20368
     Assertion:a-directory-renamed-by,sentence:a directory renamed by the world with the same insides keeps its id — so do its insides — one rename noticed and nothing else
+    Assertion:renamed-into-another-name,sentence:renamed into another name range a directory moves to that partition with its insides — the ids stay — the partition it left holds none of it
+    Assertion:a-mag-nothing-changed,sentence:a Mag nothing changed in is written once and never again — Mag:Pile and an untouched partition — while the Trail is written every walk
     Assertion:each-walk-is-one,sentence:each walk is one moment on the Trail in order — what it noticed is said there by id — nothing went missing
+  step=6,desc:the page reloads — the pile stood again from its stored Mags — walk again,dige:aaccf545e55c8dbc
+    Assertion:stood-again-from-its,sentence:stood again from its files the pile has every id it had and its moves — the walk after notices nothing new
+    Assertion:after-the-reload-a,sentence:after the reload a Mag that did not change is not written again — Mag:Pile nor a partition — the Trail is
+  step=7,desc:the world renames a file after the reload — walk again,dige:49db28a4d92d0422
+    Assertion:after-the-reload-a-2,sentence:after the reload a file the world renames keeps the id it was given before — the Trail carries on counting
+  step=8,desc:the world drops three files into a full partition — walk again,dige:5ac5511ba406eaea
+    Assertion:a-full-partition-is,sentence:a full partition is never reshuffled — newcomers fill the last one with room and spill into a new serial one — the full one is not written again

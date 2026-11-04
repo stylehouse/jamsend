@@ -594,6 +594,16 @@ abstract class StorableHousing extends Housing {
     _last_written: string | undefined
     _saving = false
 
+    // stash_key: the stash's Dexie row is keyed by the House's PLACE — its names from the top, '/'-joined (Mundo, Mundo/Desk,
+    //  Mundo/<Book>/Desk) — not its bare name: two Desks are two places, and keyed by name they shared every stashed setting
+    //   (owner 2026-11-04, the C** toggle).  The top keeps its bare name, so Mundo's stash is where it always was.  Read in
+    //    the effects, after subHouse() has set .up.
+    stash_key(): string {
+        const names: string[] = []
+        for (let h: any = this; h; h = h.up) names.unshift(h.name)
+        return names.join('/')
+    }
+
     // stashed is ready once it has loaded from Dexie (even if empty object)
     override start_checks(): (boolean | null)[] {
         return [...super.start_checks(), this.stashed != null]
@@ -615,7 +625,7 @@ abstract class StorableHousing extends Housing {
             ;(this.c as any).stash_saving = 1
             this._last_written = json
             try {
-                await this._table.put({ name: this.name, json })
+                await this._table.put({ name: this.stash_key(), json })
                 ;(this.c as any).stash_durable_at = Date.now()
             } finally {
                 this._saving = false
@@ -634,12 +644,16 @@ abstract class StorableHousing extends Housing {
         })
 
         $effect(() => {
+            const key = this.stash_key()
             const sub = liveQuery(
-                () => this._table.get(this.name)
+                () => this._table.get(key)
             ).subscribe({
-                next: (row) => {
+                next: async (row) => {
                     if (!row) {
-                        if (!this.stashed) { this.stashed = {} }
+                        // a place with no row yet: adopt what the old name-keyed row held, once (it is copied, and the next save
+                        //  writes it under the place)
+                        const old = !this.stashed && key !== this.name ? await this._table.get(this.name).catch(() => null) : null
+                        if (!this.stashed) { this.stashed = old?.json ? JSON.parse(old.json) : {} }
                         return
                     }
                     const incoming = row.json
@@ -656,7 +670,7 @@ abstract class StorableHousing extends Housing {
                     }
                 },
                 error: (err) => {
-                    console.error(`liveQuery ${this.constructor.name}:${this.name}`, err)
+                    console.error(`liveQuery ${this.constructor.name}:${key}`, err)
                     if (!this.stashed) { this.stashed = {} }
                 }
             })
@@ -1111,52 +1125,14 @@ export class House extends StorableHousing {
         if (H._push_log.length > 60) H._push_log.shift()
         H.todo.push(e)
         H.todo_version++
-        // the drain dog (2026-11-03): one timer per House, armed by a push.  A Book sat at begun because a House's todo stopped
-        //  draining — the item ahead drained, then nothing came back for the rest (HohoLocate on Mundo; the Desk runner's H:Desk).
-        //   It only speaks when the head has waited 2s with no drain since and the mutex is free — then says why and drives it
-        if (!H.c.drain_dog) H.c.drain_dog = setTimeout(() => { H.c.drain_dog = undefined; H._drain_dog() }, 2000)
+        // the drain dog (2026-11-03) was here — a 2s timer per House that drove a todo that stopped draining.  RETIRED 2026-11-04
+        //  (spec/AtheoryArrive_todo.md §3): it rescued 0× over ~20 Book starts once the push drove its own drain (below), and a Desk
+        //   that stops moving is now NAMED by its Arrive row's 20s stall clock (Ground.g Ground_arrive_probe) instead of guessed at
         // SELF-DRIVING (2026-11-03): a push drives the drain itself — through a microtask, never re-entering the caller's stack.
         //  It used to rest on the todo_version $effect, a signal that can be lost (the begun-wedge); a row waiting is enough now.
         //   A gate already open (answer_calls_waiting) comes back for it on its own timer, which looks at the rows (answer_calls)
         if (!H.answer_calls_waiting && H.started && !H.stopped) queueMicrotask(() => { try { H.answer_calls() } catch (er) {} })
     }
-    _drain_dog() {
-        const H = this
-        const head = H.todo[0]
-        if (H.stopped || !head) return
-        const now = Date.now()
-        const top = H.top_House()
-        const held = top.mutex_held?.('beliefs')
-        const waited = now - Number(head.c.push_t ?? now)
-        const since_drain = now - Number(H.c.drain_at ?? 0)
-        if (!H.started && waited >= 5000 && !H.c.drain_dog_told_unstarted) {
-            // a House whose todo waits on its own start ($effect: _all_checks_pass) — said once, never driven (the drain refuses it)
-            H.c.drain_dog_told_unstarted = 1
-            const line = `🐕 todo waits on an UNSTARTED H:${H.name} — head ${head.c.push_tag ?? '?'} waited ${waited}ms, ${H.todo.length} queued`
-            H.diag(line)
-            console.warn(line)
-            const ring = ((top as any).c.drain_stuck ??= []) as string[]
-            ring.push(`${line} @${now % 100000}`)
-        }
-        if (held || !H.started || waited < 2000 || since_drain < 2000) {
-            // busy, or moving — look again
-            H.c.drain_dog = setTimeout(() => { H.c.drain_dog = undefined; H._drain_dog() }, 2000)
-            return
-        }
-        const why_line = `🐕 todo stuck on H:${H.name} — head ${head.c.push_tag ?? '?'} waited ${waited}ms, ${H.todo.length} queued · since push calls=${H._ac_calls - Number(head.c.push_calls ?? 0)} gated=${H._ac_gated - Number(head.c.push_gated ?? 0)} tries=${H._ac_tries - Number(head.c.push_tries ?? 0)} · waiting=${H.answer_calls_waiting} pending=${H.answer_calls_pending} · why=${H.c.drain_why ?? '—'} · began=${H.c.began_run ?? '—'} finished=${H.c.finished_run ?? '—'}`
-        H.diag(why_line)
-        console.warn(why_line + ' — driving the drain')
-        // its own ring (runner_ask world prints it): the question is how OFTEN this rescues, and where
-        const M = top as any
-        M.c.drain_stuck_n = (M.c.drain_stuck_n ?? 0) + 1
-        const ring = (M.c.drain_stuck ??= []) as string[]
-        ring.push(`${why_line} @${now % 100000}`)
-        if (ring.length > 20) ring.splice(0, ring.length - 20)
-        H.answer_calls_waiting = false
-        H.answer_calls()
-        if (H.todo.length) H.c.drain_dog = setTimeout(() => { H.c.drain_dog = undefined; H._drain_dog() }, 2000)
-    }
-
     // ELECTRODE (2026-08-07) — see _push_todo.  Plain fields, no reactivity, monotonic.
     _ac_calls = 0     // answer_calls() called (the $effect fired, or a retry/watchdog drove it)
     _ac_gated = 0     // …and returned immediately because a drain was already in its gate window

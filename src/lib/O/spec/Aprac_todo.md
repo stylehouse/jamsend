@@ -7,6 +7,14 @@
 
 ## 0. START HERE (2026-10-22)
 
+**Newest (2026-11-04): Stuffica's In and Out are built, and Stuffmush is its first explorer.**  `O/ui/Stuffmush.svelte` (Stuffing on a
+ view: open-gated deep walk, Stuffing's grouping, Matstyle hue per mainkey) replaces the C** dump on `?G=` pages.  Clicks arrive at
+ `Stuffica_arrive` → one take on `%TheAIO:screen` → rows on the Seem (`%TheAOpen`/`TheAShut`/`TheAPin`/`TheAAt`, named by PATH so a re-walk keeps them) → walk + commit in UItime.  H|A|w open by
+  themselves (`%TheAAuto`); every value shown (no `+N`); values said by `objectify`.  ArriveFace and Storica (open step, pins, focus/since,
+   refresh) ride the same door.  Stuffmush walks only when a walked particle's version counter moved (`Stuffica_stirred`, read 2×/s,
+    no lock) — an old House runs no TheA run, so that is the only news.  Book AthePondMush (6 oaths).  Owed: the owner's look; the walk
+     cost on Mundo with A|w churning per tick (ring: `UItime … Stuffica Stuffmush refresh`); a pinned point under a shut parent vanishes.
+
 **Newest (2026-10-25): the Ground — §0.5.**  What a tab stands on, said as bundles in `wormhole/Ground/`, stood by one loader at
  two levels (the Desk, simple; Story, automated).  **Slices 1–2 built** (tags → 15 derived Grounds + `src/lib/A/grounds.gen.js`;
   the floor `src/lib/A/ground.ts` + `Ghost/A/Ground.g`, proved by Book AthePondGround; Hackarium stands on Ground/Land — not yet

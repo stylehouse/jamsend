@@ -58,6 +58,13 @@ Other mounts on top of any base: `pool/` → browser storage (OPFS, the SoundPoo
  `.jamsend/account` + `.jamsend/identities` → a separately granted credentials folder if there is one
   (`Wormhole_mount_creds`); `.jamsend/radiostock` and `.jamsend/berth` stay on the base, beside the music.
 
+**Per-person app data goes in `.jamsend/<kind>/` on the base**, keyed by identity where more than one person may use the
+ base: `.jamsend/account/<prepub>/`, `.jamsend/radiostock`, `.jamsend/berth`, and **`.jamsend/pile/<prepub>/`** (the Pile's stored
+  Mags, `Ghost/P/PilePage.g`, 2026-11-04).  Never `wormhole/` — that is the app's own tree (Books, fixtures), from the repo or
+   GitHub — and never a bare dir at the base's root.  On the developer box the base is the repo, so this is `/app/.jamsend/`
+    (gitignored).  A tool that walks a music folder skips `.jamsend/` (Pile does): the app's tree may live inside the very folder
+     being walked.  A folderless device has no `.jamsend/`; its only home is the House stash (§7).
+
 **How a listener gets the app's own tree** (`Housing.svelte.ts` `Wormhole_compose_app_tree`,
  `MountNav.svelte.ts` `app_tree_decision`, `WormholeOpfs.svelte.ts` `mount_lazy_github_nav`): once per grant,
   if the folder's expanded root lists directories and **none is named `wormhole`**, the app mounts

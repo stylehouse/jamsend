@@ -1,0 +1,17 @@
+story:AthePondMush
+  Styles
+  Plan
+  Opt
+    For
+  Stands:CoreTesting
+  step,dige:7ccb948eca1b6f98
+  step=2,desc:a glass with an open-gated deep view of a pond held on the glass — Tanks open by themselves,dige:a6caf025e97b3ee5
+    Assertion:a-kind-told-to,sentence:a kind told to open opens by itself — the Tanks hold their fish — a shut chub says it has 2 fins
+    Assertion:stuffmush-groups-rows-as,sentence:Stuffmush groups rows as Stuffing did — the two Tanks are one group and their names a spread
+  {"step":3,"desc":"three clicks — open the chub, shut Q, pin the Heron — one take","dige":"574374b8e2ce92ff"}
+    Assertion:three-clicks-arrive-as,sentence:three clicks arrive as one take — on the tape — one walk opens the chub and shuts Q though Tanks open by themselves
+    Assertion:a-pin-is-said,sentence:a pin is said on the tree by path — the Heron lit
+  step=4,desc:shut P while a tench lands in it,dige:d5f4de9130b618dc
+    Assertion:shut-a-row-and,sentence:shut a row and its points go — it says it now holds 4
+  step=5,desc:open P again,dige:44996b3e2793296f
+    Assertion:opened-again-a-row,sentence:opened again a row shows what was open inside it — the chub still shows its fins

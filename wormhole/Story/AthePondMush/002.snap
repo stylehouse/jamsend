@@ -1,0 +1,32 @@
+Snap:H
+  H:AthePondMush,Run
+    A:AthePondMush
+      self,round=2	{"mung":["age"]}
+      w:AthePondMush
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        w:Athe_Glass
+          TheASeem:mush,dip,walks
+            TheAKind:*
+            TheADeep,open
+            TheAAuto:Tank
+            TheATrace:Tank,of:P
+              Dip:seem,value:mush_1,i=3
+              TheATrace:Fish,of:chub,age=2
+                Dip:seem,value:mush_1_1
+              TheATrace:Fish,of:roach,age
+                Dip:seem,value:mush_1_2
+              TheATrace:Weed,of
+                Dip:seem,value:mush_1_3
+            TheATrace:Tank,of:Q
+              Dip:seem,value:mush_2,i
+              TheATrace:Fish,of:dace,age=3
+                Dip:seem,value:mush_2_1
+            TheATrace:Heron,of:grey
+              Dip:seem,value:mush_3
+            Dip:seem,value:mush,i=3
+            TheAWalk:1,neu=7
+              TheANeu:Tank,of:P
+              TheANeu:Tank,of:Q
+              TheANeu:Heron,of:grey
+          TheAView:mush,commits,dige:c623ff6a8a4eed5f

@@ -1,0 +1,165 @@
+// Store.g — the storage reflex: a Mag kept in its own file, written when what it says changed (spec/Pile_todo.md §3 "Each
+//  stored separately"; Atheory_design.md §1.15 "an Atheory-era %Good portal").  A prototype the Berth might learn from; it calls
+//   neither the Berth nor LiesStore.
+//
+//  A particle holding %TheAStore:<path> is STORED: it is the whole of <path>/toc.snap.  Anything stored inside it is written as
+//   its line alone, with its own %TheAStore under it — a reference — so a Mag of Mags writes a handful of lines and each inner
+//    Mag writes its own rows.  A reference says only who it is: its mainkey and its words, not its numbers (counts move as it
+//     works, and live in its own file), so the outer file holds still while the inner ones change.  A dontSnap particle folds as Theory.g's TheA_persist folds it.
+//   - WHEN: Store_settle, after a run (or whoever knows things settled): every stored particle's text is digested and compared
+//      with what it last wrote (or read) — .c, runtime — and each one that changed gets a %TheAStoring:<path> Job on the
+//       compartment, dropped once landed, kept with `why` when it failed.  Nothing polls.
+//   - READ: Store_open — a file read is an arrival; what it says is stood again (decode, as TheA_thaw does), and each
+//      reference line in it is filled from its own file.  What it wrote is what it read, so an unchanged Mag isn't rewritten.
+//   - WHERE: a nav (read_file(dir, name) / write_file(dir, name, text)) — the identity's app tree on a page, a memory nav
+//      (Store_memory_nav) in a Book.
+//
+//      w:Pile
+//        Mag:Pile
+//          TheAStore:Pile                     ← Pile/toc.snap
+//          Mag:Collection,side:A               ← in Pile/toc.snap as this line and its TheAStore only
+//            TheAStore:Pile/Collection
+//            Mag:A-G
+//              TheAStore:Pile/Collection/A-G
+//        TheAStored:Pile,writes=2             ← the ledger: how often each path was written
+//        TheAStoring:Pile/Trail,why:…         ← a write that failed, said
+
+IMPORT()
+
+// Store_keep — say a particle is stored at path
+Store_keep(C, path):
+    C.oai({ TheAStore: path })
+    return C
+
+// where a particle is stored, or null
+Store_path(C):
+    return C.o({ TheAStore: 1 })[0]?.sc.TheAStore ?? null
+
+// the stored particles at and under C, outermost first.  A Seem's points are never stored units, so a walk doesn't go into them
+Store_units(C, out):
+    out = out || []
+    if (this.Store_path(C)) out.push(C)
+    for (const kid of C.o()) {
+        if (kid.sc.TheATrace !== undefined || kid.sc.TheASeem !== undefined) continue
+        this.Store_units(kid, out)
+    }
+    return out
+
+// a reference line's sc: the mainkey, and every value that isn't a number
+Store_ref_sc(sc):
+    let k = Object.keys(sc)[0]
+    let ref = {}
+    for (const [key, v] of Object.entries(sc)) {
+        if (key === k || typeof v !== 'number') ref[key] = v
+    }
+    return ref
+
+// Store_text — a stored particle as its file says it: itself, everything under it, a stored particle inside as its reference
+//  line + its TheAStore, a dontSnap one as its line + folded
+async Store_text(C):
+    let fold = (n, top) => {
+        if (n !== top && this.Store_path(n)) {
+            let ref = new TheC({ c: {}, sc: this.Store_ref_sc(n.sc) })
+            ref.i({ TheAStore: this.Store_path(n) })
+            return ref
+        }
+        let keep = new TheC({ c: {}, sc: n.sc.dontSnap ? { ...n.sc, folded: 1 } : { ...n.sc } })
+        if (n.sc.dontSnap) return keep
+        for (const kid of n.o()) keep.i(fold(kid, top))
+        return keep
+    }
+    let out = await this.enWaft(fold(C, C))
+    if (out.errors?.length) return null
+    return out.snap
+
+// Store_settle — write every stored particle under w whose text changed since it was last written or read.  Returns the paths
+//  written
+async Store_settle(w, nav):
+    if (!nav) return []
+    let jobs = []
+    for (const C of this.Store_units(w)) {
+        let path = this.Store_path(C)
+        let text = await this.Store_text(C)
+        if (text == null) {
+            w.oai({ TheAStoring: path }, { why: 'would not say itself as text' })
+            continue
+        }
+        let dige = this.TheA_digest(text)
+        if (dige === C.c.store_dige) continue
+        let job = w.oai({ TheAStoring: path })
+        jobs.push({ C, path, text, dige, job })
+    }
+    let wrote = []
+    for (const { C, path, text, dige, job } of jobs) {
+        try {
+            await nav.write_file(path, 'toc.snap', text)
+        }
+        catch (er) {
+            w.oai({ TheAStoring: path }, { why: String(er?.message || er) })
+            continue
+        }
+        C.c.store_dige = dige
+        let led = w.o({ TheAStored: path })[0]
+        w.oai({ TheAStored: path }, { writes: Number(led?.sc.writes || 0) + 1 })
+        w.drop(job)
+        wrote.push(path)
+    }
+    return wrote
+
+// Store_open — stand what is stored at path into `into`, every reference in it filled from its own file.  Returns the particle,
+//  or null when there's no such file (said on `into` as %TheAStoring:<path>,why)
+async Store_open(into, path, nav):
+    let C = await this.Store_read(path, nav)
+    if (!C) {
+        into.oai({ TheAStoring: path }, { why: 'nothing stored there' })
+        return null
+    }
+    into.i(C)
+    await this.Store_fill(C, nav)
+    for (const unit of this.Store_units(C)) unit.c.store_dige = this.TheA_digest(await this.Store_text(unit))
+    return C
+
+// a stored file read and decoded, or null — a nav may throw for a directory that isn't there, which is the same answer
+async Store_read(path, nav):
+    let text = null
+    try {
+        text = await nav.read_file(path, 'toc.snap')
+    }
+    catch (er) {
+        text = null
+    }
+    if (!text) return null
+    return this.decode_wh_lines(text).C
+
+// fill each reference line under C (a stored particle holding only its TheAStore) from its own file: what's under it, and the
+//  numbers its line left out
+async Store_fill(C, nav):
+    for (const kid of C.o()) {
+        let path = this.Store_path(kid)
+        if (path && kid.o().length === 1) {
+            let stored = await this.Store_read(path, nav)
+            if (stored) {
+                let nums = {}
+                for (const [key, v] of Object.entries(stored.sc)) {
+                    if (typeof v === 'number' && key !== Object.keys(stored.sc)[0]) nums[key] = v
+                }
+                if (Object.keys(nums).length) C.oai({ ...kid.sc }, nums)
+                for (const inner of stored.o()) {
+                    if (inner.sc.TheAStore === undefined) kid.i(inner)
+                }
+            }
+            else {
+                kid.oai({ TheAStoring: path }, { why: 'its file is missing' })
+            }
+        }
+        if (kid.sc.TheATrace === undefined && kid.sc.TheASeem === undefined) await this.Store_fill(kid, nav)
+    }
+
+// Store_memory_nav — a nav held in memory, for a Book: files by dir/name
+Store_memory_nav():
+    let files = {}
+    return {
+        files,
+        read_file: async (dir, name) => files[dir + '/' + name] ?? null,
+        write_file: async (dir, name, text) => { files[dir + '/' + name] = text },
+    }

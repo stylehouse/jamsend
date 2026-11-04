@@ -7,29 +7,57 @@
     //    dynamic"); a row says "stalled" only once its stall clock has run out.  A row opens to say what it stands on: the A it
     //     reads, the row that meets it, and that A's Grounds (%GroundUsed / %TheACode).  ⋯ opens the whole roster (SupervisorPanel).
     //  IT JUDGES NOTHING — Supervisor_lines gives mark, tone and the give-up; this picks which rows and draws them.
-    //  Polls like SupervisorPanel and the Butler, slower: verdicts move on the Supervisor's 1s tick and bump no version.
+    //  A Stuffica view (Ghost/A/Stuffica.g): one Seem over w:Supervisor's %Watch rows, keeping only what a line shows (verdict,
+    //   patience, note, met, sentence).  It is walked through the door once a second — the Supervisor's verdicts move on its 1s
+    //    tick and say nothing about who moved — and COMMITS only when a watch's verdict changed, so the rack redraws on news, not
+    //     on the clock.  What a click does (list, open a row) arrives at the door as rows on the view's Seem (%TheAOpen).
+    import { untrack } from "svelte"
+    import { TheC } from "$lib/Stuff.svelte"
     import SupervisorPanel from "$lib/O/ui/SupervisorPanel.svelte"
     let { H = null }: { H?: any } = $props()
 
-    let tick = $state(0)
-    $effect(() => {
-        const iv = setInterval(() => { tick++ }, 1000)
-        return () => clearInterval(iv)
-    })
-    let open: Record<string, boolean> = $state({})
+    class Look { v = $state(0); commit() { this.v++ } }
+    const look = new Look()
+    const Wv = new TheC({ c: {}, sc: { w: 'Arrive' } })
+    const NAME = 'rack'
+    let stood = false
     let guts = $state(false)
-    let listing = $state(false)
 
     let M = $derived(H?.top_House ? H.top_House() : H)
-    let world = $derived.by(() => {
-        void tick
-        return M?.o?.({ A: 'Supervisor' })[0]?.o?.({ w: 'Supervisor' })[0] ?? null
+    const sup_w = () => M?.o?.({ A: 'Supervisor' })[0]?.o?.({ w: 'Supervisor' })[0] ?? null
+    const loaded = () => typeof H?.Stuffica_door === 'function' && typeof H?.Supervisor_line === 'function'
+    function refresh() {
+        if (!loaded() || document.hidden) return
+        if (!stood) {
+            stood = true
+            H.Stuffica_view(Wv, NAME, ['Watch'], look, { says: ['verdict', 'patience', 'note', 'met', 'sentence', 'orphan'] })
+        }
+        const pile = untrack(sup_w)
+        H.Stuffica_door(Wv, 'refresh', () => {
+            H.Stuffica_from(Wv, NAME, pile)
+            return H.Stuffica_refresh(Wv, [NAME])
+        }).catch((e: any) => console.warn('ArriveFace refresh', e))
+    }
+    $effect(() => {
+        refresh()
+        const iv = setInterval(refresh, 1000)
+        return () => clearInterval(iv)
     })
+
+    // Show: on a commit, each point's watch flattened by the Supervisor (its line), and what the screen asked to see
     let lines = $derived.by(() => {
-        void tick
-        if (!world || !H?.Supervisor_lines) return []
-        try { return H.Supervisor_lines(world) } catch { return [] }
+        void look.v
+        return untrack(() => (loaded() ? H.Stuffica_points(Wv, NAME).map((p: any) => p.c.C && H.Supervisor_line(p.c.C)).filter(Boolean)
+            .sort((a: any, b: any) => (a.stage - b.stage) || (a.i - b.i)) : []))
     })
+    let asked = $derived.by(() => {
+        void look.v
+        return new Set(untrack(() => Wv.o({ TheASeem: NAME })[0]?.o({ TheAOpen: 1 }).map((r: any) => String(r.sc.TheAOpen)) ?? []))
+    })
+    let listing = $derived(asked.has('list'))
+    const flip = (what: string) => H.Stuffica_arrive(Wv, { view: NAME, ...(asked.has(what) ? { shut: what } : { open: what }) })
+
+    let world = $derived.by(() => { void look.v; return untrack(sup_w) })
     let ours   = $derived(lines.filter((l: any) => l.key.startsWith('arrive.')))
     let others = $derived(lines.filter((l: any) => !l.key.startsWith('arrive.')))
     let loud   = $derived(others.filter((l: any) => l.tone === 'bad').length)
@@ -51,16 +79,16 @@
 
 {#if ours.length}
     <div class="rack">
-        <button class="unit" title="the Ground's arrival — click to list" onclick={() => listing = !listing}>
+        <button class="unit" title="the Ground's arrival — click to list" onclick={() => flip('list')}>
             <span class="tag">arrive</span>
             {#each ours as l (l.key)}<span class="chip {l.tone}" class:gaveup={l.gaveup}>{l.mark}{l.key.replace(/^arrive\./, '')}{l.gaveup ? ' stalled' : ''}</span>{/each}
             {#if others.length}<span class="chip more" class:loud={loud}>+{others.length}{loud ? ` ✗${loud}` : ''}</span>{/if}
         </button>
         {#if listing}
         {#each ours as l (l.key)}
-            {@const d = open[l.key] ? depends(l.key) : null}
+            {@const d = asked.has(l.key) ? depends(l.key) : null}
             <div class="row {l.tone}" class:gaveup={l.gaveup}>
-                <button class="line" onclick={() => open[l.key] = !open[l.key]}>
+                <button class="line" onclick={() => flip(l.key)}>
                     <span class="mark">{l.mark}</span>
                     <span class="says">{l.sentence}</span>
                     {#if l.gaveup}<span class="stalled">stalled</span>{/if}

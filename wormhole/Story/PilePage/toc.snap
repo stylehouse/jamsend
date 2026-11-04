@@ -1,0 +1,35 @@
+story:PilePage
+  Styles
+  Plan
+  Opt
+    For
+  Stands:Core
+  Stands:Ghost/A/Store.g
+  Stands:Ghost/P/Pile.g
+  Stands:Ghost/P/PilePage.g
+  Stands:Ghost/P/PileTesting.g
+  TimeSpool
+    TimeTotal:beliefs,avg=0.021
+      sample=0.01,at=1793780603
+      sample=0.062,at=1793780679
+      sample=0.016,at=1793780685
+      sample=0.012,at=1793780689
+      sample=0.017,at=1793780692
+      sample=0.024,at=1793780790
+      sample=0.01,at=1793780799
+      sample=0.019,at=1793780809
+    TimeTotal:step,avg=0.007
+      sample=0.003,at=1793780603
+      sample=0.021,at=1793780679
+      sample=0.005,at=1793780685
+      sample=0.004,at=1793780689
+      sample=0.006,at=1793780692
+      sample=0.008,at=1793780790
+      sample=0.003,at=1793780799
+      sample=0.006,at=1793780809
+  step,dige:047425d893987f6a
+  step=2,desc:a page with nothing stored — a folder is granted — walked and stored,dige:2e736b40259ae6f4
+    Assertion:a-page-with-nothing,sentence:a page with nothing stored opens empty — a folder granted through its handle becomes the side’s Mag named for it — walked and stored
+    Assertion:a-jamsend-directory-in,sentence:a .jamsend directory in the folder is the app’s own — never part of the pile
+  step=3,desc:the page reloads — the pile is there from its files before the folder is granted again — granted and walked,dige:59bf3641700e09fc
+    Assertion:a-reloaded-page-has,sentence:a reloaded page has the pile from its files before the folder is granted again — granted — the walk notices nothing

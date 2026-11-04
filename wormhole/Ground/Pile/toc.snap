@@ -1,0 +1,6 @@
+Ground:Pile,desc:a music folder kept as a Mag** — walked — its ids kept — each Mag in its own file (spec/Pile_todo.md)
+  Load:Ghost/A/Store.g
+  Load:Ghost/P/Pile.g
+  Load:Ghost/P/PilePage.g
+  Main:Pile
+  Role:pile

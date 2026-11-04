@@ -1,0 +1,38 @@
+Snap:H
+  H:AthePondMush,Run
+    A:AthePondMush
+      self,round=3	{"mung":["age"]}
+      w:AthePondMush
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        w:Athe_Glass
+          TheASeem:mush,dip,walks=2
+            TheAKind:*
+            TheADeep,open
+            TheAAuto:Tank
+            Dip:seem,value:mush,i=3
+            TheAOpen:Tank:P/Fish:chub
+            TheAShut:Tank:Q
+            TheAPin:Heron:grey
+            TheATrace:Tank,of:P
+              Dip:seem,value:mush_1,i=3
+              TheATrace:Fish,of:chub,age=2
+                Dip:seem,value:mush_1_1,i=2
+                TheATrace:Fin,of:left
+                  Dip:seem,value:mush_1_1_1
+                TheATrace:Fin,of:right
+                  Dip:seem,value:mush_1_1_2
+              TheATrace:Fish,of:roach,age
+                Dip:seem,value:mush_1_2
+              TheATrace:Weed,of
+                Dip:seem,value:mush_1_3
+            TheATrace:Tank,of:Q
+              Dip:seem,value:mush_2,i
+            TheATrace:Heron,of:grey
+              Dip:seem,value:mush_3
+            TheAWalk:2,fit=6,neu=2,gone
+          TheAView:mush,commits=2,dige:888158afad6310c0
+          TheAIO:screen,heard=3,takes
+            TheAHeard:1,take,view:mush,open:Tank:P/Fish:chub
+            TheAHeard:2,take,view:mush,shut:Tank:Q
+            TheAHeard:3,take,view:mush,pin:Heron:grey

@@ -1,0 +1,74 @@
+Snap:H
+  H:PileWalk,Run
+    A:PileWalk
+      self,round=8	{"mung":["age"]}
+      w:PileWalk
+        self,round=8	{"mung":["age"]}
+        req:wrangle,eternal,ok
+    A:PileW
+      self,round=2	{"mung":["age"]}
+      w:PileW
+        Mag:Pile
+          TheAStore:Pile
+          Mag:Collection,side:A,most=4,minted=21,moves=4
+            TheAStore:Pile/Collection
+            Mag:A-G
+              TheAStore:Pile/Collection/A-G
+              Dir:Album Y,v:e989201ff5087a99,id:5
+                File:a.mp3,size=2001,mod=21,ms:2001.21,id:6
+                File:b.mp3,size=2002,mod=22,ms:2002.22,id:7
+                File:stray.ogg,size=3001,mod=31,ms:3001.31,id:10
+              Dir:Empty,id:8
+            Mag:H-N
+              TheAStore:Pile/Collection/H-N
+              Dir:Loose,id:9
+            Mag:O-T
+              TheAStore:Pile/Collection/O-T
+              Dir:Singles,v:19ad250d95da3078,id:11
+                Mag:O-T
+                  TheAStore:Pile/Collection/11/O-T
+                  File:s1.flac,size=5001,mod=51,ms:5001.51,id:12
+                  File:s2.flac,size=5002,mod=52,ms:5002.52,id:13
+                  File:s3.flac,size=5003,mod=53,ms:5003.53,id:14
+                  File:s4.flac,size=5004,mod=54,ms:5004.54,id:15
+                Mag:O-T (2)
+                  TheAStore:Pile/Collection/11/O-T (2)
+                  File:s0.flac,size=5000,mod=50,ms:5000.50,id:19
+                  File:s5.flac,size=5005,mod=55,ms:5005.55,id:16
+                  File:s6.flac,size=5006,mod=56,ms:5006.56,id:17
+                  File:s7.flac,size=5007,mod=57,ms:5007.57,id:20
+                Mag:O-T (3)
+                  TheAStore:Pile/Collection/11/O-T (3)
+                  File:s8.flac,size=5008,mod=58,ms:5008.58,id:21
+              File:readme.txt,size=4001,mod=41,ms:4001.41,id:18
+            Moved:1,of:3,how:rename,from:Album X/02 Noon.flac,to:Album X/02 Midday.flac
+            Moved:2,of:10,how:move,from:Loose/stray.ogg,to:Album Y/stray.ogg
+            Mag:U-Z
+              TheAStore:Pile/Collection/U-Z
+              Dir:X Album,v:b31cff81e6414b1d,id:1
+                File:01 Dawn.flac,size=1001,mod=11,ms:1001.11,id:2
+                File:02 Midday.flac,size=1002,mod=12,ms:1002.12,id:3
+                File:03 Dusk (live).flac,size=1003,mod=13,ms:1003.13,id:4
+            Moved:3,of:1,how:rename,from:Album X,to:X Album
+            Moved:4,of:4,how:rename,from:X Album/03 Dusk.flac,to:X Album/03 Dusk (live).flac
+          Mag:Trail,moments=7
+            TheAStore:Pile/Trail
+            Moment:1,about:first look,side:A,saw=18
+            Moment:2,about:the world renames a file,side:A,saw=18
+              Noticed:rename,of:3
+            Moment:3,about:the world moves a file into another directory,side:A,saw=18
+              Noticed:move,of:10
+            Moment:4,about:the world renames a directory — its insides the same — into another name range,side:A,saw=18
+              Noticed:rename,of:1
+            Moment:5,about:the page reloads,side:A,saw=18
+            Moment:6,about:the world renames a file after the reload,side:A,saw=18
+              Noticed:rename,of:4
+            Moment:7,about:the world drops three files into a full partition,side:A,saw=21,neu=3
+          Ask:fsa,side:B
+        TheAStored:Pile/Trail,writes=3
+        self,round=2	{"mung":["age"]}
+        TheAStored:Pile/Collection,writes=2
+        TheAStored:Pile/Collection/U-Z,writes
+        TheAStored:Pile/Collection/O-T,writes
+        TheAStored:Pile/Collection/11/O-T (2),writes
+        TheAStored:Pile/Collection/11/O-T (3),writes

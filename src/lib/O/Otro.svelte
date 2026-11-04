@@ -12,6 +12,7 @@
     import { boot_param } from "$lib/boot";
     import BootGate from "./ui/BootGate.svelte";
     import ArriveFace from "./ui/ArriveFace.svelte";
+    import Stuffmush from "./ui/Stuffmush.svelte";
     import { sockcap_install, socklog_armed, concap_install } from "$lib/O/sockcap";   // ALMOST-GONER: relay-socket tap (dumped via Wormhole) — sockcap.ts header; concap = the console ring (runner_ask console)
     // TEMP — CPU-attribution experiment (?cpu_legs=1): cycles which Lies/Lang/Cyto/Story panel
     //  is mounted, announcing the leg on screen + console, so CPU readings taken externally
@@ -109,7 +110,7 @@
             h.c.ground = ground
             const role = ground.toLowerCase()
             if (role === 'runner' || role === 'daemon') h.c.boot_role = role
-            else console.warn(`⛔ ?G=${ground}: only a runner|daemon Ground boots from the URL yet — booting bare`)
+            else console.log(`⛰ ?G=${ground}: a page with no machine role — its Ground's Mains are the page`)
         }
         else if (on_grid) {                        h.c.boot_role = 'runner' }
         if (remote_wormhole) h.c.remote_wormhole = true
@@ -172,6 +173,8 @@
     //   not Book state, so it shouldn't snap or bleed across Books.  Following
     //    the "lean stashed" doctrine we delete the key when off rather than
     //     storing a 0, so the autosave $effect (which tracks the key set) fires.
+    //  The stash is keyed by the House's place (Housing stash_key), so two Desks keep two toggles.
+    const showC = (house) => !!house.stashed?.showC
     function toggle_C(house) {
         if (house.stashed.showC) delete house.stashed.showC
         else house.stashed.showC = 1
@@ -221,7 +224,7 @@
                 <div class="house-actions">
                     {#if hasActions}<Actions N={house.actions.ob({ action: 1 })} H={house} />{/if}
                     {#if house.stashed}
-                        <button class="cstar" class:on={house.stashed.showC}
+                        <button class="cstar" class:on={showC(house)}
                             title="show this House's C** (Stuffing) tree"
                             onclick={() => toggle_C(house)}>C**</button>
                     {/if}
@@ -239,8 +242,13 @@
                     {/if}
                 {/if}
             {/each}
-            {#if house.stashed?.showC}
-                <Stuffing mem={house.imem('current')} stuff={house} H={house} M={house} />
+            {#if showC(house)}
+                <!-- a Ground page explores C** with Stuffmush (Stuffing on a Stuffica view); the old pages keep Stuffing -->
+                {#if on_ground}
+                    <Stuffmush H={house} stuff={house} />
+                {:else}
+                    <Stuffing mem={house.imem('current')} stuff={house} H={house} M={house} />
+                {/if}
             {/if}
         {/each}
     {/snippet}
