@@ -11,6 +11,7 @@
     import NaviScroll from "./ui/NaviScroll.svelte";
     import { boot_param } from "$lib/boot";
     import BootGate from "./ui/BootGate.svelte";
+    import ArriveFace from "./ui/ArriveFace.svelte";
     import { sockcap_install, socklog_armed, concap_install } from "$lib/O/sockcap";   // ALMOST-GONER: relay-socket tap (dumped via Wormhole) — sockcap.ts header; concap = the console ring (runner_ask console)
     // TEMP — CPU-attribution experiment (?cpu_legs=1): cycles which Lies/Lang/Cyto/Story panel
     //  is mounted, announcing the leg on screen + console, so CPU readings taken externally
@@ -32,6 +33,9 @@
     //  reassigns (`H = new House()`), so it self-retriggers forever, allocating a House every
     //  tick → the tab OOMs to multi-GB.  (Svelte 5: an effect re-runs on any $state it reads.)
     const toplevel = boot_param('A') || 'Auto'
+    // a Ground page (?G=, /Desk) shows the Supervisor as a small rack in Mundo, where its full panel sat (ArriveFace,
+    //  AtheoryArrive_todo §1.3) — the panel opens from the rack's ⋯
+    const on_ground = !!boot_param('G')
     // ?B=<Book> auto-activates a Story Book under the default A=Auto (the Library/Story owner) —
     //  ?B=Editron boots the editor as a Book, ?B=PereStaple the test runner, etc.  Auto reads
     //   H.c.book on first boot and activates it (see Auto.svelte).  ?W=<Waft> rides alongside for
@@ -224,7 +228,9 @@
                 </div>
             </div>
             {#each house.UIs.ob({ UI: 1 }) as uiC (keyser(uiC.sc))}
-                {#if !cpu_leg_hides(uiC.sc.UI)}
+                {#if on_ground && uiC.sc.UI === 'Supervisor'}
+                    <ArriveFace H={house} />
+                {:else if !cpu_leg_hides(uiC.sc.UI)}
                     {#if uiC.c.fu}
                         <!-- a UI the new generation (StoryFu) registered — framed so it's told apart from Story.svelte's -->
                         <div class="fu-ui" title="StoryFu — the new Story"><svelte:component this={uiC.sc.component} H={house} /></div>

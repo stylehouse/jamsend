@@ -537,6 +537,17 @@ A:Feeder
    `from:` resolved by nearness (BUILT 2026-11-02 — R3 below), a Book's own routine running through its A, and whether the A\*\*
     tree maps onto relations (the owner's hunch).
 
+**The storage reflex — an Atheory-era `%Good` portal (designed 2026-11-04, for Pile).**  What of a compartment is stored, and
+ where, said as rows: `%TheAStore:<path>` on a Mag says it's stored; after a run, every stored Mag whose text digest changed since its
+  last write gets one `%TheAStoring` Job (when to write is decided the way Stuffica decides when to commit a view); a read is an
+   arrival that thaws the Mag (`TheA_thaw`) and its Seem carries on from the points it had.  Small partitioned Mags make each write a
+    whole-file rewrite, so there are no appended parts and no compaction; a nested stored Mag is written as its reference line only.
+     It re-says LiesStore's ideas (a known digest, skip an unchanged write, a read handed to whoever waits on the `%Good`) in rows and
+      Jobs, and calls neither LiesStore nor Heist's Berth.  It is also the first case of the owner's "persisting parts of a Seem"
+       (§1.12): what must outlive a reload is the Trace points and their regards, not the rows a walk can re-derive.  Prototype:
+        `Ghost/A/Store.g`; design in `Pile_todo.md` §3.  **Which parts of the old machine are becoming Atheorised is tracked in
+         `AtheoryNexus_todo.md` §1b.**
+
 **Remaining conceptualisations** *(gathered 2026-10-30 — each is a question to think from the top, not a fix; patches made
  meanwhile are in the ledger, §2).*  **Since 2026-11-01 the open concepts are reduced and tracked in `AtheoryNexus_todo.md`** —
   add new ones there; this list stays as the record of how they were first put.

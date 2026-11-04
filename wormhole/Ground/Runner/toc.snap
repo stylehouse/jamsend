@@ -5,3 +5,6 @@ Ground:Runner,desc:a tab that runs Books it is told — each Job stands a Desk a
   Spine:Wire
   Spine:Ghost/Story/ErrchannelTesting.g
   Spine:Ghost/O/Supervisor.g
+  Arrive:spine,of:Runner,stage:self,says:the runner's code is loaded
+  Arrive:book,of:Story,in:Desk,by:StoryAt,until:finished,moves:run,stage:story,says:the Book asked for walks to its end
+  Lift:spine

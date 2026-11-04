@@ -107,6 +107,10 @@ Two generations (`Atheory_todo.md` §0.0, "Newest").  The old one — Otro, the 
   code on an A.  Story is refactored by being run nested and fixed where nesting breaks it, never by a big rewrite up front.
    When the inner Story gets the same greens, `/Desk?B=<Book>` tabs answer the relay as runners (so `runner_ask` keeps working)
     and the old generation retires.  On the way, Story_future's features land as Atheory things (§2), one at a time.
+   **But the old generation can't retire on Story's greens alone (owner 2026-11-04):** the music page at `/` rides it too — Auto,
+    Otro, Story.svelte booting the Sounditron — so it goes only once `/` stands on a Ground: Radio as a Main, the Supervisor in Atheory
+     terms, the arrival splash as the Ground's Face.  That top-down of startup is `AtheoryArrive_todo.md` (to be written from the talk —
+      `AtheoryNexus_todo.md` E, "NEXT SESSION").
 
 Until the retirement **a Story fix lands twice** — in `Story.svelte` and in `StoryFu.g`.  They drifted once (the 10-26
  "de-vanishing Wafts" guard; mirrored into the .g 2026-10-29).

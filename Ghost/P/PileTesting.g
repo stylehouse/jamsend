@@ -1,0 +1,150 @@
+// PileTesting.g — the proof of Pile.g (spec/Pile_todo.md rung 1).
+//
+//  A runner can't pick a folder, so the Book's pile is a FIXTURE: a little tree held in memory (on .c, never snapped), with a
+//   lister over it the way Pile_fsa_lister lists a real directory.  "The world" changes it between walks — a rename, a move, a
+//    directory renamed with the same insides — and each walk must say what happened by id, never as a vanish plus an arrival.
+//  Pile.g must already be loaded (the Book's toc stands on it).
+
+IMPORT()
+
+//#region the fixture pile
+
+// a tree: a directory is an object of its entries, a file is [size, modified].  Sizes and times all differ, so nothing pairs
+//  by accident
+PileTesting_fixture():
+    return {
+        'Album X': { '01 Dawn.flac': [1001, 11], '02 Noon.flac': [1002, 12], '03 Dusk.flac': [1003, 13] },
+        'Album Y': { 'a.mp3': [2001, 21], 'b.mp3': [2002, 22] },
+        'Loose': { 'stray.ogg': [3001, 31] },
+        'Empty': {},
+        'readme.txt': [4001, 41],
+    }
+
+// the directory object at a path, or null
+PileTesting_dir(tree, path):
+    let here = tree
+    if (path === '.') return here
+    for (const part of path.split('/')) {
+        here = here?.[part]
+        if (!here || Array.isArray(here)) return null
+    }
+    return here
+
+PileTesting_lister(tree):
+    return {
+        list: async (path) => {
+            let dir = this.PileTesting_dir(tree, path)
+            if (!dir) return []
+            return Object.keys(dir).map(name => (Array.isArray(dir[name]) ? { name, size: dir[name][0], mod: dir[name][1] } : { name, dir: 1 }))
+        },
+    }
+
+// the world renames something: same directory, new name, insides untouched
+PileTesting_rename(tree, dir_path, name, to):
+    let dir = this.PileTesting_dir(tree, dir_path)
+    dir[to] = dir[name]
+    delete dir[name]
+
+// the world moves something into another directory, keeping its name
+PileTesting_move(tree, dir_path, name, to_dir):
+    let dir = this.PileTesting_dir(tree, dir_path)
+    this.PileTesting_dir(tree, to_dir)[name] = dir[name]
+    delete dir[name]
+
+//#endregion
+//#region the test routine — Book PileWalk
+// Step 2 stands pile A over the fixture and walks it.  Step 3: the world renames a file.  Step 4: the world moves a file into
+//  another directory.  Step 5: the world renames a directory, its insides the same.  Each step ends with one walk; the Trail
+//   gets a moment per walk.
+PileWalk(A,w):
+    w oai %req:wrangle,eternal
+        await &PileWalk_drive,w,req
+        req%ok = 1
+
+async PileWalk_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 5
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.PileWalk_stand(w)
+        if (n === 3) await this.PileWalk_world(w, 'the world renames a file — walk again', (tree) => this.PileTesting_rename(tree, 'Album X', '02 Noon.flac', '02 Midday.flac'))
+        if (n === 4) await this.PileWalk_world(w, 'the world moves a file into another directory — walk again', (tree) => this.PileTesting_move(tree, 'Loose', 'stray.ogg', 'Album Y'))
+        if (n === 5) await this.PileWalk_world(w, 'the world renames a directory — its insides the same — walk again', (tree) => this.PileTesting_rename(tree, '.', 'Album X', 'Album Z'))
+    }
+    this.PileWalk_witness(w)
+
+PileWalk_pile():
+    return this.o({ A: 'Pile' })[0]?.o({ w: 'Pile' })[0] ?? null
+
+async PileWalk_stand(w):
+    w.i({ desc: 'stand pile A over a fixture tree — walk it' })
+    let old = this.o({ A: 'Pile' })[0]
+    if (old) this.drop(old)
+    let pile = this.Pile_stand(this, 'Pile')
+    let mag = this.Pile_mag(pile, 'A')
+    mag.c.tree = this.PileTesting_fixture()
+    mag.c.lister = this.PileTesting_lister(mag.c.tree)
+    await this.Pile_walk(pile, 'A', 'first look')
+
+async PileWalk_world(w, desc, change):
+    w.i({ desc })
+    let pile = this.PileWalk_pile()
+    let mag = pile?.o({ Mag: 'Pile', side: 'A' })[0]
+    if (!mag?.c.tree) return
+    // what each path's id was before the world changed it: the witness compares against it (runtime, never snapped)
+    let ids = {}
+    for (const row of mag.o()) {
+        if (row.sc.id) ids[this.Pile_path(row.sc)] = row.sc.id
+    }
+    mag.c.ids_before = ids
+    change(mag.c.tree)
+    await this.Pile_walk(pile, 'A', desc.replace(/ — walk again$/, ''))
+
+// the witness reads the tree the steps wrote: rows, their ids, the Moved rows, the Trail — never the fixture
+PileWalk_witness(w):
+    let pile = this.PileWalk_pile()
+    if (!pile) return
+    let n = this.c.run?.c.step_n ?? 0
+    let mag = pile.o({ Mag: 'Pile', side: 'A' })[0]
+    let trail = pile.o({ Mag: 'Trail' })[0]
+    if (!mag || !trail) return
+    let rows = mag.o().filter(row => row.sc.File !== undefined || row.sc.Dir !== undefined)
+    let at = (path) => this.Pile_row_at(pile, 'A', path)
+    let moment = (k) => trail.o({ Moment: String(k) })[0]
+    let noticed = (k) => (moment(k)?.o({ Noticed: 1 }) ?? []).map(it => it.sc.Noticed + ':' + it.sc.of)
+    let moved = (how) => mag.o({ Moved: 1 }).filter(m => m.sc.how === how)
+
+    let ids = rows.map(row => row.sc.id)
+    if (n === 2 && rows.length === 11 && ids.every(id => id) && new Set(ids).size === 11 && at('Album X/01 Dawn.flac')?.sc.in === 'Album X' && !rows.some(row => row.o().length)) {
+        this.story_swear(w, 'every entry of the pile is one flat row with its own id — a file names its directory by path')
+    }
+    if (n === 3) {
+        let was = mag.c.ids_before?.['Album X/02 Noon.flac']
+        let now = at('Album X/02 Midday.flac')
+        let one = moved('rename')
+        if (was && now?.sc.id === was && !at('Album X/02 Noon.flac') && one.length === 1 && one[0].sc.of === was && noticed(2).join(' ') === 'rename:' + was) {
+            this.story_swear(w, 'a file renamed by the world keeps its id — the walk says rename — not a vanish and an arrival')
+        }
+    }
+    if (n === 4) {
+        let was = mag.c.ids_before?.['Loose/stray.ogg']
+        let now = at('Album Y/stray.ogg')
+        if (was && now?.sc.id === was && moved('move').length === 1 && moved('move')[0].sc.to === 'Album Y/stray.ogg' && noticed(3).join(' ') === 'move:' + was) {
+            this.story_swear(w, 'a file moved by the world into another directory keeps its id — the walk says move')
+        }
+    }
+    if (n === 5) {
+        let seen = mag.c.ids_before || {}
+        let dir = at('Album Z')
+        let kids = ['01 Dawn.flac', '02 Midday.flac', '03 Dusk.flac']
+        let kept = kids.every(name => at('Album Z/' + name)?.sc.id === seen['Album X/' + name])
+        if (dir && dir.sc.id === seen['Album X'] && kept && noticed(4).join(' ') === 'rename:' + seen['Album X']) {
+            this.story_swear(w, 'a directory renamed by the world with the same insides keeps its id — so do its insides — one rename noticed and nothing else')
+        }
+        let moments = trail.o({ Moment: 1 }).map(m => m.sc.Moment).join(',')
+        if (moments === '1,2,3,4' && !trail.o({ Moment: 1 }).some(m => m.o({ Noticed: 'gone' }).length)) {
+            this.story_swear(w, 'each walk is one moment on the Trail in order — what it noticed is said there by id — nothing went missing')
+        }
+    }
+//#endregion

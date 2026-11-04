@@ -1,0 +1,61 @@
+Snap:H
+  H:PileWalk,Run
+    A:PileWalk
+      self,round=5	{"mung":["age"]}
+      w:PileWalk
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok
+    A:Pile
+      self,round=3	{"mung":["age"]}
+      w:Pile
+        Mag:Pile,side:A,minted=11,moves=3
+          TheASeem:pile,walks=4
+            TheAKind:Dir
+            TheAKind:File
+            TheASphere:pile,tense:Regard
+            TheATrace:Dir,of:Album Y,in:.,kids:e989201ff5087a99
+              TheARegard:pile,id:2
+            TheATrace:Dir,of:Album Z,in:.,kids:33528c2692697413
+              TheARegard:pile,id:1
+            TheATrace:Dir,of:Empty,in:.
+              TheARegard:pile,id:3
+            TheATrace:Dir,of:Loose,in:.
+              TheARegard:pile,id:4
+            TheATrace:File,of:readme.txt,in:.,size=4001,mod=41,ms:4001.41
+              TheARegard:pile,id:5
+            TheATrace:File,of:a.mp3,in:Album Y,size=2001,mod=21,ms:2001.21
+              TheARegard:pile,id:9
+            TheATrace:File,of:b.mp3,in:Album Y,size=2002,mod=22,ms:2002.22
+              TheARegard:pile,id:10
+            TheATrace:File,of:stray.ogg,in:Album Y,size=3001,mod=31,ms:3001.31
+              TheARegard:pile,id:11
+            TheATrace:File,of:01 Dawn.flac,in:Album Z,size=1001,mod=11,ms:1001.11
+              TheARegard:pile,id:6
+            TheATrace:File,of:02 Midday.flac,in:Album Z,size=1002,mod=12,ms:1002.12
+              TheARegard:pile,id:7
+            TheATrace:File,of:03 Dusk.flac,in:Album Z,size=1003,mod=13,ms:1003.13
+              TheARegard:pile,id:8
+            TheAWalk:4
+          Moved:1,of:7,how:rename,from:Album X/02 Noon.flac,to:Album X/02 Midday.flac
+          Moved:2,of:11,how:move,from:Loose/stray.ogg,to:Album Y/stray.ogg
+          Dir:Album Y,in:.,kids:e989201ff5087a99,id:2
+          Dir:Album Z,in:.,kids:33528c2692697413,id:1
+          Dir:Empty,in:.,id:3
+          Dir:Loose,in:.,id:4
+          File:readme.txt,in:.,size=4001,mod=41,ms:4001.41,id:5
+          File:a.mp3,in:Album Y,size=2001,mod=21,ms:2001.21,id:9
+          File:b.mp3,in:Album Y,size=2002,mod=22,ms:2002.22,id:10
+          File:stray.ogg,in:Album Y,size=3001,mod=31,ms:3001.31,id:11
+          File:01 Dawn.flac,in:Album Z,size=1001,mod=11,ms:1001.11,id:6
+          File:02 Midday.flac,in:Album Z,size=1002,mod=12,ms:1002.12,id:7
+          File:03 Dusk.flac,in:Album Z,size=1003,mod=13,ms:1003.13,id:8
+          Moved:3,of:1,how:rename,from:Album X,to:Album Z
+        Mag:Trail,moments=4
+          Moment:1,about:first look,side:A,saw=11
+          Moment:2,about:the world renames a file,side:A,saw=11
+            Noticed:rename,of:7
+          Moment:3,about:the world moves a file into another directory,side:A,saw=11
+            Noticed:move,of:11
+          Moment:4,about:the world renames a directory — its insides the same,side:A,saw=11
+            Noticed:rename,of:1
+        self,round=3	{"mung":["age"]}

@@ -168,12 +168,12 @@ Waft:Credence
       Funkcion:Storying,of_Book:StuffResolving
     What:Toy,desc:diagnostic toys — a snap-diff step-machine and floating live-world Stuffings in Cyto
       Funkcion:StoryTimes
-      Funkcion:Storying,of_Book:Diffmatication
+      Funkcion:Storying,of_Book:Diffmatication,unusual:rethink — the snap-diff machine over HohoTiles snaps (June fixtures) — wants more Atheory before it is taken on again
       Funkcion:Storying,of_Book:AwFloat,brand_new:1
-    What:Misc,inline:1,desc:editor codecs LangHold-checkout peering export ttl-waits and reactive-Waft stability
+  What:Misc,inline:1,desc:editor codecs LangHold-checkout peering export ttl-waits and reactive-Waft stability
       Funkcion:StoryTimes
       Funkcion:Storying,of_Book:Editron,unusual:destination — stands the editor app to use — not a regression test (and hangs a runner)
-      Funkcion:Storying,of_Book:Interesting
+      Funkcion:Storying,of_Book:Interesting,unusual:rethink — a w:Lies + Cyto smoke from June — wants more Atheory before it is taken on again
       Funkcion:Storying,of_Book:MundaneStation
       Funkcion:Storying,of_Book:MundaneStaying
       Funkcion:Storying,of_Book:ReactiveWaft,unusual:stale-fixtures — red on every run since its 2026-06 fixtures drifted — re-record after a look (Story_hygiene_todo §0)
@@ -235,6 +235,8 @@ Waft:Credence
     Funkcion:Storying,of_Book:AthePondAttendMark,born:2026-11-02,synapse:no synapse — a Desk attending think holds a Note and a pond attending run — an unmarked pond beside,doc:AtheoryNexus_todo,desc:one attention mark — think is thought pumped findable watched — run is findable and watched only and moves by pulse
     Funkcion:Storying,of_Book:AtheStoryPick,born:2026-11-02,synapse:a Desk whose Story runs AthePondRounds held at ready — two clicks on the step strip,doc:AtheoryNexus_todo,desc:a click is an arrival — the Desk’s step-strip pocket moves by the run loop and tells the inner Story story_sel by ref
     Funkcion:Storying,of_Book:AtheStorySabotage,born:2026-10-30,synapse:no synapse — a Desk whose StoryFu runs AthePondRounds under the sabotage its toc declares,doc:AtheoryStory_todo,desc:every oath proves it bites — the variant pushed onto the inner run’s House at a stop — the inner stops at its first red with exactly the declared oaths fallen — pulled — green again
+  What:Pile,desc:the pile — a music folder kept as a flat Mag** under a Seem — walked and moved around in by id — Ghost/P/Pile.g with the routines in Ghost/P/PileTesting.g
+    Funkcion:Storying,of_Book:PileWalk,born:2026-11-04,synapse:no synapse — a fixture tree in memory changed by the world between walks,doc:Pile_todo §4 rung 1,desc:every entry is one flat row with an id — a renamed file and a moved file keep their ids — a directory renamed with the same insides is one rename — each walk is a moment on the Trail
   What:Misc,inline
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:GhoghoDrone

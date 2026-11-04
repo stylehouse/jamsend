@@ -20,7 +20,12 @@ import { GROUNDS } from './grounds.gen.js'
 //    as well as what to load: Main (the A the page runs from, repeatable), Role (default: its name lowercased), Face.
 //  A runner composition also carries its SPINE: what the page loads flat before any Book — Grounds by name, or a lone .g path
 //   that no Ground wears yet.  It shrinks as Books say their own Stands (AtheoryNexus_todo §0.0 E slice 3).
-export type GroundRead = { stands: string[], load: string[], main: string[], spine?: string[], role?: string, face?: string }
+//  And what it should have once it is up: its ARRIVE rows (spec/AtheoryArrive_todo.md §1) — one milestone each, met by a row the
+//   named A carries (`%Arrived:<key>` by default, or the row `by:` names, up to `until:`), `in:` a sub-House it stands per job;
+//    `moves:` a row whose change also counts as progress (a Story's run row: done climbs per step); `Lift:` names the one that opens the door.  The Supervisor watches them (Ground.g Ground_arrive) — it never names them itself.
+export type GroundArrive = { Arrive: string, says?: string, of?: string, in?: string, by?: string, until?: string, stage?: string, moves?: string }
+export type GroundRead = { stands: string[], load: string[], main: string[], spine?: string[], role?: string, face?: string,
+    arrive?: GroundArrive[], lift?: string }
 const LEARNED: Record<string, GroundRead> = {}
 export function ground_learn(name: string, g: GroundRead) { LEARNED[name] = g }
 export function ground_read(name: string): GroundRead | undefined {
@@ -39,6 +44,14 @@ export function ground_from_toc(G: any): GroundRead {
     const g: GroundRead = { stands: vals('Stands'), load: vals('Load'), main: vals('Main') }
     const spine = vals('Spine')
     if (spine.length) g.spine = spine
+    const arrive = (G?.o?.({ Arrive: 1 }) ?? []).map((n: any) => {
+        const a: GroundArrive = { Arrive: String(n.sc.Arrive) }
+        for (const k of ['says', 'of', 'in', 'by', 'until', 'stage', 'moves'] as const) if (n.sc[k] != null) a[k] = String(n.sc[k])
+        return a
+    })
+    if (arrive.length) g.arrive = arrive
+    const lift = vals('Lift')[0]
+    if (lift) g.lift = lift
     const role = vals('Role')[0], face = vals('Face')[0]
     if (role) g.role = role
     if (face) g.face = face
@@ -93,16 +106,19 @@ export function ground_loads(name: string): string[] {
 //  already loaded here is left alone.  Resolves when the last include has landed (or failed) — never throws.  Call it
 //   fire-and-forget from a do_fn (an include is a dynamic import whose eatfunc needs further ticks), then stand the
 //    Theory side from an elvis once it resolves.
+//  A name ending .g is a LONE file, loaded after the Grounds as a spine's are (ground_spine_paths): a Book standing on code no
+//   Ground wears yet says `Stands:Ghost/Pile/Pile.g` beside its Grounds (Pile_todo §5.1, 2026-11-04).
 export async function ground_include(top: any, names: string[]): Promise<{ order: GroundStep[], unknown: string[], failed: string[] }> {
-    const { order, unknown } = ground_closure(names)
+    const lone = names.filter(n => n.endsWith('.g'))
+    const { order, unknown } = ground_closure(names.filter(n => !n.endsWith('.g')))
     const failed: string[] = []
-    for (const step of order) {
-        for (const path of ground_loads(step.name)) {
-            if (top.Lies_ghost_get?.(path)) continue
-            let ok = false
-            try { ok = await top.Lies_ghost_include(path) } catch { ok = false }
-            if (!ok) failed.push(path)
-        }
+    const include = async (path: string) => {
+        if (top.Lies_ghost_get?.(path)) return
+        let ok = false
+        try { ok = await top.Lies_ghost_include(path) } catch { ok = false }
+        if (!ok) failed.push(path)
     }
+    for (const step of order) for (const path of ground_loads(step.name)) await include(path)
+    for (const path of lone) await include(path)
     return { order, unknown, failed }
 }

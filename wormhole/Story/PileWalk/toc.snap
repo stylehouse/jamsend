@@ -1,0 +1,33 @@
+story:PileWalk
+  Styles
+  Plan
+  Opt
+    For
+  Stands:Core
+  Stands:Ghost/P/Pile.g
+  Stands:Ghost/P/PileTesting.g
+  TimeSpool
+    TimeTotal:beliefs,avg=0.027
+      sample=0.039,at=1793755562
+      sample=0.026,at=1793755769
+      sample=0.026,at=1793755779
+      sample=0.026,at=1793755791
+      sample=0.022,at=1793755795
+      sample=0.023,at=1793755799
+    TimeTotal:step,avg=0.005
+      sample=0.008,at=1793755562
+      sample=0.005,at=1793755769
+      sample=0.005,at=1793755779
+      sample=0.005,at=1793755791
+      sample=0.004,at=1793755795
+      sample=0.005,at=1793755799
+  step,dige:5147eac85e16c66a
+  step=2,desc:stand pile A over a fixture tree — walk it,dige:c1d7eaba8d5a3452
+    Assertion:every-entry-of-the,sentence:every entry of the pile is one flat row with its own id — a file names its directory by path
+  step=3,desc:the world renames a file — walk again,dige:3ac5d8fbaaec878a
+    Assertion:a-file-renamed-by,sentence:a file renamed by the world keeps its id — the walk says rename — not a vanish and an arrival
+  step=4,desc:the world moves a file into another directory — walk again,dige:ef42cb7f1e45a6e2
+    Assertion:a-file-moved-by,sentence:a file moved by the world into another directory keeps its id — the walk says move
+  step=5,desc:the world renames a directory — its insides the same — walk again,dige:2c8b7ba08d1db3db
+    Assertion:a-directory-renamed-by,sentence:a directory renamed by the world with the same insides keeps its id — so do its insides — one rename noticed and nothing else
+    Assertion:each-walk-is-one,sentence:each walk is one moment on the Trail in order — what it noticed is said there by id — nothing went missing

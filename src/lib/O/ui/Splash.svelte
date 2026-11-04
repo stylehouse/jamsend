@@ -12,7 +12,7 @@
     //       room behind it — OPEN SHARE, being out-layered above, still receives its tap;
     //    · a generous safety cap so a wedged boot still reveals the Butler (which carries its own ▦ exit);
     //    · fades on the Radio beginning (glass up + Butler lifted), or 3s after a boot GAVE-UP (a grace for a
-    //       fail-then-succeed-into-Radio boot), or the 7s safety cap — whichever first;
+    //       fail-then-succeed-into-Radio boot), or 20s with no advance (STALL_MS) — whichever first;
     //    · skipped for runner/editor boots (?B= / ?E=).
     //  JUST THE TREE (owner 2026-08-31: "it shows the lowres version every subsequent time, lets not wait for
     //   the hires splash image to load.  this is simple and standard web frontending").  The blurred-mini +
@@ -47,6 +47,7 @@
     //   Radio win inside it.  Plain lets (a handle + a one-shot latch), not $state — they gate a timeout, not a render.
     let urge_timer: ReturnType<typeof setTimeout> | null = null
     let urge_armed = false
+    let last_phase: string | null = null
 
     onMount(() => {
         try {
@@ -54,16 +55,24 @@
             if (s.has("B") || s.has("E")) { show = false; return }   // runner/editor boot — HIDE the SSR'd splash
         } catch {}
         const min = setTimeout(() => { held = true }, 700)
-        // LAST-DITCH cap only — 45s, was 7s (owner 2026-08-31: a slow-but-progressing boot "takes ages" and the
-        //  7s cap FADED THE TREE mid-boot, revealing the bare Supervisor glass with an OPEN SHARE icon in it —
-        //   "interrupts the splash").  The 7s was set when there was no other escape from a wedged tree; now ▦
-        //    sits ABOVE this splash (z 2.2M) and lifts it on demand (BigSoundland boot_ready `sprawl`), so the
-        //     cap is a genuine wedge backstop, not a trip-wire — a slow remote-wormhole boot (~25s) stays calm
-        //      under the tree, OPEN SHARE floating over it, and only a truly hung boot (>45s, no arrival, no
-        //       ▦) ever falls through to the Butler's progress/gaveup.  (Radio-beginning `ready` and the 3s
-        //        gaveup grace still fade FIRST on a healthy boot — this only ever fires on a real wedge.)
-        const max = setTimeout(() => fade(), 45000)
-        return () => { clearTimeout(min); clearTimeout(max); if (urge_timer) clearTimeout(urge_timer) }
+        return () => { clearTimeout(min); if (stall) clearTimeout(stall); if (urge_timer) clearTimeout(urge_timer) }
+    })
+    // STALL, NOT ELAPSED (owner 2026-11-04: "the 45s cap is a guess … should be 20s since last progress").  The
+    //  old cap (45s, then 7s before it) was a wall clock from mount, so a slow-but-moving boot and a dead one got the same 45s.  Now the
+    //   clock re-arms on every ADVANCE — a new phase label (the library count rides in it) or a bigger frac — and
+    //    only 20s with nothing advancing fades the tree to the Butler.  A bridge: AtheoryArrive_todo moves this to
+    //     the Ground's Face reading the Supervisor's fold (met/expected milestones), where "advance" is a row.
+    const STALL_MS = 20000
+    let stall: ReturnType<typeof setTimeout> | null = null
+    let seen_frac = -1
+    $effect(() => {
+        const p = phase, f = frac
+        if (typeof window === 'undefined') return
+        if (stall && !(f > seen_frac) && p === last_phase) return
+        last_phase = p
+        if (f > seen_frac) seen_frac = f
+        if (stall) clearTimeout(stall)
+        stall = setTimeout(() => fade(), STALL_MS)
     })
 
     function fade() {
@@ -85,7 +94,7 @@
     //  `urge` (boot GAVE UP) no longer fades AT ONCE (owner 2026-08-29: *"wait 3s after the first FAILED turns up to
     //   actually reveal the Supervisor glass, as we sometimes fail then immediately succeed into Radio"*): the FIRST
     //    failed arms a 3s grace; if the Radio starts inside it the `ready` line fades us instantly, otherwise we fade
-    //     at 3s to reveal the Butler's failure.  (The 7s safety cap still backstops a wholly wedged boot.)
+    //     at 3s to reveal the Butler's failure.  (STALL_MS backstops a wedged boot.)
     $effect(() => {
         if (ready && held) { fade(); return }
         if (urge && !urge_armed) { urge_armed = true; urge_timer = setTimeout(() => fade(), 3000) }

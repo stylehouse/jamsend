@@ -1,20 +1,20 @@
 Credulate,of_Book:AtheStoryInStory
-  TheACode:Ground/Core,dige:45bcad169c771a95
-  TheACode:Ground/Story,dige:4e68d17d2644adca
+  TheACode:Ground/Core,dige:ea8a70353d310c85
+  TheACode:Ground/Story,dige:dc6e93d56e81459c
   TheACode:Ground/CoreTesting,dige:62b2b2680a1b5d74
   GhostInclude:Ghost_A_Theory,dige:804ebab235555f08~g1
   GhostInclude:Ghost_A_Stuffica,dige:1f0ec09474696daa~g1
-  GhostInclude:Ghost_A_Ground,dige:315f819fcbdd91d3~g1
-  GhostInclude:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
+  GhostInclude:Ghost_A_Ground,dige:7861a13d0b95a377~g1
+  GhostInclude:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1
   GhostInclude:Ghost_A_AtheTesting,dige:a6411eebb38ab117~g1
   GhostInclude:Ghost_A_AtheFishTesting,dige:3d13bf77d88a5d90~g1
-  last_ok,at=1793698856.648,ok_pct
-    TheACode:Ground/Core,dige:45bcad169c771a95
-    TheACode:Ground/Story,dige:4e68d17d2644adca
+  last_ok,at=1793770161.471,ok_pct
+    TheACode:Ground/Core,dige:ea8a70353d310c85
+    TheACode:Ground/Story,dige:dc6e93d56e81459c
     TheACode:Ground/CoreTesting,dige:62b2b2680a1b5d74
     uses:Ghost_A_Theory,dige:804ebab235555f08~g1
     uses:Ghost_A_Stuffica,dige:1f0ec09474696daa~g1
-    uses:Ghost_A_Ground,dige:315f819fcbdd91d3~g1
-    uses:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
+    uses:Ghost_A_Ground,dige:7861a13d0b95a377~g1
+    uses:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1
     uses:Ghost_A_AtheTesting,dige:a6411eebb38ab117~g1
     uses:Ghost_A_AtheFishTesting,dige:3d13bf77d88a5d90~g1

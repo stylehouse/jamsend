@@ -154,6 +154,29 @@
      scratchpad `xref.mjs` lists every cross-Ground `this.X`), while Glass/Core/Land Testing need only Story.  So the 80 Books of those
       four stand on all four (`Stands:WireTesting` `MusicTesting` `CaveTesting` `SwarmTesting`) — the first "huge pile" test Ground,
        spelt out per Book until a hand-kept Ground is readable by Story's loader (then one `Stands:Musu`-ish line).
+   **AtheoryArrive — TALKED + slice 1 BUILT 2026-11-04: now its own doc, `AtheoryArrive_todo.md` §0 (read that, not this brief).**  The outcome is a new
+    `AtheoryArrive_todo.md`: startup top-down in Atheory terms — arrival as an Identity standing on a Ground, told as rows (%Who,
+     %Page, the Spine, the Mains up), the splash as the Ground's Face reading them, the Supervisor saying arriving|stuck|finished off
+      them.  It absorbs `Arrival_todo.md`'s arrival authority (2026-08-31, old-generation parts) and the Supervisor laws; Arrival_todo
+       goes to history/ once absorbed.  The old Story retires only after `/` is ported onto this (AtheoryStory_todo "The arc").
+    A TALK, not a build: the
+    owner wants the paranoias aired about tracking a program's overall state "from the outside or the top", for guiding what the
+     splash page says while a person waits.  Read first: `Supervisor_todo.md` §0 (the two false sentences), §2 (slow vs stuck), §4
+      (two tiers — in-tab outside the belief loop; the daemon "above", NOT BUILT), §8 (who decides depends on who watches);
+       `Ghost/O/Supervisor.g` header (the laws); BigSoundland's boot badges (`spine_pending` &c., the splash it already has).
+    The laws it already keeps, to carry over or break on purpose: it never names what it watches (watches ARRIVE from their owners —
+     the roster is the coverage); it lives on the top House so it can say "the run died"; it works with no glass; a probe may not
+      mutate; milestone (latches) vs standing (never latches); elapsed time can't tell slow from stuck — only monotonic progress can;
+       a give-up must never contradict the evidence beside it; "posted" is not "entered" (one surface short keeps a fixed diagnosis
+        unfixed for the person looking).
+    Atheory angles to bring: decide from rows, not signals (a watch is a row that progress ARRIVALS touch, not a timer that polls);
+     As report up (Story's `report_up`, `%StoryAt`) — is the roster just what As standing in As already say?; nearness (a watch is
+      read by the nearest Supervisor out, so a Desk could have its own); is it a Seem over the runs; where it stands on a Ground page
+       (A:Supervisor as a Main? the Ground's `Face:` is the splash?); the "top" is itself an A that can die — who watches it (tier 2).
+    Not forgotten while doing it: StoryFu is the Story that stays (Ground/Story, aside in each Desk); Story.svelte and Auto.svelte
+     go, and most of `/O/` is ported or rebuilt in time — so nothing new should land in them except as a bridge, said so (last night's
+      `Story_error` home walk in Story.svelte is one such bridge: until a Book's `this` reaches StoryFu through its A).
+   **Diffmatication + Interesting marked `unusual:rethink`** in Credence (owner: random projects that proved we need more Atheory first).
    **Low need, left here (owner 2026-11-03):** the recipes — each makes its own `A:<Book>/w:<Book>` (one name said twice) and
     defines the `<Book>(A, w)` method the w runs — could be reimagined: how a Book's actor comes to stand, and where its think lives.
    **Next (3b):** stand the Creduler Lies, keep-awake, Supervisor and the storyFinished → `Cred_spool`/verdict from A:Runner instead of
@@ -348,6 +371,26 @@ A→B→C is the "decide from rows" migration (disk replies, Story steps, clicks
 | **Toy, proven by hand** | the scheduler: `TheA_run`, move, batch, boundary, Turn, synapse, tape, hold (`%TheAWait`), tendrils | runs on ponds, Books and `/Pondland` — and, since 2026-11-02, inside `beliefs()` for any A marked `%TheAAttend:run` (no real duty marked yet: §0 item 3) |
 | **Sketch** | the door, IO as compartments, `%J`, `@name`, spheres beyond Trace/Regard, turfs, the Believer, migrations riding code | words |
 | **Tax** (paid while the old generation lives) | two Storys (every Story fix twice); everything.js; `%InnerRun`; a `Self_round` Entcase in every nested Book | ends when everything moves into the new tube-ways (§3.1) |
+
+## 1b. The old machine, Atheorised — part by part
+
+*Started 2026-11-04 (owner: "where we shall track which parts of the old machine are becoming Atheorised").*  One row per part of
+ the old machine, what it becomes on the new fabric, and how far along it is.  Add a row when a part starts moving; move its status
+  as it does; delete nothing (a part that's fully gone says so).  The land map (§0.0) is the picture; this is the list.
+
+| old part | becomes | status | where |
+|---|---|---|---|
+| `/Otro?I=`, `?B=`, the nine knobs of a tab's kind | `/Desk?I=<who>&G=<Ground>`; a Ground's toc says how to run | slices 1–2 built and live | §0.0 E |
+| Auto's who-am-I region | `A:Identity`'s think (`identity_settle`) saying `%Who` | built (slice 2) | §0.0 E |
+| the GhostList spine + everything.js bundles | hand-kept `wormhole/Ground/<Name>/toc.snap` read by `ground.ts` | in progress: Story's loader still reads only baked Grounds; a Book's `Stands:` takes a lone `.g` (2026-11-04) | §0.0 E, `Pile_todo.md` §0.0 |
+| Story.svelte | StoryFu on `A:Story` in a Desk | working proto; the twin tax until Story.svelte retires | §1, `AtheoryStory_todo.md` |
+| Stuffing | Stuffica views | Show built; In and Out not | §3.12 |
+| Hovercraft reqs, ttlilt, `feebly_ponder` | rows waiting: `TheA_run`, synapses, `%TheAWait` | toy, proven by hand | §0.0, §1 |
+| Wormhole disk replies (a signal) | an arrival row | not started | §0.0 |
+| **LiesStore** (w:Lies' IO: known digest, skip an unchanged write, reads on a `%Good` that wakes its subscribers) and **Heist's Berth** (a named toc.snap per Waft, parts appended) | **the storage reflex — an Atheory-era `%Good` portal**: `Ghost/A/Store.g`, `%TheAStore:<path>` on a stored Mag, one `%TheAStoring` Job per changed Mag after a run, a read handed back as an arrival.  Calls neither ancestor | designed 2026-11-04; built with Pile.  LiesStore and the Berth stay as they are until something moves onto it | `Atheory_design.md` §1.15, `Pile_todo.md` §3 |
+| the House stash (one Dexie blob per House name, whole-blob last writer wins) | maybe the storage reflex, one file per stored thing | open | `Pile_todo.md` §3 "Beside the radio tab" |
+| the `%Crate` tree / the Stoker's disk read | the disk becomes a Mag as it's read: Pile's fs Mag, kept by a Seem, ids that survive renames and moves | rung 1 built flat; the reshape to partitioned Mags owed | `Pile_todo.md` §0.0 |
+| Funkcion (Waft's little UIs) | not carried over; a control is a row on a Mag | ruled for `Ground/Pile` 2026-11-04 | `Pile_todo.md` §3 |
 
 ## 2. Words, pinned
 

@@ -1,11 +1,10 @@
 Credulation,of_Book:AthePondSeem
-  run=0,at=1793698738.584,ok,ok_pct,mode:check
+  run=0,at=1793755808.973,ok,ok_pct,mode:check
     TheACode:Ground/Core,dige:45bcad169c771a95
-    TheACode:Ground/Story,dige:4e68d17d2644adca
     TheACode:Ground/CoreTesting,dige:62b2b2680a1b5d74
+    uses:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
     uses:Ghost_A_Theory,dige:804ebab235555f08~g1
     uses:Ghost_A_Stuffica,dige:1f0ec09474696daa~g1
     uses:Ghost_A_Ground,dige:315f819fcbdd91d3~g1
-    uses:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
     uses:Ghost_A_AtheTesting,dige:a6411eebb38ab117~g1
     uses:Ghost_A_AtheFishTesting,dige:3d13bf77d88a5d90~g1

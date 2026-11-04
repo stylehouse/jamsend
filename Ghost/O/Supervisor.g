@@ -168,6 +168,9 @@ Supervisor_tick(H):
     //     it is derived from `performance.now()`, so calling it late costs nothing and lies about
     //      nothing — that is the whole reason the zero is computed backwards from page start.
     this.Supervisor_zero(w)
+    // THE GROUND'S EXPECTATIONS (AtheoryArrive_todo §1): the page's Ground registers its Arrive rows as watches — the Ground is
+    //  their owner, this only gives it a tick that outlives the run.  Same shape as Screen_decide below: the method, if it is here
+    if (this.Ground_arrive) { try { this.Ground_arrive(w) } catch (er) {} }
     this.Supervisor_read(w)
     this.Supervisor_read_dials(w)
     this.Supervisor_say(w)
@@ -743,7 +746,8 @@ Supervisor_read(w):
         let got = null
         // the probe runs in the watched process's own code, on a tick it does not own — a throw
         //  there must land HERE as a reading, not as a broken House pass.
-        try { got = probe.call(this, watch.c.subject, w) } catch (er) { got = { verdict: 'unknown', note: this.Supervisor_clean(er) } }
+        //  The watch itself rides third, for a probe that reads its own row (Ground.g Ground_arrive_probe: one probe, many rows).
+        try { got = probe.call(this, watch.c.subject, w, watch) } catch (er) { got = { verdict: 'unknown', note: this.Supervisor_clean(er) } }
         this.Supervisor_stamp(watch, this.Supervisor_verdict(got), this.Supervisor_note(got))
         this.Supervisor_patience(watch)
     }

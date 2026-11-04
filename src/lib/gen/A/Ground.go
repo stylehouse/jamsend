@@ -5,13 +5,17 @@
 
 import { GROUNDS } from "$lib/A/grounds.gen.js"
 import { ground_closure, ground_loads, ground_read, GROUND_CORE } from "$lib/A/ground"
+// the stall clock (owner 2026-11-04: "20s since last progress", AtheoryArrive_todo §1): an Arrive watch's patience re-arms on
+//  every ADVANCE — its A appearing or changing, or the row it reads moving — and runs out only after this long with nothing
+//   moving.  Elapsed time from the start can't tell slow from stuck; this can (Supervisor_todo §2)
+const GROUND_STALL_S = 20
 
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_Ground(): string { return '315f819fcbdd91d3~g1' },
+    Ghostmeta_Ghost_A_Ground(): string { return '7861a13d0b95a377~g1' },
 
 // Ground.g — what a tab stands on, said as particles on the A that stands on it (spec/Aprac_todo.md §0.5).
 //
@@ -321,6 +325,8 @@ Runner_spine(A, w) {
     if (!grounds.length) return
     if (this.Ground_stand(A, grounds)) {
         w.c.spine_firm = 1
+        // the Ground's Arrive:spine, met (AtheoryArrive_todo §1)
+        w.oai({ Arrived: 'spine' })
     }
 
 },
@@ -338,6 +344,87 @@ Runner_stand(H, book) {
     D.oai({ A: 'Desk' }).oai({ w: 'Desk' }).oai({ DeskRunner: 1 })
     this.Desk_story(H, book)
     D.main(true)
+
+},
+// THE ARRIVAL (spec/AtheoryArrive_todo.md §1): the page's Ground says what it should have once it is up, as Arrive rows, and this
+//  hands them to the Supervisor as watches — the Ground is their owner, so the Supervisor still names nothing.  Called from the
+//   Supervisor's own tick (beside Screen_decide), so it registers whenever both are up, in either order; idempotent per Ground read.
+//    Each row is met by a row its A carries — `%Arrived:<key>` by default (a skipped one says `%Arrived:<key>,moot:<why>`), or the
+//     row `by:` names, met at `until:` (a Desk's Story: %StoryAt, until finished; `moves:run` — its run row climbing is progress).  A row `in:` a sub-House is per job: standing,
+//      not latched, read afresh each Desk.  Lift: is the arrival the door waits on (Supervisor_arrival)
+//
+//      Ground:Runner
+//        Arrive:spine,of:Runner,says:the runner's code is loaded      ← A:Runner/w:Runner %Arrived:spine
+//        Arrive:book,of:Story,in:Desk,by:StoryAt,until:finished,…     ← H:Desk … A:Story/w:Story %StoryAt:step,n:3
+Ground_arrive(sw) {
+    let M = this.top_House()
+    let G = M.o({ Page: 1 })[0]?.sc.G
+    let g = G ? ground_read(G) : null
+    if (!g?.arrive?.length || sw.c.arrive_of === g) return
+    sw.c.arrive_of = g
+    for (const r of g.arrive) {
+        let stage = r.stage ? this.Supervisor_stage(r.stage) : null
+        let watch = this.Supervisor_watch(sw, 'arrive.' + r.Arrive, r.says || r.Arrive, r.in ? 'standing' : 'milestone', 'Ground_arrive_probe', null, stage)
+        if (!watch) continue
+        for (const k of ['of', 'in', 'by', 'until', 'moves']) {
+            if (r[k] && watch.sc[k] !== r[k]) watch.sc[k] = r[k]
+        }
+        watch.sc.wait = '' + GROUND_STALL_S
+        watch.bump()
+    }
+    if (g.lift) this.Supervisor_arrival(sw, 'arrive.' + g.lift)
+
+},
+// Ground_arrive_probe — one Arrive watch read: find the A (in the sub-House it names, else the top), find the row that meets it.
+//  A pure read.  Not there yet is `wrong` under patience (Supervisor_speaking stays quiet while it hopes); a per-job row with no
+//   job standing is `moot` — nobody asked
+Ground_arrive_probe(subject, sw, watch) { const H = this;
+    if (!watch) return 'unknown'
+    let key = String(watch.sc.Watch).replace(/^arrive\./, '')
+    let M = this.top_House()
+    let where = watch.sc.in ? M.o({ H: watch.sc.in })[0] : M
+    if (!where) return { verdict: 'moot', note: 'no ' + watch.sc.in + ' stands' }
+    let of = watch.sc.of || key
+    let A = this.Ground_arrive_A(where, of)
+    if (!A) return this.Ground_arrive_clock(watch, null, '', { verdict: 'wrong', note: 'A:' + of + ' has not stood' })
+    let by = watch.sc.by || 'Arrived'
+    let row = this.Ground_arrive_row(A, by, by === 'Arrived' ? key : 1)
+    if (row?.sc.moot) return { verdict: 'moot', note: String(row.sc.moot) }
+    if (row && (!watch.sc.until || row.sc[by] === watch.sc.until)) return 'ok'
+    // the reading, and what counts as moving: the row itself, and the `moves:` row beside it (a Story's run row — done climbs per
+    //  step, where %StoryAt moves only when leashed)
+    let moving = watch.sc.moves ? this.Ground_arrive_row(A, watch.sc.moves, 1) : null
+    let said = [row, moving].filter(r => r).map(r => Object.entries(r.sc).map(([k, v]) => k + ' ' + v).join(' ')).join(' · ')
+    return this.Ground_arrive_clock(watch, A, said, { verdict: 'wrong', note: said || 'A:' + of + ' stood — nothing said yet' })
+
+},
+// …the advance: a new A or a new reading re-arms the deadline; Supervisor_patience grades it (and clears it once ok or moot)
+Ground_arrive_clock(watch, A, said, got) {
+    if (watch.c.arrive_A !== A || watch.c.arrive_said !== said || !watch.c.deadline) {
+        watch.c.arrive_A = A
+        watch.c.arrive_said = said
+        watch.c.deadline = Date.now() + GROUND_STALL_S * 1000
+    }
+    return got
+
+},
+// …the A named, breadth-first through the As standing in As (A:Desk/A:Story), bounded
+Ground_arrive_A(H, name) {
+    let q = [...H.o({ A: 1 })]
+    for (let i = 0; i < q.length && i < 64; i++) {
+        if (q[i].sc.A === name) return q[i]
+        q.push(...q[i].o({ A: 1 }))
+    }
+    return null
+
+},
+// …the row that meets it, on the A or one of its ws
+Ground_arrive_row(A, by, val) {
+    for (const n of [A, ...A.o({ w: 1 })]) {
+        let row = n.o({ [by]: val })[0]
+        if (row) return row
+    }
+    return null
 
 },
 

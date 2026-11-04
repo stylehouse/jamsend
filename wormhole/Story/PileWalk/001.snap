@@ -1,0 +1,7 @@
+Snap:H
+  H:PileWalk,Run
+    A:PileWalk
+      self,round	{"mung":["age"]}
+      w:PileWalk
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

@@ -8,12 +8,39 @@
 
 ## 0. What to get on with next
 
+### 0.0 Where rung 1 stands (2026-11-04)
+
+**Built, Book-proven: the listing and its identity.**  `Ghost/P/Pile.g` reads a pile into `Mag:Pile,side:A`, flat (one row per
+ entry, `in:<parent path>`), and a Seem pairs each walk with the last.  The id is minted once and rides the pairing as
+  `TheARegard:pile,id` on the point (stamped onto the row too).  A walk tells **rename** (same parent id, new name) from **move**
+   (another parent id), and ignores a path that changed only because a directory above it was renamed.  The Mag keeps a
+    `%Moved:<n>,of:<id>,how,from,to` per change; `%Mag:Trail` gets a `%Moment` per walk with `%Noticed:<how>,of:<id>` under it.
+     Pairing keys: a file's `ms` (size.modified) survives a rename, its name survives a move; a directory's `kids` (a digest of
+      what it holds) survives its rename.  **Book `PileWalk`** (`Ghost/P/PileTesting.g`, a fixture tree in memory that "the world"
+       changes between walks): 5 steps, 5 oaths, all sworn — 11 flat rows with ids; a renamed file, a moved file and a renamed
+        directory each keep their ids; one Trail moment per walk.
+- **Floor change:** a Book's `Stands:` now takes a lone `.g` path beside Ground names (`src/lib/A/ground.ts` `ground_include`),
+   so `PileWalk` stands on `Core` + `Ghost/P/Pile.g` + `Ghost/P/PileTesting.g`.  `Cred_book_code` (Auto) still digests Grounds
+    only, so a lone file isn't in a Book's Credence code digest yet.
+- `Pile_fsa_lister(handle)` is written (a real directory's entries with size + lastModified) but nothing calls it yet.
+
+**Still owed for rung 1, in order:**
+0. **Reshape to the three Mags** (§3, owner 2026-11-04): `%Mag:Pile` referencing a fs Mag per side and the Trail; the fs Mag
+    partitioned by name range as Mags in Mags (`Mag:<fsa>/Mag:A-G/…`), the Seem pairing the logical tree across partitions.  PileWalk's five oaths carry over unchanged; their snaps
+     re-record.  Storing each Mag is the storage reflex (§3), a prototype `Ghost/A/Store.g` — no Berth.
+1. **The squares view + the page**: `wormhole/Ground/Pile/toc.snap` (hand-kept, `Main:Pile`), `/Desk?I=…&G=Pile`, a directory
+    picker into `Pile_fsa_lister`, re-grant on reload, and plain squares in a scrolly pane (a Stuffica view over the Mag's rows).
+2. **The walk as Jobs**: today a walk is one awaited breadth-first loop.  Make each directory read a `%Job` arrival, dropped
+    once served, so a giant folder fills as it lands (§5.1 "Big directories stream").
+3. **The partial-hash confirm Job** (§5.1): today a pairing is trusted on `ms`/name/`kids` alone.
+4. **Sabotages still unrun**: two files with the same size+modified; an emptied directory renamed (no `kids` — say so).
+
 1. Read §2 (Atheory in one sitting) and `CLAUDE.md`; then `AtheoryNexus_todo.md` §0.0 (the land map) and its *E thought through*.
 2. **Rung 1 — the listing as a Mag, drawn as squares** (§4): a `Ground/Pile` composition and a Book that streams a folder's
     listing (a fixture tree, then a real FSA handle) into a `Mag**` held under a Seem, and a new Stuffica-era view that draws it
      as plain squares in scrolly panes.  No Stuffing fold, no Waft, no typewriter yet — the basic square shape first (owner).
 3. Every rung is a Book first (`Stands:<Ground>` in its toc, a Credence row), sworn with `story_swear`, run on the live runner.
-4. Ask the owner the §5 questions as they become load-bearing — not up front.
+4. Work out §5.1 yourself, proving each answer in a Book; ask the owner the §5.2 questions as they become load-bearing, not up front.
 
 ---
 
@@ -40,6 +67,17 @@
     advanced... we'll just make another Stuffica era UI for now, to avoid touching Waft directly, but you get the idea of just racks
      of atoms... different scrolly panes that can vector-graphique between each other to show the webbing of sameness or movement or
       so... drawing the albums and bunches... kind of forget Stuffing initially, lets get the basic square-shape working first"
+
+*2026-11-04, fourth:* "there's quite a bit of Seem to be noticing when inners remain the same and a rename happens, which we might have
+ been the cause of anyway. yeah, managing and exploring the filesystem, should be kept in a log of the current session's activities,
+  similar to Aside or Trail in the LiesLang system … so we can compute off that for what has|hasn't been seen|listened to. we'll be
+   playing whole original tracks instead of making previews, probably... although the ability to jump around lots of unfamiliar music
+    rapidly spliced together randomly would be a nice slow process we could enable in the background... I guess the process has some
+     options like that, which switch on some UI tool which interacts with the Mag** substrate that way... so yeah our Mag:Trail (similar
+      to Waft) would remember what we moved|renamed|listened-to, and Mag** would remember the moves|renames, and could one day be
+       consulted as the source of chasable pointers if eg radiostock is still pointing the wrong place, although radiostock might be
+        able to be updated if it too is indexed on Mag** so... bright future! keep things separate for now though, this all goes in the
+         modern end of things as a free-standing but ?I using thing."
 
 ---
 
@@ -90,15 +128,71 @@
 
 ## 3. The shape
 
-**The listing is a Mag\*\*, kept by a Seem.**  An FSA directory listing streams into a `Mag**` that *represents* the
- filesystem — a Mag per directory (nesting is `Mag**`, walked recursively the way `Ra_recs_deep` already does), a row per
-  file.  The Mag is held on an A and controlled by a **Seem** (`Atheory_design.md` §0: a controller over a compartment that
-   walks the rows of the kinds it holds and keeps a **point** per row, paired walk to walk by what holds still).  That pairing is
-    what lets a thing **notice being moved**: re-walk after a move, and the point that lost its old place pairs with the row in
-     its new one — a move, not a delete-plus-create.  And a Seem is the one controller that can **roll back** (`%TheAMark`,
-      `TheA_seem_rollback`), which is what makes this a **careful, reversible file manager**: CRUD and moves are proposed on
-       the Mag, carried to disk as Jobs, and every one has a mark to return to.  Things can also just *hang out* in the Mag —
-        notes, relations, pointers — superimposed on the listing without touching a file.
+**The Mag\*\* of a Pile — three kinds, each stored on its own (owner, 2026-11-04).**  It all looks like `Mag**`, but there are three kinds:
+- **`%Mag:Pile` — the enclosing one, all we're up to.**  Small, and the most stable thing there is.  It holds *references* to the
+   others (one row per side naming its Mag, one naming the Trail), never their contents.  It is where the **add-another-FSA** control
+    lives: a row asking for a handle, answered by a picker on the page.
+- **One fs Mag per side — derived from the filesystem.**  The directory projected into being: `%Mag:<name>` for pile A, another for
+   B.  Rebuilt from disk by walking; the Seem keeps its ids.
+- **`%Mag:Trail` — the looser what-we-did one.**  Moments, by id.
+
+**Each stored separately — by an Atheory-era storage reflex, not the Berth (owner, 2026-11-04).**  Radio ruled the naming
+ (`Mag_todo.md` §1: `%Mag:<unique-name>` the way `%Waft:<path>` is, pages inside it, a durable Mag its own toc.snap).  It stored
+  them through Heist.g's Berth, which is not elegant and is a radio ghost Pile mustn't call.  Pile gets a **separate prototype**
+   instead, `Ghost/A/Store.g`, that the Berth might later learn from.
+
+*Why storing C\*\* isn't trivial, and what dissolves each part:*
+- **When to write**, without polling or timers.  Stuffica already answers this for views: after a run, digest what each one
+   shows and commit only the ones that changed (Stuffica.g).  A stored Mag is the same: after the run, any stored Mag whose text
+    digest differs from its last write gets **one write Job** (an arrival, decided from rows).
+- **Big files grow slow**, which is why the Berth appends numbered parts and compacts them, and folds parts back by identity keys
+   on open.  Partitioning makes all of that unnecessary: each partition Mag is its own **small** file, so a write is a whole-file
+    rewrite (atomic on FSA close), and open is one read.  A nested stored Mag is written as **its reference line only** (folded,
+     as `TheA_persist` folds `dontSnap`), so `%Mag:Pile` writes a handful of lines and each partition writes its own rows.
+- **What must persist** is less than it looks.  An fs Mag's rows can be re-derived from disk at any time; what can't be is the
+   **Seem's points with their id regards, and the `%Moved` history**.  That's the owner's "persisting parts of a Seem is a topic to
+    come" (`Atheory_todo.md` §0.5) arriving: the stored file keeps the Trace tree; rows may be stored too as a cache, so a page
+     can draw before the first walk.
+- **Reading is an arrival** too: standing a stored Mag asks for its file; the reply thaws it (`TheA_thaw`) and its Seem
+   carries on from the points it had.
+- **One writer.**  One tab writes a stored Mag; the page claims it (`navigator.locks`, later).
+- **Where**: the identity's app tree (a nav: `read_file`/`write_file`), `<app tree>/Pile/<mag name>/toc.snap`, never inside a
+   music folder.  A Book gives it an in-memory nav.
+
+*Its two ancestors, and why it calls neither (checked 2026-11-04).*  **LiesStore** (`src/lib/O/LiesStore.svelte`) is w:Lies'
+ disk IO: one eternal `req:Store` pump, a req per write keyed by path + content digest (skipped when the `%Good`'s `/known` digest
+  already matches the disk), reads landed on a `%Good` slot that wakes its `%subscribe`rs, and `writeCarefully`'s pull-before-push.
+   The reflex keeps those ideas (known digest, skip an unchanged write, a read handed to whoever waits) but says them as Atheory rows
+    and Jobs rather than req/maz/ttlilt, and doesn't call LiesStore: it lives on w:Lies, so using it would pull Lies into Ground/Pile.
+     **The Berth** (Heist.g) is already deliberately LiesStore-free ("bound to the encoders only + the nav contract"); it holds Heist's
+      own berths (`KeepMemo`, `Heists`, `HeistDefaults`).  **Neither is on the Mag replication path**: Repli carries a Mag over the
+       wire (`Ra_offer_stock`) and touches no storage.  So the reflex gates nothing in Radio or production; the Berth can move onto
+        it later, on its own schedule.  The design note is `Atheory_design.md` §1.15; its row in the old-machine ledger is
+         `AtheoryNexus_todo.md` §1b.
+
+*The prototype's rows*: `%TheAStore:<path>` on a Mag says it's stored and where; `.c` holds the last-written digest; a
+ `%TheAStoring` Job per pending write, dropped once landed (or kept with `why` when it failed — never silent).
+
+**Partitioned by name, as Mags in Mags (owner, 2026-11-04).**  `Mag**` is a freely partitionable `Mag/Mag/Mag/…/rows`, so
+ nothing piles up in one place.  A wide layer splits by **name range**: `%Mag:<the FSA you loaded>/%Mag:A-G` is the first
+  partition of a collection, made just by dividing the first character of the first layer's names (artist folders, usually); a
+   partition still too big splits again (`A-G` → `A-B`, `C-D`, …, or by the next layer down), and so on.  Each partition is its
+    own Mag and can be stored on its own (a berth per partition), so a page loads only the partitions it is looking at.
+- **Partitioning is storage, not identity.**  Which partition a row sits in is decided by its name and how full things are; it
+   says nothing about what the row *is*.  The id (minted once, carried by the Seem) and the row's place in the tree (`in:` its
+    directory) are the identity.  So a rename that crosses a range boundary (`Abba` → `Zappa`) moves the row between partitions and
+     is still one rename; a split or merge of partitions changes no id and notices nothing on the Trail.
+- **The Seem pairs the logical tree, not the partitions.**  It walks every row of the fs Mag whatever partition holds it (a deep
+   Seem, `%TheADeep`, over `Mag**`; rows with kinds File/Dir are the points, partition Mags are passed through), so a move or
+    rename pairs exactly as in today's flat rung-1 shape.  If a whole collection's points are too many to hold at once, the walk
+     goes partition by partition with `%TheALimbo` catching what crossed between them (Book `AthePondMoves`); limbo's key is kind +
+      name today, so a moved-and-renamed file needs it to try `ms` too.
+- **When to split** is a number (rows per partition, a few hundred) and a rule (first character, then the next, then the next
+   layer); the rule lives in one method so it can change without touching identity.
+- **No Waft, no Funkcion in this Ground.**  Funkcion (how Waft woke little UIs) is ~3k lines that are hard to say the point of.
+   `Ground/Pile` stands on Core (Theory, Stuffica) and later Glass, never Lies/Waft/Funkcion.  Pile's UI is Svelte over Stuffica
+    views; a control is a row on a Mag (the add-another-FSA ask), not a Funkcion.  Writing a Mag to disk needs only the encoder
+     (`Text.svelte` `enWaft`), which is foundation, not the Waft editor.
 
 **Two hemispheres, A and B.**  B is another FSA handle (a second directory picker in the same browser) to some pile of music
  somewhere; it streams into its own Mag the same way.  A is the collection (the main pile, its own folder structure — the user's *extant* categories, read
@@ -117,8 +211,10 @@
     file is that A file) and *movement* (this went from there to here).  **Stuffing's fold comes later** (a folder of 400 alike
      files reading as one row until attended), and so does the floaty landscape on the glass (Voro/Vyto) — square shape first.
 
-**Listening is the instrument.**  You walk the pile by ear: a track plays (the radio and the pool exist), and while it plays you dial
- in where it goes.  The Heist setup shows *what is already where it's going* — the destination's reality, not a form.
+**Listening is the instrument.**  You walk the pile by ear: a **whole original track** plays straight off the FSA handle (no
+ radiostock, no preview encode — Pile is not the radio), and while it plays you dial in where it goes.  **Later, an option:** a slow
+  background process that splices many unfamiliar tracks together at random so you can jump around a big strange pile fast.  A process
+   option like that switches on its own UI tool over the same `Mag**` substrate; it is not a mode of the core view.  The Heist setup shows *what is already where it's going* — the destination's reality, not a form.
 
 **The typewriter.**  Language as an artform, in a space made for music.  A text input that knows what is playing and what is attended,
  so what you type becomes a `Mag**` — a magazine page, a review, a list, a path through the pile — written **here or there**: directly
@@ -127,6 +223,40 @@
 
 **Cave systems across Mags.**  A Mag can point into other Mags, yours or a friend's, so passages run between them — the code cave's
  shape (VytoSpine: head, rope, passage, torch) turned on music.  Presented as a magazine: you scroll it, it reads.
+
+**Two memories, kept apart.**
+- **`Mag**` remembers the filesystem**, including its own history: the moves and renames its Seem noticed.  A directory renamed with
+   its insides unchanged is a rename, not a vanish plus an arrival, so the Seem pairs directories by their contents as well as by name.
+- **`Mag:Trail` remembers the session**: what *we* explored, moved, renamed and listened to, one moment per act.  It is the Pile's
+   Aside/Trail (`Interest.md`), so "seen / not seen / heard / not heard" is computed off it, never stamped onto the pile's rows.  Build it
+    in the flat shape the Aside was ruled into but never reached (`Lagoon_todo.md` leg 3 ruling, `Clerkdesk_todo.md` §0): a moment
+     carries **`about`** (what you went in there for) and **where you came from**, and its points are **referring** particles naming
+      a `Mag**` row by id, never a copy of it.  The `about` is what the Aside lineage proved worth keeping: the research perspective,
+       why you went somewhere, not just where.
+- **The join is cause.**  When the Seem notices a move or rename, the Trail says whether **we** did it (a Job we carried out, predicted
+   before the walk) or the world did (no Trail moment explains it).  Ours is quiet confirmation; the world's is news.
+- **One day, not now:** `Mag**`'s move history becomes the source of chasable pointers for anything still naming an old path
+   (radiostock, a Card, a friend's Mag), or radiostock itself is indexed on `Mag**` and moves with it.  **Keep it separate now.**  Pile
+    calls nothing in `Ghost/M`'s radio, pool or heard ghosts, and nothing there reads Pile.
+
+**Free-standing, but with an identity.**  Pile lives at the modern end (Atheory, Grounds, the Desk), stands on its own Ground, and
+ uses `?I` only for *who*: whose stash keeps the FSA handles, the `Mag**` and the `Mag:Trail`.  That isn't much complication.
+  `/Desk?I=…&G=Runner` already does exactly this, and FSA handle persistence with the permission re-ask already exists in
+   `Housing.svelte.ts` (~:2480, `queryPermission` → `requestPermission`).
+
+**Beside the radio tab, same `?I` (checked 2026-11-04).**  Pile on `/Desk?I=X&G=Pile` and the music page on `/?I=X` at once is
+ fine, on three conditions.  (There's no `G=Radio` yet: the music app is still `/` on Auto until it's ported to a Ground.)
+- **No second station door.**  The relay delivers a frame addressed to a prepub to every socket that dialled `?addr=<prepub>`
+   (`relay.ts` `deliverLocal`).  Two such sockets means every music chunk arrives twice, in both tabs.  Pile stands on no Swarm/Wire
+    Ground, so it never dials one: its Lies channel is a role socket, which never owns the door.  If Pile ever needs the wire (sharing
+     a Mag), it must not open its own station for X.
+- **Its own stash row.**  The House stash is one Dexie row per House **name**, shared by every tab of the origin, and a liveQuery
+   replaces the whole blob on any change (`Housing.svelte.ts` ~:636).  So two tabs saving the same House name are last-writer-wins
+    on the whole thing.  Keep Pile's `Mag**` and `Mag:Trail` in a House named for Pile and the identity (`Pile:<prepub>`), never in
+     Mundo's row.  One Pile tab per identity: a second would race the first on that row (a `navigator.locks` claim, later).
+- **The radio sees Pile's moves as the world's.**  Both tabs can hold a handle on the same music folder.  A Pile move is, to the
+   radio tab, a file that vanished; radiostock still names the old path.  That's the "chasable pointers, one day" join above.  For
+    now, check what the Stoker does with a vanished path before rung 4 moves real files.
 
 **The workflow over sessions.**  A merge of a giant folder takes days.  Every decision is a row (state lives in particles, never in
  `.c` or localStorage — memory "state-home discipline"), so a session picks up where the last left it, and the mechanical part (move
@@ -138,7 +268,7 @@
 
 | rung | what | Book proves |
 |---|---|---|
-| 1 | **The listing as a Mag, as squares**: `Ground/Pile` (hand toc; `Main:Pile`); a directory listing streamed into `Mag**` on an A under a Seem (a fixture tree in the wormhole first, then a real FSA handle); a Stuffica-era view of plain squares in a scrolly pane | the Mag rows of a fixture tree; the walk is arrivals (one `%Job` per directory read), no timer; a file moved on disk, re-walked, is seen as a **move** (its point re-pairs) |
+| 1 | **The listing as a Mag, as squares** (and the first `Mag:Trail` moment for each walk): `Ground/Pile` (hand toc; `Main:Pile`); a directory listing streamed into `Mag**` on an A under a Seem (a fixture tree in the wormhole first, then a real FSA handle); a Stuffica-era view of plain squares in a scrolly pane | the Mag rows of a fixture tree; the walk is arrivals (one `%Job` per directory read), no timer; a file moved on disk, re-walked, is seen as a **move** (its point re-pairs) |
 | 2 | **Two hemispheres, webbed**: B a second FSA handle streamed into its own Mag; two panes; "already in A" found and said as a relation row, drawn as a line between panes | relations minted for a fixture pair; nothing copied |
 | 3 | **Listen and dial in**: play a B track, choose an A destination from A's own folders; a `%Move` proposal row | proposals; the destination's existing contents shown |
 | 4 | **Carry out**: proposals become Jobs that really move (or copy) on disk, each undoable; resumable across reloads | a fixture move done, undone, resumed after a reload |
@@ -149,12 +279,51 @@
 
 ---
 
-## 5. Open — ask the owner when a rung needs it
+## 5. Open
 
-- What does a Seem pair a file's point on, so a move is noticed: its **name** (survives a move, breaks on rename), its
-   **content hash** (survives both, costs a read of every file), or size+name as a cheap first guess confirmed by hash?
+### 5.1 For the builder to figure out (not the owner's calls)
+
+*Folded in 2026-11-04 from the Atheory/E session's advice; the first two are the ones that fail silently.*
+
+- **⚠ A new Ground loads nothing in a Book yet.**  Story's loader reads only baked Grounds (`grounds.gen.js`) and ones
+   `auto_ground` learned; a hand-kept `wormhole/Ground/Pile/toc.snap` is invisible to it (owed in `AtheoryNexus_todo.md` E).
+    Until then a Pile Book's toc says `Stands:<a baked Ground>` and lists its lone `.g` files.  No `Stands:` at all = a HOLLOW run
+     (no `req:wrangle`, 0 sworn) that looks green.  Every new Book also gets its hand-kept Credence row.
+- **⚠ Keep `Mag**` flat** (§3): one row per entry, `in:<parent id>`.  Deep nesting is cut by `max_child_depth` with no error.
+   Books use small fixture piles.
+- **The id is not the path** (§3).  Trail moments refer by that id under their own mainkey (`of:<id>`), never copying the row.
+   Path-as-key turns every rename into a vanish plus an arrival and loses the history.
+- **File pairing, cheap then sure.**  In the walk: name + size + `lastModified` (a move usually keeps lastModified).  Confirm with a
+   partial hash (size + first/last 64KB) in a **background Job** — never an await on the walk's hot path (it flakes Books).  Only a
+    confirmed pair becomes a rename/move.
+- **Directory pairing by contents**: the overlap of children's name+size sets, above a threshold.  An empty directory can't pair —
+   say so, don't guess.  Prove both with a sabotage in the Book: rename a fixture directory, re-walk, see one rename.
+- **Ours vs the world's, in two phases.**  A Job writes its **intent** before touching disk and its **outcome** after.  A crash
+   between leaves an intent with no outcome; the next walk settles it: a match → ours, done; no match → "attempted", shown as such.
+    An unexplained change is the world's, and is news.
+- **A stale path is history.**  A Trail moment naming a path that has since moved renders as a visit, never as a broken link and
+   never silently repaired (`Clerkdesk_todo.md` §0).  Resolve it through `Mag**`'s move history when the history has it.
+- **No wall clock in `.sc`.**  Order Trail moments by a counter; time goes on the clock/tape (`TheA_io`) or raw on `.c`.  Never
+   stamp a maybe-undefined sc value (`{"undef":…}`); booleans are `1` or absent.
+- **Big directories stream** as paging `%Job`s, and the Mag fills as they land; never enumerate a giant folder before drawing
+   (`Wander_todo.md`).  **Drop each paging Job once served** (`host.drop`) or a big walk leaves thousands of finished rows.
+- **A Book can't pick a folder** (no gesture, no `showDirectoryPicker` on a runner): drive a fixture pile through a nav.  A rename
+   or move must exist in all three nav layers (`MountNav` → `WormholeNav` + `OpfsOverlayNav`) or the sabotage can't run.
+- **Reloads lose the permission.**  A remembered FSA handle needs a click to be re-granted (`Housing.svelte.ts` ~:2480; the same
+   thing reds MusuRadio on a reloaded runner).  The page's arrival treats "re-grant pile A / B" as an expected step, a row the Ground
+    declares (`AtheoryArrive_todo.md`).
+- **Where the Mags persist**: each its own toc.snap through the storage reflex in the identity's app tree (§3 "Each stored separately"), never inside either music
+   pile.  Writing into the user's music folders is a rung-4 act, done by a Job, never bookkeeping.
+- **Play originals with plain `<audio>`** over `URL.createObjectURL(file)`, revoked when done — no radio ghost.  Some codecs won't
+   play; a refusal is a row, not silence.
+- **Seen/heard is a query**, not a stamp: a function over `Mag:Trail`.
+- **The usual footguns**: never read `o()` right after a bare `r()` (async replace); a presence wildcard `o({k:1})` matches more
+   than you meant — filter on mainkey.
+
+### 5.2 Ask the owner when a rung needs it
+
 - Is B's merge a **move** or a **copy** by default, and where does an undone move go?
-- The remote mount: is B usually another FSA in the same browser, or a friend's/daemon's pile over the wire?
+- ~~Is B another FSA or a pile over the wire?~~ Answered 2026-11-03: another FSA handle.  A friend's or the daemon's pile over the wire is later.
 - Do the user's categories live only in folder names, or also in tags inside files?
 - The typewriter's Mag: a new kind of page beside `%Mag:heard`, or a Mag of its own named by the writer?
 - What does "superimposed" persist as — an overlay folder in `.jamsend/`, or a Mag that names paths?
