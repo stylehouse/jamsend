@@ -8,7 +8,7 @@
 
 ## 0. What to get on with next
 
-### 0.0 Where rung 1 stands (2026-11-04, night)
+### 0.0 Where rung 1 stands (2026-11-05)
 
 **Built, Book-proven: the tree, its identity, partitions, the three Mags, and their storage.**
 - **The fs Mag is the directory tree** (§3 "Treeing, overflow, cursors"): `Dir` holds its `Dir`s and `File`s.  Each `Dir`
@@ -50,6 +50,37 @@
 - **Dispatch by name**: a runner that has loaded PilePage.g thinks any `w:Pile` as the page, so Books stand theirs as `w:PileW` /
    `w:PileP`.
 
+- **Listening and taste** (built 2026-11-05, owner-untested).  A click on a square plays it, read off the disk through the
+   lister's `file(path)`, and at the end of a track the next one plays.  The `Dir` holding what plays lights up and opens into
+    a list of its tracks, scrolled into view (click a `Dir`'s name to open or close one).  ♥ on a track writes
+     `%Like:<name>,of:<id>,side`; 👎 on a `Dir` writes `%Dislike`.  Both live in `%Mag:Taste`, stored at `Pile/Taste`:
+      referring rows by id, never stamped on the fs rows.  Both are toggles, as Radio's heart is.  A disliked `Dir` keeps its
+       liked tracks as `%Spare,of` rows under the `%Dislike`, a trace recomputed each turn; "next" skips a disliked `Dir`'s
+        tracks but not its spares.  `%Playing` sits on w and is never stored.  Categories are `Dir`s named `0 <name>` (Heist's
+         shelf marker, `Pile_category`); the face draws them purple, without the `0 `.  "add a folder" shrinks to a line under
+          the panes once A and B are open.
+- **The page's turn is a Sunpit** (`Pile_pit`): `%TheASunpit:turn` on w holds `%TheAPass:Press`, `%TheAPass:Want` and
+   `%TheAPass:Dislike,in:Taste`, and `Pile_turn` runs `Pile_pass_<Kind>` over each kind's rows in that order.  The face only
+    stands `%Press:<how>,side,of` rows through the Stuffica door (play, next, stop, like, dislike, look).  A grant or a "look
+     again" stands `%Want:walk,side`, which waits until the side has a lister.  Nothing turned means nothing to settle.
+      **Book `PilePage`** now has 5 steps and 6 oaths.  Steps 4–5: a like and a dislike in one turn spare the track; next skips
+       the disliked album's rest; `0 chill` is a category; after a reload the taste is back with its spares and nothing plays.
+        PilePage + PileWalk are 3/3 green interleaved on one tab.
+- **What building this asked of the Sunpit** (for `AtheoryNexus_todo.md` §3.8, the `%J` / Sunpit design):
+  1. **A pass must say where its rows are.**  Taste's rows live in a Mag under the home, not on w, so I added `in:`.  A real
+      Sunpit wants an address (`@Taste/%Dislike`), which is §3.3's `S` read.
+  2. **Dispatch by name is the whole runner.**  `this['Pile_pass_' + kind]` is ten lines every compartment would rewrite, so
+      Theory should own it (`TheA_sunpit_turn(w, prefix)`), the same way `TheA_rows` already reads the pit.
+  3. **Did anything happen?**  Each pass returns how much it changed so the page knows whether to settle and redraw.  That count
+      is the `%TheATurn` Neu/Goner diff Theory already makes: a Sunpit run should leave one, and the settle should read it.
+  4. **A pass whose rows are gestures** drops them as it goes, which is what an inbox does.  A gesture is a pulse, so `%Press`
+      wants to be a `TheA_send` to the page's synapse, the face being one more sender; then the Stuffica door and the pulse
+       boundary become the same thing.
+  5. **A derived trace (`%Spare`) re-made every turn** is a Sunpit wanting a `watch`: it should wake only when a Like or a
+      Dislike moved (coarse version, §5's "wake coarse, land fine").  Today it runs every turn that has any Dislike.
+  6. **Order is a decision.**  Press before Dislike means a ♥ and the 👎 it softens land in one turn.  The pit makes that order
+      readable in a snap.  That is its best feature, and the reason to keep pits as rows.
+
 **Known limits:**
 - A walk reads the whole disk before pairing (`v` needs the insides first); fine for now, but rung 2 (walk as Jobs) must stream.
    A `Dir` whose insides changed AND was moved loses its id (its insides keep theirs, each noticed as a move).
@@ -67,6 +98,15 @@
     as the run's tail.
 4. **The partial-hash confirm Job** (§5.1): today a pairing is trusted on `ms`/name/`v` alone.
 5. **Sabotages still unrun**: two files with the same size+modified; an emptied directory renamed (no `v` — say so).
+6. **The cull** — a Dislike's "default delete" (owner 2026-11-05): with readwrite permission and undoable Jobs, a disliked `Dir`
+    goes, minus its `%Spare`s, which move somewhere kept, so a too-much album leaves one good track for the radio's diversity.
+     Today it is only the plan, drawn (👎 keeps N).
+7. **The intelligiser** (owner 2026-11-05, pushed back behind listening): an organ that slowly forms opinions about rows by id,
+    kept in its own Mag, never on the fs rows.  It would guess the artist and album per `Dir` from names alone (`NN Artist -
+     Title`, `Artist - Album (Year)`, a name repeated across siblings and parents), with confidence growing as the guesses
+      agree; tags read from the files later, as Jobs; the face shows a guess as a label.
+8. **Likes reaching the radio**: today `%Like` is the Pile's own.  Radio's heart is `take` on a Card in `%Mag:heard`
+    (Heard.g); when the pile feeds the radio, the two should be one ledger, or one should name the other.
 
 1. Read §2 (Atheory in one sitting) and `CLAUDE.md`; then `AtheoryNexus_todo.md` §0.0 (the land map) and its *E thought through*.
 2. **Rung 1 — the listing as a Mag, drawn as squares** (§4): a `Ground/Pile` composition and a Book that streams a folder's

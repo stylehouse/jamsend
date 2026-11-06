@@ -4,7 +4,10 @@
 //   - %Mag:Pile, the enclosing one, all we're up to: it holds the others, and its file is only their lines (references), plus
 //      %Ask:fsa — the add-another-FSA control, answered by a picker on the page;
 //   - one fs Mag per side, %Mag:<the folder's name>,side:A — the directory projected into being, rebuilt from disk by walking;
-//   - %Mag:Trail, the session: a %Moment per walk, saying what it noticed, by id.
+//   - %Mag:Trail, the session: a %Moment per walk, saying what it noticed, by id;
+//   - %Mag:Taste, what a person said of the rows, by id: %Like (♥, a track), %Dislike (👎, a Dir or a track) — referring rows,
+//      never a verdict stamped onto an fs row (those are what the disk says).  A Dislike of a Dir holding liked tracks SPARES
+//       them (%Spare,of under it): a disliked album keeps its one good track, for the radio's sake.
 //  The fs Mag IS the directory tree: a %Dir holds its %Dir and %File rows as the disk does.  A container (the fs Mag or a Dir)
 //   holding more than `most` rows (900; a Book sets less) holds PARTITIONS instead — %Mag:A-G for the names under A to G, and
 //    when that is full a serial %Mag:A-G (2) — each its own file.  A row stays in the partition it was in while its name stays in
@@ -39,7 +42,7 @@
 //              Noticed:rename,of:6
 //          Ask:fsa,side:B
 //
-//  The lister is runtime, on the fs Mag's .c: { list(path) → [{ name, dir:1 } | { name, size, mod }] }.  `path` is '.' for the
+//  The lister is runtime, on the fs Mag's .c: { list(path) → [{ name, dir:1 } | { name, size, mod }], file(path) → a File }.  `path` is '.' for the
 //   top, else the entry's path joined with '/'.  The nav the Mags are stored through is runtime too, on w's .c.
 
 IMPORT()
@@ -66,7 +69,7 @@ Pile_mag(w, side, name, most):
     let mag = this.Pile_side(w, side)
     if (!mag) {
         name = String(name || side)
-        if (name === 'Pile' || name === 'Trail' || home.o({ Mag: name }).length) {
+        if (name === 'Pile' || name === 'Trail' || name === 'Taste' || home.o({ Mag: name }).length) {
             name = name + '_' + side
         }
         mag = this.Store_keep(home.i({ Mag: name, side, most: most || 900 }), 'Pile/' + name)
@@ -341,6 +344,86 @@ Pile_row_at(w, side, path):
     let places = this.Pile_places(this.Pile_side(w, side))
     return Object.values(places).find(p => p.path === path)?.row ?? null
 
+// Pile_category — a Dir named `0 <name>` is a category (a genre, a section): Heist's shelf marker (Heist_genre_norm, the
+//  '0 ' a leading dash becomes).  Its name without the marker, or null
+Pile_category(row):
+    let m = /^0 (.+)$/.exec(String(row?.sc.Dir ?? ''))
+    return m ? m[1] : null
+
+// Pile_audio — a File that plays
+Pile_audio(row):
+    return row?.sc.File !== undefined && /\.(flac|mp3|ogg|opus|m4a|aac|wav|aiff?)$/i.test(String(row.sc.File))
+
+// ── TASTE — %Mag:Taste, stored at Pile/Taste ───────────────────────────────────────────────────────────────────────────
+//      Mag:Taste
+//        Like:01 Dawn.flac,of:6,side:A
+//        Dislike:Album X,of:1,side:A
+//          Spare:01 Dawn.flac,of:6          ← a trace: the liked track this dislike keeps
+Pile_taste(w):
+    let home = this.Pile_home(w)
+    return home.o({ Mag: 'Taste' })[0] ?? this.Store_keep(home.i({ Mag: 'Taste' }), 'Pile/Taste')
+
+// what was said of a row (how: Like | Dislike), or null
+Pile_said(w, how, side, id):
+    return this.Pile_taste(w).o({ [how]: 1, of: String(id), side })[0] ?? null
+
+// Pile_toggle — ♥ or 👎 a row, or take it back (Radio's heart is a toggle too: love, unlove).  Saying one unsays the other
+Pile_toggle(w, how, side, id):
+    let row = this.Pile_row(w, side, id)
+    if (!row) return null
+    let taste = this.Pile_taste(w)
+    let had = this.Pile_said(w, how, side, id)
+    if (had) {
+        taste.drop(had)
+        return null
+    }
+    let other = this.Pile_said(w, how === 'Like' ? 'Dislike' : 'Like', side, id)
+    if (other) taste.drop(other)
+    return taste.i({ [how]: String(row.sc[this.Pile_kind(row)]), of: String(id), side })
+
+// Pile_spare — a Dislike's spares: the liked tracks anywhere under the Dir it names, as %Spare rows under it.  Returns how many
+//  changed (a Dislike of a track, or of a Dir with nothing liked, has none)
+Pile_spare(w, dislike):
+    let side = dislike.sc.side
+    let row = this.Pile_row(w, side, dislike.sc.of)
+    let want = row?.sc.Dir !== undefined ? this.Pile_rows(row).filter(r => r.sc.File !== undefined && this.Pile_said(w, 'Like', side, r.sc.id)) : []
+    let changed = 0
+    for (const spare of dislike.o({ Spare: 1 })) {
+        if (!want.some(r => r.sc.id === spare.sc.of)) {
+            dislike.drop(spare)
+            changed++
+        }
+    }
+    for (const r of want) {
+        if (!dislike.o({ Spare: 1, of: r.sc.id }).length) {
+            dislike.i({ Spare: String(r.sc.File), of: r.sc.id })
+            changed++
+        }
+    }
+    return changed
+
+// Pile_heard — does a row get played: not when it, or a Dir it's in, is disliked — unless it's liked (spared)
+Pile_heard(w, side, id):
+    if (this.Pile_said(w, 'Like', side, id)) return true
+    let places = this.Pile_places(this.Pile_side(w, side))
+    for (let at = String(id); at && at !== '.'; at = places[at]?.up) {
+        if (this.Pile_said(w, 'Dislike', side, at)) return false
+    }
+    return true
+
+// Pile_next — the track after this one, in shelf order, that gets played; null at the end
+Pile_next(w, side, id):
+    let files = this.Pile_rows(this.Pile_side(w, side)).filter(r => this.Pile_audio(r))
+    let i = files.findIndex(r => r.sc.id === String(id))
+    return files.slice(i + 1).find(r => this.Pile_heard(w, side, r.sc.id))?.sc.id ?? null
+
+// Pile_play — %Playing:<name>,of:<id>,side on w, the one track playing (runtime, never stored), or none
+Pile_play(w, side, id):
+    for (const was of w.o({ Playing: 1 })) w.drop(was)
+    let row = id != null ? this.Pile_row(w, side, id) : null
+    if (!this.Pile_audio(row)) return null
+    return w.i({ Playing: String(row.sc.File), of: row.sc.id, side })
+
 // Pile_settle — write each of the pile's Mags whose text changed (Store.g), through the nav on w's .c.  After a walk, until a
 //  walk is a run whose tail does it
 async Pile_settle(w):
@@ -381,5 +464,11 @@ Pile_fsa_lister(root):
                 }
             }
             return out
+        },
+        file: async (path) => {
+            let parts = path.split('/')
+            let name = parts.pop()
+            let dir = await dir_at(parts.length ? parts.join('/') : '.')
+            return (await dir.getFileHandle(name)).getFile()
         },
     }

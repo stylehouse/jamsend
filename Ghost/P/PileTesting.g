@@ -251,6 +251,7 @@ PileWalk_witness(w):
 //   memory nav for the identity's app tree.  The page's w is stood as w:PileP so the House never thinks it on its own — the Book
 //    calls Pile(A,w) itself, once per thing the page would do.  Step 2: a page with nothing stored; a folder is granted; walked.
 //     Step 3: the page reloads: what was stored is there before the folder is granted again; granted, the walk notices nothing.
+//      Step 4: presses, as the face makes them — ♥ a track, 👎 its album, play it, then next.  Step 5: the page reloads; the taste is there.
 PilePage(A,w):
     w oai %req:wrangle,eternal
         await &PilePage_drive,w,req
@@ -258,12 +259,14 @@ PilePage(A,w):
 
 async PilePage_drive(w, req):
     let run = this.c.run
-    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 3
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 5
     let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) await this.PilePage_first(w)
         if (n === 3) await this.PilePage_reload(w)
+        if (n === 4) await this.PilePage_taste(w)
+        if (n === 5) await this.PilePage_retaste(w)
     }
     this.PilePage_witness(w)
 
@@ -310,6 +313,31 @@ async PilePage_reload(w):
     await this.Pile_grant(pw, 'A', this.PileTesting_handle(this.c.pilep_tree, 'Music'), 'the page reloads')
     await this.Pile(A, pw)
 
+async PilePage_taste(w):
+    w.i({ desc: 'presses as the face makes them — like a track — dislike its album — play it — then next' })
+    let pw = this.o({ A: 'PileP' })[0]?.o({ w: 'PileP' })[0]
+    let A = this.o({ A: 'PileP' })[0]
+    if (!pw) return
+    let dawn = this.Pile_row_at(pw, 'A', 'Album X/01 Dawn.flac')
+    let album = this.Pile_row_at(pw, 'A', 'Album X')
+    this.Pile_press(pw, 'like', 'A', dawn?.sc.id)
+    this.Pile_press(pw, 'dislike', 'A', album?.sc.id)
+    this.Pile_press(pw, 'play', 'A', dawn?.sc.id)
+    await this.Pile(A, pw)
+    let p = pw.o({ Playing: 1 })[0]
+    w.oai({ Saw: 'played' }, { of: String(p?.sc.Playing ?? 'nothing') })
+    this.Pile_press(pw, 'next', 'A', dawn?.sc.id)
+    await this.Pile(A, pw)
+    w.oai({ Saw: 'next' }, { of: String(this.Pile_path_of(pw, 'A', this.Pile_row(pw, 'A', pw.o({ Playing: 1 })[0]?.sc.of)) ?? 'nothing') })
+
+async PilePage_retaste(w):
+    w.i({ desc: 'the page reloads — what was liked and disliked is there — nothing plays' })
+    let pw = this.PilePage_stand()
+    let A = this.o({ A: 'PileP' })[0]
+    await this.Pile(A, pw)
+    await this.Pile_grant(pw, 'A', this.PileTesting_handle(this.c.pilep_tree, 'Music'), 'the page reloads')
+    await this.Pile(A, pw)
+
 PilePage_witness(w):
     let pw = this.o({ A: 'PileP' })[0]?.o({ w: 'PileP' })[0]
     if (!pw) return
@@ -331,5 +359,21 @@ PilePage_witness(w):
     let m2 = trail.o({ Moment: '2' })[0]
     if (n === 3 && again?.sc.rows === 18 && again.sc.live === undefined && rows.length === 18 && m2 && !m2.o().length && !m2.sc.neu && Number(mag.sc.minted) === 18) {
         this.story_swear(w, 'a reloaded page has the pile from its files before the folder is granted again — granted — the walk notices nothing')
+    }
+    let taste = home.o({ Mag: 'Taste' })[0]
+    let dislike = taste?.o({ Dislike: 'Album X' })[0]
+    let spares = dislike ? dislike.o({ Spare: 1 }).map(x => x.sc.Spare).join(',') : ''
+    if (n === 4 && w.o({ Saw: 'played' })[0]?.sc.of === '01 Dawn.flac' && taste?.o({ Like: '01 Dawn.flac' }).length && spares === '01 Dawn.flac'
+        && !pw.o({ Press: 1 }).length && String(files['Pile/Taste/toc.snap'] || '').includes('Spare:01 Dawn.flac')) {
+        this.story_swear(w, 'a like and a dislike pressed in one turn — the disliked album spares its liked track — stored in the Taste Mag')
+    }
+    if (n === 4 && w.o({ Saw: 'next' })[0]?.sc.of === 'Album Y/a.mp3') {
+        this.story_swear(w, 'next skips the rest of a disliked album — its spared track still plays')
+    }
+    if (n === 4 && this.Pile_category({ sc: { Dir: '0 chill' } }) === 'chill' && this.Pile_category({ sc: { Dir: 'Album X' } }) === null) {
+        this.story_swear(w, 'a Dir named 0 and a space is a category — Heist’s shelf marker')
+    }
+    if (n === 5 && !pw.o({ Playing: 1 }).length && spares === '01 Dawn.flac' && taste?.o({ Like: 1 }).length === 1 && rows.length === 18) {
+        this.story_swear(w, 'after a reload the likes and dislikes are back from their file with the spares — nothing is playing')
     }
 //#endregion

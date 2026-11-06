@@ -512,6 +512,9 @@ R1 holding, R2 refs, R3 nearness are built (`Atheory_design.md` §1.15, Book `At
     definition; an `S` outside one is an error Atlas reports.
 - **Reqs.**  A Sunpit could be an eternal req on its J whose wake is its synapses — the req machine keeps doing, the Sunpit says
    when.  To test, not assume.
+- *Used for real, 2026-11-05:* the Pile page's turn is a hand Sunpit (`Pile_pit`, `Pile_turn`); what building it asked of the
+   Sunpit (where a pass's rows live, dispatch by name in Theory, a changed count, gestures as pulses, watch-woken traces) is
+    listed in `Pile_todo.md` §0.0 "What building this asked of the Sunpit".
 - *First build (when it's time):* a toy J on a pond — one kind, two instances on one tank, one Sunpit each, poked directly; a Book
    swears only the poked instance moved.
 

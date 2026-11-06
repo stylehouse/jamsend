@@ -8,6 +8,10 @@ Snap:H
         Saw:opened
     A:PileP
       w:PileP
+        TheASunpit:turn
+          TheAPass:Press
+          TheAPass:Want
+          TheAPass:Dislike,in:Taste
         Mag:Pile
           TheAStore:Pile
           Mag:Music,side:A,most=900,minted=18

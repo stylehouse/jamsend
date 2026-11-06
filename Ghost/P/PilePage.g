@@ -4,7 +4,9 @@
 //      .jamsend/ on the base, beside radiostock, berth and account/<prepub> (App_todo §0.5) — one pile per identity;
 //   - opening what is stored, once, so the page draws the pile as it was before the first walk;
 //   - a handle a person picked (PileFace's picker answers %Ask:fsa, or a remembered one re-granted) turned into a side's lister;
-//   - a walk whenever a side asks for one (w.c.walk), then a settle, then the face's one commit.
+//   - the page's turn, declared on w as a Sunpit (%TheASunpit:turn, a %TheAPass per kind of row, in order): what a person did
+//      (%Press — play, next, ♥, 👎, look again), what that wants (%Want:walk), each dislike's spares; then a settle, then the
+//       face's one commit.  The face only stands %Press rows (through the Stuffica door) and plays what %Playing says.
 //  The face is a Svelte component registered as a UI (Supervisor.g's idiom); it reads the tree untracked on its commit counter.
 
 IMPORT()
@@ -22,7 +24,7 @@ Pile_nav_under(nav, prefix):
         write_file: (dir, name, text) => nav.write_file(prefix + '/' + dir, name, text),
     }
 
-// Pile — the page's think.  Each pass: stand the face, open what is stored once the disk is up, then walk any side that asked
+// Pile — the page's think.  Each pass: stand the face, open what is stored once the disk is up, then take the turn
 async Pile(A, w):
     if (!w.c.face) {
         w.c.face = 1
@@ -42,31 +44,88 @@ async Pile(A, w):
         }
         w.c.ui?.commit?.()
     }
-    let home = w.o({ Mag: 'Pile' })[0]
-    for (const mag of home ? home.o({ Mag: 1, side: 1 }) : []) {
-        if (!mag.c.lister || !mag.c.walk) continue
-        mag.c.walk = 0
-        await this.Pile_walk(w, mag.sc.side, mag.c.walk_about || 'look')
+    if (await this.Pile_turn(w)) {
         await this.Pile_settle(w)
         w.c.ui?.commit?.()
     }
 
+// Pile_pit — how the page's turn goes, declared on w: a Sunpit by hand (Theory.g TheA_rows; AtheFishTesting's tank).  Each
+//  %TheAPass is one handler over all the rows of one kind, before the next; `in:` names the Mag under the home they live in when
+//   it isn't w.  Presses go first so a ♥ and the 👎 it softens land in one turn, and the spares see both
+Pile_pit(w):
+    let pit = w.o({ TheASunpit: 'turn' })[0]
+    if (pit) return pit
+    pit = w.i({ TheASunpit: 'turn' })
+    pit.i({ TheAPass: 'Press' })
+    pit.i({ TheAPass: 'Want' })
+    pit.i({ TheAPass: 'Dislike', in: 'Taste' })
+    return pit
+
+// Pile_turn — each pass over its rows, by name (Pile_pass_<Kind>).  Returns how much changed: nothing changed, nothing to settle
+async Pile_turn(w):
+    let changed = 0
+    for (const pass of this.Pile_pit(w).o({ TheAPass: 1 })) {
+        let kind = pass.sc.TheAPass
+        let at = pass.sc.in ? w.o({ Mag: 'Pile' })[0]?.o({ Mag: pass.sc.in })[0] : w
+        let rows = at ? at.o({ [kind]: 1 }) : []
+        if (!rows.length) continue
+        changed += (await this['Pile_pass_' + kind](w, rows)) || 0
+    }
+    return changed
+
+// what a person did, each dropped once done: play|next|stop a track, ♥ (like) or 👎 (dislike) a row, look again at a side
+Pile_pass_Press(w, rows):
+    for (const press of rows) {
+        w.drop(press)
+        let how = press.sc.Press
+        let side = press.sc.side
+        let of = press.sc.of
+        if (how === 'like') this.Pile_toggle(w, 'Like', side, of)
+        if (how === 'dislike') this.Pile_toggle(w, 'Dislike', side, of)
+        if (how === 'play') this.Pile_play(w, side, of)
+        if (how === 'next') this.Pile_play(w, side, this.Pile_next(w, side, of))
+        if (how === 'stop') this.Pile_play(w, side, null)
+        if (how === 'look') w.oai({ Want: 'walk', side }, { about: 'look again' })
+    }
+    return rows.length
+
+// a side wants walking: walked once it has a lister (a handle granted); until then the want waits
+async Pile_pass_Want(w, rows):
+    let changed = 0
+    for (const want of rows) {
+        let mag = this.Pile_side(w, want.sc.side)
+        if (!mag?.c.lister) continue
+        w.drop(want)
+        await this.Pile_walk(w, want.sc.side, want.sc.about || 'look')
+        changed++
+    }
+    return changed
+
+// each dislike's spares, again: a like said or unsaid this turn, or a walk that brought a liked track in
+Pile_pass_Dislike(w, rows):
+    let changed = 0
+    for (const dislike of rows) changed += this.Pile_spare(w, dislike)
+    return changed
+
 // Pile_grant — a handle for a side (picked, or a remembered one re-granted): its fs Mag (made if new, named for the folder), a
-//  lister over the handle, and a walk asked for.  Called through the Stuffica door (UItime), so nothing moves meanwhile.
+//  lister over the handle, and a walk wanted.  Called through the Stuffica door (UItime), so nothing moves meanwhile.
 //   Pile_fsa_lister compiles async (it holds awaits in its arrows), so it is awaited
 async Pile_grant(w, side, handle, about):
     let mag = this.Pile_mag(w, side, handle.name)
     mag.c.lister = await this.Pile_fsa_lister(handle)
     mag.c.handle = handle
-    mag.c.walk = 1
-    mag.c.walk_about = about
+    w.oai({ Want: 'walk', side }, { about })
     this.main()
     return mag
 
-// Pile_rewalk — look again at a side
-Pile_rewalk(w, side):
-    let mag = this.Pile_side(w, side)
-    if (!mag?.c.lister) return
-    mag.c.walk = 1
-    mag.c.walk_about = 'look again'
+// Pile_press — what the face does: one %Press row, then a think.  Through the Stuffica door, so nothing moves meanwhile
+Pile_press(w, how, side, of):
+    w.i({ Press: how, side, ...(of != null ? { of: String(of) } : {}) })
     this.main()
+
+// Pile_file — a track's File off its side's disk, for the face to play; null without a lister
+async Pile_file(w, side, id):
+    let mag = this.Pile_side(w, side)
+    let path = this.Pile_path_of(w, side, this.Pile_row(w, side, id))
+    if (!mag?.c.lister?.file || !path) return null
+    return mag.c.lister.file(path)

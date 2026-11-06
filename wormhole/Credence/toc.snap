@@ -42,6 +42,15 @@ Waft:Credence
     Funkcion:Storying,of_Book:SwarmSpread
     Funkcion:Storying,of_Book:SwarmReboot
     Funkcion:Storying,of_Book:SwarmHelm
+    What:Wire,desc:the real channel and what rides it — relay liveness — the invite sealed ferried and walked — the error channel
+      Funkcion:StoryTimes
+      Funkcion:Storying,of_Book:Sounditron,unusual:real-environment,wire:probes the REAL relay and live peers — the only real-channel Book — channel liveness not a proven round-trip
+      Funkcion:Storying,of_Book:SounditronVisualCrux
+      Funkcion:Storying,of_Book:InvSeal
+      Funkcion:Storying,of_Book:InvFerry
+      Funkcion:Storying,of_Book:InvWalk
+      Funkcion:Storying,of_Book:ErrChannel
+      Funkcion:Storying,of_Book:SuperCull
   What:Voro,desc:the Voronoi-Cyto render — Cyto's force layout reinterpreted as power-diagram cells with the crushed Stuffings molded into a rosette,obsoleted:by Vyto
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:VoroMitosis
@@ -139,6 +148,11 @@ Waft:Credence
     Funkcion:Storying,of_Book:MusuHeard
     Funkcion:Storying,of_Book:MusuHandoff
     Funkcion:Storying,of_Book:MusuPoolPolicy
+    What:Radio,desc:radio and heist probes — the graffiti drone — the radio and heist stations
+      Funkcion:StoryTimes
+      Funkcion:Storying,of_Book:GhoghoDrone
+      Funkcion:Storying,of_Book:Radiation
+      Funkcion:Storying,of_Book:Heistation
   What:Puddle,desc:the lower-level instruments in one puddle — machinery proven once and kept for regression hunts not for relitigating
     Funkcion:StoryTimes
     What:Lake,desc:the editor machine — the Lies compile-run pipeline over Docs Wafts and focus
@@ -195,20 +209,6 @@ Waft:Credence
       Funkcion:StoryTimes
       Funkcion:Storying,of_Book:MundaneStation
       Funkcion:Storying,of_Book:MundaneStaying
-    What:Wire,desc:the real channel and what rides it — relay liveness — the invite sealed ferried and walked — the error channel
-      Funkcion:StoryTimes
-      Funkcion:Storying,of_Book:Sounditron,unusual:real-environment,wire:probes the REAL relay and live peers — the only real-channel Book — channel liveness not a proven round-trip
-      Funkcion:Storying,of_Book:SounditronVisualCrux
-      Funkcion:Storying,of_Book:InvSeal
-      Funkcion:Storying,of_Book:InvFerry
-      Funkcion:Storying,of_Book:InvWalk
-      Funkcion:Storying,of_Book:ErrChannel
-      Funkcion:Storying,of_Book:SuperCull
-    What:Radio,desc:radio and heist probes — the graffiti drone — the radio and heist stations
-      Funkcion:StoryTimes
-      Funkcion:Storying,of_Book:GhoghoDrone
-      Funkcion:Storying,of_Book:Radiation
-      Funkcion:Storying,of_Book:Heistation
     What:Land,desc:the land — Atlas Electrode Lagoon and Workshop staples — the cave — the Hackarium — the editor app
       Funkcion:StoryTimes
       Funkcion:Storying,of_Book:AtlasStaple
@@ -270,4 +270,4 @@ Waft:Credence
     Funkcion:Storying,of_Book:AtheStorySabotage,born:2026-10-30,synapse:no synapse — a Desk whose StoryFu runs AthePondRounds under the sabotage its toc declares,doc:AtheoryStory_todo,desc:every oath proves it bites — the variant pushed onto the inner run’s House at a stop — the inner stops at its first red with exactly the declared oaths fallen — pulled — green again
   What:Pile,desc:the pile — a music folder kept as a Mag** tree with ids on its rows — walked and moved around in by id — Ghost/P/Pile.g with the routines in Ghost/P/PileTesting.g
     Funkcion:Storying,of_Book:PileWalk,born:2026-11-04,synapse:no synapse — a fixture tree in memory changed by the world between walks,doc:Pile_todo §4 rung 1,desc:the pile is the directory tree with an id on every row — renames and moves keep ids — partitions by name range with serial overflow — each Mag stored in its own file and stood again from them — each walk a moment on the Trail
-    Funkcion:Storying,of_Book:PilePage,born:2026-11-04,synapse:no synapse — a fake directory handle over the fixture and a memory nav,doc:Pile_todo §4 rung 1,desc:the Pile page’s think — open what is stored — a granted folder becomes a side walked through Pile_fsa_lister — a reload has the pile before the folder is granted again
+    Funkcion:Storying,of_Book:PilePage,born:2026-11-04,synapse:no synapse — a fake directory handle over the fixture and a memory nav,doc:Pile_todo §4 rung 1,desc:the Pile page’s think — open what is stored — a granted folder becomes a side walked through Pile_fsa_lister — a reload has the pile before the folder is granted again — presses through its Sunpit turn — like and dislike with spares — next skips the disliked

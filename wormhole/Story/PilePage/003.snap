@@ -36,4 +36,8 @@ Snap:H
             Moment:1,about:a folder picked,side:A,saw=18
             Moment:2,about:the page reloads,side:A,saw=18
           Ask:fsa,side:B
+        TheASunpit:turn
+          TheAPass:Press
+          TheAPass:Want
+          TheAPass:Dislike,in:Taste
         TheAStored:Pile/Trail,writes

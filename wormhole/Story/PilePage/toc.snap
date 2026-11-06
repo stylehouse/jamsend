@@ -28,8 +28,14 @@ story:PilePage
       sample=0.003,at=1793780799
       sample=0.006,at=1793780809
   step,dige:047425d893987f6a
-  step=2,desc:a page with nothing stored — a folder is granted — walked and stored,dige:2e736b40259ae6f4
+  step=2,desc:a page with nothing stored — a folder is granted — walked and stored,dige:8423b0d9b798ca42
     Assertion:a-page-with-nothing,sentence:a page with nothing stored opens empty — a folder granted through its handle becomes the side’s Mag named for it — walked and stored
     Assertion:a-jamsend-directory-in,sentence:a .jamsend directory in the folder is the app’s own — never part of the pile
-  step=3,desc:the page reloads — the pile is there from its files before the folder is granted again — granted and walked,dige:59bf3641700e09fc
+  step=3,desc:the page reloads — the pile is there from its files before the folder is granted again — granted and walked,dige:bd254bfcb980f471
     Assertion:a-reloaded-page-has,sentence:a reloaded page has the pile from its files before the folder is granted again — granted — the walk notices nothing
+  step=4,desc:presses as the face makes them — like a track — dislike its album — play it — then next,dige:f48c038820bc460e
+    Assertion:a-like-and-a,sentence:a like and a dislike pressed in one turn — the disliked album spares its liked track — stored in the Taste Mag
+    Assertion:next-skips-the-rest,sentence:next skips the rest of a disliked album — its spared track still plays
+    Assertion:a-dir-named-0,sentence:a Dir named 0 and a space is a category — Heist’s shelf marker
+  step=5,desc:the page reloads — what was liked and disliked is there — nothing plays,dige:b5c595ec2a4244dc
+    Assertion:after-a-reload-the,sentence:after a reload the likes and dislikes are back from their file with the spares — nothing is playing
