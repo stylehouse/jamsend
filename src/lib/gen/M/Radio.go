@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '8f1cf53f6171e839~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '8b408c09cfcff2f2~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -89,7 +89,8 @@ Radio_state(radio, state) {
 //      again on purpose — the music stopped and the guts are once more the interesting thing, which is
 //       the same judgement the starve note makes in words.
 //  A PROPOSAL, NOT A COMMAND (Vyto_focus's own word): the governor decides, and a world with no glass
-//   commissioned simply has no Vyto to hear it.  Live page only — a driven world must keep the even cut
+//   commissioned simply has no Vyto to hear it (vaguely_ponder: /Radio's Cello has none, and an insisting i_elvisto
+//    warned on every play).  Live page only — a driven world must keep the even cut
 //    its fixtures recorded, and humdinger is the standing predicate for exactly that distinction.
 Radio_focus_tell(radio, state) {
     let SH = this.top_House()
@@ -98,8 +99,8 @@ Radio_focus_tell(radio, state) {
     if (SH.c.radio_focus === want) return
     SH.c.radio_focus = want
     try {
-        if (want) SH.i_elvisto('Vyto/Vyto', 'Vyto_focus', { on: want })
-        if (!want) SH.i_elvisto('Vyto/Vyto', 'Vyto_focus', { release: 1 })
+        if (want) SH.vaguely_ponder('Vyto/Vyto', 'Vyto_focus', { on: want })
+        if (!want) SH.vaguely_ponder('Vyto/Vyto', 'Vyto_focus', { release: 1 })
     } catch (er) {}
 
 },

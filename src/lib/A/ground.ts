@@ -58,6 +58,17 @@ export function ground_from_toc(G: any): GroundRead {
     return g
 }
 
+// THE SHIPPED TOCS (2026-11-07, AtheoryArrive_todo §5): every hand-kept wormhole/Ground/<Name>/toc.snap, bundled as text.  A page
+//  reads its Ground from the wormhole when it has one (Auto auto_ground — a toc edit shows on the next load), but a listener's page
+//   has no wormhole holding Grounds at all (a phone, a folderless body, a headless eye: no storage), so the Ground it boots from must
+//    ship with the code.  ⚠ vite's watcher ignores wormhole/ (vite.config), so in dev this copy can lag its file until the server
+//     restarts — the wormhole read is first for that reason.  A NEW toc is seen once this file is re-transformed (any edit here) or the
+//      server restarts (this note was re-touched 2026-11-09 for Ground/Radio's Wiki.g row).
+const SHIPPED = import.meta.glob('/wormhole/Ground/*/toc.snap', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
+export function ground_toc_shipped(name: string): string | undefined {
+    return SHIPPED[`/wormhole/Ground/${name}/toc.snap`]
+}
+
 export const GROUND_CORE = 'Core'
 
 // ground_spine_paths — a spine (Ground names and lone .g paths) as the .g a page loads, in order: each Ground's closure (Core

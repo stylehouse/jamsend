@@ -11,7 +11,7 @@ import { APP_DATA_DIR } from "$lib/app_data_dir"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '41d20f8813f6ea51~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '208c7a6eb6ea4a72~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -2629,6 +2629,9 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
     }
     if (state === 'pulling') {
         if (keep.sc.dose) { delete keep.sc.dose; keep.bump() }   // FOLD the cell down once it starts
+        // the handover here too — a keep ▶-started on its blag before the source answered still holds guess picks, and the defaulter below
+        //  would add the wire's twins beside them (the doubled album, 2026-11-09).  Once per keep, path-joined (Heist_wire_supersede).
+        if (keep.o({ Pick: 1, blag: 1 })[0] && this.Heist_rummage_wire(srcmir, seed).length) this.Heist_wire_supersede(keep, srcmir, seed)
         this.Heist_keep_default_pick(keep, srcmir, seed)         // ensure at least the heard track is kept
         let picks = keep.o({ Pick: 1 })
         let own = this.Ra_home_self(rw, me)
@@ -3369,7 +3372,10 @@ Heist_keep_take_go(keep, srcmir, seed) {
     let one = !!((this.Heist_defaults_get && this.Heist_defaults_get()) || {}).one
     //  In album mode ANY pick is the proof — the seed's own pick can miss forever on an alias the census never
     //   minted, which is how a ♥ keep used to sit primed and get drawn as a setup form.
-    let cut = one ? (keep.o({ Pick: 1, ref: String(sref) })[0] ? this.Heist_keep_solo(keep, sref) : -1) : (keep.o({ Pick: 1 })[0] ? 0 : -1)
+    //  …but a BLAGGED pick is not proof (2026-11-09, b8bc's ♥ on Groove G: "16 tracks" from an 8-wav folder, each landed twice).  The blag is our
+    //   guess from the mirror; going on it flipped the keep to pulling before the source answered, the handover (Heist_wire_supersede) only
+    //    runs while a keep is a form, and the wire's 8 picks were then added BESIDE the blag's 8.  Wait for one pick the source named.
+    let cut = one ? (keep.o({ Pick: 1, ref: String(sref) })[0] ? this.Heist_keep_solo(keep, sref) : -1) : (keep.o({ Pick: 1 }).some((p) => !p.sc.blag) ? 0 : -1)
     if (cut < 0) {
         if (!keep.c.solo_wait_since) { keep.c.solo_wait_since = Date.now() }
         else if (!keep.c.no_route_ts && Date.now() - keep.c.solo_wait_since > 45000) { keep.c.no_route_ts = Date.now() }

@@ -1,7 +1,7 @@
 <script lang="ts">
     // WikipediaFace — Cell:Wikipedia, "click for a random page" (spec/WikipediaCell_todo.md).
     //  A READER, like every other face: the queue is `%Page` rows under the `%Wikipedia` anchor (n), the
-    //   one wearing `shown` is the card, and the only verb is `Sounditron_wiki_roll` (Sounditron.g) — the
+    //   one wearing `shown` is the card, and the only verb is `Wiki_roll` (Ghost/M/Wiki.g; `Sounditron_wiki_roll` on /) — the
     //    fetch, the promote and the top-up all live there and log as 📖.  Reads off H.version like the
     //     Door does; the ghost bumps the anchor when the queue moves.
     //  BECOMING THE BELLY IS THE PRESS (the owner: "click it, get a random Wikipedia page"): the first
@@ -10,8 +10,8 @@
     let { n, H } = $props()
 
     const w = () => n?.c?.up
-    const roll = (why: string) => { try { (H as any)?.Sounditron_wiki_roll?.(w(), why) } catch (e) { console.warn('📖⚠ roll threw', e) } }
-    const wander = (title: string) => { try { (H as any)?.Sounditron_wiki_wander?.(w(), title) } catch (e) { console.warn('📖⚠ wander threw', e) } }
+    const roll = (why: string) => { try { ((H as any)?.Wiki_roll ?? (H as any)?.Sounditron_wiki_roll)?.call(H, w(), why) } catch (e) { console.warn('📖⚠ roll threw', e) } }
+    const wander = (title: string) => { try { ((H as any)?.Wiki_wander ?? (H as any)?.Sounditron_wiki_wander)?.call(H, w(), title) } catch (e) { console.warn('📖⚠ wander threw', e) } }
 
     // ── the section HTML, made ours.  Wikipedia's parse output is trusted-ish, but it goes in via
     //  {@html}, so it is rebuilt through an ALLOWLIST (unknown tags unwrap to their children, no

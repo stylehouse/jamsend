@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { page_nav } from "$lib/O/ui/page_nav"
     import { calm_watch } from "./calm"
     calm_watch()   // measure the fps once; under ~40 the glow below is switched off (calm.ts)
     import { lifewatch } from './micro/lifetell'   // DIAGNOSTIC — strip with the rest of the remount probes
@@ -519,7 +520,7 @@
     //   grants, and a star is taste, not membership.  Never leaves this browser.
     let marks = $derived.by(() => { void H?.version; void tick; return pier_marks(H) })
     // a friend's dot opens THEIR CELL (owner 2026-10-14: "a whole new Cell that disappears when exited")
-    function pier_open(pub: string) { try { (H as any)?.Sounditron_pier_open?.(pub) } catch {} }
+    function pier_open(pub: string) { try { page_nav(H, 'pier_open', pub) } catch {} }
     // starred friends first (stable otherwise)
     let friend_piers = $derived(((face?.friends ?? []) as any[]).filter((f: any) => !f.cave && !forgotten.has(f.pub))
         .map((f: any, i: number) => ({ f, i })).sort((a: any, b: any) => (marks[b.f.pub]?.star ? 1 : 0) - (marks[a.f.pub]?.star ? 1 : 0) || a.i - b.i).map((x: any) => x.f))
@@ -682,12 +683,12 @@
                     <!-- LINK A DEVICE — opens the Link ceremony as a BELLY CELL (owner 2026-08-29: "I want a
                          Cell").  Sounditron_link_open focuses %Link directly; you leave it by "no". -->
                     {#if link_live}
-                        <button class="df-linkdev live" onclick={() => H?.Sounditron_link_open?.()}
+                        <button class="df-linkdev live" onclick={() => page_nav(H, 'link_open')}
                             title="a device link is in progress — go back to the Link cell">
                             <span class="df-linkdev-chip">🔗 Link</span> in progress
                         </button>
                     {:else}
-                        <button class="df-linkdev" onclick={() => H?.Sounditron_link_open?.()}
+                        <button class="df-linkdev" onclick={() => page_nav(H, 'link_open')}
                             title="carry this account to another device — opens the Link Device cell, which you dismiss with “no”">
                             🔗 Link Device
                         </button>

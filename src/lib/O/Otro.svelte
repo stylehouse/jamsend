@@ -13,6 +13,7 @@
     import BootGate from "./ui/BootGate.svelte";
     import ArriveFace from "./ui/ArriveFace.svelte";
     import Stuffmush from "./ui/Stuffmush.svelte";
+    import ArriveSplash from "./ui/ArriveSplash.svelte";
     import { sockcap_install, socklog_armed, concap_install } from "$lib/O/sockcap";   // ALMOST-GONER: relay-socket tap (dumped via Wormhole) — sockcap.ts header; concap = the console ring (runner_ask console)
     // TEMP — CPU-attribution experiment (?cpu_legs=1): cycles which Lies/Lang/Cyto/Story panel
     //  is mounted, announcing the leg on screen + console, so CPU readings taken externally
@@ -37,6 +38,12 @@
     // a Ground page (?G=, /Desk) shows the Supervisor as a small rack in Mundo, where its full panel sat (ArriveFace,
     //  AtheoryArrive_todo §1.3) — the panel opens from the rack's ⋯
     const on_ground = !!boot_param('G')
+    // a player page's splash is the Ground's Face: the tree, told by the Supervisor's fold of its Arrive rows (ArriveSplash)
+    //  (Ground/Radio's Role is player — its toc says so, but Otro boots before any toc is read, so the name is mapped here)
+    const BOOT_ROLE_OF: Record<string, string> = { radio: 'player' }
+    const ground_boot_role = (g: string) => BOOT_ROLE_OF[g.toLowerCase()] ?? g.toLowerCase()
+    const on_player = ground_boot_role(boot_param('G') || '') === 'player'
+    let guts = $state(false)
     // ?B=<Book> auto-activates a Story Book under the default A=Auto (the Library/Story owner) —
     //  ?B=Editron boots the editor as a Book, ?B=PereStaple the test runner, etc.  Auto reads
     //   H.c.book on first boot and activates it (see Auto.svelte).  ?W=<Waft> rides alongside for
@@ -108,8 +115,12 @@
         //  (?E=/?B= still win: an editor or booked runner that ALSO carries ?I just gains an identity.)
         else if (ground) {
             h.c.ground = ground
-            const role = ground.toLowerCase()
+            const role = ground_boot_role(ground)
             if (role === 'runner' || role === 'daemon') h.c.boot_role = role
+            // a player (Ground/Radio, AtheoryArrive_todo §5) boots as the music page does (BigQualand role 'sound'): the runner
+            //  machine — the Creduler loads its Spine, the wire and the Supervisor stand — as a humdinger, an end-user page that
+            //   claims no runner seat and is never dispatched a Book.  Its Main (A:Radio) is the page, not a Story
+            else if (role === 'player') { h.c.boot_role = 'runner'; (h.c as any).humdinger = true }
             else console.log(`⛰ ?G=${ground}: a page with no machine role — its Ground's Mains are the page`)
         }
         else if (on_grid) {                        h.c.boot_role = 'runner' }
@@ -222,6 +233,9 @@
                 {/if}
 
                 <div class="house-actions">
+                    {#if on_player && i === 0}
+                        <button class="cstar" class:on={guts} title="the guts — every other UI on this page" onclick={() => guts = !guts}>▦</button>
+                    {/if}
                     {#if hasActions}<Actions N={house.actions.ob({ action: 1 })} H={house} />{/if}
                     {#if house.stashed}
                         <button class="cstar" class:on={showC(house)}
@@ -233,6 +247,9 @@
             {#each house.UIs.ob({ UI: 1 }) as uiC (keyser(uiC.sc))}
                 {#if on_ground && uiC.sc.UI === 'Supervisor'}
                     <ArriveFace H={house} />
+                {:else if on_player && uiC.sc.UI !== 'Radio'}
+                    <!-- a player page is its glass: every other UI stays mounted (the spine shims must) but folded behind ▦ -->
+                    <div class="guts" class:open={guts}><svelte:component this={uiC.sc.component} H={house} /></div>
                 {:else if !cpu_leg_hides(uiC.sc.UI)}
                     {#if uiC.c.fu}
                         <!-- a UI the new generation (StoryFu) registered — framed so it's told apart from Story.svelte's -->
@@ -259,6 +276,10 @@
 
 {#if H}
     <Lens {H} kind="Panel" />
+{/if}
+
+{#if H && on_player}
+    <ArriveSplash {H} />
 {/if}
 
 {#if H}
@@ -378,4 +399,5 @@
         justify-content: flex-end;
         min-width: 0;
     }
+    .guts:not(.open) { display: none; }
 </style>

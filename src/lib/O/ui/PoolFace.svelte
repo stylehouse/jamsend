@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { page_nav } from "$lib/O/ui/page_nav"
     // PoolFace — the %Pooling CELL as ONE SENTENCE (owner 2026-09-03, the final cut):
     //   "SoundPool keeps rolling [ 300 ] MB of music in browser storage, sourced from [ ] friends (less
     //    predictable) and [x] crew (your devices, see Door)"
@@ -118,7 +119,7 @@
             <input class="pf-mb" type="number" min="0" step="100" value={draft} onchange={(e) => set_mb(num(e))} title="megabytes of music to keep — 0 switches it off and clears it out" />
             <span class="pf-nb">MB of music</span> in browser storage{#if free_gb != null} <span class="pf-dim pf-nb">({free_gb} GB free{#if persisted === true} · persistent{:else if persisted === false} · <span title="the browser may clear this site's storage under pressure — everything at once, the pool and your identity with it">evictable</span>{/if})</span>{/if}, sourced from
             <label class="pf-ck"><input type="checkbox" checked={friends} onchange={(e) => set_who((e.currentTarget as HTMLInputElement).checked, crew)} /> friends <span class="pf-dim">(less predictable)</span></label>
-            <label class="pf-ck"><input type="checkbox" checked={crew} onchange={(e) => set_who(friends, (e.currentTarget as HTMLInputElement).checked)} /> crew <span class="pf-dim">(your devices, see <button class="pf-link" onclick={() => (H as any)?.Sounditron_focus?.('Door')} title="opens the Door — your crew and friends">Door</button>)</span></label>
+            <label class="pf-ck"><input type="checkbox" checked={crew} onchange={(e) => set_who(friends, (e.currentTarget as HTMLInputElement).checked)} /> crew <span class="pf-dim">(your devices, see <button class="pf-link" onclick={() => page_nav(H, 'focus', 'Door')} title="opens the Door — your crew and friends">Door</button>)</span></label>
             and
             <label class="pf-ck"><input type="checkbox" checked={recent} onchange={(e) => set_recent((e.currentTarget as HTMLInputElement).checked)} /> recent acquisitions <span class="pf-dim">(what you just downloaded)</span></label>{#if consent}<span class="pf-dim pf-nb"> · {pooled} pooled so far</span>{/if}
         </p>

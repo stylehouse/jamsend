@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { page_nav } from "$lib/O/ui/page_nav"
     // PierViewFace — the PIER CELL: one friend, opened from their green dot in the Door (owner 2026-10-14: "the
     //  others green dots should be able to open a Pier cell to star, write notes on, and ban them" … "it should be a
     //   whole new Cell that disappears when exited").  The particle is %PierView,of:<pub> — a REFERRING particle on the
@@ -38,7 +39,7 @@
     $effect(() => { void pub; note_draft = pier_marks(H)[pub]?.note ?? '' })
     function star() { pier_mark_set(H, pub, { star: mark.star ? '' : '1' }) }
     function note_save() { pier_mark_set(H, pub, { note: note_draft.trim() }) }
-    function close() { try { H?.Sounditron_pier_close?.() } catch {} }
+    function close() { try { page_nav(H, 'pier_close') } catch {} }
     function ban() {
         try { H?.Swarm_pier_forget?.(null, pub) } catch {}
         close()

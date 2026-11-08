@@ -55,7 +55,7 @@
     import { now_in_seconds, now_in_seconds_with_ms } from "$lib/Common";
     import { APP_DATA_DIR } from "$lib/app_data_dir"
     import { boot_param }   from "$lib/boot"
-    import { ground_from_toc, ground_learn, ground_read, ground_role, ground_include, ground_closure, ground_loads } from "$lib/A/ground"
+    import { ground_from_toc, ground_learn, ground_read, ground_toc_shipped, ground_role, ground_include, ground_closure, ground_loads } from "$lib/A/ground"
     import { Idento }       from "$lib/Common"
     import { prepubOf }     from "$lib/cluster_trust"
     import { crew_keys, crew_keys_home } from "$lib/O/Funk/Crewkeys"
@@ -1266,21 +1266,40 @@
     //    the Mains' code).  A toc whose Role: disagrees with the booted role is said, not obeyed: the role can't change after boot.
     //  Called each Auto think until done; each pass does one step and returns.
     auto_ground(w: TheC) {
+        const GROUND_WORMHOLE_MS = 3000
         const H = this as House
         const G = String(H.c.ground)
         if (!w.c.ground_read) {
+            // the wormhole's toc first (a hand edit shows on the next load); the SHIPPED copy (ground.ts ground_toc_shipped) when there
+            //  is no wormhole to ask — no storage answered within GROUND_WORMHOLE_MS, it errs, or it has no such toc (a listener's folder)
+            const shipped = ground_toc_shipped(G)
+            w.c.ground_t0 ??= Date.now()
+            let content: string | undefined
             const rw  = w.oai({ rw_queue: 1 })
             const req = rw.o({ req: 'ground_read' })[0] || rw.i({ req: 'ground_read', rw_name: `wormhole/Ground/${G}/toc.snap`, rw_op: 'read' })
-            if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })) return
-            const reply = req.sc.reply as any
-            rw.drop(req)
-            if (reply?.error) return                 // storage not up yet — ask again next think
-            if (reply?.not_found || !(reply?.content ?? '').trim()) {
+            if (H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })) {
+                const reply = req.sc.reply as any
+                rw.drop(req)
+                if (!reply?.error && (reply?.content ?? '').trim()) content = reply.content
+                else if (!shipped && reply?.error) return    // storage not up yet, nothing shipped — ask again next think
+                else if (shipped) console.log(`⛰ ?G=${G}: the wormhole has no Ground toc — standing on the shipped one`)
+            }
+            else if (shipped && Date.now() - (w.c.ground_t0 as number) > GROUND_WORMHOLE_MS) {
+                rw.drop(req)
+                console.log(`⛰ ?G=${G}: no wormhole answered in ${GROUND_WORMHOLE_MS}ms — standing on the shipped Ground toc`)
+            }
+            else {
+                // the Wormhole answers on a later think; make sure there is one
+                setTimeout(() => H.main(), 500)
+                return
+            }
+            content ??= shipped
+            if (!(content ?? '').trim()) {
                 w.c.ground_done = true
                 console.warn(`⛔ ?G=${G}: no wormhole/Ground/${G}/toc.snap — the page stands on nothing`)
                 return
             }
-            const { C, errors } = H.decode_wh_lines(reply.content)
+            const { C, errors } = H.decode_wh_lines(content)
             const top = C?.sc.Ground === G ? C : undefined   // the toc's root line IS %Ground:<G>
             if (errors.length || !top) {
                 w.c.ground_done = true
@@ -1296,7 +1315,8 @@
             const I = boot_param('I')
             if (I) page.sc.I = I
             for (const m of top.o({ Main: 1 }) as TheC[]) page.oai({ Main: String(m.sc.Main) })
-            if (role !== H.c.boot_role) console.warn(`⚠ Ground/${G} says Role:${role} but the tab booted as ${H.c.boot_role ?? 'nothing'} — a role can't change after boot`)
+            // a player boots the runner machine (Otro: humdinger, no seat) — the role it boots as, not the role it is
+            if ((role === 'player' ? 'runner' : role) !== H.c.boot_role) console.warn(`⚠ Ground/${G} says Role:${role} but the tab booted as ${H.c.boot_role ?? 'nothing'} — a role can't change after boot`)
             console.log(`⛰ page stands on Ground/${G} as ${role}`)
             // the Creduler holds until it can read this Ground's Spine (LiesLies Creduler_ghosts) — wake it now it can
             const lies_w = H.o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] as TheC | undefined

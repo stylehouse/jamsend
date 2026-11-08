@@ -66,6 +66,7 @@ Cello (#21) is owned by this section too: it's the app foundation's cells and Do
 | 18 | **Ways of listening** | `Radio_future.md` | the imagination ledger of listening, and the shapes it takes (§16: a flock on a few live Records, served from disk): alone, following a DJ, many at once, the phone as instrument | `Solo_todo.md` (the lonely Radio), `Radio_multicast_todo.md` (following a DJ and the phone as instrument are one line each in `Radio_future.md` §13) |
 | 19 | **The daemon** | `Daemon_todo.md` | jamserve: the headless resident body that serves the music; its weight, its loop, its HTTP introspection. (A resident body is a foundation idea; this one is Jamsend's) | `Perf_todo.md` §7 |
 | 19b | **The pile** | `Pile_todo.md` §0 | the showroom for Atheory: a music pile walked as a landscape, two hemispheres (collection + incoming) related by pointers, listened through and merged over sessions, and a typewriter that writes `Mag**` — frontier G | `AtheoryNexus_todo.md` §0.0, `Mag_todo.md`, `Wander_todo.md` |
+| 19c | **The shelf** | `Shelf_todo.md` §0 | a person's recommended music as a Mag with writing, published to everyone, hosted in lofi by consenting peers and the daemon, rifled through beside the main cell. Nothing built (2026-11-09) | `SoundPooling_todo.md`, `Pile_todo.md`, `Daemon_todo.md` |
 
 ## IV. The visual end
 

@@ -20,8 +20,13 @@ Started 2026-11-04 from the Supervisor talk (`AtheoryNexus_todo.md` E, "NEXT SES
        it later loads the shipped .go), simpler than naming the Spine + Stands.  Unseen live: an actual editor rungo.
 - **With Radio:** a finished Book's watches linger on the runner roster (InvSeal's invite watch) — Radio registers watches too.
 - Owner's look at Stuffmush (C** on a `?G=` page) and the 1U rack still owed.
-- Then: `/`: Ground/Music with Radio as a Main, its Arrive rows replacing
-    BigSoundland's `boot_progress` ladder, the splash as its Face.
+- **v1.1 = the music page on A (owner 2026-11-09).  `/Radio` is canonical** (= `/Desk?G=Radio`; Ground/Player renamed Radio).
+   Owner tried it: "done, is good".  NEXT, in order (§6): (2) friends' shelves + the Yay cell and the heist rules, (3) the Wikipedia
+    cell + an eye over every cell kind (glass_kinds.ts), (4) `/` and `/BigSoundland` point at `/Radio` — some day.  No Story on the
+     page for v1.1: the Supervisor's Health upload is the report; Story+Supervisor synergy is later (§6 "Later").
+- **Radio as a Main — slice 1 written 2026-11-07 (§5)**: `/Desk?I=…&G=Player` stands A:Radio on Mundo with no Book; its
+   arrival is Ground/Player's Arrive rows; the splash is ArriveSplash reading their fold.  `/` (BigSoundland + Sounditron) untouched.
+    Next: the glass (slice 2), then the Door/Link cells and friends' shelves, then `/` mounts it.
 - §2's open questions get settled while building.
 
 ## 1. Rulings (owner, 2026-11-04)
@@ -100,3 +105,117 @@ Started 2026-11-04 from the Supervisor talk (`AtheoryNexus_todo.md` E, "NEXT SES
 - `O/ui/Splash.svelte` — the 45s cap from mount became `STALL_MS` 20s, re-armed on every advance (a new phase label — the
    library count rides in it — or a bigger frac).  BigSoundland's `boot_progress` ladder is unchanged and still names
     Swarm/census/glass by hand; it is what §1.1 replaces.
+
+## 5. Radio as a Main — slice 1 (2026-11-07)
+
+- **The Ground is `Player`, not `Music`** (renamed `Radio` 2026-11-09, served at `/Radio`; deviation from §0's wording): Ground/Music's toc is DERIVED (everything.js rewrites it); a
+   composition is hand-kept and named for what runs (AtheoryNexus_todo E, "Runner, Daemon, Player").  `wormhole/Ground/Player/toc.snap`:
+    `Main:Radio`, `Role:player`, `Spine:` Wire Swarm Music Cave + Supervisor.g, `Load:Ghost/M/RadioPage.g`, four Arrive rows
+     (spine, who, shelf, radio — all of A:Radio but `who`, met by A:Identity's %Who), `Lift:radio`.
+- **Role player** (Otro): boots as the music page does — `boot_role` runner + `humdinger` (BigQualand's 'sound'): Creduler loads the
+   Spine, the wire + Supervisor stand, no runner seat, never dispatched a Book; no `H.c.book`, so no Story.
+- **`Ghost/M/RadioPage.g` `Radio(A,w)`**: the organs Sounditron_glass stood inside its Book world now stand on w:Radio — Radio_ensure,
+   Stoker_ensure + preheat, Radio_lineup_ensure — and it writes `%Arrived:spine|shelf|radio` (shelf moot: the stoker rests with none;
+    radio is met once the shelf has said either way — a moot Lift never lifts).  Re-asks itself each 1s until `radio` arrives.
+- **Faces**: `O/ui/RadioPageFace.svelte` (RadioFace + LineupFace + StokerFace in plain boxes, the cells without the glass);
+   `O/ui/ArriveSplash.svelte` — the tree Splash told by Supervisor_lines' `arrive.*` rows: label = first unmet row's sentence, frac =
+    settled/declared, ready = Supervisor_arrived 'arrived', urge = 'gaveup'.  Otro mounts it on a `?G=Player` page.
+- **Slice 2, the glass (2026-11-07)**: Cello, as on `/` (owner: "really more port-hole looking") — RadioPageFace mounts `Cellui` on
+   Mundo full-height.  No Vyto commission: with no A:Vyto world Cellui casts by its raw walk (every faced particle under an A's w),
+    so the cast is w:Radio's organs + a %Door RadioPage now stands; Cellui keeps the Stoker off (`keep_cell`, Sounditron's lean set);
+     Supervisor shows only when amiss.  Minicells no longer drag-roll or wheel-resize (owner: "don't need to be draggable") — on `/`
+      too; a tap still promotes.  Otro on a player page folds every other UI behind ▦ (still mounted — the spine shims must be).
+       The raw walk also met Mine|Mag|Transfer (never cells on /, owner) — so RadioPageFace names the CAST (Cellui's new `cast` prop,
+        which wins over mirror + walk): %Radio, %Door, and the %Supervisor row (shown only when amiss).  Seen in the eye: main Radio,
+         minicells Door · Supervisor.
+- **Slice 3, the page's navigation (2026-11-07)**: the glass is FULLSCREEN over Otro (owner: "I want the fullscreen glass"; ▦ in
+   its corner lets it back into the page).  The verbs a face uses to move the main cell were Sounditron's — a Book that watched the
+    radio start (owner: "we're likely to renovate that given new Story+Supervisor capabilities").  They are now the page's: `Page_focus`,
+     `Page_link_open|done|close`, `Page_pier_open|close` in RadioPage.g, the focus a `%Focus,cell` row on w:Radio (Radio = absence).
+      Faces call `O/ui/page_nav.ts` (Page_* first, else Sounditron_* — so `/` is unchanged); Swarm's ferry phase surfaces the Link the
+       same way.  Cellui takes `focus`/`onfocus` props beside `cast`; the cast adds %Link while focused or a link is in flight, and
+        %PierView while focused.  Eye: Door minicell → main; named, "link a device" → the Link cell main.  The ceremony itself is unseen.
+- **Sounditron, renovated (talk):** what is left in it that a page needs (Screen_decide, the supervise registrations, the wiki cell,
+   the keeps' belly ladder) moves to the page the same way; what it was FOR — watching an arrival — is now Ground Arrive rows + the
+    Supervisor, so the Book shrinks to a Story about a Player page (Desk Stands:Player), not the thing that runs one.
+- **Not yet**: the Uptime cell, friends' %Theirs shelves (the trickle), the
+   ▦ guts, the BootGate share grant, `%Reloading` (§1.7), the lingering watches (§0).  Then `/` and `/BigSoundland` mount this.
+
+## 6. v1.1 — the rest of the port (owner 2026-11-09)
+
+**Where things are.**  `/Radio` (src/routes/Radio, `boot_default('G','Radio')` in $lib/boot) mounts Otro on Ground/Radio
+ (`wormhole/Ground/Radio/toc.snap`, hand-kept, shipped in the bundle).  Otro maps the name Radio → role player (`BOOT_ROLE_OF`) because it
+  boots before any toc is read.  The H** layout: everything is on Mundo — A:Auto, A:Identity, A:Lies (the Creduler, humdinger), A:Wormhole,
+   A:Clustation/w:Swarm, A:Supervisor (its %Watch roster incl. the four arrive.* rows), A:Radio/w:Radio (the Main: %Radio %Stoker
+    %Mag:Lineup %Door %Link %PierView %Focus %Arrived:*); no sub-House, no Story.  The glass is Cellui fullscreen with an explicit cast.
+
+**The shelves, as they are** (for the next reader — owner asked "a shelf is full of Mag which are full of Records?" — not quite): on the radio's w,
+ `%Mine,pub:<me>` is my home and `%Theirs,pub:<them>` a friend's as I hold it; each home has shelves — `stock` (records ready to play),
+  `shop` (what is mid-transfer: my %Caper pulls, %Heist keeps), `radiostocking` — and the shelves hold `%Record`s.  The Mags are elsewhere:
+   Heard's `%Mag:heard,pub:<me>` > %Cloud,page > %Card,id,pub — what I heard of whom and what I took (♥) — the ledger of love.
+
+**(2) Friends + the Yay cell — the design talked 2026-11-09 (owner's words, to build):**
+- Friends' shelves: their %Theirs crates reach the dial (Sounditron did it by re-commissioning when the Theirs set grew — the trickle);
+   on /Radio the cast is RadioPageFace's, so it only has to see them.
+- **The heist takes the main cell** when the Door's "ask to heist" option is on and a keep is a FORM (primed|wanted|asking|choosing — the
+   folder ticks, a section to type, ▶); a running keep is a progress bar and rides as a minicell (Sounditron_belly_keep's rule: a form beats
+    a run, the one touched last wins, a pressed bud beats a form).
+- **No FSA (no folder) ⇒ every heist goes to their other device** (a Cave, the crew), keeping the given folder structure — or, with no
+   other device yet, the yay just waits as "what we liked" data.  A fused bundle of options governs it — gather them in one place.
+- **Cell:Yay — new.**  A ♥ (yay|like|love) is a data point; show what becomes of it.  When the first one is made, a Yay minicell APPEARS
+   and the ♥ animatedly flies from the like button into it.  It tracks every Yay and Nay (👎) and what became of each (heisted here,
+    sent to the other device, waiting).  From it: untick "autoheist when yayed", untick the Door's "ask to heist"; a list of what to
+     download later, with an introduction to Link Devices; review a non-autoheisted yay and heist it.  It SYNCS between both devices
+      (the Heard Mag crew mirror already carries ♥ — Heard_haul_beat / RemoteHeist R4).  "It's nearly how it is" — most rows exist.
+- Organs maybe retired (owner: "I'm not sure I ever want to see Hauls"): `%Hauls` = albums that actually landed, newest first;
+   `%Uptime` = seconds since page load (a "did my reload land" tell, 2026-07).  Neither is in /Radio's cast.
+
+**(2) BUILT 2026-11-09** (headless eye: Wikipedia cell taps into the reading room on /Radio; the ♥ path + Yay cell are UNSEEN — they need a
+ real track and a heart, i.e. the owner's page):
+- **The pulse** — `RadioPage_pump` (RadioPage.g): every 2.5s, Swarm_pulse_all + Peeroleum retx/liveness/cull every other beat.  It was
+   Sounditron_trickle's job and /Radio had NONE of it: friends never saw us "here", a lost pier_accept was never re-sent.
+- **The cast moved into the ghost** — `Page_cast()` (read-only; it runs inside Cellui's derive) and `RadioPage_organs` (the think mints the
+   anchors).  Radio, Door, the keeps, Wikipedia, the Riffle at ≥2 sealed piers, Pooling at ≥1, Yay once a reaction exists, the Supervisor row,
+    Link|PierView while focused.  Cellui seats everything a `cast` names (no extras cap).
+- **The keeps** — a FORM (primed|wanted|asking|choosing, not carried) wears `.c.stage_want` → Cellui's insistent main (its "no" refuses);
+   one asks: the pinned (`Page_focus_keep`, HaulFace's press via page_nav) else the last touched; a running keep is a minicell.  Naming any
+    cell drops the pin.  The Door's "ask to heist" is the existing `Heist_take_asks` (`Heist_defaults.ask`).
+- **Cell:Yay** — `%Yay,face:Yay,dontSnap` on w:Radio, minted at the first heart|nay; YayFace reads `Page_yays` (Heard's card union — mine +
+   my devices' mirrors, so both devices list the same): every ♥|👎 and its fate (heisted here|on X, sent to X, being heisted by X, saved for
+    later, waiting for X, already had it, couldn't land, "kept — what we liked" with no folder).  Two switches: **autoheist when yayed**
+     (`Heard_autoheist`, `Heist_defaults.auto`) and ask-before-heisting.  The download-later list with ⇊ (`Page_yay_go` → `Heard_go`), and a
+      Link Devices intro when there is no folder and no linked device.  The ♥ flies (RadioFace throws `jam-yay`; RadioPageFace animates into
+       `.cello-sat[data-mk=Yay]`).
+- **Later, as stamps** (Heard.g): autoheist off ⇒ `Heard_take` stamps `later_at`; `Heard_go` stamps a newer `go_at`; `Heard_later(card)`
+   gates the haul beat (says "saved for later").  Both ride the crew mirror (`Heard_mirror_stamp_keys`), so the hauling body honours the
+    presser's word.  The SWITCHES are per device (Heist_defaults lives in the stash) — syncing them is open.
+- **The Wikipedia cell** — `Ghost/M/Wiki.g` (Sounditron_wiki_* copied as Wiki_*; a `Load:` row on Ground/Radio); WikipediaFace asks Wiki_*
+   first.  Sounditron keeps its copy for / until (4).
+- Radio_focus_tell's Vyto proposal is a `vaguely_ponder` now (the "no House has A:Vyto" warning on every play).
+- ⚠ A Ground toc edit reaches a FOLDERLESS page (the eye, a phone) only after a dev-server restart — vite caches the `?raw` toc module and
+   ignores wormhole/ (`touch vite.config.ts`, then 3 green pings).
+- Open: the Yay cell's look on a real page; whether a sealed-friend's shelf reaches the dial on /Radio as on / (the Repli fill is Swarm's own
+   share loop, so it should); the switches' sync; Haul (`%Hauls`) is not cast — the Yay cell covers "what became of it".
+
+**Owner's first look, 2026-11-09 — fixed same day:** the Supervisor + Riffle minicells are out of the cast (the Riffle is a forgotten
+ organ — Flip does nothing); a ♥-keep with "ask" off is a haul, not a form, so it no longer grabs the main cell; the Yay cell never
+  appeared because the think stops re-running once the radio has arrived — RadioPage_organs now also runs on the pulse; the ♥ flight waits
+   ≤4s for its target; each Yay row's Heist is status-lined ("3 of 8 tracks", "asking Grav for the album") and links through
+    (page_nav focus_keep); the fill-screen QR (InvitePanel .ip-overlay, z 60) opened invisibly UNDER the fullscreen glass (z 1000) → z 1500.
+ **The doubled album** ("16 tracks" from 8 wavs, each landed twice — Heist.g): a ♥ keep went pulling on its BLAGGED picks (the mirror
+  guess) before the source answered; Heist_wire_supersede only ran while a keep was a form, so the wire's picks were added beside the
+   blag's.  Now Heist_keep_take_go waits for a pick the source named, and the pulling branch runs the supersede too (a ▶ pressed early).
+    Probably as old as the blag on /; Books MusuHeist/MusuHeard/MusuPool*/Heistation green after.
+
+**(3) Every cell kind** lives in `src/lib/O/glass_kinds.ts` (mainkey → Face component, 27 of them) and `glass_faces.ts` (FACE_MAINKEYS).
+ Owner: "we must have all these Cells defined somewhere I can eye them all?" — a page (or a Book) that stands one of each, for a look; then
+  "furthering their artifice" after 1.1.  Sounditron's left-overs to move out the same way as Page_* (§5 slice 3): Screen_decide, the
+   supervise registrations, the wiki cell, the keeps' belly ladder, the Theirs trickle.
+
+**(4) Some day:** `/` and `/BigSoundland` point at `/Radio` — MOUNT, not redirect (routes/+page.svelte: an invite URL must stay as scanned),
+ carrying BigSoundland's pocket-player duties (the service worker's `music_page`, `navigator.storage.persist`).  Then Sounditron leaves the
+  music page and becomes a Story about one.
+
+**Later:** Story + Supervisor are one job at two tenses — the Supervisor holds standing questions now, a Story films and compares to a
+ recording.  A noticing Story (a step per Supervisor fold move, the Arrive rows its oaths) is the renovated Sounditron.  Not for v1.1: the
+  Supervisor already uploads Health (counts + verdicts, prod only, per-boot id — Supervisor.g "the report that travels"); /log unread so far.

@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { page_nav } from "$lib/O/ui/page_nav"
     // LinkDevice — the "spread out" front door (Division_todo §CEREMONY).  The DISTINCT, smaller sibling of
     //  InvitePanel's "invite a friend": here you divide YOURSELF across your own devices.  The model is the
     //   HANDSHAKE + FERRY (Swarm_ferry_* in Ghost/S/Swarm.g), NOT the old adopt-seal — that inverted the
@@ -256,7 +257,7 @@
         // "no" / cancel = the ONE dismiss now that the ceremony is its own surface: Sounditron_link_close tears
         //  down the ferry (Swarm_ferry_cancel, idempotent) AND drops top.c.link_lobby, so LinkSurface folds at
         //   once — no belly cell to un-focus anymore (owner 2026-08-29: the ceremony was pulled out of the belly).
-        try { (H as any)?.Sounditron_link_close?.(world()) } catch (e) { err = String(e) }
+        try { page_nav(H, 'link_close', world()) } catch (e) { err = String(e) }
         url = ''; pending = null; sent = ''
         // a Linkee cancelling must also drop the device-link ?Iz from the bar (owner 2026-08-31: "cancelling
         //  doesn't remove it from the location") — else the ghost's standup re-parks ferry_offer off it and the
@@ -380,7 +381,7 @@
         // 'done' through the phase verb: the %Ferry particle records the terminal, and its surface
         //  policy lands us back in the DOOR — the new 🔗 cave pier standing in the our-box is the receipt.
         try { (H as any)?.Swarm_ferry_phase?.(world(), 'done', {}) } catch {}
-        try { (H as any)?.Sounditron_link_done?.(world()) } catch {}
+        try { page_nav(H, 'link_done', world()) } catch {}
         try { (H?.ave as any)?.bump_version?.() } catch {}
     }
     // AUTO-RECEIVE (owner 2026-08-30: "we shouldn't need to 'receive this soul', they already consented") —

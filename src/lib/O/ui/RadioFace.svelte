@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { page_nav } from "$lib/O/ui/page_nav"
     // RadioFace — the radio's face in the glass: mounted by Cytui on a %Radio particle wearing
     //  sc.face:'Radio' (glass_kinds.ts).  Reads the particle's sc each H.version bump; the
     //   buttons call the Radio ghost's verbs straight on H (ghost methods mix onto the House).
@@ -16,7 +17,15 @@
     //    It opens itself ONCE, after the first ♥ ever (Heard_tipped on the heard Mag — durable, stashed, never
     //     re-asked), and long-press is the way back forever.  The road switch (Heard_hand_set) and the tip are
     //      scalars on the Mag; the sheet holds no state of its own beyond open/closed.
-    const like = () => { (H as any)?.Radio_like?.(n) }
+    // the press also SAYS where it happened (a window event), so /Radio's glass can fly a ♥ from here into the Yay cell
+    //  (RadioPageFace).  Nobody listening on / — the event just falls on the floor.
+    const like = (e?: MouseEvent) => {
+        ;(H as any)?.Radio_like?.(n)
+        try {
+            const r = (e?.currentTarget as HTMLElement | null)?.getBoundingClientRect?.()
+            if (r) window.dispatchEvent(new CustomEvent('jam-yay', { detail: { x: r.left + r.width / 2, y: r.top + r.height / 2 } }))
+        } catch {}
+    }
     let roads = $derived.by(() => {
         void H?.version
         try {
@@ -335,7 +344,7 @@
             {/if}
             {#if face.source === 'pool'}
                 <button class="rf-src rf-src-local rf-src-pool" onclick={chip_press} title={chooser ? 'press to choose where to listen from' : 'press to flip to friends'}>♪ SOUNDPOOL</button>
-                {#if !pool_ok}<button class="rf-src-sub rf-invite-link" onclick={() => (H as any)?.Sounditron_focus?.('Pooling')} title="open SoundPool">setup</button>
+                {#if !pool_ok}<button class="rf-src-sub rf-invite-link" onclick={() => page_nav(H, 'focus', 'Pooling')} title="open SoundPool">setup</button>
                 {:else if !pool_n}<div class="rf-src-sub">{pool_c.cards ? pool_c.cards + ' pooled · none playable yet' : 'empty'}</div>{/if}
             {:else if face.by}
                 <button class="rf-src rf-src-remote" class:rf-src-aimed={aimed_by} class:rf-src-dry={aim_dry} onclick={chip_press}
@@ -351,7 +360,7 @@
         </div>
     {/if}
     {#if !pool_ok && pool_wanted && face.source !== 'pool'}
-        <button class="rf-src-sub rf-invite-link" onclick={() => (H as any)?.Sounditron_focus?.('Pooling')} title="open SoundPool">SOUNDPOOL setup</button>
+        <button class="rf-src-sub rf-invite-link" onclick={() => page_nav(H, 'focus', 'Pooling')} title="open SoundPool">SOUNDPOOL setup</button>
     {/if}
     <!-- THE INVITE, PUT FORWARD FOR A PEERLESS LISTENER — sits right under the ♪ LOCAL sayer, because
          "playing your own record, alone" is the exact moment bringing a friend is the obvious next move.
@@ -361,7 +370,7 @@
          WORDED AS A FACT WITH A DOOR IN IT (the owner 2026-08-28: "have the thing by LOCAL say
           'no peers ever, [invite some]' where invite some is a link to the Door"). -->
     {#if peerless && face.by == null && face.title && face.state !== 'off' && face.state !== 'digging'}
-        <div class="rf-src rf-src-local">no peers ever, <button class="rf-invite-link" onclick={() => H?.Sounditron_focus?.('Door')}
+        <div class="rf-src rf-src-local">no peers ever, <button class="rf-invite-link" onclick={() => page_nav(H, 'focus', 'Door')}
             title="bring a friend in to listen together (opens the Door, where the invite QR lives)">invite some</button></div>
     {/if}
     {#if face.note}<div class="rf-note">{face.note}</div>{/if}

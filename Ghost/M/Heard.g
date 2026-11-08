@@ -368,7 +368,7 @@ Heard_adopt(w, me, card):
 //  every stamp MAX-MERGES (never overwrites backward); the listing rides along only when a stamp
 //   actually advanced, so a stale re-delivered frame writes nothing at all.
 Heard_mirror_stamp_keys():
-    return ['hearted_at', 'nayed_at', 'mehed_at', 'played_through', 'pressed_on', 'carried_at', 'landed_at', 'already_had_at', 'landing_failed_at', 'offer_unsigned_at', 'looked_at']
+    return ['hearted_at', 'nayed_at', 'mehed_at', 'played_through', 'pressed_on', 'carried_at', 'landed_at', 'already_had_at', 'landing_failed_at', 'offer_unsigned_at', 'looked_at', 'later_at', 'go_at']
 Heard_mirror_listing_keys():
     return ['title', 'artist', 'dir', 'path', 'bytes', 'body_hash', 'keep', 'why', 'waiting_for', 'carried_by', 'via_addr', 'to']
 // Heard_mirror_merge — land a decoded sibling snap's Cards onto MY mirror of them.  Swarm.g's
@@ -709,8 +709,32 @@ Heard_take(w, me, rec, by, to0):
         let lo = this.Heist_defaults_get ? this.Heist_defaults_get().lofi : ''
         if (lo) { if (!card.sc.lofi) { card.sc.lofi = 1 } } else if (card.sc.lofi) { delete card.sc.lofi }
     }
+    // LATER, NOT NOW (owner 2026-11-09, Cell:Yay): with "autoheist when yayed" unticked the heart is kept and no haul
+    //  starts for it — it waits on the Yay cell's download-later list until someone presses ⇊ there (Heard_go).  A
+    //   stamp beside hearted_at, so it rides the crew mirror like lofi and the hauling body honours the presser's word.
+    if (!this.Heard_autoheist()) { card.sc.later_at = card.sc.hearted_at }
     card.bump()
     this.Heard_settle(w, me, 'heard_take')
+    return 1
+
+// Heard_autoheist — does a ♥ start a haul by itself?  ON until the listener unticks it on the Yay cell
+//  (`Heist_defaults.auto`: '0' is off, absent|'1' on — the Heist_take_asks idiom).  Per device, like every Heist default.
+Heard_autoheist():
+    let d = this.Heist_defaults_get ? this.Heist_defaults_get() : {}
+    return String((d && d.auto) ?? '1') !== '0'
+
+// Heard_later — is this heart saved for later?  A later_at not yet answered by a go_at (stamps, not flags: a key can't be
+//  un-set over the wire, so "heist it after all" is a newer stamp, never a deletion).
+Heard_later(card):
+    if (!card || !card.sc.later_at) { return 0 }
+    return +(card.sc.go_at || 0) >= +card.sc.later_at ? 0 : 1
+
+// Heard_go — the Yay cell's ⇊ on a saved-for-later heart: heist it now (the haul beat picks it up on its next pass)
+Heard_go(w, me, card):
+    if (!card || !this.Heard_later(card)) { return 0 }
+    card.sc.go_at = this.Heard_react_at(w, card, ['later_at'])
+    card.bump()
+    this.Heard_settle(w, me, 'heard_go')
     return 1
 
 // Heard_forget — drop a set of keys off a Card without bumping (the caller bumps once).  ONLY Heard_untake
@@ -1260,7 +1284,8 @@ async Heard_haul_beat(w, rw, me, nav, shop, ident):
             console.log('♥⇢ ' + String(c.sc.title || k).slice(0, 32) + ' — ' + why)
         }
         for (const c of row.cards) { if (!this.Heard_for_me(c, myprepub)) { say(c, 'not mine to haul — the 🧲 is on ' + (this.Heard_to_name(c) || String(c.sc.to).slice(0, 8))) } }
-        let cards = row.cards.filter((c) => this.Heard_for_me(c, myprepub)).map((c) => this.Heard_adopt(w, me, c)).filter((c) => c)
+        for (const c of row.cards) { if (this.Heard_later(c)) { say(c, 'saved for later — not autoheisted (the Yay cell holds it)') } }
+        let cards = row.cards.filter((c) => this.Heard_for_me(c, myprepub) && !this.Heard_later(c)).map((c) => this.Heard_adopt(w, me, c)).filter((c) => c)
         if (!cards.length) { continue }
         let busy = 0
         for (const k of shop.o({ Heist: 1, pub: row.pub })) { if (String(k.sc.state || 'primed') !== 'done') { busy = 1 } }

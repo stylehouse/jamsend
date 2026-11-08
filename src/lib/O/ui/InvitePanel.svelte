@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { page_nav } from "$lib/O/ui/page_nav"
     // InvitePanel — the Invite front door's live face (Swarm_spec §10.1). Two directions in one
     //  chunky panel:
     //   MINT — resolve the machine's LIVE identity (Swarm_live_self: the one signing key Auto's
@@ -499,7 +500,7 @@
     $effect(() => {
         if (whisked || !invite || !device_link(invite) || !named || !stood) return
         whisked = true
-        try { H?.Sounditron_link_open?.() } catch {}
+        try { page_nav(H, 'link_open') } catch {}
     })
     // (The DEVICE-LINK OFFER BRIDGE that lived here for a few hours on 2026-08-30 is GONE, on the owner's
     //  ruling: "relying on a certain cell being mounted to hear a message is quite the design dissonance."
@@ -837,7 +838,7 @@
                     <span class="ip-note">{joined}</span>
                 {:else}
                     <!-- a WAY THERE, not a promise (2026-09-29, owner: "hard to get back to Link from Door") -->
-                    <button class="ip-golink" onclick={() => H?.Sounditron_link_open?.()} title="go to the Link cell — you can become them there">
+                    <button class="ip-golink" onclick={() => page_nav(H, 'link_open')} title="go to the Link cell — you can become them there">
                         <span class="ip-golink-chip">🔗 Link</span> in progress
                     </button>
                 {/if}
@@ -1299,8 +1300,9 @@
     .ip-tally { font-size: 0.75rem; color: #9c8; white-space: nowrap; }
 
     /* ── the full-screen face ── a warm amber-tan radial, lightest where the QR sits */
+    /* 1500: over /Radio's fullscreen glass (1000) — at 60 it opened invisibly behind it (2026-11-09) — under BootGate (2100) */
     .ip-overlay {
-        position: fixed; inset: 0; z-index: 60;
+        position: fixed; inset: 0; z-index: 1500;
         display: flex; align-items: center; justify-content: center;
         background: radial-gradient(circle at 50% 44%, #f3e3bd 0%, #e2bd85 46%, #a8763f 100%);
         cursor: pointer;

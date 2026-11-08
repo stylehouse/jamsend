@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { page_nav } from "$lib/O/ui/page_nav"
     // HaulFace — WHAT YOU HEISTED (the owner 2026-08-13, ruling on whether to build it: *"yeah build
     //  something aye"*).  The list of albums that have actually landed in your collection, newest first.
     //
@@ -163,7 +164,7 @@
 
     // ── THE VERBS.  Each one is the SAME call the heist's own cell makes — this list is a second way to
     //  the object, never a second implementation of what pressing it means.
-    function open(keep: any) { A?.Sounditron_focus_keep?.(W, keep) }
+    function open(keep: any) { page_nav(A, 'focus_keep', W, keep) }
     function pause(keep: any) { A?.Heist_keep_pause?.(keep) }
     function resume(keep: any) { A?.Heist_keep_resume?.(keep) }
     function first(keep: any) { A?.Heist_keep_first?.(keep) }

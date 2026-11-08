@@ -75,7 +75,8 @@ Radio_state(radio, state):
 //      again on purpose — the music stopped and the guts are once more the interesting thing, which is
 //       the same judgement the starve note makes in words.
 //  A PROPOSAL, NOT A COMMAND (Vyto_focus's own word): the governor decides, and a world with no glass
-//   commissioned simply has no Vyto to hear it.  Live page only — a driven world must keep the even cut
+//   commissioned simply has no Vyto to hear it (vaguely_ponder: /Radio's Cello has none, and an insisting i_elvisto
+//    warned on every play).  Live page only — a driven world must keep the even cut
 //    its fixtures recorded, and humdinger is the standing predicate for exactly that distinction.
 Radio_focus_tell(radio, state):
     let SH = this.top_House()
@@ -84,8 +85,8 @@ Radio_focus_tell(radio, state):
     if (SH.c.radio_focus === want) return
     SH.c.radio_focus = want
     try {
-        if (want) SH.i_elvisto('Vyto/Vyto', 'Vyto_focus', { on: want })
-        if (!want) SH.i_elvisto('Vyto/Vyto', 'Vyto_focus', { release: 1 })
+        if (want) SH.vaguely_ponder('Vyto/Vyto', 'Vyto_focus', { on: want })
+        if (!want) SH.vaguely_ponder('Vyto/Vyto', 'Vyto_focus', { release: 1 })
     } catch (er) {}
 
 // commas cut snap lines; long titles cut cells.  Same sanitizer stance as Sounditron_clean.

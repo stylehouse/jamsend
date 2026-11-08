@@ -10,6 +10,11 @@
 //  jsdom defines an (empty) `location`, so under vitest the URL branch simply misses and we
 //   fall through to env — i.e. a CLI run drives the same knobs the browser drives via the URL.
 //  `process` is absent in the browser bundle, hence the typeof guard (no ReferenceError).
+// BOOT_DEFAULTS — what a ROUTE says when the URL doesn't (2026-11-09): /Radio is the Player page, `/Desk?G=Radio` without having to
+//  say so — its +page sets G before Otro reads it.  The URL still wins; then env; then these.
+const BOOT_DEFAULTS: Record<string, string> = {}
+export function boot_default(name: string, v: string) { BOOT_DEFAULTS[name] = v }
+
 export function boot_param(name: string): string | undefined {
     if (typeof location !== 'undefined' && location.search) {
         const v = new URLSearchParams(location.search).get(name)
@@ -19,7 +24,7 @@ export function boot_param(name: string): string | undefined {
         const v = process.env[name.toUpperCase()]
         if (v != null && v !== '') return v
     }
-    return undefined
+    return BOOT_DEFAULTS[name]
 }
 
 // A persisted per-tab preference (localStorage, survives reload) — a sibling to the URL/env params

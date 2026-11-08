@@ -17,7 +17,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '5238a4f8314c2f9e~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '43e8fd967a41b78a~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -9494,10 +9494,23 @@ Swarm_ferry_phase(w, phase, patch) {
         let pull = phase === 'confirming' || phase === 'pending' || phase === 'held' || phase === 'got' || phase === 'ended' || phase === 'received'
         if (pull) {
             try { if (typeof this.Radio_pop_glass === 'function') this.Radio_pop_glass() } catch (er) {}
-            try { if (typeof this.Sounditron_link_open === 'function') this.Sounditron_link_open(w) } catch (er) {}
+            // the page's own verb first (Ghost/M/RadioPage.g, the Player page), else the Sounditron Book's (on /)
+            try {
+                if (typeof this.Page_link_open === 'function') {
+                    this.Page_link_open()
+                } else if (typeof this.Sounditron_link_open === 'function') {
+                    this.Sounditron_link_open(w)
+                }
+            } catch (er) {}
         }
         if (phase === 'done') {
-            try { if (typeof this.Sounditron_link_done === 'function') this.Sounditron_link_done(w) } catch (er) {}
+            try {
+                if (typeof this.Page_link_done === 'function') {
+                    this.Page_link_done(w)
+                } else if (typeof this.Sounditron_link_done === 'function') {
+                    this.Sounditron_link_done(w)
+                }
+            } catch (er) {}
         }
     }
     if (top.bump_version) { top.bump_version() }

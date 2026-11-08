@@ -20,7 +20,12 @@
     import { backOut } from 'svelte/easing'
     import { Spring } from 'svelte/motion'
 
-    let { H } = $props()
+    // `cast` — the cells, named by the page that mounts the glass (the Player page, RadioPageFace — no Vyto world commissioned
+    //  there, so no mirror says who is in it; the raw walk below met every faced particle, Mine|Mag|Transfer among them).  It wins
+    //   over the mirror and the walk; keep_cell still gates each one.  `focus`/`onfocus` the same way: the page's focus (the main
+    //    cell's mainkey) read and driven by the page, where a commissioned glass has Sounditron's.
+    let { H, cast = null, focus = null, onfocus = null }: { H: any, cast?: (() => any[]) | null,
+        focus?: (() => string | null) | null, onfocus?: ((mk: string) => void) | null } = $props()
 
     // ════════════════════════════════════════════════════════════════════════════
     //  THE PHYSICAL SWAP — "like Pixar animated them" (owner, all-night craft pass).
@@ -228,6 +233,9 @@
         try {
             if (PERMANENT_CAST.has(mk)) return true
             if (mk === 'Supervisor') return supervisor_amiss(n)
+            // THE STOKER IS NOT A CELL (the owner 2026-07-28, Sounditron's lean organ set: "the stoker I don't care to see or interact
+            //  with").  Sounditron simply never grappled it; a glass cast by the raw walk (the Player page, RadioPage.g) meets it, so say it here
+            if (mk === 'Stoker') return false
             // A POOL KEEP IS MACHINERY, NOT A HAUL (the owner 2026-09-06: "now in Hauls there's a Venus trying to
             //  download I never clicked on … a fullscreen-ish cell … all tiny").  A circulation fill rides the
             //   same %Heist the ⇊ button mints (the byte-lane reuse) — but nobody pressed it, it is one track into
@@ -323,6 +331,11 @@
 
             const seen = new Set<TheC>()
             const out: Cell[] = []
+
+            if (cast) {
+                for (const n of cast() ?? []) { const cell = cell_of(n, seen); if (cell) out.push(cell) }
+                return out
+            }
 
             // PRIMARY — the commissioned mirror(s)
             for (const w of commissioned_worlds()) {
@@ -507,6 +520,7 @@
     function commissioner_focus(): string | null {
         try {
             void now_tick
+            if (focus) return focus() || null
             const get = (H as any)?.Sounditron_focus_get
             for (const w of commissioned_worlds()) {
                 const cw = (w.c as any)?.client_w
@@ -526,6 +540,7 @@
     //   mainkey ('Radio'/'Door'/'Link'…).  Guarded; the local main_key echo still moves the glass if the
     //    seam isn't present (a bare House, headless).
     function set_focus(mk: string) {
+        if (onfocus) { try { onfocus(mk) } catch {} ; return }
         try { (H as any).Sounditron_focus?.(mk) } catch { /* no seam — rely on the local echo */ }
     }
 
@@ -726,7 +741,8 @@
         // permanent cast is always kept; the extras are capped unless we're heisting.
         // a consented SoundPool keeps its seat (owner 2026-09-13: "where's the 🏊 bud?") — Sounditron only
         //  mints the organ on a music page with a pier, so it is standing furniture there, not an extra.
-        const seated = (c: Cell) => PERMANENT_CAST.has(c.mk) || c.mk === 'Pooling'
+        //  A page that names its cast (the `cast` prop, /Radio) has already been restrained — it names only what earns a seat.
+        const seated = (c: Cell) => !!cast || PERMANENT_CAST.has(c.mk) || c.mk === 'Pooling'
         const permanent = ordered.filter(seated)
         const extras = ordered.filter(c => !seated(c))
         const extra_cap = heisting ? extras.length : Math.min(extras.length, 2)
@@ -757,66 +773,8 @@
     }
 
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    // ROLLABLE + RESIZABLE MINICELLS — a minicell is a physical stone: drag to ROLL it
-    //  around/along the main cell, wheel (or corner-drag) to RESIZE.  Its nudged position
-    //   (a px offset off its resting flex slot) + scale persist keyed by the STABLE cell.key
-    //    in a plain Map — VIEW STATE, never snapped, so it survives the 1s heartbeat re-scan
-    //     and re-derives.  A stone being dragged pauses its ambient rocks-in-palm drift and
-    //      settles where it lands (the drift resumes from there).  Pointer-based, guarded.
-    // ─────────────────────────────────────────────────────────────────────────────
-    type Nudge = { dx: number, dy: number, scale: number }
-    // reactive so a nudge repaints; a Map wrapped in $state gives us fine-grained keys.
-    let nudges = $state<Map<string, Nudge>>(new Map())
-    let dragging_key = $state<string | null>(null)
-
-    function nudge_of(key: string): Nudge {
-        return nudges.get(key) ?? { dx: 0, dy: 0, scale: 1 }
-    }
-    function set_nudge(key: string, n: Nudge) {
-        const m = new Map(nudges); m.set(key, n); nudges = m
-    }
-
-    // pointer roll — drag the stone; dx/dy accumulate off its resting slot (guarded).
-    function sat_pointerdown(e: PointerEvent, cell: Cell) {
-        try {
-            if (e.button !== 0) return
-            const start = nudge_of(cell.key)
-            const sx = e.clientX, sy = e.clientY
-            const target = e.currentTarget as HTMLElement
-            let moved = false
-            dragging_key = cell.key
-            try { target.setPointerCapture(e.pointerId) } catch { /* no-op */ }
-            const move = (ev: PointerEvent) => {
-                const ddx = ev.clientX - sx, ddy = ev.clientY - sy
-                if (!moved && Math.hypot(ddx, ddy) > 4) moved = true
-                // clamp the roll so a stone can wander around/along the main but never off to nowhere
-                const clamp = (v: number, lim: number) => Math.max(-lim, Math.min(lim, v))
-                set_nudge(cell.key, { dx: clamp(start.dx + ddx, 480), dy: clamp(start.dy + ddy, 480), scale: start.scale })
-            }
-            const up = (ev: PointerEvent) => {
-                window.removeEventListener('pointermove', move)
-                window.removeEventListener('pointerup', up)
-                try { target.releasePointerCapture(ev.pointerId) } catch { /* no-op */ }
-                dragging_key = null
-                // a real drag consumes the click so it doesn't ALSO promote; a tap (no move) promotes.
-                if (moved) { const swallow = (ce: Event) => { ce.stopPropagation(); ce.preventDefault() }
-                    target.addEventListener('click', swallow, { capture: true, once: true }) }
-            }
-            window.addEventListener('pointermove', move)
-            window.addEventListener('pointerup', up)
-        } catch { dragging_key = null }
-    }
-
-    // wheel resize — grow/shrink the stone under the pointer, persisted + clamped (guarded).
-    function sat_wheel(e: WheelEvent, cell: Cell) {
-        try {
-            e.preventDefault()
-            const cur = nudge_of(cell.key)
-            const next = Math.max(0.55, Math.min(2.4, cur.scale * (e.deltaY < 0 ? 1.08 : 0.926)))
-            set_nudge(cell.key, { dx: cur.dx, dy: cur.dy, scale: next })
-        } catch { /* no-op */ }
-    }
+    // MINICELLS STAY PUT (owner 2026-11-07: "the minicells don't need to be draggable").  They were rollable stones — drag to roll
+    //  one around the main cell, wheel to resize it, kept in a view-state Map; gone.  A tap promotes (switcheroo), nothing else.
 
     // ── FOOLPROOF LAYOUT — a ResizeObserver on the stage root ─────────────────────
     //  The layout is CSS-driven (flex + clamp + vw/vh), so it already flows, but the
@@ -1285,12 +1243,10 @@
         <div class="cello-satellites">
             {#each satellites as cell (cell.key)}
                 {@const tiny = false /* TODO: measure width < LABEL_FLOOR_W */}
-                {@const nz = nudge_of(cell.key)}
-                {@const held = dragging_key === cell.key}
                 <button
                     class="cello-sat"
                     class:tiny={tiny}
-                    class:held={held}
+                    data-mk={cell.mk}
                     in:receive={{ key: cell.key }}
                     out:send={{ key: cell.key }}
                     animate:flip={{ duration: reduce_motion ? 0 : 420, easing: backOut }}
@@ -1298,23 +1254,16 @@
                         --cell-bg:     {cell.colour.bg};
                         --cell-fg:     {cell.colour.color};
                         --cell-border: {cell.colour.border};
-                        --nudge-x: {nz.dx}px; --nudge-y: {nz.dy}px; --nudge-s: {nz.scale};
                     "
                     onclick={() => switcheroo(cell)}
-                    onpointerdown={(e) => sat_pointerdown(e, cell)}
-                    onwheel={(e) => sat_wheel(e, cell)}
                     title={cell.label}
                     aria-label="switch to {cell.label}"
                 >
-                  <!-- NUDGE WRAPPER — the user's persisted drag-roll (--nudge-x/y) + wheel resize (--nudge-s),
-                       off the resting flex slot.  It MOVED off the outer button onto this inner wrapper because
-                        crossfade (in:receive/out:send) now owns the button's transform for the physical swap; a
-                         nudge on the same outer element would fight the send/receive tween.  The drift wrapper
-                          (rocks-in-palm) nests INSIDE this, so button-transform (swap) ⊃ nudge ⊃ drift compose. -->
+                  <!-- NUDGE WRAPPER — held the drag-roll + wheel resize (gone 2026-11-07, minicells stay put); its vars now
+                       sit at their defaults.  Kept as the layer between the swap's transform and the drift. -->
                   <div class="cello-sat-nudge">
-                  <!-- DRIFT WRAPPER — the rocks-in-palm wander, PAUSED while this stone is held so it
-                       settles where it lands and resumes from there. -->
-                  <div class="cello-drift" class:paused={held}
+                  <!-- DRIFT WRAPPER — the rocks-in-palm wander. -->
+                  <div class="cello-drift"
                        style="--drift-dur:{drift_dur(cell.seed, 16)}s; animation-delay:{drift_delay(cell.seed)};">
                     <div class="cello-body" style="clip-path: {cell.blob};"></div>
                     {#if cell.wall}

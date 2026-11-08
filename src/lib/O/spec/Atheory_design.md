@@ -318,6 +318,11 @@ A:Pond_Warm                                   %TheACode:Athe_Pond, one layer (th
 
 ### 1.12 Spheres on a Seem — `AthePondSeem`
 
+**Owner, 2026-11-07, looking back:** *rollback is "entirely uninteresting … what could it be for? code isn't supposed to throw
+ exceptions."*  And a sphere is **a whole tree**, joined to the Seem's tree at each node, holding more than one reflector per
+  point — the toy's one `%TheARegard` row per point undersells it.  What carried forward is the pairing (`resolve()` →
+   `TheA_pair`, Pile's walk); Pile keeps ids on its rows instead of a Seem beside them.
+
 **Owner, 2026-10-21:** versions of data wait for inventing time on Seem and the spheres; Seem is probably the only data
  controller that can roll back.  The first slice (`Theory.g`, "Seem"; working notes in `Atheory_todo.md` §0.5):
 

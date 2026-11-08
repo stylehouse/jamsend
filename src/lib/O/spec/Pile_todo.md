@@ -8,6 +8,9 @@
 
 ## 0. What to get on with next
 
+**Pile and Radio (owner 2026-11-07):** *"Pile is its own world where we very explicitly move music around, Radio is where it
+ happens by magic."*  Kept apart.
+
 ### 0.0 Where rung 1 stands (2026-11-05)
 
 **Built, Book-proven: the tree, its identity, partitions, the three Mags, and their storage.**
@@ -105,7 +108,7 @@
     kept in its own Mag, never on the fs rows.  It would guess the artist and album per `Dir` from names alone (`NN Artist -
      Title`, `Artist - Album (Year)`, a name repeated across siblings and parents), with confidence growing as the guesses
       agree; tags read from the files later, as Jobs; the face shows a guess as a label.
-8. **Likes reaching the radio**: today `%Like` is the Pile's own.  Radio's heart is `take` on a Card in `%Mag:heard`
+8. **Likes reaching the radio** — not yet (owner 2026-11-07: no joining these systems yet): today `%Like` is the Pile's own.  Radio's heart is `take` on a Card in `%Mag:heard`
     (Heard.g); when the pile feeds the radio, the two should be one ledger, or one should name the other.
 
 1. Read §2 (Atheory in one sitting) and `CLAUDE.md`; then `AtheoryNexus_todo.md` §0.0 (the land map) and its *E thought through*.

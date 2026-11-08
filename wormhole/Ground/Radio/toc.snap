@@ -1,0 +1,15 @@
+Ground:Radio,desc:the music page as a Main — Radio stands on Mundo with no Book under it — its arrival told as rows (spec/AtheoryArrive_todo.md §5)
+  Main:Radio
+  Role:player
+  Spine:Wire
+  Spine:Swarm
+  Spine:Music
+  Spine:Cave
+  Spine:Ghost/O/Supervisor.g
+  Load:Ghost/M/RadioPage.g
+  Load:Ghost/M/Wiki.g
+  Arrive:spine,of:Radio,stage:self,says:the player's code is loaded
+  Arrive:who,of:Identity,by:Who,stage:self,says:who you are
+  Arrive:shelf,of:Radio,stage:share,says:a track is ready to play
+  Arrive:radio,of:Radio,stage:sound,says:the radio is ready
+  Lift:radio
