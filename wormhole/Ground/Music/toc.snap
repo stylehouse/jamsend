@@ -7,12 +7,8 @@ Ground:Music,desc:the music pipeline — rastock racast raterm — stock a track
   Load:Ghost/M/Crate.g
   Beside:src/lib/O/ui/PoolFace.svelte
   Beside:src/lib/O/ui/RadioFace.svelte
-  Beside:src/lib/O/ui/LineupFace.svelte
-  Beside:src/lib/O/ui/TunerFace.svelte
-  Beside:src/lib/O/ui/StokerFace.svelte
   Beside:src/lib/O/ui/RiffleFace.svelte
   Beside:src/lib/O/Funk/Sound.svelte
-  Beside:src/lib/O/ui/CrateFace.svelte
   Advice:src/lib/O/spec/Radio_todo.md
   Advice:src/lib/O/spec/Radio_circuit_todo.md
   Advice:src/lib/O/spec/SoundPooling_todo.md

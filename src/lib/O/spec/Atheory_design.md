@@ -58,6 +58,114 @@
 **One principle at two scales: nobody sees a write from the same round.**  Inside a compartment, the frontier gives each
  pass a snapshot of the rows.  Between compartments, the boundary gives each move a snapshot of the pulses.
 
+## 0.5 How the code moves (owner 2026-11-09: "big vectors we'll be aligning a few orders through")
+
+From a keystroke to a running A, and the ledgers each leg leaves.  Two generations ride side by side — **old** (the GhostList spine,
+ Story.svelte/Otro/Auto) and **new** (Grounds, %TheACode, StoryFu) — and most open work is pulling a leg from the first onto the second.
+
+**The picture, tight.**  One atom joins everything: a **path** (`Ghost/M/Radio.g`).  The same path is a `Doc:` row in the map, a
+ `%Doc:<path>` in Atlas, a `%TheALayer:<path>` on an A, a `Load:` in a Ground, and (slashes → underscores) a `uses:Ghost_M_Radio` line in a Credulation.  Four
+  constellations hold it in four senses; most bugs and most design live on the edges between them.
+
+```
+   THE TEXT                     THE KNOWING                          THE RUNNING                    THE PROVING
+   what is written              what the code says / is for          what a tab has loaded          what a Book showed
+   ───────────────              ───────────────────────────          ─────────────────────          ───────────────────
+   Ghost/**.g                   w:Atlas > %Doc:<path>,dige            src/lib/gen/**.go              wormhole/Story/<Book>/
+   src/** .svelte .ts .md         > %Map > %def %call %region           Vite · HMR · /__gen/dige      toc (Stands:) + NNN.snap
+   wormhole/**/toc.snap         /__atlas/dige (the dige index)        Ground/<Name> toc · Creduler   Credence (every Book)
+    (Wafts, Grounds, Credence,  Lagoon asks (seek callers beads)      A > %TheACode:Ground/X,dige    Credulate|Credulation
+     Story fixtures)            Electrode: what it DOES (Flow)           > %TheALayer:<path>,dige     (digests a run ran on)
+                                the MAP: Everything + area Wafts      GhostInclude (old spine)       Supervisor (live oaths)
+                                 (Doc rows · Points · Books · tags)
+```
+
+- **Text ↔ Knowing — the index edge.**  Atlas makes a %Map per path from the REAL parser (the compiler's own vocabulary), kept as
+   particles; the map's `Point` claims a def by name.  Today the keeper re-finds defs by regex — the edge should be one question to
+    Atlas.  A dige (sha of the text) is what says "this Map is current" — Atlas's `%Doc,dige`, the dige index, Docindex.
+- **Knowing ↔ Running — the belonging edge.**  The map's Ground tags (on its Whats) decide which Ground a path loads in (the first
+   that cites it); the derived Ground tocs and `grounds.gen.js` carry it to the Creduler.  Curation (where a row sits for a reader)
+    and loading (what a tab stands) are one fact here — the edge most worth deciding a direction for.
+- **Text ↔ Running — the compile edge.**  .g → .go, three hosts, one compiler; the .go's digest becomes the `%TheALayer` dige.
+   The editor rides a frozen copy (`pinned_stable/`) — the one place Running is deliberately behind Text.
+- **Running ↔ Proving — the staleness edge.**  A Book stands its Ground's closure; Credulation records the `%TheACode` digests it ran
+   on; an A holds today's.  Compare them and every Book knows if it is stale.  A fixture is evidence about a digest, not about a name.
+- **Knowing ↔ Proving — the oath edge.**  Credence lists Books by area; a Book's sworn sentences sit in its toc; the map's `What:the
+   tests` names the test ghosts.  Electrode's Flow is the bridge not yet walked: which Books actually EXERCISE a method.
+- **Proving ↔ Text — the fixture edge.**  NNN.snap and Credulation are text in the wormhole too: accepting a run writes Text, so the
+   loop closes — and it is the one write that must stay a human's act.
+
+The legs, in order:
+
+```
+ author ─▶ compile ─▶ serve ─▶ stand ─▶ push ─▶ prove            and beside it all, the MAP (what the code is, said as Wafts)
+  .g        .go        Vite     Ground    seam    Book Stands:
+```
+
+1. **Author.**  A ghost is `Ghost/<X>/<Name>.g` (the .g dialect — braced if/else, `i %k:v` sugar); the app shell is `src/**`
+    .svelte/.ts.  Edited in the editor (Editron, `role:editor`; Wordland is its read-only successor) or by hand.
+2. **Compile** — .g → `src/lib/gen/<X>/<Name>.go` (a Svelte-module ghost).  Three hosts, one compiler (`src/lib/O/lang/compile.ts`):
+    the editor's Lies pipeline on save (Cortex → Codebit owns the write), LocalGen (`GFILES=… vitest … LocalGen.spec.ts`, the
+     headless floor), `ghost_compile.ts`.  Trust the .go (newer than its .g, parses), never the ack.
+3. **Serve.**  Vite serves the .go as a module.  A live tab takes a new one by HMR (onMount → `eatfunc` deposits the methods on H
+    again), by the Creduler's reswap poll (`/__gen/dige`, one ETag'd index for the gen tree), or by `runner_ask --swap|ghost_load`.
+     The editor itself rides a FROZEN spine (`src/lib/pinned_stable/*.go`).
+4. **Stand** — which code a tab loads, and the ledger saying so.
+    - *old:* `CREDULER_GHOSTS` (/, Big*land, `?B=`) — the GhostInclude ledger, one row per ghost.
+    - *new:* the page names a Ground (`?G=`, or a route's `boot_default` — /Radio).  `wormhole/Ground/<Name>/toc.snap` says
+       `Main/Role/Spine/Load/Arrive/Lift`; the Creduler loads the `Spine:` closure (Core first), Auto the `Load:` rows
+        (`ground_include`), and the A says what it runs: `%TheACode:Ground/<Name>,dige` > `%TheALayer:<.g>,dige` (Ground.g,
+         Theory.g §1.2).  A folderless page reads the toc SHIPPED in the bundle (`ground.ts` glob); the floor loads Core from the
+          baked `src/lib/A/grounds.gen.js` with no wormhole at all.
+5. **Push** — a compile reaching an A that holds it: `ghostsHaunt` → `%TheACodePush` → through at the seam (a Story step, else at
+    once) → `e_TheA_code_arrive` (§1.3).  Two versions in one heap is A** (§1.11).
+6. **Prove** — a Book's toc says `Stands:<Ground>` (else it runs HOLLOW); Story stands that closure, and Credulate|Credulation
+    record per run the `%TheACode` digests and per-ghost `uses:` it ran on — a fixture is tied to the code that made it.
+     Credence (`wormhole/Credence/toc.snap`, hand-kept) lists every Book.
+7. **The map** — hand-kept since 2026-11-09 (everything.js sublated): Waft:Everything + the area Wafts it points at say every
+    area's Docs, its main Points (with keywords), its Books, and the **Ground tags** (`,ground:X,stands:Y` on a What).
+     `src/lib/L/wafts_keep.js` reads them back (`wafts_parse`/`wafts_read`), checks every row (Doc exists, Point is a def, no comma in a
+      desc, Book exists) and DERIVES: Waft:Ghost/Rest/Unsorted (every source file no area cites — the map's debt), Everything's
+       counted Whats, the tagged `wormhole/Ground/<Name>` tocs and `grounds.gen.js`.  Two hosts: `node scripts/wafts_everything.mjs
+        [--check]` (the floor) and the `everything` verb (Lagoon.g, an editor terminal).  Beside it: Atlas keeps what the code SAYS
+         (a compiler Map per doc, `/__atlas/dige`), Electrode what it DOES.
+
+**The seams to align (the "few orders"):**
+- **Two kinds of Ground toc.**  DERIVED (Core, Wire, Swarm, Music, Cave, Glass, Land, Story… — from the map's tags, rewritten by the
+   keeper) and HAND-KEPT (Radio, Runner, Pile — a page's recipe: Main/Role/Spine/Arrive, untouched by it).  A hand-kept Ground's
+    `Spine:` names derived ones.  One shape, one keeper, eventually.
+- **Two stand ledgers.**  GhostInclude (old, `CREDULER_GHOSTS`) vs `%TheACode` (new).  / still stands the old way — until it mounts
+   /Radio (AtheoryArrive_todo §6 (4)).
+- **Three compile hosts** whose acks differ; the editor's frozen spine lags the live one.
+- **Tags live in the map, recipes in the Ground** — a .g's home Ground is "the first Ground that cites it" in map order, which is
+   a rule about where a Doc row sits in a toc.  Moving a Doc between area Wafts moves code between Grounds.
+- **THE REFLEX — where these vectors point (owner 2026-11-09: "we want to build an editor that automatically manages the reflex of
+   re-indexing|compiling when change is made").**  Today each leg is a separate act someone remembers: the editor compiles a .g on
+    save, but the map check (`wafts_everything.mjs`), Atlas's re-map (a census ask), the Ground derive + `grounds.gen.js`, a Book's
+     Credulate, a tab's reload are each run by hand or by a poll.  The editor should own the whole reflex: one change → compile →
+      re-index (Atlas Map, the map's rows checked, Unsorted recounted) → re-derive the Grounds it touches → push to the As that hold it
+       → the Books standing on it go stale and say so.  Each leg already has a door; the work is chaining them, and making the costly
+        ones (a `grounds.gen.js` rewrite reloads every tab) happen at a seam instead of mid-run.
+- **Dev lags.**  Vite ignores wormhole/, so a toc edit reaches a folderless page only after a server restart; `grounds.gen.js`
+   changing reloads every tab.
+
+**Thinking about it whole (2026-11-09, before building the reflex):**
+- **A change ARRIVES, like a page does.**  The reflex is the Arrive machinery again: a change is a row that moves through stages
+   (compiled · indexed · grounded · pushed · proven), each met by a fact, folded by a Supervisor, a stall clock giving up — exactly what
+    Ground/Radio's `Arrive:` rows do for a boot.  The editor's world shows each edit's wave through the legs as particles; nothing new to invent.
+- **One index, not three.**  Atlas parses every doc into a Map; the keeper re-finds defs by regex; the compiler knows them exactly.
+   The reflex should have the keeper ASK Atlas ("is this Point a def") so a rename shows up once, everywhere.
+- **Which way does belonging point?**  Today a .g's Ground is wherever its Doc row first sits in the map — reading order decides
+   loading.  Either the Ground tocs become the source and the map points at them, or a .g states its own Ground and both read it.
+    Decide before the reflex, because the reflex re-derives whichever is downstream.
+- **Staleness is nearly free.**  Credulation already records the `%TheACode` digests a Book ran on; the live A holds today's.  A Book
+   whose digests differ is stale, by comparison — no extra bookkeeping, just a join.
+- **Costly effects belong at seams.**  The era seam (§1.3) is the dev loop's too: a `grounds.gen.js` rewrite, a tab reload, a frozen-
+   spine promotion wait for a quiet moment instead of landing mid-run.  The editor is a scheduler over the repo; its changes are IO
+    on a tape (TheA_io) — replayable, which is how a reflex gets a Book.
+- **The editor must survive its own reflex.**  It rides a frozen spine for a reason; promoting its own code is a deliberate stage
+   (today a hand copy into `pinned_stable/`), and should stay one — the last leg, never automatic.
+
 ## 1. The design as it stands
 
 *Each part: what it is, where the code lives, the Book that proves it.  To flesh out.*

@@ -2,7 +2,7 @@
 //
 //  A Ground is a list of .g a tab loads to stand some work: Ground/Land is Atlas Electrode Lagoon Workshop and its toys,
 //   standing on Ground/Glass (Voro Vyto); Ground/Core (Theory Stuffica Ground) is under every one and never said.  The
-//    lists are not authored — Waft:Everything's area Whats wear the tags and src/lib/L/everything.js derives the bundles,
+//    lists are not authored — Waft:Everything's area Whats wear the tags and src/lib/L/wafts_keep.js derives the bundles (the map itself is the hand-kept tocs since 2026-11-09),
 //     into wormhole/Ground/<Name>/toc.snap and, baked, into ./grounds.gen.js.
 //
 //  THE CHICKEN AND THE EGG.  The Theory way to stand code is `Ground_stand` (Ghost/A/Ground.g) on `TheA_code_stand` — but

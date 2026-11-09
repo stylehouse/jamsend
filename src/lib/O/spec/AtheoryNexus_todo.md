@@ -423,7 +423,7 @@ A→B→C is the "decide from rows" migration (disk replies, Story steps, clicks
 
 ### 3.1 The tube-ways — everything moves into the new fabric
 *Ruled (owner 2026-11-01): "everything has to move within the new tube-ways."*  The Desk becomes the page (`/Desk?B=`), the spine
- becomes `Ground/Runner`, everything.js is sublated, Story.svelte/Otro/Auto retire once StoryFu has their greens.  THE MAP item 1.
+ becomes `Ground/Runner`, everything.js is sublated (DONE 2026-11-09 — wafts_keep.js), Story.svelte/Otro/Auto retire once StoryFu has their greens.  THE MAP item 1.
   Mostly porting, but it is what ends the tax in §1.  Waits on: Lies (the relay seat) standable by a Ground.
 
 ### 3.2 Attention — each level says which loop it wants

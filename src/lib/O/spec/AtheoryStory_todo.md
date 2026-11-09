@@ -58,7 +58,7 @@
 - A new House thinks only once something lands on its todo; a Story run owns its Run House's clock (`no_ambient`); an A with no w
    grows a default w on its first think (`procure_ways`).
 - Kept-aside code is per TAB and outlives a run.  A recompile of an aside file isn't re-included (the reswap sweeps the spine only).
-- Never edit `src/lib/L/everything.js` while a tab you care about is up — the save reloads tabs (owner: sublate it, next code-side
+- ~~Never edit `src/lib/L/everything.js` while a tab you care about is up~~ (gone 2026-11-09 — sublated into the hand-kept tocs; editing a Ground's tags still rewrites grounds.gen.js, which reloads tabs) — the save reloads tabs (owner: sublate it, next code-side
    session).  `wormhole/Credence/toc.snap` is hand-edited.
 - The console's `🔍 n=… ok=false` lines are BEFORE noise forgiveness; the Step's ok/caveat is the verdict.
 - *(found building the leash, 2026-10-30 — seven recordings)*  **`doai` wires a req's body ONCE**: anything the body closes over is

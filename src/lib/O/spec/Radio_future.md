@@ -151,6 +151,10 @@ Short sketches of what it could feel like. None of these exist yet.
 - One place answering "what's happening with the song I liked?".
 - The radio's choices made visible: why this track, why not that friend.
 - A gentle health check: broken files, missing tags, a disk filling up.
+- **What the dial can reach vs what it can actually play** — every track in reach as a pip, lit only once its first chunk has landed
+   (the gap is why it "keeps playing the same 10").  Was ShuffleFace, cut 2026-11-09 as a dead cell — in git history, `src/lib/O/ui/ShuffleFace.svelte`.
+- **The live download/upload display** — rx/tx bars that jiggle with real packets, per-track pull and serve progress.  Was TransferFace
+   (fed by `top_House().c.xfer`, still live), cut 2026-11-09 — in git history, `src/lib/O/ui/TransferFace.svelte`.
 
 ---
 ---

@@ -204,10 +204,13 @@ Show the arc, not just the diff.
  (`FromWhat:Waft:…`) at that area's Waft — `Ghost/Net/Easy`, `Ghost/Swarm/Easy`, `Ghost/Music/Ality`,
   `Ghost/Music/Cave`, `Ghost/Vis/Visua`, `Ghost/Land/Wordland`, `Ghost/Hoho/Easy` — plus `Credence` (every
    Book). An area Waft lists its ghosts' MAIN functions as `Point,method:X,desc:<keywords>`. The keeping
-    policy is the last `What` of Everything. Everything and the area Wafts are generated + validated by
-     `scripts/wafts_everything.mjs` — edit THAT, re-run it, reload the editor; never hand-edit those tocs.
-      **`wormhole/Credence/toc.snap` is the exception: it is EDITED BY HAND** (one `Funkcion:Storying,of_Book:…` row
-       per Book, beside its neighbours) — the script only points at it.  A new Book gets its row there, and `Stands:<Ground>` in its own toc.
+    policy is the last `What` of Everything. **Everything and the area Wafts are HAND-KEPT tocs**, like
+     `wormhole/Credence/toc.snap` (`src/lib/L/everything.js` was sublated 2026-11-09): edit them, then
+      `node scripts/wafts_everything.mjs` (`--check` writes nothing) validates every row through `src/lib/L/wafts_keep.js` —
+       every Doc exists, every Point is a def, no comma in a desc, every Book exists — and rewrites ONLY what is derived:
+        Waft:Ghost/Rest/Unsorted, Everything's counted Whats, the tagged `wormhole/Ground/<Name>` tocs and `src/lib/A/grounds.gen.js`
+         (a change there reloads tabs).  Run it with no editor tab up — the editor saves open Wafts back.  Credence: one
+          `Funkcion:Storying,of_Book:…` row per Book, beside its neighbours.  A new Book gets its row there, and `Stands:<Ground>` in its own toc.
 
 ## Docs: specs, todos, and the history/ shelf
 

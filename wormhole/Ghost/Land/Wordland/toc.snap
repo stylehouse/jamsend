@@ -45,9 +45,9 @@ Waft:Ghost/Land/Wordland,desc:the land — the bet turned on the code itself —
     Doc:src/lib/O/LiesFunk.svelte
     Point,method:Verbs_all,desc:every verbs_ table on the House
     Point,method:Verb_run,desc:the one gate — writes refused where writing is not this tab duty
-    Doc:src/lib/L/everything.js
-    Point,method:everything_map,desc:the authored map of the program
-    Point,method:everything_build,desc:coverage validate emit — one emitter two hosts
+    Doc:src/lib/L/wafts_keep.js
+    Point,method:wafts_read,desc:the hand-kept map read back off its tocs
+    Point,method:wafts_build,desc:coverage validate and the derived — one keeper two hosts
   What:the workshop,desc:build a creation and watch it live — :play :watch :make — a creation is a ghost under Ghost/Play with one world
     Doc:Ghost/L/Workshop.g
     Point,method:verbs_Workshop,desc:play watch make

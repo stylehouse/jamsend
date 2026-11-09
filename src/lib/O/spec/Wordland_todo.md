@@ -14,6 +14,14 @@
 
 ## 0. What to get on with next
 
+**⚠ RED, found 2026-11-09 (unattributed):** AtlasStaple (7 oaths ABSENT from step 2) and LagoonStaple (3) — Atlas maps NOTHING from its
+ fixture corpus.  Runner log: `🗺 atlas dige index — 0 docs`.  Lead: the Books set `aw.c.roots = ['Ghost/L/test_corpus']` and
+  `Atlas_diges` asks `/__atlas/dige?roots=Ghost/L/test_corpus`, but `atlas_diges` (src/lib/server/dige.ts) refuses any root that
+   isn't ONE plain segment (`^[A-Za-z0-9_-]+$`), so it answers `docs:0` and Atlas takes the empty index as the truth.  Both were green
+    2026-11-03 and neither Atlas.g nor dige.ts changed since — so what moved is upstream (the runner's boot/Grounds, or its Dexie
+     supermap: "adopted 0 docs … 692 moved since").  Not the everything.js sublation (neither Book touches the map).
+
+
 1. **Strings and groups (§1.2–1.3)**: the features that make Wordland more than a search box.  Neither is built.
 2. **The write seat** (`Editron.md` §8.2 A): a lease at the relay, wrested by the active tab, with `Lies_holds_seat`
     replacing `=== 'editor'`.  Until then, Wordland writes nothing and Editron is the only writer.
@@ -22,7 +30,7 @@
     with `leave:1` and resets the query; middle-click paste is unverified.
 5. **Seats and the map (owner, 2026-10-21).**
     - **Waft:Everything → `wormhole/Ghost/Everything` — DONE 2026-10-21.**  The map of the whole program now sits among
-       the area Wafts it maps (`EVERYTHING` in `src/lib/L/everything.js`; the cave reads it by that constant).  Owner leaning: one vague big map leading everywhere, close-range knowledge as per-.g
+       the area Wafts it maps (`EVERYTHING` in `src/lib/L/wafts_keep.js`; the cave reads it by that constant).  Owner leaning: one vague big map leading everywhere, close-range knowledge as per-.g
           overlays — the area Wafts may go.
     - **The Keep is one person's seat, not a store.**  It holds their open Wafts (`WaftTimes`), cursor, per-Waft
        layout and Aside ledger — one `Waft:Keep` per repo, so two people stomp each other, and `Lies_keep_boot` is

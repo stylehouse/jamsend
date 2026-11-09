@@ -83,8 +83,6 @@ Waft:Ghost/Music/Ality,desc:the music pipeline — rastock racast raterm — sto
     Point,method:Radio_hbase,desc:prepend the head run
     Point,method:Radio_dec_open,desc:open the decoder
     Doc:src/lib/O/ui/RadioFace.svelte
-    Doc:src/lib/O/ui/LineupFace.svelte
-    Doc:src/lib/O/ui/TunerFace.svelte
   What:the stoker and the riffle,desc:what warms the next play — churn preheat cull — a card dealt from a shelf
     Doc:Ghost/M/Radio.g
     Point,method:Stoker_ensure,desc:the stoker particle
@@ -95,7 +93,6 @@ Waft:Ghost/Music/Ality,desc:the music pipeline — rastock racast raterm — sto
     Point,method:Riffle_ensure,desc:the riffle
     Point,method:Riffle_deal_shelf,desc:deal a card off a shelf
     Point,method:Riffle_deal_deep,desc:deal from deep
-    Doc:src/lib/O/ui/StokerFace.svelte
     Doc:src/lib/O/ui/RiffleFace.svelte
   What:the audio engine,desc:Sound — synth silence measure and the real audio device — real muted Web Audio
     Doc:Ghost/M/Sound.g
@@ -112,7 +109,6 @@ Waft:Ghost/Music/Ality,desc:the music pipeline — rastock racast raterm — sto
     Point,method:Crate_meta_from_path,desc:artist title from a path
     Point,method:Crate_transcode_release,desc:let a transcode go
     Point,method:Crate_pile_draw,desc:draw from the pile
-    Doc:src/lib/O/ui/CrateFace.svelte
   What:the tests
     Doc:Ghost/Story/MusuTesting.g
     Doc:Ghost/Story/RaTesting.g

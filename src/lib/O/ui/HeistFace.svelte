@@ -595,6 +595,18 @@
     function goFirst() { press_probe('first', () => { A?.Heist_keep_first?.(n) }) }
 </script>
 
+<!-- THE BUD IS AN ICON (owner 2026-11-09: "the Heist minicell has the full glass for a minicell inlay, it should be an icon") — the
+     glyph, a ring of how far, and n/total.  Everything else is the cell you get by pressing it (its row on the Yay cell links there too). -->
+{#if face.bud}
+<div class="kf-ico" title="{face.title} — {face.landed_n}/{face.total_n || '?'} from {face.from}">
+    <svg viewBox="0 0 40 40" class="kf-ico-ring" aria-hidden="true">
+        <circle cx="20" cy="20" r="17" class="kf-ico-track"></circle>
+        <circle cx="20" cy="20" r="17" class="kf-ico-fill" style="stroke-dasharray:{(face.trackPct / 100) * 106.8} 106.8"></circle>
+    </svg>
+    <span class="kf-ico-g">{face.state === 'done' ? '✓' : '⇊'}</span>
+    {#if face.total_n}<span class="kf-ico-n">{face.landed_n}/{face.total_n}</span>{/if}
+</div>
+{:else}
 <div class="kf" class:folded={face.folded || face.unfocused} class:bud={face.bud}>
     <!-- THE HEAD IS THE PARTICLE (the human 2026-08-07: "better than opening the x8 tracks thing is to
          heading it as a Heist:$n (or whatever key we use there)").  The key is `Heist` — this cell IS one
@@ -900,8 +912,15 @@
         </div>
     {/if}
 </div>
+{/if}
 
 <style>
+    .kf-ico { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 64px; height: 64px; margin: auto; color: #b8b8f0; }
+    .kf-ico-ring { position: absolute; inset: 0; transform: rotate(-90deg); }
+    .kf-ico-track { fill: none; stroke: rgba(136, 136, 232, 0.2); stroke-width: 3; }
+    .kf-ico-fill { fill: none; stroke: #8888e8; stroke-width: 3; stroke-linecap: round; transition: stroke-dasharray 0.6s ease; }
+    .kf-ico-g { font-size: 22px; line-height: 1; }
+    .kf-ico-n { font-size: 9px; opacity: 0.85; margin-top: 1px; }
     /* the voronoi cell bbox overlaps its neighbours, so the ROOT must not eat pointer events; each
        button re-arms pointer-events (the CaperFace hard contract). */
     .kf {

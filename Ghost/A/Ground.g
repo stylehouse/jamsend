@@ -1,6 +1,6 @@
 // Ground.g — what a tab stands on, said as particles on the A that stands on it (spec/Aprac_todo.md §0.5).
 //
-//  A Ground is a list of .g — derived from the Ground tags on Waft:Everything by src/lib/L/everything.js, read here from
+//  A Ground is a list of .g — derived from the Ground tags on Waft:Everything by src/lib/L/wafts_keep.js, read here from
 //   the baked manifest ($lib/A/grounds.gen.js; wormhole/Ground/<Name>/toc.snap says the same).  No diges in a Ground: each
 //    .g's version is its own layer's dige, kept by TheA_code_stand.  Standing Grounds on an A gives it:
 //

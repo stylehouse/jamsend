@@ -72,7 +72,7 @@
         <label class="yf-opt"><input type="checkbox" checked={view.auto} onchange={() => set({ auto: view.auto ? '0' : '1' })} />
             autoheist when yayed</label>
         <label class="yf-opt"><input type="checkbox" checked={view.ask} onchange={() => set({ ask: view.ask ? '0' : '1' })} />
-            ask before heisting (the Heist form comes up first)</label>
+            ask before heisting</label>
 
         {#if !view.folder && !view.devices}
             <div class="yf-intro">
@@ -115,7 +115,11 @@
     .yf-heart { font-size: 1.6rem; line-height: 1; }
     .yf-n { font-size: 0.9rem; }
     .yf-later { font-size: 0.7rem; opacity: 0.8; margin-left: 0.2rem; }
-    .yf { display: flex; flex-direction: column; gap: 0.3rem; width: 100%; padding: 0.5rem 0.7rem; box-sizing: border-box;
+    /* a natural width, not 100%: Cellui scales a full-width ("stretched") face up to 1.56× and it spilled off the left edge (2026-11-09);
+       a compact face is fitted INTO the cell, at any window size */
+    /* pointer-events: auto — Cellui's mold is inert by contract and a face re-arms its own controls (DoorFace/RadioFace do); without it
+       the switches, ⇊ and the Heist links never got a click (2026-11-09) */
+    .yf { display: flex; flex-direction: column; gap: 0.3rem; width: 26rem; padding: 0.5rem 0.7rem; pointer-events: auto; box-sizing: border-box;
         font-family: system-ui, sans-serif; color: #e8d0d8; font-size: 0.85rem; }
     .yf-head { font-weight: 700; font-size: 1rem; color: #f4b8c8; }
     .yf-opt { display: flex; gap: 0.4rem; align-items: center; font-size: 0.8rem; opacity: 0.9; cursor: pointer; }

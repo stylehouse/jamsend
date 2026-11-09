@@ -60,7 +60,6 @@ Waft:Ghost/Music/Cave,desc:the collection — heist original bytes into the Cave
     Point,method:Cursor_make,desc:a cursor into a magazine
     Point,method:Cursor_resolve,desc:find the spot
     Point,method:Cursor_heal,desc:heal across a rename
-    Doc:src/lib/O/ui/ZineFace.svelte
   What:the heard,desc:the Heard Mag is the ledger — a Card per track per pub — love takes and unlove unwants — verdicts and the unseen mark
     Doc:Ghost/M/Heard.g
     Point,method:Heard_mag,desc:the Mag per pub

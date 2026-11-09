@@ -42,10 +42,16 @@ Waft:Ghost/Everything,desc:READ THIS FIRST — one Waft per area of the program 
     Doc:src/lib/O/LiesStore.svelte
     Doc:src/lib/O/spec/Keeping_spec.md
     Doc:src/lib/O/spec/Clerkdesk_todo.md
-  What:the unsorted,desc:Ghost/Rest/Unsorted — 210 of 405 source files no area claims yet — by directory — the debt of this map,FromWhat:Waft:Ghost/Rest/Unsorted
-  What:the groundless,desc:12 .g in no Ground — nothing loads them by recipe — tag their area on this Waft
+  What:the unsorted,desc:Ghost/Rest/Unsorted — 224 of 414 source files no area claims yet — by directory — the debt of this map,FromWhat:Waft:Ghost/Rest/Unsorted
+  What:the groundless,desc:18 .g in no Ground — nothing loads them by recipe — tag their area on this Waft
     Doc:Ghost/A/AtheAside.g
+    Doc:Ghost/A/Store.g
     Doc:Ghost/L/test_corpus/Sample.g
+    Doc:Ghost/M/RadioPage.g
+    Doc:Ghost/M/Wiki.g
+    Doc:Ghost/P/Pile.g
+    Doc:Ghost/P/PilePage.g
+    Doc:Ghost/P/PileTesting.g
     Doc:Ghost/Story/ErrchannelTesting.g
     Doc:Ghost/test/Story/Hoho/HohoAmeliorations.g
     Doc:Ghost/test/Story/Hoho/HohoAntecedents.g
@@ -64,6 +70,7 @@ Waft:Ghost/Everything,desc:READ THIS FIRST — one Waft per area of the program 
     What:the spec What is last,desc:specs and todos sit under What:the spec at the tail — a _todo opens with §0 what to get on with next — only the human promotes a doc to _spec
     What:rebalance when an area splits,desc:when a Waft passes about 150 lines or two stories live in it — split it and add the new Waft here
     What:stale names are bugs,desc:a Doc path or Point that no longer resolves is a mint bug — scripts/wafts_everything.mjs validates every one before writing — re-run it after a rename
+    What:the map is these tocs,desc:Everything and the area Wafts are kept by hand — in the editor or a text editor — scripts/wafts_everything.mjs checks every row and rewrites only what is derived — the unsorted the counts the Ground tocs (src/lib/L/everything.js sublated 2026-11-09)
     What:new sessions read this Waft first,desc:then the area Waft for the work at hand — then its _todo §0
     What:every file has a home,desc:every source file under Ghost and src is cited by an area Waft or sits in the unsorted Waft — re-running this map recounts it
     What:every .g has a Ground,desc:an area What here wears ground:<Name> — its Waft becomes Ground/<Name> — an inner What may wear its own — a .g lives in the first Ground that cites it and a Ground citing another Ground .g stands on it — *Testing.g and every .g under a What:the tests go to <Name>Testing — Core is under everything and never said

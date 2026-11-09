@@ -83,6 +83,14 @@ Radio is jamsend's listen-to-your-friends'-music engine. It is a family of ghost
 | `Love_todo.md` | the ♥ rulings — the one intent, three roads, the ledger |
 | `Radio_future.md` | the imagination ledger — what the machine knows about listening, and what it could become |
 | `Radio_multicast_todo.md` | the swarm design — unbuilt (P0-P4); its cost-routing model `Mesh.g` was deleted 2026-10-16 (§0.d) |
+
+**The next push (owner 2026-11-09): how to DISPLAY a Mag, and how to TRAVERSE a pile of music in|around Radio.**  /Radio now has
+ cells (AtheoryArrive_todo §6) but the music itself is only ever one track at a time on the dial.  The Mags are the shape to show —
+  Heard's `%Mag:heard` (my Clouds of Cards — what I heard and loved, the Yay cell's ledger), the Lineup Mag, the Pile's `Mag**`
+   (`Pile_todo.md` — a collection walked as a landscape) — and the question is one way to walk any of them from the radio: around the
+    track playing (its album, its neighbours, who else has it), through a friend's crate, through my own pile.  Prior art to read
+     first: `Radio_future.md` (scenes + the inventory of what we record), the cut ShuffleFace/CrateFace ideas (git history), the Riffle
+      (deal/flip a crate — the owner found it forgotten and dead on /Radio, so: what it was trying to be, not what it is).
 | `Radio_lowlevel.md` + `Radiobuddies_handover.md` | archaeology the owner chose to keep (2026-07-27 override) — the instance-by-instance ladder and the regroup handover |
 | `RemoteHeist_todo.md` | remote heisting — Captain forms it, a Cave runs it, the 🧲 decides who |
 | `SoundPooling_todo.md` | the pool — press + reach into it, pool-first radio out, cells over it |

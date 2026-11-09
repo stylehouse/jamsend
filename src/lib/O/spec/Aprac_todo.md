@@ -158,7 +158,7 @@
     its own.  Today: the wire → **Wire**, the swarm → **Swarm**, the music → **Music**, the cave → **Cave**, the visual →
      **Glass**, the land → **Land** (stands on Glass), the theory → **Core** (a new area, `Ghost/Atheory/Theory`), the foundation
       → **Story**.
-- **Derived** by `grounds_derive` (everything.js) into `wormhole/Ground/<Name>/toc.snap` — `Ground:<Name>,desc,FromWhat` then
+- **Derived** by `grounds_derive` (wafts_keep.js) into `wormhole/Ground/<Name>/toc.snap` — `Ground:<Name>,desc,FromWhat` then
    `Stands:` / `Load:` (.g, in order) / `Beside:` (other code cited with it — not loaded by the Ground) / `Advice:` (.md) — and,
     baked, into **`src/lib/A/grounds.gen.js`** (`GROUNDS`), written only when it changes.
 - **Rules, as coded**: a .g's home is the **first** Ground that cites it (map order); a Ground citing another's .g **stands on
@@ -227,7 +227,7 @@ So the new thing to Seem into being is the chain **GhostList → Ground → (Sto
     What:the theory,desc:…,FromWhat:Waft:Ghost/Atheory/…,Ground:Atheory
       (inner, in the area Waft)  What:the toy,Ground:Fish     ← overrides for its Docs
 
-- **The bundle is derived**: the emitter (`src/lib/L/everything.js`, run by `scripts/wafts_everything.mjs` or the
+- **The bundle is derived**: the keeper (`src/lib/L/wafts_keep.js` — was everything.js until 2026-11-09 — run by `scripts/wafts_everything.mjs` or the
    `everything` verb) collects every Doc under each tag and writes `wormhole/Ground/<Name>/toc.snap` — generated, never
     hand-edited, like the area Wafts.  Its `.g` Docs are what to load (in the order the map lists them); its `.md` Docs become
      the bundle's read-first advice for free (an area's spec sits beside its code); other kinds are skipped.
@@ -309,7 +309,7 @@ Because each .g has exactly one home Ground, the Grounds partition the code, so 
      Desk reads that when Wormhole can't; the dev path reads the wormhole.
 
 ### Weird bits (worth knowing before building)
-1. **The map is code** — see above; the editor gesture needs a writable home for the tags. **Owner 2026-10-29: "everything.js is silly" — sublate it next time we're on the code aspect** (the tags, the area Wafts and the Book lists into particles the wormhole holds, with Credence — today hand-edited — in the same shape).
+1. **The map is code** — see above; the editor gesture needs a writable home for the tags. **DONE 2026-11-09 — everything.js sublated**: the area Wafts + Everything are hand-kept tocs; `src/lib/L/wafts_keep.js` reads, validates and derives (Unsorted, the counts, the tagged Ground tocs, grounds.gen.js).  Was: **Owner 2026-10-29: "everything.js is silly" — sublate it next time we're on the code aspect** (the tags, the area Wafts and the Book lists into particles the wormhole holds, with Credence — today hand-edited — in the same shape).
 2. **Order matters**: eatfunc is last-wins (`ghostsHaunt` lays later files over earlier).  Stand order = what a Ground stands
     on first, then its .g in map order; clobbers are already reported (`TheA_clobbers_stand`).
 3. **The .svelte spine isn't .g**: Lies, Lang, Cyto, Story.svelte… are mounted by `Ghost.svelte`.  The first cut covers .g

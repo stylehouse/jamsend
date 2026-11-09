@@ -6,7 +6,7 @@
 import Lagui from "$lib/L/Lagui.svelte"
 import Clerkdesk from "$lib/L/Clerkdesk.svelte"
 import { TESTING_RE } from "$lib/L/testing"
-import { everything_map, everything_build, COVER_ROOTS, EVERYTHING } from "$lib/L/everything.js"
+import { wafts_read, wafts_build, COVER_ROOTS, EVERYTHING } from "$lib/L/wafts_keep.js"
 // THE CAVE's deck — VytoSpine's own, with room for a family's members on one vertebra before the fold
 //  one scope down crests them (ribs:N, default 7 — "Method ×30" was that crest, and it is not a place)
 const LAGOON_CAVE_DECK      = 'spine,kindfold,budget:400,ribs:48'
@@ -29,7 +29,7 @@ const OATH_LINE_RE      = /^\s*Assertion:([a-z0-9-]+),/gm
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Lagoon(): string { return 'b7f9fb85f28690bf~g1' },
+    Ghostmeta_Ghost_L_Lagoon(): string { return '899aa083bcb7ea9f~g1' },
 
 // Lagoon.g — the READER LAYER over the censuses.  The third ghost in Ghost/L/ (the land); spec home:
 //  src/lib/O/spec/Lagoon_todo.md.  `Lagoon` is the owner's working title (2026-09-08) and the image is
@@ -2348,7 +2348,7 @@ verbs_Lagoon() {
           run: (w, a) => H.Lagoon_everything(w, a, false),
           prepare: (w, a) => H.Lagoon_everything_prepare(w, a), read: (w, a, plan) => H.Lagoon_everything_read(w, a, plan, false) },
         { name: 'everything', where: 'editor', writes: 1, args: '',
-          desc: 'rebuild the program map — every area Waft and Everything — validated first — written through the repo nav',
+          desc: 'check the hand-kept program map and rewrite what it derives — the Unsorted · the counts · the Ground tocs — written through the repo nav',
           run: (w, a) => H.Lagoon_everything(w, a, true),
           prepare: (w, a) => H.Lagoon_everything_prepare(w, a), read: (w, a, plan) => H.Lagoon_everything_read(w, a, plan, true) },
         { name: 'atlas_lint', where: 'terminal', writes: 0, args: '[--sees] [--stale]',
@@ -2357,7 +2357,7 @@ verbs_Lagoon() {
     ]
 
 },
-// THE PROGRAM MAP, from a terminal (src/lib/L/everything.js — one map, one emitter, two hosts; spec/Verbs_todo.md §3.3).
+// THE PROGRAM MAP, from a terminal (src/lib/L/wafts_keep.js — the hand-kept tocs, one keeper, two hosts; spec/Verbs_todo.md §3.3).
 //  This host reads the tree the way the land already does: the FILE LIST is Atlas's census (refreshed first, so a file made a
 //   minute ago counts), every TEXT and every Book comes through the repo nav.  `write` only when asked and only on the editor
 //    terminal (the verb's `writes` makes Verb_run refuse it elsewhere); a problem anywhere writes nothing at all.
@@ -2399,24 +2399,31 @@ async Lagoon_everything_read(w, a, plan, write) {
         exists: async (p) => rostered.has(p) || (await read(p)) != null,
         text: (p) => read(p),
         book: async (b) => (await read('wormhole/Story/' + b + '/toc.snap')) != null,
+        toc: (k) => read('wormhole/' + k + '/toc.snap'),
     }
-    let r = await everything_build(everything_map(), host)
+    let map = await wafts_read(host)
+    let r = await wafts_build(map.W, host)
+    r.problems.unshift(...map.problems)
     let out = { coverage: r.coverage, problems: r.problems, wafts: r.out.map(x => ({ name: x[0], lines: x[1].split('\n').length - 1 })) }
     if (!write || r.problems.length) {
         if (write) out.written = 0
         return out
     }
+    // only what changed — an authored Waft comes back byte-identical, and a rewrite would wake whatever has it open
+    let n = 0
     for (const x of r.out) {
+        if ((await read('wormhole/' + x[0] + '/toc.snap')) === x[1]) continue
         let ab = split('wormhole/' + x[0] + '/toc.snap')
         await nav.write_file(ab[0], ab[1], x[1])
+        n = n + 1
     }
-    // the baked Ground manifest beside the tocs (src/lib/L/everything.js GROUND_MANIFEST) — only when it changed
+    // the baked Ground manifest beside the tocs (src/lib/L/wafts_keep.js GROUND_MANIFEST) — only when it changed
     for (const x of r.files || []) {
         if ((await read(x[0])) === x[1]) continue
         let ab = split(x[0])
         await nav.write_file(ab[0], ab[1], x[1])
     }
-    out.written = r.out.length
+    out.written = n
     return out
 
 },

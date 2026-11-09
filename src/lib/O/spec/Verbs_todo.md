@@ -105,7 +105,7 @@ A **working `_todo`**, opened 2026-10-09.  Homethink §4 already named the disea
     runs — the controls documented, out of the code itself); `:verb args` + Enter runs it through `Verb_run` (the one gate the
      relay dispatch shares) and answers as spine; an item naming a doc opens its method's place.  Proven headless: `:verbs`,
       `:lagoon families`, `:nonsense` (a named Error), `:make Pond` refused in the hacker room.
-5. ✅ **`:everything`** — the program map is ONE source with TWO hosts: `src/lib/L/everything.js` holds the authored map
+5. ✅ **`:everything`** — (2026-11-09: the map is now the hand-kept tocs; `src/lib/L/wafts_keep.js` checks them and derives the rest — the two hosts stand) the program map is ONE source with TWO hosts: `src/lib/L/everything.js` held the authored map
     and the coverage/validate/emit logic; `scripts/wafts_everything.mjs` is now a thin FLOOR host (node + fs, no tab), and the
      `everything_check` (read-only, any room) / `everything` (writes — editor terminal) verbs are the TERMINAL host (Atlas's
       census for the file list, the repo nav for text and writes).  Proven: both hosts count 191 of 415 with no problems, and

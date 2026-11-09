@@ -162,7 +162,7 @@ Lang compiles (`LangCompiling`, `LangSion` for the IOing reduction) → `req:Cod
 
 Waft → What → Doc → Point; the medium is documented atop `ui/Waft.svelte` (`history/Waft_spec.md` has the old grammar table).
  Chrome: NaviCado, DocMinimap, Searchbar, the Interest strip, Liesui's Waft list.  Wafts are generated, mostly: the area Wafts
-  and **Waft:Everything** come from `src/lib/L/everything.js` (`scripts/wafts_everything.mjs` or the `everything` verb) —
+  and **Waft:Everything** are hand-kept tocs (since 2026-11-09; were `src/lib/L/everything.js`), checked by `src/lib/L/wafts_keep.js` (`scripts/wafts_everything.mjs` or the `everything` verb) —
    never hand-edited — and Everything's area Whats carry the **Ground tags** (`ground:Land` …) that derive `wormhole/Ground/`.
 
 ## 8. Role gates and who writes

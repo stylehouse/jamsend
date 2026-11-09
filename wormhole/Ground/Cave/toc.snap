@@ -6,7 +6,6 @@ Ground:Cave,desc:the collection — heist original bytes into the Cave — the k
   Beside:src/lib/O/Funk/HeistSetup.svelte
   Beside:src/lib/O/ui/HaulFace.svelte
   Beside:src/lib/O/ui/PickFace.svelte
-  Beside:src/lib/O/ui/ZineFace.svelte
   Advice:src/lib/O/spec/Heist_todo.md
   Advice:src/lib/O/spec/Heist_design.md
   Advice:src/lib/O/spec/Mag_todo.md

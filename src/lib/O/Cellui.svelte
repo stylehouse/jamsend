@@ -623,8 +623,12 @@
         if (!bound_warned) { bound_warned = true; console.warn('🎴 Cello: contained a render fault (deferred-transition reset race) — region retries in 150ms', e) }
         setTimeout(() => { try { reset() } catch { /* region gone */ } }, 150)
     }
-    function set_main(next: string | null) {
+    // THE CELL-CHANGE LOG (back on 2026-11-09, owner: "switch back on the cell change diagnostic logs") — one line per main change,
+    //  saying WHO moved it: the insistent ask (stage_want), the commissioner's|page's focus, the resting fall-back, or a tap.
+    function set_main(next: string | null, why = '') {
         if (next === main_key) return
+        const mk_of = (k: string | null) => cells.find(c => c.key === k)?.mk ?? k ?? '∅'
+        console.log(`🎴⇄ main ${mk_of(main_key)} → ${mk_of(next)}${why ? ' — ' + why : ''}`)
         const now = Date.now()
         // frozen mid-storm — hold the current main, ride it out.  EXCEPT within a beat and a half of a
         //  user-intent entrance (the cells derivation stamps user_intent_at when a fresh commissioner
@@ -647,14 +651,14 @@
         // TIER 1 — an unrefused insistent ask (a Cave wearing stage_want) OWNS the belly, re-claiming
         //  even after you wander ("a Cave wanting colonising focuses us back"), until refused ("no").
         const want = insistent
-        if (want) { set_main(want.key); return }
+        if (want) { set_main(want.key, 'insistent ask (stage_want)'); return }
         // TIER 2 — the COMMISSIONER'S FOCUS (w.c.focused, a mainkey): the Door buttons + a Vyto switch
         //  drive it, Cello follows.  Match by mainkey (Radio/Door/Link are singletons).
         const foc = commissioner_focus()
-        if (foc) { const c = list.find(x => x.mk === foc); if (c) { set_main(c.key); return } }
+        if (foc) { const c = list.find(x => x.mk === foc); if (c) { set_main(c.key, 'focus ' + foc); return } }
         // TIER 3 — the resting main: keep a still-valid main, else fall to Radio.
         if (main_key && keys.has(main_key)) return
-        set_main(resting_main(list)?.key ?? null)
+        set_main(resting_main(list)?.key ?? null, main_key ? 'its main left the cast — resting' : 'resting')
     })
 
     // ── partition into main + satellites ─────────────────────────────────────────
@@ -758,6 +762,7 @@
     //     cast AND contextual (Link/Heist/Transfer) — the $effect below honours the pick.
     function switcheroo(cell: Cell) {
         set_focus(cell.mk)    // DRIVE the commissioner's focus — Vyto follows, and a left Link un-grapples
+        console.log(`🎴⇄ main ${main_cell?.mk ?? "∅"} → ${cell.mk} — tap`)
         main_key = cell.key   // optimistic local echo; the effect re-affirms from w.c.focused next derive
     }
 

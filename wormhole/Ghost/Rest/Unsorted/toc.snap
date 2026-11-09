@@ -1,8 +1,16 @@
-Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 210 of 405 — one What per directory — give each a home in its area and re-run
-  What:Ghost/A,desc:1 file with no area
+Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 224 of 414 — one What per directory — give each a home in its area and re-run
+  What:Ghost/A,desc:2 files with no area
     Doc:Ghost/A/AtheAside.g
+    Doc:Ghost/A/Store.g
   What:Ghost/L/test_corpus,desc:1 file with no area
     Doc:Ghost/L/test_corpus/Sample.g
+  What:Ghost/M,desc:2 files with no area
+    Doc:Ghost/M/RadioPage.g
+    Doc:Ghost/M/Wiki.g
+  What:Ghost/P,desc:3 files with no area
+    Doc:Ghost/P/Pile.g
+    Doc:Ghost/P/PilePage.g
+    Doc:Ghost/P/PileTesting.g
   What:Ghost/Story,desc:1 file with no area
     Doc:Ghost/Story/ErrchannelTesting.g
   What:Ghost/test/Story/Hoho,desc:9 files with no area
@@ -75,9 +83,11 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 210 o
     Doc:src/lib/O/lang/grammars/tsstho/index.ts
   What:src/lib/O/lang,desc:1 file with no area
     Doc:src/lib/O/lang/registry.ts
-  What:src/lib/O/spec,desc:59 files with no area
+  What:src/lib/O/spec,desc:63 files with no area
     Doc:src/lib/O/spec/App_todo.md
     Doc:src/lib/O/spec/Arrival_todo.md
+    Doc:src/lib/O/spec/AtheoryArrive_todo.md
+    Doc:src/lib/O/spec/AtheoryNexus_todo.md
     Doc:src/lib/O/spec/AtheoryStory_todo.md
     Doc:src/lib/O/spec/Attractor_todo.md
     Doc:src/lib/O/spec/Cello_meditation_todo.md
@@ -111,6 +121,7 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 210 o
     Doc:src/lib/O/spec/Perf_todo.md
     Doc:src/lib/O/spec/Persistence_todo.md
     Doc:src/lib/O/spec/Pier_todo.md
+    Doc:src/lib/O/spec/Pile_todo.md
     Doc:src/lib/O/spec/Portability_doc.md
     Doc:src/lib/O/spec/Radiation_determinism_todo.md
     Doc:src/lib/O/spec/Radio_future.md
@@ -118,6 +129,7 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 210 o
     Doc:src/lib/O/spec/RemoteHeist_todo.md
     Doc:src/lib/O/spec/Repli_idspace_todo.md
     Doc:src/lib/O/spec/Seemables_todo.md
+    Doc:src/lib/O/spec/Shelf_todo.md
     Doc:src/lib/O/spec/Signed_call_todo.md
     Doc:src/lib/O/spec/Snappy_todo.md
     Doc:src/lib/O/spec/Solo_todo.md
@@ -158,14 +170,14 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 210 o
     Doc:src/lib/O/test/Understandication.svelte
     Doc:src/lib/O/test/Understandity.svelte
     Doc:src/lib/O/test/Understandium.svelte
-  What:src/lib/O/ui,desc:45 files with no area
+  What:src/lib/O/ui,desc:47 files with no area
     Doc:src/lib/O/ui/Actions.svelte
-    Doc:src/lib/O/ui/BeatFace.svelte
+    Doc:src/lib/O/ui/ArriveFace.svelte
+    Doc:src/lib/O/ui/ArriveSplash.svelte
     Doc:src/lib/O/ui/BootGate.svelte
     Doc:src/lib/O/ui/Butler.svelte
     Doc:src/lib/O/ui/CpuLegBanner.svelte
     Doc:src/lib/O/ui/CpuLegs.svelte.ts
-    Doc:src/lib/O/ui/DiagFace.svelte
     Doc:src/lib/O/ui/DocCompost.svelte
     Doc:src/lib/O/ui/DocDiff.svelte
     Doc:src/lib/O/ui/DocMinimap.svelte
@@ -185,24 +197,26 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 210 o
     Doc:src/lib/O/ui/NaviScroll.svelte
     Doc:src/lib/O/ui/PeelInput.svelte
     Doc:src/lib/O/ui/PierViewFace.svelte
+    Doc:src/lib/O/ui/PileFace.svelte
     Doc:src/lib/O/ui/Plank.svelte
+    Doc:src/lib/O/ui/RadioPageFace.svelte
     Doc:src/lib/O/ui/ResidualMote.svelte
     Doc:src/lib/O/ui/RiffFace.svelte
     Doc:src/lib/O/ui/ShareButton.svelte
-    Doc:src/lib/O/ui/ShuffleFace.svelte
     Doc:src/lib/O/ui/Splash.svelte
     Doc:src/lib/O/ui/StemHive.svelte
+    Doc:src/lib/O/ui/Stuffmush.svelte
     Doc:src/lib/O/ui/SupervisorFace.svelte
     Doc:src/lib/O/ui/SupervisorPanel.svelte
     Doc:src/lib/O/ui/SurprisePopover.svelte
     Doc:src/lib/O/ui/TodoSpool.svelte
-    Doc:src/lib/O/ui/TransferFace.svelte
     Doc:src/lib/O/ui/TreeFace.svelte
-    Doc:src/lib/O/ui/UptimeFace.svelte
     Doc:src/lib/O/ui/Vexpandy.svelte
     Doc:src/lib/O/ui/WikipediaFace.svelte
+    Doc:src/lib/O/ui/YayFace.svelte
     Doc:src/lib/O/ui/boot_gate.svelte.ts
     Doc:src/lib/O/ui/calm.ts
+    Doc:src/lib/O/ui/page_nav.ts
     Doc:src/lib/O/ui/pier_marks.ts
   What:src/lib/O/ui/micro,desc:6 files with no area
     Doc:src/lib/O/ui/micro/Bandwidth.svelte
@@ -229,8 +243,12 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 210 o
     Doc:src/routes/BigSoundland/+page.svelte
   What:src/routes/BigWordland,desc:1 file with no area
     Doc:src/routes/BigWordland/+page.svelte
+  What:src/routes/Desk,desc:1 file with no area
+    Doc:src/routes/Desk/+page.svelte
   What:src/routes/Otro,desc:1 file with no area
     Doc:src/routes/Otro/+page.svelte
+  What:src/routes/Radio,desc:1 file with no area
+    Doc:src/routes/Radio/+page.svelte
   What:src/routes/art,desc:1 file with no area
     Doc:src/routes/art/+page.svelte
   What:src/routes/ice,desc:1 file with no area

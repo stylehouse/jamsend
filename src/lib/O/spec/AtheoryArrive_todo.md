@@ -212,6 +212,22 @@ Started 2026-11-04 from the Supervisor talk (`AtheoryNexus_todo.md` E, "NEXT SES
   "furthering their artifice" after 1.1.  Sounditron's left-overs to move out the same way as Page_* (§5 slice 3): Screen_decide, the
    supervise registrations, the wiki cell, the keeps' belly ladder, the Theirs trickle.
 
+**(3) The cell inventory, by relevance (2026-11-09 — from who mints|casts each, Books aside):**
+- **In service on /Radio:** Radio · Door · Wikipedia · Yay · Pooling (≥1 friend) · Heist (a keep; its minicell is an icon now) · Link · PierView (both while focused).
+- **Only on / (Sounditron's glass), retire with it unless wanted:** Hauls (Yay covers "what became of it") · Caper (the flow organ, no-keep only) ·
+   Riffle + Riff (crate picker — owner: forgotten, Flip dead) · the plain glass + Junk (`w.c.plain`) · the Pose parts Float|Pull|Serve.
+- **Developer-only (`show_diag`):** Supervisor · Tree.  (On /Radio the ▦ guts show the Supervisor.)
+- **Fallen out of service — rows minted, never cast:** Beat · Uptime · Diag · Tuner · Stoker · Zine · Shuffle (Books only) · Transfer.
+- **Nothing mints them at all:** Lineup (`%Mag:Lineup` exists, never cast) · Crate (Mine|Theirs by mainkey — off the glass since 2026-07-28).
+- **Vyto's nested glass only (Cello doesn't nest):** HeistBar · Pick.  **Story Books only:** Errlog.
+- **TRIMMED 2026-11-09 (owner: "drop all those dead cells"):** the ten faces Beat · Uptime · Diag · Tuner · Stoker · Zine · Shuffle · Transfer ·
+   Lineup · Crate — the .svelte and their glass_kinds rows.  All were read-only views (no model logic); ideas worth keeping live in git:
+    ShuffleFace (reach vs playable pips), TransferFace (the live rx/tx HUD), LineupFace (a friend's starve as a red line).  KEPT on purpose:
+     the rows the ghosts mint (the Sounditron witness swears on %Beat/%Uptime) and glass_faces.ts FACE_MAINKEYS (Cyto's model reads it —
+      a snap could move); a kind with no component draws as its label in every glass.  OWED: everything.js still names Lineup|Tuner|Stoker|
+       Crate|Zine Face as Docs, so the generated Wafts (Ghost/Music/*, Ghost/Rest/Unsorted, Ground/Music|Cave Beside: rows) list missing
+        files — DONE 2026-11-09 with the everything.js sublation (the rows were dropped from the hand-kept tocs).
+
 **(4) Some day:** `/` and `/BigSoundland` point at `/Radio` — MOUNT, not redirect (routes/+page.svelte: an invite URL must stay as scanned),
  carrying BigSoundland's pocket-player duties (the service worker's `music_page`, `navigator.storage.persist`).  Then Sounditron leaves the
   music page and becomes a Story about one.
