@@ -13,6 +13,17 @@ Home of: the **reader layer** (every answer asked of a census, in one place) and
 
 ## 0. What to get on with next
 
+**THE OATH CONSTELLATION (owner 2026-11-09, Atheory_design §0.5 "Knowing ↔ Proving"): "we can locate the oaths right?" — yes, three ways
+ already, never yet joined into one thing you can look at:**
+- the SITE — Atlas's `%Map` holds a `%proves,sentence,line,via` row per `story_swear` call (via = the enclosing def);
+- the DECLARATION — each Book's toc carries `Assertion:<slug>,sentence:…` under its latch step;
+- the CITATION — a doc's «slug» link, resolved by `Lagoon_oaths` to the Book that swears it (and `sworn_gone` when nobody does).
+ Owed: one particle per oath joining all three (site · Book · step · docs citing it), plus the bridge to the code it EXERCISES (Electrode's
+  Flow over a Book's run) — so "which Books prove Heard_take" is a lookup.  Then the picture: when the whole program is drawn as a
+   sprawling generative spaceship (the glass over the map), the oaths are a SUBFRAME — each Book a frame of struts to the methods it
+    exercises and the sentences it swears.  Wants the AtlasStaple/LagoonStaple reds fixed first (Wordland_todo §0).
+
+
 ### ☀ 2026-09-09 EVENING — the day lined up, and where it is going.  READ THIS FIRST.
 
 The owner, tired, end of day: *"can we line up the rest of the day's work, and where are we going…"*

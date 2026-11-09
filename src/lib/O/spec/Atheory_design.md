@@ -92,6 +92,8 @@ From a keystroke to a running A, and the ledgers each leg leaves.  Two generatio
    on; an A holds today's.  Compare them and every Book knows if it is stale.  A fixture is evidence about a digest, not about a name.
 - **Knowing ↔ Proving — the oath edge.**  Credence lists Books by area; a Book's sworn sentences sit in its toc; the map's `What:the
    tests` names the test ghosts.  Electrode's Flow is the bridge not yet walked: which Books actually EXERCISE a method.
+   Oaths are already locatable three ways — the swear SITE (Atlas `%proves`), the DECLARATION (Book toc `Assertion:`), the CITATION
+    (a doc's «slug», `Lagoon_oaths`) — not yet joined; the join + the spaceship subframe are owed (Lagoon_todo §0).
 - **Proving ↔ Text — the fixture edge.**  NNN.snap and Credulation are text in the wormhole too: accepting a run writes Text, so the
    loop closes — and it is the one write that must stay a human's act.
 

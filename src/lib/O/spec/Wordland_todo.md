@@ -20,6 +20,11 @@
    isn't ONE plain segment (`^[A-Za-z0-9_-]+$`), so it answers `docs:0` and Atlas takes the empty index as the truth.  Both were green
     2026-11-03 and neither Atlas.g nor dige.ts changed since — so what moved is upstream (the runner's boot/Grounds, or its Dexie
      supermap: "adopted 0 docs … 692 moved since").  Not the everything.js sublation (neither Book touches the map).
+ **Half fixed 2026-11-09:** `atlas_diges` now takes nested roots (plain segments joined by '/'), the corpus serves `docs:1`, and
+  AtlasStaple's step 2 oaths came back.  STILL RED: AtlasStaple step 5 (a file written / changed / deleted after the roster isn't seen by
+   the next refresh) and LagoonStaple 3·5·6 (`seek defs:0` — the reader asks before the corpus is mapped).  During those runs no
+    mapping is logged; the supermap adopts the doc only AFTER the run.  Next look: Atlas_refresh's inline map with the Book's `w.c.roots`
+     + `Atlas_cache_adopt` now that `dige_of` is non-empty (before, an EMPTY index meant every doc fell through to its own read).
 
 
 1. **Strings and groups (§1.2–1.3)**: the features that make Wordland more than a search box.  Neither is built.

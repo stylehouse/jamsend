@@ -102,9 +102,11 @@ export function atlas_diges(repo_root: string, roots: string[]): Record<string, 
     const out: Record<string, Served> = {}
     const base = resolve(repo_root)
     for (const r of roots) {
-        // a root is ONE plain segment; anything else (a slash, a dot-dot, an absolute path) is
-        //  refused rather than sanitised, so there is no clever escape to reason about
-        if (!/^[A-Za-z0-9_-]+$/.test(r)) continue
+        // a root is plain SEGMENTS joined by '/' (2026-11-09: a Book's corpus root is `Ghost/L/test_corpus` — refused as one segment,
+        //  it answered docs:0 and Atlas took the empty index as the truth, reddening AtlasStaple + LagoonStaple).  Each segment is
+        //   [A-Za-z0-9_-]+, so a dot-dot, a dot-file, an absolute path or an empty segment is still refused rather than sanitised —
+        //    there is still no clever escape to reason about
+        if (!/^[A-Za-z0-9_-]+(\/[A-Za-z0-9_-]+)*$/.test(r)) continue
         walk(base, r, out)
     }
     return out

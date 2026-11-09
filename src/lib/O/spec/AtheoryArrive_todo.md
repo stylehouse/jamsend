@@ -212,6 +212,11 @@ Started 2026-11-04 from the Supervisor talk (`AtheoryNexus_todo.md` E, "NEXT SES
   "furthering their artifice" after 1.1.  Sounditron's left-overs to move out the same way as Page_* (§5 slice 3): Screen_decide, the
    supervise registrations, the wiki cell, the keeps' belly ladder, the Theirs trickle.
 
+**Owner's look 2026-11-09, for the Radios agent:** the Yay toggles are nice (they work since YayFace re-armed pointer-events).  The
+ minicells get a bit numerous: the older or quieter ones (Wikipedia, Pooling) should shrink a bit more, and the minicells should sit
+  ALONG THE EDGE of the big cell (the off-edge belly already perches them on its bulge — make that the resting layout too).  Cellui's
+   satellite strip: `satellites` derive + `.cello-satellites` CSS.
+
 **(3) The cell inventory, by relevance (2026-11-09 — from who mints|casts each, Books aside):**
 - **In service on /Radio:** Radio · Door · Wikipedia · Yay · Pooling (≥1 friend) · Heist (a keep; its minicell is an icon now) · Link · PierView (both while focused).
 - **Only on / (Sounditron's glass), retire with it unless wanted:** Hauls (Yay covers "what became of it") · Caper (the flow organ, no-keep only) ·
