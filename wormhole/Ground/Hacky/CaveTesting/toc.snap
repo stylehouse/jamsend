@@ -1,0 +1,5 @@
+Ground:Hacky/CaveTesting,desc:Ground/CaveTesting built to be measured — the caller survives an await,FromWhat:Ground:CaveTesting
+  Flavour:electrode
+  Stands:Hacky/Cave
+  Load:Ghost/Story/HeistTesting.g
+  Load:Ghost/Story/BerthTesting.g

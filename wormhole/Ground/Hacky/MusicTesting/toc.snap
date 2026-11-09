@@ -1,0 +1,5 @@
+Ground:Hacky/MusicTesting,desc:Ground/MusicTesting built to be measured — the caller survives an await,FromWhat:Ground:MusicTesting
+  Flavour:electrode
+  Stands:Hacky/Music
+  Load:Ghost/Story/MusuTesting.g
+  Load:Ghost/Story/RaTesting.g

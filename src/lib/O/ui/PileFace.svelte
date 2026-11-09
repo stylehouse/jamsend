@@ -61,13 +61,24 @@
             const spares = new Map<string, number>()
             for (const d of t?.o({ Dislike: 1 }) ?? []) spares.set(d.sc.side + ':' + d.sc.of, d.o({ Spare: 1 }).length)
             const p = w?.o({ Playing: 1 })[0]
-            return { like: set('Like'), dislike: set('Dislike'), spares, playing: p ? { side: String(p.sc.side), id: String(p.sc.of), name: String(p.sc.Playing) } : null }
+            // the listening cursor and the Dirs it passed (on the Trail): where to carry on from, and what snuck in behind
+            const trail = w?.o({ Mag: 'Pile' })[0]?.o({ Mag: 'Trail' })[0]
+            const passed = new Map<string, string>()
+            for (const r of trail?.o({ Passed: 1 }) ?? []) passed.set(r.sc.side + ':' + r.sc.Passed, String(r.sc.v))
+            const cur = trail?.o({ Cursor: 'listen' })[0]
+            const cur_row = cur ? H.Pile_row(w, cur.sc.side, cur.sc.at) : null
+            const cursor = cur_row ? { side: String(cur.sc.side), id: String(cur.sc.at), name: String(cur_row.sc.File) } : null
+            return { like: set('Like'), dislike: set('Dislike'), spares, passed, cursor, playing: p ? { side: String(p.sc.side), id: String(p.sc.of), name: String(p.sc.Playing) } : null }
         })
     })
     const liked = (side: string, r: any) => taste.like.has(side + ':' + r.sc.id)
     const disliked = (side: string, r: any) => taste.dislike.has(side + ':' + r.sc.id)
     const is_playing = (side: string, r: any) => taste.playing?.side === side && taste.playing.id === r.sc.id
     const holds_playing = (side: string, d: any) => taste.playing?.side === side && untrack(() => H.Pile_rows(d).some((r: any) => r.sc.id === taste.playing!.id))
+    // a Dir the cursor left behind; snuck = its v moved since (something arrived or changed in it after we were through)
+    const passed = (side: string, d: any) => taste.passed.has(side + ':' + d.sc.id)
+    const snuck = (side: string, d: any) => passed(side, d) && taste.passed.get(side + ':' + d.sc.id) !== String(d.sc.v)
+    const is_cursor = (side: string, r: any) => !taste.playing && taste.cursor?.side === side && taste.cursor.id === r.sc.id
     const audio_re = /\.(flac|mp3|ogg|opus|m4a|aac|wav|aiff?)$/i
     const spare_note = (n: number) => (n ? ' keeps ' + n : '')
 
@@ -116,7 +127,8 @@
 
     // a Dir opened by a click on its name (zoomed: its tracks as a list); the one holding what plays is open unless closed
     let opened = $state<Record<string, boolean>>({})
-    const is_open = (side: string, d: any) => opened[side + ':' + d.sc.id] ?? holds_playing(side, d)
+    const holds_cursor = (side: string, d: any) => !taste.playing && taste.cursor?.side === side && untrack(() => H.Pile_rows(d).some((r: any) => r.sc.id === taste.cursor!.id))
+    const is_open = (side: string, d: any) => opened[side + ':' + d.sc.id] ?? (holds_playing(side, d) || holds_cursor(side, d))
     const toggle_open = (side: string, d: any) => { opened = { ...opened, [side + ':' + d.sc.id]: !is_open(side, d) } }
 
     // the player: loads what %Playing says off its side's disk; at a track's end, the next (Pile_next skips the disliked)
@@ -158,7 +170,7 @@
                         <button class="heart" class:on={liked(side, f)} title="like" onclick={() => press('like', side, f.sc.id)}>♥</button>
                     </div>
                 {:else}
-                    <div class="track" class:mute={!audio_re.test(f.sc.File)}>
+                    <div class="track" class:mute={!audio_re.test(f.sc.File)} class:cursor={is_cursor(side, f)}>
                         <button class="name" onclick={() => press('play', side, f.sc.id)}>{f.sc.File}</button>
                         <button class="heart" class:on={liked(side, f)} title="like" onclick={() => press('like', side, f.sc.id)}>♥</button>
                     </div>
@@ -167,15 +179,16 @@
         </div>
     {:else if files.length}
         <div class="atoms">
-            {#each files.slice(0, MANY) as f (f.sc.id)}<button class="atom" class:liked={liked(side, f)} class:playing={is_playing(side, f)} class:mute={!audio_re.test(f.sc.File)} title="{f.sc.File} #{f.sc.id}" onclick={() => press('play', side, f.sc.id)}></button>{/each}
+            {#each files.slice(0, MANY) as f (f.sc.id)}<button class="atom" class:liked={liked(side, f)} class:playing={is_playing(side, f)} class:cursor={is_cursor(side, f)} class:mute={!audio_re.test(f.sc.File)} title="{f.sc.File} #{f.sc.id}" onclick={() => press('play', side, f.sc.id)}></button>{/each}
             {#if files.length > MANY}<span class="more">+{files.length - MANY}</span>{/if}
         </div>
     {/if}
     {#each dirs as d (d.sc.id)}
         {@const cat = untrack(() => H.Pile_category(d))}
-        <div class="rack" class:deep={depth > 0} class:category={cat != null} class:disliked={disliked(side, d)} class:active={holds_playing(side, d)}>
+        <div class="rack" class:deep={depth > 0} class:category={cat != null} class:disliked={disliked(side, d)} class:active={holds_playing(side, d)} class:passed={passed(side, d) && !snuck(side, d)}>
             <div class="label">
                 <button class="name" title="#{d.sc.id}" onclick={() => toggle_open(side, d)}>{cat ?? d.sc.Dir}</button>
+                {#if snuck(side, d)}<span class="snuck" title="changed since you passed it">✦ new inside</span>{/if}
                 {#if disliked(side, d)}<span class="cull">👎{spare_note(taste.spares.get(side + ':' + d.sc.id) ?? 0)}</span>{/if}
                 <button class="thumb" class:on={disliked(side, d)} title="dislike — its liked tracks are kept" onclick={() => press('dislike', side, d.sc.id)}>👎</button>
             </div>
@@ -195,6 +208,9 @@
                 <button class="heart" class:on={taste.like.has(p.side + ':' + p.id)} title="like" onclick={() => press('like', p.side, p.id)}>♥</button>
                 <span class="now">{p.name}</span>
             </span>
+        {:else if taste.cursor}
+            {@const c = taste.cursor}
+            <span class="player"><button onclick={() => press('play', c.side, c.id)} title="carry on from where listening was">▶ carry on: {c.name}</button></span>
         {/if}
         {#if view.trail}<span class="trail">moment {view.trail.n}: {view.trail.about}{view.trail.noticed.length ? ' — ' + view.trail.noticed.join(', ') : ''}</span>{/if}
         {#if no_fsa}<span class="warn">this browser can't open folders (no File System Access)</span>{/if}
@@ -248,6 +264,11 @@
     /* the Dir holding what plays: lit, and open into a list of its tracks */
     .rack.active { border-left-color: var(--play); box-shadow: 0 0 0 1px color-mix(in srgb, var(--play) 50%, transparent); }
     .rack.disliked { opacity: .45; }
+    /* passed: the cursor went through it; snuck: it changed since */
+    .rack.passed > .label .name { color: var(--dim); font-weight: 500; }
+    .snuck { font-size: 11px; color: var(--play); font-weight: 600; }
+    .atom.cursor { outline: 1px solid var(--play); outline-offset: 1px; }
+    .track.cursor { outline: 1px dashed var(--play); border-radius: 3px; }
     .rack.disliked > .label .name { text-decoration: line-through; }
     .label { display: flex; gap: 4px; align-items: center; }
     .label .name { font-weight: 600; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; text-align: left; }

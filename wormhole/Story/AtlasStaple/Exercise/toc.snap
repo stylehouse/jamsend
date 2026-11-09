@@ -1,22 +1,14 @@
-Exercise:AtlasStaple,flows:393
+Exercise:AtlasStaple,flows:397
   Flow,of:Atlas
   Flow,of:AtlasStaple
   Flow,of:AtlasStaple_SH
   Flow,of:AtlasStaple_aw
   Flow,of:AtlasStaple_await
-  Flow,of:AtlasStaple_converged
   Flow,of:AtlasStaple_drive
-  Flow,of:Atlas_cache_adopt
-  Flow,of:Atlas_cache_prefetch
-  Flow,of:Atlas_cache_put
   Flow,of:Atlas_forget
-  Flow,of:Atlas_map_one
   Flow,of:Atlas_nav
   Flow,of:Atlas_pass
   Flow,of:Atlas_refresh
-  Flow,of:Atlas_report
-  Flow,of:Atlas_super_put
-  Flow,of:Atlas_walk
   Flow,of:Auto
   Flow,of:Clustation_self
   Flow,of:Cred_spool
@@ -24,7 +16,6 @@ Exercise:AtlasStaple,flows:393
   Flow,of:Ghost_version_checkin
   Flow,of:Identity
   Flow,of:Lang_ghostmeta_name
-  Flow,of:Lang_map_into
   Flow,of:Lies
   Flow,of:LiesCurse
   Flow,of:LiesPersist
@@ -38,6 +29,7 @@ Exercise:AtlasStaple,flows:393
   Flow,of:Lies_engage_check
   Flow,of:Lies_ghost_get
   Flow,of:Lies_ghost_include
+  Flow,of:Lies_include_shelf
   Flow,of:Lies_is_runner
   Flow,of:Lies_keepalive
   Flow,of:Lies_mark
@@ -78,7 +70,6 @@ Exercise:AtlasStaple,flows:393
   Flow,of:_resolve_runstepped
   Flow,of:agency_officing
   Flow,of:deL
-  Flow,of:decode_wh_lines
   Flow,of:e_Lies_dock_askies
   Flow,of:e_Verb
   Flow,of:e_reqyonciliation
@@ -132,13 +123,26 @@ Exercise:AtlasStaple,flows:393
   Flow,of:Atlas_db,from:Atlas_cache_prefetch
   Flow,of:Atlas_db,from:Atlas_cache_put
   Flow,of:Atlas_db,from:Atlas_forget
+  Flow,of:Atlas_cache_put,from:Atlas_map_one
+  Flow,of:Lang_map_into,from:Atlas_map_one
+  Flow,of:Atlas_cache_adopt,from:Atlas_pass
+  Flow,of:Atlas_cache_prefetch,from:Atlas_pass
   Flow,of:Atlas_diges,from:Atlas_pass
+  Flow,of:Atlas_map_one,from:Atlas_pass
+  Flow,of:Atlas_report,from:Atlas_pass
+  Flow,of:Atlas_super_put,from:Atlas_pass
   Flow,of:Atlas_super_take,from:Atlas_pass
   Flow,of:Atlas_walk_one,from:Atlas_pass
+  Flow,of:Atlas_cache_adopt,from:Atlas_refresh
   Flow,of:Atlas_diges,from:Atlas_refresh
+  Flow,of:Atlas_forget,from:Atlas_refresh
+  Flow,of:Atlas_map_one,from:Atlas_refresh
+  Flow,of:Atlas_report,from:Atlas_refresh
+  Flow,of:Atlas_walk,from:Atlas_refresh
   Flow,of:Atlas_db,from:Atlas_super_put
   Flow,of:Atlas_db,from:Atlas_super_take
   Flow,of:Atlas_super_key,from:Atlas_super_take
+  Flow,of:decode_wh_lines,from:Atlas_super_take
   Flow,of:Supervisor_tick,from:Auto
   Flow,of:Supervisor_up,from:Auto
   Flow,of:keep_awake_tick,from:Auto

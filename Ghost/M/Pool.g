@@ -1692,6 +1692,7 @@ async Ra_pool_previews_heal(w, ident):
 //    rides the pool pump's own cadence rather than the streaming budget, which is the right pocket:
 //     a pool head must never take a slot from the track someone is listening to right now.
 async Ra_pool_heads_heal(w, ident, homes):
+    if (!this.Ra_heads_on || !this.Ra_heads_on()) { return 0 }   // heads are not made (Ra_heads_on)
     if (!homes || !homes.pool || !homes.mw) { return 0 }
     for (const card of this.Ra_recs(homes.pool)) {
         if (+(card.sc.pv_off || 0) < 1) { continue }        // no cut point ⇒ the offer already starts at 0

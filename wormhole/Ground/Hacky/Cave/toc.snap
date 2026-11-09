@@ -1,0 +1,4 @@
+Ground:Hacky/Cave,desc:Ground/Cave built to be measured — the caller survives an await,FromWhat:Ground:Cave
+  Flavour:electrode
+  Load:Ghost/M/Heist.g
+  Load:Ghost/M/Heard.g

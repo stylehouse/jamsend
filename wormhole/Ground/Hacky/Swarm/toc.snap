@@ -1,0 +1,4 @@
+Ground:Hacky/Swarm,desc:Ground/Swarm built to be measured — the caller survives an await,FromWhat:Ground:Swarm
+  Flavour:electrode
+  Stands:Hacky/Wire
+  Load:Ghost/S/Swarm.g

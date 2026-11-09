@@ -149,6 +149,18 @@ const say = (m: string) => {
     } catch { /* logging must never be why the daemon dies */ }
 }
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
+// THE TEE (2026-11-09): the app's own console lines reach only stdout (docker logs), so from the claude container the
+//  ffmpeg jobs, transcode stalls and mutex wedges were invisible.  Those few kinds — not the per-beat spam — also land
+//   in the log, unprefixed by the daemon clock's say() so they read as the app's.
+for (const k of ['log', 'warn', 'error'] as const) {
+    const orig = console[k].bind(console)
+    console[k] = (...a: any[]) => {
+        orig(...a)
+        const m = typeof a[0] === 'string' ? a[0] : ''
+        if (!/^(🎬|◈⚠|🧱|👁|⏳⚠|🏊|🛰⚠)/u.test(m)) return
+        try { const line = `[app ${((Date.now() - t0) / 1000).toFixed(1)}s] ${m}\n`; appendFileSync(LOG, line); log_size += Buffer.byteLength(line) } catch { /* never why the daemon dies */ }
+    }
+}
 
 // THE LOOP WATCHDOG (2026-10-21, prod: the daemon froze ~85s after boot — no heartbeat, /status accepted but never
 //  answered, the relay cut it for a missed pong, and it never knew, because a blocked event loop runs NOTHING: not the
@@ -730,6 +742,10 @@ const wrap_probe = () => {
     // the money one: _Aw_think is the per-world dispatch — its label names the exact A/w whose
     //  handler is sitting there not returning.
     wrap('_Aw_think', (a) => `Aw ${(a[0]?.sc?.n)?.sc?.A ?? '?'}/${(a[1]?.sc?.n)?.sc?.w ?? '?'}`)
+    // the inbound drain is a post_do (fn:handle_inbound), outside beliefs — a frame's handler that never returns holds
+    //  the mutex with the stack above empty ("inside: (idle)", 2026-11-09).  Name the frame it is inside.
+    wrap('Lies_drain_inbound', () => 'drain_inbound')
+    wrap('Peeroleum_deliver_do', (a) => { const h = a[1]?.header ?? {}; return `frame ${h.type ?? '?'} seq=${h.seq ?? '?'} ← ${String(h.from ?? '?').slice(0, 8)}` })
     wrap('agency_officing')
     wrap('self_timekeeping', (a) => `timekeep ${a[0]?.sc?.A ?? a[0]?.sc?.w ?? '?'}`)
 }
@@ -1022,6 +1038,30 @@ const relay_guard = (r: any) => {
     }
 }
 
+// parked_state — every parked want a friend is waiting on, and the .c flags of its record that decide whether the transcode
+//  pump will ever kick it (2026-11-09, "transcode STALLED" with the ffmpeg queue idle: the pump's gates live on .c, which
+//   nothing else here shows).
+const parked_state = () => {
+    const out: any[] = []
+    const now = Date.now()
+    const M: any = (H as any).top_House?.() ?? H
+    for (const A of M.o?.({ A: 1 }) ?? []) for (const w of A.o?.({ w: 1 }) ?? []) {
+        const piers: any[] = []
+        if (w.c?.tx) piers.push(w.c.tx)
+        for (const cp of w.c?.repli_casters ?? []) if (!piers.includes(cp)) piers.push(cp)
+        for (const pier of piers) for (const pw of pier.o?.({ parked_want: 1 }) ?? []) {
+            let rec: any = null
+            try { rec = (H as any).Repli_find_record?.(w, pw.sc.id, (H as any).Repli_src_for?.(w, pier)) } catch { rec = null }
+            const c = rec?.c ?? {}
+            out.push({ id: String(pw.sc.id).slice(0, 8), from_idx: pw.sc.from_idx, parked_s: pw.c?.parked_at ? Math.round((now - pw.c.parked_at) / 1000) : null,
+                rec: rec ? { title: String(rec.sc.title ?? rec.sc.Record ?? '').slice(0, 40), preview: rec.sc.preview, total: rec.sc.total, pv_off: rec.sc.pv_off,
+                    mirror: c.from ? 1 : 0, body_hash: rec.sc.body_hash ? 1 : 0, pcm: c.pcm ? 1 : 0, ra: c.ra ? { next: c.ra.next, done: c.ra.done ? 1 : 0 } : null,
+                    pcm_pending: c.pcm_pending ? Math.round((now - c.pcm_pending) / 1000) : 0, nat_pending: c.nat_pending ? Math.round((now - c.nat_pending) / 1000) : 0,
+                    retry_in_s: c.pcm_retry_at ? Math.round((c.pcm_retry_at - now) / 1000) : 0, tries: c.pcm_tries ?? 0, why: c.pcm_why ?? '', sent: c.sent ?? 0 } : 'no record' })
+        }
+    }
+    return out
+}
 const stats = () => {
     const hs = allHouses(H)
     return {
@@ -1043,6 +1083,7 @@ const stats = () => {
         inside: probe_line(),
         book: book_state(),
         stock: stock_state(),
+        parked: parked_state(),
         serve: serve_state(),
         vyto: vyto_state(),
         identity: identity_state(),

@@ -1,0 +1,7 @@
+Ground:Hacky/Wire,desc:Ground/Wire built to be measured — the caller survives an await,FromWhat:Ground:Wire
+  Flavour:electrode
+  Load:Ghost/N/Peeroleum.g
+  Load:Ghost/N/Tribunal.g
+  Load:Ghost/N/Reliable.g
+  Load:Ghost/N/Presence.g
+  Load:Ghost/N/Repli.g

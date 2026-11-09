@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_P_Pile(): string { return '31a7ffd670f98aab~g1' },
+    Ghostmeta_Ghost_P_Pile(): string { return 'a8646b73d3c7b7e6~g1' },
 
 // Pile.g — a music pile kept as a Mag** you can walk, move around in, and undo (spec/Pile_todo.md).
 //
@@ -16,7 +16,8 @@
 //   - %Mag:Pile, the enclosing one, all we're up to: it holds the others, and its file is only their lines (references), plus
 //      %Ask:fsa — the add-another-FSA control, answered by a picker on the page;
 //   - one fs Mag per side, %Mag:<the folder's name>,side:A — the directory projected into being, rebuilt from disk by walking;
-//   - %Mag:Trail, the session: a %Moment per walk, saying what it noticed, by id;
+//   - %Mag:Trail, the session: a %Moment per walk, saying what it noticed, by id; the listening %Cursor, and each %Passed Dir
+//      it left behind with the v it had (a passed Dir whose v moved is "snuck in behind");
 //   - %Mag:Taste, what a person said of the rows, by id: %Like (♥, a track), %Dislike (👎, a Dir or a track) — referring rows,
 //      never a verdict stamped onto an fs row (those are what the disk says).  A Dislike of a Dir holding liked tracks SPARES
 //       them (%Spare,of under it): a disliked album keeps its one good track, for the radio's sake.
@@ -461,6 +462,51 @@ Pile_play(w, side, id) {
     let row = id != null ? this.Pile_row(w, side, id) : null
     if (!this.Pile_audio(row)) return null
     return w.i({ Playing: String(row.sc.File), of: row.sc.id, side })
+
+},
+// ── CURSORS — on the Trail (Pile_todo §3 "Treeing, overflow, cursors") ─────────────────────────────────────────────────
+//      Mag:Trail
+//        Cursor:listen,side:A,at:9            ← where listening is, by id: stored, so a reload can carry on from it
+//        Passed:1,side:A,v:…                  ← a Dir the cursor left behind, and the v it had then
+//  A Dir passed whose v has moved since is SNUCK IN BEHIND (something arrived, left or changed in it after we were through);
+//   a Dir with no Passed is unseen.  Dirs only, never files.  An empty Dir has no v, so it is never passed
+Pile_cursor(w, side) {
+    return this.Pile_trail(w).o({ Cursor: 'listen', side })[0] ?? null
+
+},
+// the Dir ids above a row, nearest first
+Pile_ups(w, side, id) {
+    let places = this.Pile_places(this.Pile_side(w, side))
+    let ups = []
+    for (let at = places[String(id)]?.up; at && at !== '.' && places[at]; at = places[at].up) ups.push(at)
+    return ups
+
+},
+// Pile_wander — the cursor goes to a track: each Dir it was in and isn't now is passed, with its v as it is.  Returns how many
+//  Passed rows changed
+Pile_wander(w, side, id) {
+    let trail = this.Pile_trail(w)
+    let was = this.Pile_cursor(w, side)?.sc.at
+    if (was === String(id)) return 0
+    let here = this.Pile_ups(w, side, id)
+    let changed = 0
+    for (const up of (was ? this.Pile_ups(w, side, was) : [])) {
+        if (here.includes(up)) continue
+        let v = this.Pile_row(w, side, up)?.sc.v
+        if (!v) continue
+        let had = trail.o({ Passed: up, side })[0]
+        if (had?.sc.v === v) continue
+        trail.oai({ Passed: up, side }, { v })
+        changed++
+    }
+    trail.oai({ Cursor: 'listen', side }, { at: String(id) })
+    return changed + 1
+
+},
+// a Dir the cursor passed whose insides moved since: the Passed row, or null
+Pile_snuck(w, side, id) {
+    let had = this.Pile_trail(w).o({ Passed: String(id), side })[0]
+    return had && had.sc.v !== this.Pile_row(w, side, id)?.sc.v ? had : null
 
 },
 // Pile_settle — write each of the pile's Mags whose text changed (Store.g), through the nav on w's .c.  After a walk, until a

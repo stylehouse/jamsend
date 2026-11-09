@@ -1,0 +1,4 @@
+Ground:Hacky/CoreTesting,desc:Ground/CoreTesting built to be measured — the caller survives an await,FromWhat:Ground:CoreTesting
+  Flavour:electrode
+  Load:Ghost/A/AtheTesting.g
+  Load:Ghost/A/AtheFishTesting.g

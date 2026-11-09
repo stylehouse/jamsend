@@ -1,0 +1,7 @@
+Ground:Hacky/LandTesting,desc:Ground/LandTesting built to be measured — the caller survives an await,FromWhat:Ground:LandTesting
+  Flavour:electrode
+  Stands:Hacky/Land
+  Load:Ghost/L/WorkshopTesting.g
+  Load:Ghost/L/AtlasTesting.g
+  Load:Ghost/L/ElectrodeTesting.g
+  Load:Ghost/L/LagoonTesting.g

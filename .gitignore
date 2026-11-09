@@ -66,3 +66,6 @@ host-firewall.sh
 
 # the eye's photographs (scripts/runner_eye.mjs) — working evidence, not source
 wormhole/shots/
+
+# the instrumented compile flavour (spec/Electrode_todo.md §0, Ground/Hacky/*) — a measuring build, rebuilt on demand; src/lib/gen/ stays committed (it ships)
+src/lib/gen-electrode/

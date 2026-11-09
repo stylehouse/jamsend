@@ -1,18 +1,18 @@
 Credulation,of_Book:AtlasStaple
-  run=0,at=1794204211.439,ok,ok_pct,mode:check
+  run=0,at=1794210101.773,ok,ok_pct,mode:check
     TheACode:Ground/Core,dige:2682d56be9e219ea
-    TheACode:Ground/Story,dige:dc6e93d56e81459c
+    TheACode:Ground/Story,dige:eeae0a8324ad76e5
     TheACode:Ground/Glass,dige:e323f92d62cd7e52
-    TheACode:Ground/Land,dige:c65463a2914eb6fa
+    TheACode:Ground/Land,dige:7b13975fed557026
     TheACode:Ground/LandTesting,dige:6737a32f63b6c177
     uses:Ghost_A_Theory,dige:bc1f5fad74703498~g1
     uses:Ghost_A_Stuffica,dige:a6371235df378ec7~g1
     uses:Ghost_A_Ground,dige:470a1c17b0c9fb46~g1
     uses:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1
-    uses:Ghost_L_Electrode,dige:201664f82379e12c~g1
     uses:Ghost_V_Voro,dige:e0323dccaf9924f8~g1
     uses:Ghost_V_Vyto,dige:ba54bff0606590e3~g1
     uses:Ghost_L_Atlas,dige:667e5c17b8c39d7f~g1
+    uses:Ghost_L_Electrode,dige:4a843707690f1758~g1
     uses:Ghost_L_Lagoon,dige:88a755669b9f0669~g1
     uses:Ghost_L_Workshop,dige:27e36e9ae751aee5~g1
     uses:Ghost_Play_Garden,dige:4e5061a1ef0f164b~g1

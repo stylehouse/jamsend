@@ -1,29 +1,36 @@
 Credulation,of_Book:PilePage
-  {"run":0,"at":1793792966.524,"ok":1,"ok_pct":null,"mode":"new"}
-    TheACode:Ground/Core,dige:cb471fc583d7b86d
+  run=0,at=1794209203.169,ok=0,ok_pct=0.6,mode:check
+    TheACode:Ground/Core,dige:2682d56be9e219ea
     TheACode:Ground/Story,dige:dc6e93d56e81459c
     uses:Ghost_A_Theory,dige:bc1f5fad74703498~g1
     uses:Ghost_A_Stuffica,dige:a6371235df378ec7~g1
-    uses:Ghost_A_Ground,dige:7861a13d0b95a377~g1
+    uses:Ghost_A_Ground,dige:470a1c17b0c9fb46~g1
     uses:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1
-  run,at=1793792985.937,ok,ok_pct,mode:check
-    TheACode:Ground/Core,dige:cb471fc583d7b86d
+  {"run":1,"at":1794209229.867,"ok":1,"ok_pct":null,"mode":"new"}
+    TheACode:Ground/Core,dige:2682d56be9e219ea
     TheACode:Ground/Story,dige:dc6e93d56e81459c
     uses:Ghost_A_Theory,dige:bc1f5fad74703498~g1
     uses:Ghost_A_Stuffica,dige:a6371235df378ec7~g1
-    uses:Ghost_A_Ground,dige:7861a13d0b95a377~g1
+    uses:Ghost_A_Ground,dige:470a1c17b0c9fb46~g1
     uses:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1
-  run=2,at=1793792996.507,ok,ok_pct,mode:check
-    TheACode:Ground/Core,dige:cb471fc583d7b86d
+  run=2,at=1794209247.81,ok,ok_pct,mode:check
+    TheACode:Ground/Core,dige:2682d56be9e219ea
     TheACode:Ground/Story,dige:dc6e93d56e81459c
     uses:Ghost_A_Theory,dige:bc1f5fad74703498~g1
     uses:Ghost_A_Stuffica,dige:a6371235df378ec7~g1
-    uses:Ghost_A_Ground,dige:7861a13d0b95a377~g1
+    uses:Ghost_A_Ground,dige:470a1c17b0c9fb46~g1
     uses:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1
-  run=3,at=1793793007.043,ok,ok_pct,mode:check
-    TheACode:Ground/Core,dige:cb471fc583d7b86d
+  run=3,at=1794209259.49,ok,ok_pct,mode:check
+    TheACode:Ground/Core,dige:2682d56be9e219ea
     TheACode:Ground/Story,dige:dc6e93d56e81459c
     uses:Ghost_A_Theory,dige:bc1f5fad74703498~g1
     uses:Ghost_A_Stuffica,dige:a6371235df378ec7~g1
-    uses:Ghost_A_Ground,dige:7861a13d0b95a377~g1
+    uses:Ghost_A_Ground,dige:470a1c17b0c9fb46~g1
+    uses:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1
+  run=4,at=1794209270.949,ok,ok_pct,mode:check
+    TheACode:Ground/Core,dige:2682d56be9e219ea
+    TheACode:Ground/Story,dige:dc6e93d56e81459c
+    uses:Ghost_A_Theory,dige:bc1f5fad74703498~g1
+    uses:Ghost_A_Stuffica,dige:a6371235df378ec7~g1
+    uses:Ghost_A_Ground,dige:470a1c17b0c9fb46~g1
     uses:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1

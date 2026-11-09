@@ -43,7 +43,7 @@
     import { SLUGGISH_MS, DEAD_MS, LIVE_MS, PIER_CULL_MS } from "$lib/O/runner_liveness.mjs"
     import { sockcap_lines, sockcap_count, SOCKCAP_BOOT, socklog_armed } from "$lib/O/sockcap"   // TEMP: relay-socket dump
     import { ghost_ledger_of } from "$lib/O/lang/compile"   // GhostLedger version identity (become_book version-gate)
-    import { ground_read, ground_spine_paths } from "$lib/A/ground"   // a ?G page's spine is its Ground's Spine: rows
+    import { ground_read, ground_spine_paths, ground_flavour_gen } from "$lib/A/ground"   // a ?G page's spine is its Ground's Spine: rows
 
     let { M } = $props()
 
@@ -1522,15 +1522,19 @@
         //  { aside: 1 } loads it KEPT ASIDE (Housing.ghost_aside): the .go's onMount gets a stand-in H whose eatfunc only
         //   keeps the version, so no House gets its methods — an A holding it runs it through TheA_as
         //    (spec/AtheoryStory_todo.md §1 "One tab").  Not hot-swapped by Creduler_reswap (that sweeps the spine only).
-        async Lies_ghost_include(path: string, opts?: { aside?: any }): Promise<boolean> {
+        //  { flavour: 'electrode' } loads the MEASURING build (src/lib/gen-electrode/, scripts/flavour_electrode.mjs) over the plain one —
+        //   eatfunc's last-wins, as --swap does — and its shelf row is its own (`GhostInclude:gen-electrode/…,flavour`), since a flavour
+        //    keeps its source's Ghostmeta dige.  Ground/Hacky/<Name> asks for it (ground.ts ground_include; spec/Electrode_todo.md §0).
+        async Lies_ghost_include(path: string, opts?: { aside?: any, flavour?: string }): Promise<boolean> {
             const H     = this as House
             const shelf = H.Lies_include_shelf()
-            const gen   = H.Lies_gen_path(path)
+            const plain = H.Lies_gen_path(path)
+            const gen   = plain && opts?.flavour ? ground_flavour_gen(path, opts.flavour) : plain
             if (!gen) {
                 shelf.oai({ GhostInclude: path }, { stood: 'no gen path' })
                 return false
             }
-            const aside = opts?.aside ? { aside: 1 } : {}
+            const aside = { ...(opts?.aside ? { aside: 1 } : {}), ...(opts?.flavour ? { flavour: opts.flavour } : {}) }
             const row = shelf.oai({ GhostInclude: gen })
             try {
                 const module = await import(/* @vite-ignore */ `../../lib/${gen}`)

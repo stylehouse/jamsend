@@ -11,7 +11,7 @@ import { sha256_hex } from "$lib/Common"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return 'e16a0ac2266ae4f8~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return '12b906c85e8b0d63~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/MusuTesting.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -252,6 +252,8 @@ Repli_head_at(rec, s) {
 async Repli_serve_head(w, pier, h, rec) {
     let off = +(rec.sc.pv_off || 0)
     if (!(off > 0)) { this.Repli_serve_miss(w, h, 'no cut point — the offer already starts at the song'); return }
+    // heads are not made here (Ra_heads_on, off by default): say so, so an older tab still asking doesn't park on us
+    if (typeof this.Ra_heads_on === 'function' && !this.Ra_heads_on() && !this.Ra_head_whole(rec)) { this.Repli_serve_miss(w, h, 'heads are not made — the offer is the opening'); return }
     if (typeof this.Ra_head_ensure === 'function' && !this.Ra_head_whole(rec)) {
         // A PIER IS WAITING ON THIS HEAD RIGHT NOW — stamp the demand so Ra_pcm_admit can rank it
         //  above background work (the lead pass building buffer for tracks already playing).  Measured

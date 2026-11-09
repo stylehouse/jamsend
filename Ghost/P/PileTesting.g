@@ -252,6 +252,8 @@ PileWalk_witness(w):
 //    calls Pile(A,w) itself, once per thing the page would do.  Step 2: a page with nothing stored; a folder is granted; walked.
 //     Step 3: the page reloads: what was stored is there before the folder is granted again; granted, the walk notices nothing.
 //      Step 4: presses, as the face makes them — ♥ a track, 👎 its album, play it, then next.  Step 5: the page reloads; the taste is there.
+//       Step 6: the world drops a track into the album listening left behind, and one into the album it's in; look again — the
+//        passed one has something snuck in behind, the other doesn't; carry on from the cursor; then wander off to another Dir.
 PilePage(A,w):
     w oai %req:wrangle,eternal
         await &PilePage_drive,w,req
@@ -259,7 +261,7 @@ PilePage(A,w):
 
 async PilePage_drive(w, req):
     let run = this.c.run
-    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 5
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 6
     let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
@@ -267,6 +269,7 @@ async PilePage_drive(w, req):
         if (n === 3) await this.PilePage_reload(w)
         if (n === 4) await this.PilePage_taste(w)
         if (n === 5) await this.PilePage_retaste(w)
+        if (n === 6) await this.PilePage_snuck(w)
     }
     this.PilePage_witness(w)
 
@@ -338,6 +341,25 @@ async PilePage_retaste(w):
     await this.Pile_grant(pw, 'A', this.PileTesting_handle(this.c.pilep_tree, 'Music'), 'the page reloads')
     await this.Pile(A, pw)
 
+async PilePage_snuck(w):
+    w.i({ desc: 'the world adds a track to the album we left and one to the album we are in — look again — carry on — wander off' })
+    let pw = this.o({ A: 'PileP' })[0]?.o({ w: 'PileP' })[0]
+    let A = this.o({ A: 'PileP' })[0]
+    if (!pw) return
+    this.PileTesting_add(this.c.pilep_tree, 'Album X', '04 Night.flac', 1004, 14)
+    this.PileTesting_add(this.c.pilep_tree, 'Album Y', 'c.mp3', 2003, 23)
+    this.Pile_press(pw, 'look', 'A')
+    await this.Pile(A, pw)
+    let x = this.Pile_row_at(pw, 'A', 'Album X')
+    let y = this.Pile_row_at(pw, 'A', 'Album Y')
+    let loose = this.Pile_row_at(pw, 'A', 'Loose')
+    w.oai({ Saw: 'looked' }, this.TheA_nonzero({ x: this.Pile_snuck(pw, 'A', x?.sc.id) ? 1 : 0, y: this.Pile_snuck(pw, 'A', y?.sc.id) ? 1 : 0, loose: this.Pile_snuck(pw, 'A', loose?.sc.id) ? 1 : 0 }))
+    this.Pile_press(pw, 'play', 'A', this.Pile_cursor(pw, 'A')?.sc.at)
+    await this.Pile(A, pw)
+    w.oai({ Saw: 'carried on' }, { of: String(pw.o({ Playing: 1 })[0]?.sc.Playing ?? 'nothing') })
+    this.Pile_press(pw, 'play', 'A', this.Pile_row_at(pw, 'A', 'Loose/stray.ogg')?.sc.id)
+    await this.Pile(A, pw)
+
 PilePage_witness(w):
     let pw = this.o({ A: 'PileP' })[0]?.o({ w: 'PileP' })[0]
     if (!pw) return
@@ -375,5 +397,24 @@ PilePage_witness(w):
     }
     if (n === 5 && !pw.o({ Playing: 1 }).length && spares === '01 Dawn.flac' && taste?.o({ Like: 1 }).length === 1 && rows.length === 18) {
         this.story_swear(w, 'after a reload the likes and dislikes are back from their file with the spares — nothing is playing')
+    }
+    let cursor = trail.o({ Cursor: 'listen', side: 'A' })[0]
+    let album_x = this.Pile_row_at(pw, 'A', 'Album X')
+    let album_y = this.Pile_row_at(pw, 'A', 'Album Y')
+    let passed_x = trail.o({ Passed: String(album_x?.sc.id), side: 'A' })[0]
+    if (n === 4 && cursor?.sc.at === this.Pile_row_at(pw, 'A', 'Album Y/a.mp3')?.sc.id && passed_x?.sc.v === album_x?.sc.v
+        && trail.o({ Passed: 1 }).length === 1 && String(files['Pile/Trail/toc.snap'] || '').includes('Cursor:listen')) {
+        this.story_swear(w, 'the listening cursor follows what plays — the album it left is passed with what it held then — stored on the Trail')
+    }
+    if (n === 5 && cursor?.sc.at === this.Pile_row_at(pw, 'A', 'Album Y/a.mp3')?.sc.id && passed_x && !this.Pile_snuck(pw, 'A', album_x?.sc.id)) {
+        this.story_swear(w, 'after a reload the cursor is where listening was — the passed album is still passed — nothing snuck in')
+    }
+    let looked = w.o({ Saw: 'looked' })[0]
+    if (n === 6 && looked?.sc.x === 1 && looked.sc.y === undefined && looked.sc.loose === undefined) {
+        this.story_swear(w, 'a track the world drops into a passed album has snuck in behind — the album listening is in and an unseen one have not')
+    }
+    if (n === 6 && w.o({ Saw: 'carried on' })[0]?.sc.of === 'a.mp3' && cursor?.sc.at === this.Pile_row_at(pw, 'A', 'Loose/stray.ogg')?.sc.id
+        && trail.o({ Passed: String(album_y?.sc.id), side: 'A' })[0]?.sc.v === album_y?.sc.v && this.Pile_snuck(pw, 'A', album_x?.sc.id)) {
+        this.story_swear(w, 'carrying on plays the cursor’s track — wandering off passes the album it was in as it is now — the album passed before stays snuck in')
     }
 //#endregion

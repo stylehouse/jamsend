@@ -11,7 +11,12 @@
 **Pile and Radio (owner 2026-11-07):** *"Pile is its own world where we very explicitly move music around, Radio is where it
  happens by magic."*  Kept apart.
 
-### 0.0 Where rung 1 stands (2026-11-05)
+**Next move (2026-11-09):** the owner tries the page in Chrome (owed item 1 below: listening, taste and the cursor are all
+ Book-proven but have never been seen in a browser).  Fix what that turns up.  Then the owner picks: the cull (6) or the
+  intelligiser (7).  Rows-and-Books discipline throughout: a new behaviour gets a step in Book `PilePage` (to add a step, strip
+   the toc's step lines so the run records in new mode, then check each step's toc dige = sha256 of its file, first 16 hex).
+
+### 0.0 Where rung 1 stands (2026-11-09)
 
 **Built, Book-proven: the tree, its identity, partitions, the three Mags, and their storage.**
 - **The fs Mag is the directory tree** (§3 "Treeing, overflow, cursors"): `Dir` holds its `Dir`s and `File`s.  Each `Dir`
@@ -69,6 +74,16 @@
       **Book `PilePage`** now has 5 steps and 6 oaths.  Steps 4–5: a like and a dislike in one turn spare the track; next skips
        the disliked album's rest; `0 chill` is a category; after a reload the taste is back with its spares and nothing plays.
         PilePage + PileWalk are 3/3 green interleaved on one tab.
+- **Cursors** (built 2026-11-09, owner-untested).  What plays moves `%Cursor:listen,side,at:<id>` on the Trail (`Pile_wander`,
+   called from the press pass on play and next).  Each `Dir` the cursor was in and isn't now gets `%Passed:<id>,side,v`, the `v`
+    it had then.  `Pile_snuck`: a passed `Dir` whose `v` has moved since is **snuck in behind**; a `Dir` with no `Passed` is unseen.
+     The Trail is stored, so after a reload the face offers "▶ carry on: <track>" and opens the cursor's `Dir`.  The face dims
+      passed `Dir`s, marks a snuck one "✦ new inside", and outlines the cursor's track while nothing plays.  **Book `PilePage`**
+       now has 6 steps and 11 oaths: the cursor and Album X passed (step 4), both back after a reload (5), and in step 6 the world
+        drops a track into each album.  Only the passed one has snuck in; carrying on plays the cursor's track; wandering off to
+         `Loose` passes Album Y with its new `v`.  PilePage + PileWalk 3/3 green interleaved on e747.
+   Limits: only Dirs *left* are passed.  A jump far ahead doesn't pass what it skipped, nor does next skipping a disliked
+    album.  One cursor per side (`listen`); a second one (a merge cursor walking B) is the same rows with another name.
 - **What building this asked of the Sunpit** (for `AtheoryNexus_todo.md` §3.8, the `%J` / Sunpit design):
   1. **A pass must say where its rows are.**  Taste's rows live in a Mag under the home, not on w, so I added `in:`.  A real
       Sunpit wants an address (`@Taste/%Dislike`), which is §3.3's `S` read.
@@ -90,13 +105,12 @@
 - An emptied partition stays; a `Dir` that shrinks back under `most` stays partitioned.  A moved `Dir`'s partitions are rebuilt
    at the same id path (rewritten, not orphaned).
 - Two files with the same `ms` are matched first-come (sabotage still unrun).
-- Cursors (`%Cursor`, `%Passed:<id>,v` on the Trail) are designed (§3) but not built.
 
 **Still owed for rung 1, in order:**
 1. **The owner opens the page** in Chrome on :9091 (`/Desk?I=<pub>&G=Pile`), picks a music folder, reloads, re-grants.  Then: the
     face's look (racks of squares is the plainest first cut), a stall-free walk for a big folder (see 3).
-2. **Cursors**: `%Cursor:<name>,at:<id>` wandering the sorted tree, `%Passed:<id>,v` on the Trail, "snuck in behind" = a passed
-    `Dir` whose `v` moved.
+2. ~~**Cursors**~~ — built 2026-11-09 (the listening cursor, above).  Owed: a cursor that walks without playing (the merge
+    workflow's "next album to place").
 3. **The walk as Jobs**: each directory read a `%Job` arrival, dropped once served, so a giant folder fills as it lands; settle
     as the run's tail.
 4. **The partial-hash confirm Job** (§5.1): today a pairing is trusted on `ms`/name/`v` alone.

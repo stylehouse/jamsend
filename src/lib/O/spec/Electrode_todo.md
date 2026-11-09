@@ -30,17 +30,37 @@ A **capture doc, not yet a plan** (the `Atheory_todo`/`Trust_todo` pattern — a
    plain: `alpha after: leaf ← nobody`; flavoured: `leaf ← alpha`, `leaf ← beta`).  JS runs one thing at a time, and between a resume
     and the next suspension nothing else runs, so: save before each await, restore on resume, clear at the next await or the end (in a
      try/finally).  Mechanical for a compiler, so it belongs in a BUILD, not in hand-written code.
-- **DESIGNED (owner 2026-11-09), not built — Ground/Hacky/<Name>, the instrumented flavour:**
-   · same .g, compiled with `flavour:electrode` into `src/lib/gen-electrode/…`: the await save/restore, a call-site id (doc:line) at
-      every call, closures coated.  LocalGen `--flavour=electrode` builds it; the editor's frozen compiler is untouched;
-   · NO toc of its own: `Hacky/Land` = Ground/Land's Load: list, each from the flavoured tree; what it stands on loads plain unless
-      named (`Hacky/Glass`);
-   · chosen by the RUN REQUEST, never the URL: `runner_ask run <Book> --flavour=electrode` / `runner_sweep --exercise` put it on the
-      job, and the job stands the Book's Stands: as Hacky/<Ground>;
-   · one reality per tab (eatfunc last-wins, as --swap): `%Page,flavour:electrode` + the ping say so until a reload; the sweep
-      reloads before and after.  Two versions side by side waits for A**;
-   · Exercise rows then gain `line:` — exact callers, joined to Atlas's `%call` rows by line.
-- **Queue:** (1) the flavour, slice by slice (LocalGen flag → ground_include flavour → job flag → line on rows); (2) also tap elvis
+- **BUILT the same day — Ground/Hacky/<Name>, the measuring flavour** (owner's shape: the twin's toc DEFINES what to do; no URL changes):
+   · **the build** — `src/lib/L/flavour_electrode.ts` rewrites a plain .go text-for-text: each async function notes its frame at entry
+      (`__ef`), restores it on every resume, and once resumed clears it at its next suspension and at its end (before its first
+       resume it clears nothing — that suspension returns to a real synchronous caller).  `for await` bodies resume too.  A pass over
+        the PLAIN .go, so no .g compiler: `node scripts/flavour_electrode.mjs --hacky` → `src/lib/gen-electrode/` (gitignored).  The
+         app never imports this module (it carries the TypeScript compiler).
+   · **the twins** — `wafts_keep` derives `wormhole/Ground/Hacky/<Name>/toc.snap` for every tagged Ground except `HACKY_PLAIN` (Core,
+      Glass, Story — Story is the runner's own drive): same `Load:` rows (SOURCES, repo-root — the loader derives the build), plus
+       `Flavour:electrode`; `Stands:` points at twins where they exist, plain otherwise.  Baked into grounds.gen.js with `flavour`.
+        ⚠ wafts_keep does not prune a twin it stops deriving — delete its dir by hand.
+   · **the loader** — `ground.ts`: `GroundRead.flavour`, `ground_flavour_gen`, a flavoured row loads over its plain self (the shelf
+      row `GhostInclude:gen-electrode/…,flavour` says which build is live — the dige can't: a flavour keeps its source's Ghostmeta);
+       `ground_flavoured(names, flavour)` maps a Book's Stands: to twins.  `Lies_ghost_include(path, {flavour})` (LiesLies).
+   · **who decides** — the TAB: the `flavour electrode|off` verb (Electrode.g) sets `top.c.flavour` until a reload; StoryFu.g and
+      Story.svelte stand a Book's Stands: through `ground_flavoured`; the ping says `flavour`.  `runner_sweep --exercise` builds,
+       arms, sets the flavour (again after each reload) and reloads the tab back to plain at the end.
+   · **the gate** — `scripts/FlavourElectrode.spec.ts` (3): dry mode is byte-identical over all 64 real modules; the scene (interleaved
+      methods, a plain closure under a coated caller, for-await, a concise arrow) attributes every call and leaks nothing; every
+       flavoured module compiles.  Live: AtlasStaple flavoured 6/6, and a plain sweep after (5 Books) green, ping plain.
+   · **what it fixed, measured** — AtlasStaple's caller-less flows 101 → 92: every Atlas-internal call after an await now has its
+      caller (cache_adopt, map_one, report, walk, super_put…).  The 92 left: plain machinery by design (Lies/Stuffica .svelte, Core's
+       TheA), and the Book's own `expecting(…)` closures, which plain Story machinery invokes after its awaits — those need LEXICAL
+        attribution, the call-site ids (next).
+   · ⚠ loading a flavour over a live plain ghost is --swap's road: a module-level `const` (a Map atop a .go) is a second copy in the
+      flavoured module until the reload.
+- **PARKED AS A WORKING SUBSYSTEM (owner 2026-11-09):** it runs from the CLI and `runner_sweep --exercise`; the Land's UI orchestrates it
+   later, once `/Desk?G=Land` has a Main.  What that UI reads is already there — armed (`see:electrode`), the tab's flavour (ping),
+    which build is live per file (`GhostInclude:gen-electrode/…,flavour`), each Book's `Exercise/` — and its controls are the verbs:
+     build the flavour, arm/disarm, flavour on/off, prune twins nobody derives (also owed in wafts_keep itself).
+- **Queue:** (1) CALL-SITE IDS in the flavour — each `this.X(` carries its doc:line, so a closure's call belongs to the method that
+   WROTE it, and Exercise rows gain `line:` joined to Atlas's `%call` rows; (2) also tap elvis
    dispatch (sender→handler) — the old world's own deliberate time-crossing; (3) Lagoon reads Exercise beside the oath join's static
     exercise (Lagoon_todo §0); (4) declare the 56 site-only oaths (Lagoon_todo §0); (5) `Main:Land` so /Desk?G=Land is the code landscape —
      Ground/Land is DERIVED by wafts_keep (ground_toc writes only Stands/Load/Beside/Advice), so a Main needs either a hand-kept row

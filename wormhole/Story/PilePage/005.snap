@@ -37,6 +37,8 @@ Snap:H
             TheAStore:Pile/Trail
             Moment:1,about:a folder picked,side:A,saw=18
             Moment:2,about:the page reloads,side:A,saw=18
+            Cursor:listen,side:A,at:6
+            Passed:1,side:A,v:f7948c21cfd3ed0f
             Moment:3,about:the page reloads,side:A,saw=18
           Ask:fsa,side:B
           Mag:Taste

@@ -11,7 +11,7 @@ const ELECTRODE_SKIP = /^(Ghostmeta_|Electrode_|Electrode$)/   // never coat the
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Electrode(): string { return '201664f82379e12c~g1' },
+    Ghostmeta_Ghost_L_Electrode(): string { return '4a843707690f1758~g1' },
 
 // Electrode.g — both ends of every ghost call, kept as marks, reduced to a picture.  The second ghost
 //  in Ghost/L/ (the land); spec home: src/lib/O/spec/Electrode_todo.md.
@@ -72,6 +72,8 @@ Electrode_T() {
         T = { armed: 0, seq: 0, cur: null, ring: [], tally: new Map(), open: new Map(), dropped: 0, cap: ELECTRODE_CAP, since: 0 }
         top.c.electrode = T
     }
+    // the ELECTRODE FLAVOUR's helpers find the tap here (src/lib/L/flavour_electrode.ts): a measuring build keeps T.cur across its awaits
+    globalThis.__ELECTRODE = T
     return T
 
 },
@@ -312,7 +314,25 @@ verbs_Electrode() {
         { name: 'exercise', where: 'runner', writes: 1, args: '<Book>',
           desc: 'keep what the tap measured since its reset as the Book\'s Exercise — caller-callee pairs bucketed and sorted so a re-run diffs only when a path moved',
           run: (w, a) => H.Electrode_verb_exercise(w, a) },
+        // flavour: this tab stands each Book's Grounds as their Ground/Hacky/* twins (the measuring build) until a reload — no URL changes
+        { name: 'flavour', where: 'runner', writes: 0, args: 'electrode|off',
+          desc: 'stand Books on the measuring build — each Ground as its Hacky twin until the tab reloads',
+          run: (w, a) => H.Electrode_verb_flavour(w, a) },
     ]
+
+},
+// Electrode_verb_flavour — the tab's flavour, on the top House's .c (runtime: a reload is the way back to plain, since the flavoured
+//  methods are already eaten over the plain ones).  `off` only stops the NEXT Book standing Hacky twins; what loaded stays loaded.
+Electrode_verb_flavour(w, a) {
+    let top = this.top_House()
+    let f = String(a.name ?? '')
+    if (f === 'off') {
+        delete top.c.flavour
+        return { flavour: null, note: 'Books stand plain from the next run — what loaded flavoured stays until a reload' }
+    }
+    if (f !== 'electrode') return { error: 'flavour: electrode|off', flavour: top.c.flavour ?? null }
+    top.c.flavour = f
+    return { flavour: f }
 
 },
 Electrode_verb_exercise(w, a) {

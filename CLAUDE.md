@@ -208,7 +208,7 @@ Show the arc, not just the diff.
      `wormhole/Credence/toc.snap` (`src/lib/L/everything.js` was sublated 2026-11-09): edit them, then
       `node scripts/wafts_everything.mjs` (`--check` writes nothing) validates every row through `src/lib/L/wafts_keep.js` —
        every Doc exists, every Point is a def, no comma in a desc, every Book exists — and rewrites ONLY what is derived:
-        Waft:Ghost/Rest/Unsorted, Everything's counted Whats, the tagged `wormhole/Ground/<Name>` tocs and `src/lib/A/grounds.gen.js`
+        Waft:Ghost/Rest/Unsorted, Everything's counted Whats, the tagged `wormhole/Ground/<Name>` tocs, their measuring twins `wormhole/Ground/Hacky/<Name>` (`Flavour:electrode`, spec/Electrode_todo.md §0) and `src/lib/A/grounds.gen.js`
          (a change there reloads tabs).  Run it with no editor tab up — the editor saves open Wafts back.  Credence: one
           `Funkcion:Storying,of_Book:…` row per Book, beside its neighbours.  A new Book gets its row there, and `Stands:<Ground>` in its own toc.
 

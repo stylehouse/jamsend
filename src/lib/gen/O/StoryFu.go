@@ -74,7 +74,7 @@ import { now_in_seconds, now_in_seconds_with_ms }     from "$lib/Common"
 import { ANSWER_CALLS_TICK_MS, House } from "$lib/O/Housing.svelte"
 import Storui                       from "$lib/O/Storui.svelte"
 import Storica                      from "$lib/O/Storica.svelte"
-import { ground_include }           from "$lib/A/ground"
+import { ground_include, ground_flavoured } from "$lib/A/ground"
 import { SoundSystem }              from "$lib/O/Audio.svelte"
 let V = { Story: 1 }   // set Story: 1 here to enable drive/analysis debug logs
 
@@ -90,7 +90,7 @@ const FRONTIER_COLOR = '#c55'
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_O_StoryFu(): string { return '007567cd1c8c8cf2~g1' },
+    Ghostmeta_Ghost_O_StoryFu(): string { return 'c814e5b2baa4ebc5~g1' },
 
 // Ghost: StoryFu — the Atheory fork of Story (working title; renamed from Story.g 2026-10-29, spec/AtheoryStory_todo.md).
 //  Ported from src/lib/O/Story.svelte, which the spine still mounts; a Story fix lands in both until the old one retires.
@@ -2080,7 +2080,8 @@ async Story(A: TheC, w: TheC) {
         //  their .g in order before the drive, so `?B=<Book>` alone is enough.  A name no Ground wears, or a .g that
         //   won't load, is a Story_error by name and reds step 1.  Once per run.
         if (!run.c.grounds_stood) {
-            const names = (w.c.The?.o({ Stands: 1 }) ?? []).map(s => String(s.sc.Stands))
+            // a FLAVOURED tab (top.c.flavour, the `flavour` verb) stands each Ground's Hacky twin — the measuring build
+            const names = ground_flavoured((w.c.The?.o({ Stands: 1 }) ?? []).map(s => String(s.sc.Stands)), H.top_House().c.flavour)
             if (!names.length) {
                 run.c.grounds_stood = true
             }

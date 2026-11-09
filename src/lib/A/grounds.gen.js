@@ -137,5 +137,131 @@ export const GROUNDS = {
    "Ghost/Story/PeerTesting.g",
    "Ghost/Story/Sounditron.g"
   ]
+ },
+ "Hacky/Cave": {
+  "stands": [],
+  "load": [
+   "Ghost/M/Heist.g",
+   "Ghost/M/Heard.g"
+  ],
+  "flavour": "electrode"
+ },
+ "Hacky/CaveTesting": {
+  "stands": [
+   "Hacky/Cave"
+  ],
+  "load": [
+   "Ghost/Story/HeistTesting.g",
+   "Ghost/Story/BerthTesting.g"
+  ],
+  "flavour": "electrode"
+ },
+ "Hacky/CoreTesting": {
+  "stands": [],
+  "load": [
+   "Ghost/A/AtheTesting.g",
+   "Ghost/A/AtheFishTesting.g"
+  ],
+  "flavour": "electrode"
+ },
+ "Hacky/GlassTesting": {
+  "stands": [
+   "Glass"
+  ],
+  "load": [
+   "Ghost/Story/VoroTesting.g",
+   "Ghost/V/VytoTesting.g"
+  ],
+  "flavour": "electrode"
+ },
+ "Hacky/Land": {
+  "stands": [
+   "Glass"
+  ],
+  "load": [
+   "Ghost/L/Atlas.g",
+   "Ghost/L/Electrode.g",
+   "Ghost/L/Lagoon.g",
+   "Ghost/L/Workshop.g",
+   "Ghost/Play/Garden.g",
+   "Ghost/Play/Pond.g"
+  ],
+  "flavour": "electrode"
+ },
+ "Hacky/LandTesting": {
+  "stands": [
+   "Hacky/Land"
+  ],
+  "load": [
+   "Ghost/L/WorkshopTesting.g",
+   "Ghost/L/AtlasTesting.g",
+   "Ghost/L/ElectrodeTesting.g",
+   "Ghost/L/LagoonTesting.g"
+  ],
+  "flavour": "electrode"
+ },
+ "Hacky/Music": {
+  "stands": [],
+  "load": [
+   "Ghost/M/Ra.g",
+   "Ghost/M/Orig.g",
+   "Ghost/M/Pool.g",
+   "Ghost/M/Radio.g",
+   "Ghost/M/Sound.g",
+   "Ghost/M/Crate.g"
+  ],
+  "flavour": "electrode"
+ },
+ "Hacky/MusicTesting": {
+  "stands": [
+   "Hacky/Music"
+  ],
+  "load": [
+   "Ghost/Story/MusuTesting.g",
+   "Ghost/Story/RaTesting.g"
+  ],
+  "flavour": "electrode"
+ },
+ "Hacky/Swarm": {
+  "stands": [
+   "Hacky/Wire"
+  ],
+  "load": [
+   "Ghost/S/Swarm.g"
+  ],
+  "flavour": "electrode"
+ },
+ "Hacky/SwarmTesting": {
+  "stands": [
+   "Hacky/Swarm"
+  ],
+  "load": [
+   "Ghost/Story/SwarmTesting.g",
+   "Ghost/Story/InvSeal.g",
+   "Ghost/Story/InvFerry.g",
+   "Ghost/Story/InvWalk.g"
+  ],
+  "flavour": "electrode"
+ },
+ "Hacky/Wire": {
+  "stands": [],
+  "load": [
+   "Ghost/N/Peeroleum.g",
+   "Ghost/N/Tribunal.g",
+   "Ghost/N/Reliable.g",
+   "Ghost/N/Presence.g",
+   "Ghost/N/Repli.g"
+  ],
+  "flavour": "electrode"
+ },
+ "Hacky/WireTesting": {
+  "stands": [
+   "Hacky/Wire"
+  ],
+  "load": [
+   "Ghost/Story/PeerTesting.g",
+   "Ghost/Story/Sounditron.g"
+  ],
+  "flavour": "electrode"
  }
 }

@@ -10,7 +10,7 @@ import { sha256_hex } from "$lib/Common"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Pool(): string { return '0cfe2b7f257ea400~g1' },
+    Ghostmeta_Ghost_M_Pool(): string { return '309aa16c2fe1b958~g1' },
 
 // Pool.g — SOUNDPOOLING's home (split out of Ra.g 2026-09-17, SoundPooling_todo.md §0.2a — the owner:
 //  "yes to Pool.g, definitely looks big enough"). Three regions, in the order a reader should meet them:
@@ -1777,6 +1777,7 @@ async Ra_pool_previews_heal(w, ident) {
 //    rides the pool pump's own cadence rather than the streaming budget, which is the right pocket:
 //     a pool head must never take a slot from the track someone is listening to right now.
 async Ra_pool_heads_heal(w, ident, homes) {
+    if (!this.Ra_heads_on || !this.Ra_heads_on()) { return 0 }   // heads are not made (Ra_heads_on)
     if (!homes || !homes.pool || !homes.mw) { return 0 }
     for (const card of this.Ra_recs(homes.pool)) {
         if (+(card.sc.pv_off || 0) < 1) { continue }        // no cut point ⇒ the offer already starts at 0

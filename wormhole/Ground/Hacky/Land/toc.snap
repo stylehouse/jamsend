@@ -1,0 +1,9 @@
+Ground:Hacky/Land,desc:Ground/Land built to be measured — the caller survives an await,FromWhat:Ground:Land
+  Flavour:electrode
+  Stands:Glass
+  Load:Ghost/L/Atlas.g
+  Load:Ghost/L/Electrode.g
+  Load:Ghost/L/Lagoon.g
+  Load:Ghost/L/Workshop.g
+  Load:Ghost/Play/Garden.g
+  Load:Ghost/Play/Pond.g

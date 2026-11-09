@@ -1,14 +1,14 @@
 Credulate,of_Book:PilePage
-  TheACode:Ground/Core,dige:cb471fc583d7b86d
+  TheACode:Ground/Core,dige:2682d56be9e219ea
   TheACode:Ground/Story,dige:dc6e93d56e81459c
   GhostInclude:Ghost_A_Theory,dige:bc1f5fad74703498~g1
   GhostInclude:Ghost_A_Stuffica,dige:a6371235df378ec7~g1
-  GhostInclude:Ghost_A_Ground,dige:7861a13d0b95a377~g1
+  GhostInclude:Ghost_A_Ground,dige:470a1c17b0c9fb46~g1
   GhostInclude:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1
-  last_ok,at=1793793007.043,ok_pct
-    TheACode:Ground/Core,dige:cb471fc583d7b86d
+  last_ok,at=1794209270.949,ok_pct
+    TheACode:Ground/Core,dige:2682d56be9e219ea
     TheACode:Ground/Story,dige:dc6e93d56e81459c
     uses:Ghost_A_Theory,dige:bc1f5fad74703498~g1
     uses:Ghost_A_Stuffica,dige:a6371235df378ec7~g1
-    uses:Ghost_A_Ground,dige:7861a13d0b95a377~g1
+    uses:Ghost_A_Ground,dige:470a1c17b0c9fb46~g1
     uses:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1

@@ -74,7 +74,11 @@ const job_what = (bin: string, args: string[]) => {
     const a = args.join(' ')
     const kind = bin === FFPROBE ? 'probe' : a.includes('loudnorm') && a.includes('-f null') ? 'measure'
         : a.includes('-f null') ? 'scan' : a.includes('-version') ? 'version' : 'encode'
-    return kind + (file ? ' ' + file.slice(0, 60) : '')
+    // the window an encode covers says WHY it runs (2026-11-09, "25 ffmpeg jobs!"): a short window mid-track is a new
+    //  record's preview (Ra_stock_one), @0 a head run (Ra_head_ensure), a long one from past 0 a listener's continuation
+    const ss = args.indexOf('-ss'), t = args.indexOf('-t')
+    const win = kind === 'encode' && t > 0 ? ` @${ss >= 0 ? Math.round(+args[ss + 1]) : 0}+${Math.round(+args[t + 1])}s` : ''
+    return kind + win + (file ? ' ' + file.slice(0, 60) : '')
 }
 const job_begin = (bin: string, args: string[]) => {
     const n = ++job_n, what = job_what(bin, args), t = Date.now()

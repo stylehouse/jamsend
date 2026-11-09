@@ -19,8 +19,10 @@
 //      --quiet         print only reds, hollows and the tally
 //      --out=<file>    every line (as if not --quiet, digests included) also goes to <file> — an agent reads the tally, opens the file only on a red
 //      --list          print the Books a pattern picks (after Credence's unusual: skips) and run NOTHING
-//      --exercise      stand + arm Electrode, reset its tally before each run, and keep a GREEN run's reach as
-//                       wormhole/Story/<Book>/Exercise/toc.snap (the `exercise` verb, Electrode.g) — re-armed after every reload
+//      --exercise      MEASURE: build the measuring flavour (scripts/flavour_electrode.mjs --hacky), stand + arm Electrode and set
+//                       the tab's flavour (its Books stand on Ground/Hacky/* — the caller survives an await), reset the tally before
+//                       each run, and keep a GREEN run's reach as wormhole/Story/<Book>/Exercise/toc.snap (the `exercise` verb,
+//                       Electrode.g).  Re-armed after every reload; the tab is reloaded back to plain at the end
 //    Exit 0 when nothing stayed red or hollow.
 //
 //  Verdicts:
@@ -186,6 +188,14 @@ const ex_arm = () => {
     ask('ghost_load', 'Ghost/L/Electrode.g', '--stand=Electrode')
     const a = ask('electrode', 'arm')
     if (a.code !== 0) say(`⚠ electrode would not arm: ${a.out.trim().split('\n').pop()}`, true)
+    const f = ask('flavour', 'electrode')
+    if (f.code !== 0) say(`⚠ the tab would not take the flavour: ${f.out.trim().split('\n').pop()}`, true)
+}
+if (EXERCISE) {
+    const b = spawnSync('node', ['scripts/flavour_electrode.mjs', '--hacky'], { encoding: 'utf8' })
+    const last = (b.stdout || '').trim().split('\n').pop()
+    if (b.status !== 0) { console.log(`✗ the measuring build refused: ${last}`); process.exit(1) }
+    say(`⚗ measuring build: ${last}`, !quiet)
 }
 const run_one = (b) => { if (EXERCISE) ask('electrode', 'reset'); return once(b) }
 ex_arm()
@@ -232,5 +242,7 @@ for (const b of books) {
         say(x && !x.error ? `    ⚡ exercise ${x.flows} flows over ${x.methods} methods${x.wrote ? ' — written' : ' — unchanged'}` : `    ⚠ exercise not kept: ${x?.error ?? 'no reply'}`, !quiet)
     }
 }
+// a measured tab holds the flavoured methods until it reloads — hand it back plain
+if (EXERCISE) { ask('reload'); await ready('after the measuring sweep (back to plain)') }
 say(`${books.length} Books: ${tally['✓']} ✓ · ${tally['~']} ~ · ${tally['✗']} ✗ · ${tally['∅']} hollow · ${tally['?']} new`, true)
 process.exit(tally['✗'] || tally['∅'] ? 1 : 0)

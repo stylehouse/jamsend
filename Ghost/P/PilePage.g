@@ -7,6 +7,8 @@
 //   - the page's turn, declared on w as a Sunpit (%TheASunpit:turn, a %TheAPass per kind of row, in order): what a person did
 //      (%Press — play, next, ♥, 👎, look again), what that wants (%Want:walk), each dislike's spares; then a settle, then the
 //       face's one commit.  The face only stands %Press rows (through the Stuffica door) and plays what %Playing says.
+//   What plays moves the listening %Cursor on the Trail (Pile_wander), so a reload can carry on, and the face can mark the
+//    Dirs passed and the ones something snuck into since.
 //  The face is a Svelte component registered as a UI (Supervisor.g's idiom); it reads the tree untracked on its commit counter.
 
 IMPORT()
@@ -86,6 +88,9 @@ Pile_pass_Press(w, rows):
         if (how === 'next') this.Pile_play(w, side, this.Pile_next(w, side, of))
         if (how === 'stop') this.Pile_play(w, side, null)
         if (how === 'look') w.oai({ Want: 'walk', side }, { about: 'look again' })
+        // the listening cursor follows what plays, passing the Dirs it leaves
+        let p = w.o({ Playing: 1, side })[0]
+        if (p && (how === 'play' || how === 'next')) this.Pile_wander(w, side, p.sc.of)
     }
     return rows.length
 

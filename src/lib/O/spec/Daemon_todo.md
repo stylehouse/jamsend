@@ -9,6 +9,35 @@ A node daemon that boots the whole jamsend machine headless and stays up: a stab
 
 ## 0. What to get on with next
 
+### 0.00000 2026-11-09 — "it stopped sending stuff over": the last chunk, the head storm, the inbound wedge
+
+**Fixed — the last chunk of a native continuation was never made.**  `total` is `Math.ceil` of the length (Ra_stock_one),
+ so a song's last chunk is partial; `Ra_native_continuation` cut with `Ra_chunk_cut(…, final)`, which folds that partial into
+  the chunk before.  The remainder came back one short on nearly every track: `ra.done` at `total-1`, the friend's last page
+   parked forever (`◈⚠ transcode STALLED … the encoder frontier never reached it` with the ffmpeg queue idle — Ex-Girlfriend
+    36/35, La Guacharaca 32/31).  Now the tail stays its own chunk while the count is short.  After the fix: 0 STALLED in 6 min
+     (before: every boot, within ~80s).  The listener-side story (what the sink did at the missing chunk) is unlooked-at.
+**Instruments added** (scripts/daemon): `/status` `parked` — each parked want with its record's `.c` gates (pcm/ra/pending/
+ retry/tries); the probe's "inside:" now names `drain_inbound` and `frame <type> seq ← from`; ffmpeg job lines carry their
+  window (`encode @from+secs`); the app's 🎬 ◈⚠ 🧱 👁 ⏳⚠ 🏊 🛰⚠ console lines are teed into run.log (they were stdout only).
+**Done — no more head runs.**  ~80 of 84 encodes after a boot were head runs (`@0+N`, Ra_head_ensure): every friend tab asked
+ its holder for the head of every mirror record (Ra_restock_beat) and pool card (Ra_pool_heads_heal), heads live on `.c` so a
+  restart lost them all, yet Radio_hbase only plays one after a play-to-the-end.  Owner: "we don't need to generate them, we have
+   radiostock cached to fit that role".  `Ra_heads_on()` (top House `c.ra_heads`, default OFF) gates the ensure and both asks;
+    Repli_serve_head answers a miss so an older tab doesn't park.  A track now opens where its radiostock does.  After: 4 encodes
+     in the first 3 min of a boot (a listener's 2 continuations, 1 dig preview + its measure), 0 stalls.
+**Open — the inbound wedge.**  Before the restarts: `🧱 beliefs mutex held 30s by H:Mundo fn:handle_inbound`, repeatedly —
+ one `Peeroleum_deliver` await never resolving, the share beat queued 150s+ behind it.  Not seen again in four short boots.
+  When it recurs, the ♥ line's "↳ inside:" names the frame.
+**Open — the listener's cursor (owner 2026-11-09, the design wanted).**  *"a cursor for what the client has listened to, stored
+ in a Mag on our side … joined to radiostock to know if they're nearly out … 90% of visits find it all ready; the 10% who listen
+  long progress the population."*  Not built: exhaustion is judged only on the LISTENER's tab (the dial finding nothing unheard
+   pokes that tab's own Stoker_churn, which digs that tab's share), and the listener's `%Mag:heard` mirrors to their crew, not to
+    the source.  The daemon stocks blind: fill to the tour window (40), then one round per 90s while any pier was heard in 10 min.
+**Open — rotation with the cull held.**  The daemon boots with `Ra_shuffle_cull held off (CULL=1 releases it)`, so heard
+ tracks never leave the shelf (51 records against the tour's 40 window).  Whether listening exhausts and refreshes the stock
+  sensibly is not checked.
+
 ### 0.0000 2026-10-21 — THE 8½-MINUTE BLOCK: the daemon froze, the relay cut it, the browser starved
 
 **Seen on prod:** the browser's preview starved well short of 30s and skipped. The relay terminated the daemon's socket

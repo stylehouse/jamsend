@@ -21,8 +21,11 @@ Waft:Ghost/Land/Wordland,desc:the land — the bet turned on the code itself —
     Point,method:Electrode_mark,desc:one call marked
     Point,method:Electrode_reduce,desc:reduce to Method and Flow
     Point,method:Electrode_top,desc:the busiest
+    Point,method:Electrode_exercise,desc:a Book reach kept beside it — caller-callee pairs sorted with no counts
     Point,method:Electrode_hangs,desc:calls that never returned
     Point,method:Electrode_film,desc:the film strip
+    Doc:src/lib/L/flavour_electrode.ts
+    Point,method:flavour_electrode_go,desc:the measuring build of a ghost — the caller survives an await
   What:the reader,desc:Lagoon asks and Atlas keeps — seek callers defs families mentions rot — the errands off the Aside
     Doc:Ghost/L/Lagoon.g
     Point,method:Lagoon_seek,desc:find a name

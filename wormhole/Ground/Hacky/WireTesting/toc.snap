@@ -1,0 +1,5 @@
+Ground:Hacky/WireTesting,desc:Ground/WireTesting built to be measured — the caller survives an await,FromWhat:Ground:WireTesting
+  Flavour:electrode
+  Stands:Hacky/Wire
+  Load:Ghost/Story/PeerTesting.g
+  Load:Ghost/Story/Sounditron.g

@@ -123,7 +123,7 @@
     import { ANSWER_CALLS_TICK_MS, House } from "$lib/O/Housing.svelte"
     import Storui                       from "$lib/O/Storui.svelte"
     import { SoundSystem }              from "$lib/O/Audio.svelte"
-    import { ground_include }           from "$lib/A/ground"
+    import { ground_include, ground_flavoured } from "$lib/A/ground"
 
     let { M } = $props()
     let V = { Story: 1 }   // set Story: 1 here to enable drive/analysis debug logs
@@ -1974,7 +1974,8 @@
         //    Held here like the toc read: no step clock is ticking yet.  A name no Ground wears, or a .g that won't load,
         //     is a Story_error by name, so step 1 reds saying which.  Once per run; what's already loaded is left alone.
         if (!run.c.grounds_stood) {
-            const names = ((w.c.The as TheC | undefined)?.o({ Stands: 1 }) ?? []).map(s => String(s.sc.Stands))
+            // a FLAVOURED tab (top.c.flavour, the `flavour` verb) stands each Ground's Hacky twin — the measuring build
+            const names = ground_flavoured(((w.c.The as TheC | undefined)?.o({ Stands: 1 }) ?? []).map(s => String(s.sc.Stands)), H.top_House().c.flavour as string | undefined)
             if (!names.length) run.c.grounds_stood = true
             else {
                 if (!run.c.grounds_asked) {

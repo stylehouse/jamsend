@@ -1,0 +1,7 @@
+Ground:Hacky/SwarmTesting,desc:Ground/SwarmTesting built to be measured — the caller survives an await,FromWhat:Ground:SwarmTesting
+  Flavour:electrode
+  Stands:Hacky/Swarm
+  Load:Ghost/Story/SwarmTesting.g
+  Load:Ghost/Story/InvSeal.g
+  Load:Ghost/Story/InvFerry.g
+  Load:Ghost/Story/InvWalk.g

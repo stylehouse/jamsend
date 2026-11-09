@@ -24,14 +24,17 @@ import { GROUNDS } from './grounds.gen.js'
 //   named A carries (`%Arrived:<key>` by default, or the row `by:` names, up to `until:`), `in:` a sub-House it stands per job;
 //    `moves:` a row whose change also counts as progress (a Story's run row: done climbs per step); `Lift:` names the one that opens the door.  The Supervisor watches them (Ground.g Ground_arrive) — it never names them itself.
 export type GroundArrive = { Arrive: string, says?: string, of?: string, in?: string, by?: string, until?: string, stage?: string, moves?: string }
+//  A FLAVOUR (2026-11-09, spec/Electrode_todo.md §0): `Flavour:electrode` on a Ground/Hacky/<Name> twin (derived by wafts_keep) says its
+//   Load: rows come from the measuring build, src/lib/gen-electrode/ — the same sources, so the toc still names the .g and only the
+//    loader knows which build runs.  Only that Ground's own rows: what it stands on loads as ITS toc says (plain Core and Glass).
 export type GroundRead = { stands: string[], load: string[], main: string[], spine?: string[], role?: string, face?: string,
-    arrive?: GroundArrive[], lift?: string }
+    arrive?: GroundArrive[], lift?: string, flavour?: string }
 const LEARNED: Record<string, GroundRead> = {}
 export function ground_learn(name: string, g: GroundRead) { LEARNED[name] = g }
 export function ground_read(name: string): GroundRead | undefined {
     if (LEARNED[name]) return LEARNED[name]
-    const b = (GROUNDS as Record<string, { stands: string[], load: string[] }>)[name]
-    return b ? { stands: b.stands, load: b.load, main: [] } : undefined
+    const b = (GROUNDS as Record<string, { stands: string[], load: string[], flavour?: string }>)[name]
+    return b ? { stands: b.stands, load: b.load, main: [], ...(b.flavour ? { flavour: b.flavour } : {}) } : undefined
 }
 // ground_role — the role a Ground boots a tab as: its own Role:, else its name lowercased (Runner → runner)
 export function ground_role(name: string): string {
@@ -52,7 +55,8 @@ export function ground_from_toc(G: any): GroundRead {
     if (arrive.length) g.arrive = arrive
     const lift = vals('Lift')[0]
     if (lift) g.lift = lift
-    const role = vals('Role')[0], face = vals('Face')[0]
+    const role = vals('Role')[0], face = vals('Face')[0], flavour = vals('Flavour')[0]
+    if (flavour) g.flavour = flavour
     if (role) g.role = role
     if (face) g.face = face
     return g
@@ -64,7 +68,7 @@ export function ground_from_toc(G: any): GroundRead {
 //    ship with the code.  ⚠ vite's watcher ignores wormhole/ (vite.config), so in dev this copy can lag its file until the server
 //     restarts — the wormhole read is first for that reason.  A NEW toc is seen once this file is re-transformed (any edit here) or the
 //      server restarts (this note was re-touched 2026-11-09 for Ground/Radio's Wiki.g row).
-const SHIPPED = import.meta.glob('/wormhole/Ground/*/toc.snap', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
+const SHIPPED = import.meta.glob(['/wormhole/Ground/*/toc.snap', '/wormhole/Ground/Hacky/*/toc.snap'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>
 export function ground_toc_shipped(name: string): string | undefined {
     return SHIPPED[`/wormhole/Ground/${name}/toc.snap`]
 }
@@ -123,13 +127,30 @@ export async function ground_include(top: any, names: string[]): Promise<{ order
     const lone = names.filter(n => n.endsWith('.g'))
     const { order, unknown } = ground_closure(names.filter(n => !n.endsWith('.g')))
     const failed: string[] = []
-    const include = async (path: string) => {
-        if (top.Lies_ghost_get?.(path)) return
+    // a flavoured file is loaded OVER its plain self (eatfunc's last-wins, as --swap does), so "already live" is asked of the include
+    //  shelf's row for that build — the dige alone can't tell them apart: a flavour keeps its source's Ghostmeta
+    const include = async (path: string, flavour?: string) => {
+        if (!flavour && top.Lies_ghost_get?.(path)) return
+        if (flavour && top.Lies_include_shelf?.()?.o?.({ GhostInclude: ground_flavour_gen(path, flavour), stood: 'yes' })?.length) return
         let ok = false
-        try { ok = await top.Lies_ghost_include(path) } catch { ok = false }
+        try { ok = await top.Lies_ghost_include(path, flavour ? { flavour } : undefined) } catch { ok = false }
         if (!ok) failed.push(path)
     }
-    for (const step of order) for (const path of ground_loads(step.name)) await include(path)
+    for (const step of order) for (const path of ground_loads(step.name)) await include(path, ground_read(step.name)?.flavour)
     for (const path of lone) await include(path)
     return { order, unknown, failed }
+}
+
+// ground_flavour_gen — a source's build under a flavour, as LiesLies' include door makes it: Ghost/M/Heist.g → gen-electrode/M/Heist.go.
+//  (src/lib/L/flavour_electrode.ts writes that tree; this file must not import it — it carries the TypeScript compiler.)
+export function ground_flavour_gen(path: string, flavour: string): string {
+    return path.replace(/^.*Ghost\//, `gen-${flavour}/`).replace(/\.g$/, '.go')
+}
+
+// ground_flavoured — a Book's Stands: as a FLAVOURED tab stands them: each name's Ground/Hacky/<Name> twin where wafts_keep derived one
+//  (Core and Glass have none — they stay plain), else the name itself.  The tab's flavour is `top.c.flavour`, set by the `flavour`
+//   verb (Electrode.g) until a reload — so a run is measured without any URL changing (spec/Electrode_todo.md §0).
+export function ground_flavoured(names: string[], flavour?: string): string[] {
+    if (!flavour) return names
+    return names.map(n => n.endsWith('.g') || !ground_read(`Hacky/${n}`) ? n : `Hacky/${n}`)
 }

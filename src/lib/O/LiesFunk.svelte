@@ -2765,6 +2765,8 @@ await M.eatfunc({
                         advertising:    !!(H.Lies_is_runner(w) && H.Lies_channel_live(w) && (H as any).Lies_self?.(w)?.prepub),
                         last_advertise: (w.c.last_advertise as number) ?? null,
                         clustation_self: (H as any).Clustation_self?.()?.prepub ?? null,   // the active %Identity's ?I= face — null iff on a stashed/env key (no ?I=); a split from `self` is the signal
+                        // a MEASURING tab (the `flavour` verb, Electrode.g) stands Books on Ground/Hacky/* until a reload — said on every ping
+                        ...(H.top_House().c.flavour ? { flavour: H.top_House().c.flavour } : {}),
                     }
                 } else if (op === 'probe') {
                     result = await H.Lies_audio_probe()   // real-audio one-shot: real-time? analyser-heard? (fleet capability)

@@ -1,0 +1,5 @@
+Ground:Hacky/GlassTesting,desc:Ground/GlassTesting built to be measured — the caller survives an await,FromWhat:Ground:GlassTesting
+  Flavour:electrode
+  Stands:Glass
+  Load:Ghost/Story/VoroTesting.g
+  Load:Ghost/V/VytoTesting.g

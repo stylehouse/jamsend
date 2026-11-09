@@ -12,7 +12,7 @@ import { APP_DATA_DIR } from "$lib/app_data_dir"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '4b8dd952a51f2107~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return 'af8f149c77ee4631~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -3005,10 +3005,21 @@ Ra_head_whole(rec) {
 //  head is whole (already, or by the end of this call), 0 otherwise — never throws, because every
 //   caller is a pacing decision and a head that cannot be made must degrade to today's behaviour
 //    rather than take the music down.
+// Ra_heads_on — are head runs made at all?  OFF unless the top House says `ra_heads` (owner 2026-11-09: "I don't think we need
+//  to generate them, we have radiostock cached to fit that role").  A head opens a track at 0:00, and Radio_hbase only ever
+//   uses one after a play-to-the-end (or for a pooled card) — yet every friend's tab asked its holder for the head of EVERY
+//    mirror record (Ra_restock_beat, 4 a beat) and every pool card (Ra_pool_heads_heal), and heads live on .c, so each daemon
+//     boot re-encoded ~80 of them (a median 47% of a song each) for nobody.  Off, a track opens where its radiostock does.
+Ra_heads_on() {
+    let M = this.top_House ? this.top_House() : null
+    return !!(M && M.c && M.c.ra_heads)
+
+},
 //  Detached-kick shaped like Ra_transcode_ensure's: no PCM yet ⇒ ask for it and answer 0 now.  It
 //   shares the SAME backoff ladder for the same reason that one gives — a source that can never
 //    encode must cost one attempt a minute, not one per beat.
 async Ra_head_ensure(w, rec) {
+    if (!this.Ra_heads_on()) return 0
     let off = +(rec.sc.pv_off || 0)
     if (!(off > 0)) return 0
     if (this.Ra_head_whole(rec)) return 1
@@ -3256,8 +3267,28 @@ async Ra_native_continuation(w, rec, nat) {
     // THE SAME GRID, not a second implementation.  Ra_chunk_cut is pure packet arithmetic over an
     //  st-shaped bag, so the native packets go through the identical cut the preview went through —
     //   the property that keeps a daemon-served chunk indistinguishable from a browser-served one.
+    //  THE TAIL IS ITS OWN CHUNK when the count needs it (2026-11-09, the daemon's "transcode STALLED" with its encoder
+    //   idle): `total` is Math.ceil of the length (Ra_stock_one), so the song's last chunk is a PARTIAL one, but the encode
+    //    stops at EOF and Ra_chunk_cut's final merge folded that partial into the chunk before — the remainder came back one
+    //     chunk short on nearly every track, `ra.done` at total-1, and the friend's last page parked forever.  The SEGS of
+    //      surplus asked for above can't help at EOF.  Kept separate while short; merged only past the count.
     let nst = { packets: enc.packets, acc: [], accs: 0 }
-    let bufs = this.Ra_chunk_cut(nst, 1)
+    let bufs = this.Ra_chunk_cut(nst, 0)
+    if (nst.acc.length) {
+        let tail = this.Ra_chunk_pack(nst.acc)
+        nst.acc = []
+        nst.accs = 0
+        if (bufs.length < (total - P) || !bufs.length) {
+            bufs.push(tail)
+        }
+        else {
+            let last = bufs[bufs.length - 1]
+            let j = new Uint8Array(last.length + tail.length)
+            j.set(last, 0)
+            j.set(tail, last.length)
+            bufs[bufs.length - 1] = j
+        }
+    }
     if (bufs.length > (total - P)) bufs = bufs.slice(0, total - P)
     if (!bufs.length) return null
     // the gain is the CARD's, not a fresh measurement — Ra_source_pcm bakes 10^(card.gain/20) for
@@ -4235,7 +4266,7 @@ async Ra_restock_beat(w, mirror, budget) {
         //    holder encodes on demand and parks us until it is cut.
         //  Deliberately OUTSIDE the `want < B` preview budget: a head is wanted once per record, ever,
         //   and must not lose its slot to the preview pages that are re-asked every ladder step.
-        if (rec.c.from && +(rec.sc.pv_off || 0) > 0 && rec.c.rx && w.c.repli_mirror_pier && this.Ra_head_whole && !this.Ra_head_whole(rec)) {
+        if (this.Ra_heads_on() && rec.c.from && +(rec.sc.pv_off || 0) > 0 && rec.c.rx && w.c.repli_mirror_pier && this.Ra_head_whole && !this.Ra_head_whole(rec)) {
             let hoff = 0
             let hhave = this.Ra_head_have(rec)
             while (hoff < +(rec.sc.pv_off || 0) && hhave[hoff] != null) hoff = hoff + PAGE
