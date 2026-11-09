@@ -22,7 +22,8 @@
             const got = {
                 ready: arrived === 'arrived',
                 urge: arrived === 'gaveup',
-                phase: next ? `${next.sentence}…` : 'here',
+                // every row settled: the splash is about to lift — say so, not a bare 'here' (owner 2026-11-10: "what's 'here'")
+                phase: next ? `${next.sentence}…` : 'in we go',
                 frac: rows.filter(settled).length / rows.length,
             }
             if (got.ready !== fold.ready || got.urge !== fold.urge || got.phase !== fold.phase || got.frac !== fold.frac) fold = got

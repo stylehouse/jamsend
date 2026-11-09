@@ -180,6 +180,9 @@ const { beat, LOG, t0 } = workerData
 const log = (m) => { const line = '[daemon ' + ((Date.now() - t0) / 1000).toFixed(1) + 's] ' + m + '\\n'; try { process.stderr.write(line) } catch (e) {} try { fs.appendFileSync(LOG, line) } catch (e) {} }
 const s = new inspector.Session()
 s.connectToMainThread()
+// scriptId → url: a paused frame carries only the id; Debugger.enable replays scriptParsed for every loaded script
+const urls = new Map()
+s.on('Debugger.scriptParsed', (m) => { if (m.params.url) urls.set(m.params.scriptId, m.params.url) })
 let reported = 0, asking = 0
 setInterval(() => {
     const stuck = Math.floor(Date.now() / 1000) - Atomics.load(beat, 0)
@@ -192,7 +195,10 @@ setInterval(() => {
     s.once('Debugger.paused', (m) => {
         answered = 1
         clearTimeout(timer)
-        const frames = m.params.callFrames.slice(0, 14).map((f) => (f.functionName || '(anon)') + '  ' + String(f.url).split('/').slice(-2).join('/') + ':' + (f.location.lineNumber + 1))
+        // innermost 8 (what it's doing) + outermost 22 (who asked) — the middle of a parser's recursion says nothing
+        const fmt = (f) => (f.functionName || '(anon)') + '  ' + String(f.url || urls.get(f.location.scriptId) || '?').replace(/\?.*$/, '').split('/').slice(-2).join('/') + ':' + (f.location.lineNumber + 1)
+        const all = m.params.callFrames
+        const frames = all.length <= 30 ? all.map(fmt) : [...all.slice(0, 8).map(fmt), '… ' + (all.length - 30) + ' frames …', ...all.slice(-22).map(fmt)]
         log('🐕 LOOP BLOCKED ' + stuck + 's — the main thread is in:\\n    ' + frames.join('\\n    '))
         s.post('Debugger.resume', () => s.post('Debugger.disable', () => { asking = 0 }))
     })

@@ -10,7 +10,7 @@ import RadioPageFace from "$lib/O/ui/RadioPageFace.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_RadioPage(): string { return '45e166972a8af198~g1' },
+    Ghostmeta_Ghost_M_RadioPage(): string { return '82757a81bba5e368~g1' },
 
 // RadioPage.g — the Radio as a page: /Radio, which is /Desk?I=<who>&G=Radio (spec/AtheoryArrive_todo.md §5).  Ground/Radio's Main is Radio, so Auto
 //  stands A:Radio/w:Radio on Mundo and its think is Radio(A,w) below — the music page with no Book under it.  On / the same organs
@@ -25,7 +25,12 @@ import RadioPageFace from "$lib/O/ui/RadioPageFace.svelte"
 //        %Door:open,face:Door           ← the front door's cell
 //        %Arrived:spine                 ← stood at all ⇒ the spine loaded (Auto stands a Main only after the Creduler)
 //        %Arrived:shelf                 ← a track stands on the shelf (moot: the stoker came to rest with none)
-//        %Arrived:radio                 ← the radio can be pressed (Lift)
+//        %Arrived:radio                 ← the radio can be pressed
+//        %Arrived:relay                 ← our socket to the relay is open
+//        %Arrived:friend                ← a friend is online (heard in the last 30s)
+//        %Arrived:catalog               ← their tracks are listed here (a mirror with records)
+//        %Arrived:music                 ← a friend's track is playable (Lift)
+//         …each moot with why: no friends, none online, or waited — and when music settles, every notch still open settles with it
 //
 //  The glass is Cello (O/Cellui.svelte, as on / — port-holes, no voronoi): RadioPageFace mounts it on Mundo, and with no Vyto world
 //   commissioned it casts every faced particle under an A's w — these organs.  Not yet here: the Link cell (DoorFace's "link a
@@ -83,11 +88,131 @@ RadioPage_arrive(w, st) {
     // the radio is ready once the shelf has said either way: an empty shelf still opens the door (the face digs on ▶), and a
     //  moot Lift would never lift — Supervisor_arrived counts only met|ok
     if (w.o({ Arrived: 'shelf' }).length) this.RadioPage_met(w, 'radio')
-    if (w.o({ Arrived: 'radio' }).length || w.c.ask_again) return
+    if (w.o({ Arrived: 'radio' }).length) this.RadioPage_music(w)
+    if (w.o({ Arrived: 'music' }).length || w.c.ask_again) return
     w.c.ask_again = setTimeout(() => {
         w.c.ask_again = null
         this.main()
     }, 1000)
+
+},
+// RadioPage_music — THE SPLASH HOLDS FOR A FRIEND'S MUSIC (owner 2026-11-10: *"dropping through seems premature … start listening to
+//  the latest peer still online? it should be going straight in there"*).  Met the moment a friend's track is playable; moot at once
+//   with no friends, after 5s with none of them online, after 12s while one is online and their music is still crossing.  Either way
+//    the splash lifts and RadioPage_listen starts the radio: on that friend, or on a stopgap the crossover leaves when they arrive.
+//  THE NOTCHES ON THE WAY (owner 2026-11-10: *"could do with a few more notches of progress"*): relay → friend → catalog → music, each
+//   met as it happens, so the bar moves while a friend's music crosses instead of sitting on one sentence.
+RadioPage_music(w) {
+    if (w.o({ Arrived: 'music' }).length) return
+    let radio = w.o({ Radio: 1 })[0]
+    if (!radio || !this.Radio_pool_census) return this.RadioPage_settle(w, 'no radio here')
+    if (!w.c.music_since) w.c.music_since = Date.now()
+    let waited = Date.now() - w.c.music_since
+    if (this.RadioPage_relay_open()) this.RadioPage_once(w, 'relay')
+    let piers = this.RadioPage_piers()
+    let online = piers.filter((p) => this.RadioPage_online(p))
+    if (online.length) this.RadioPage_once(w, 'friend')
+    let c = this.Radio_pool_census(w, radio)
+    if (c.known) this.RadioPage_once(w, 'catalog')
+    if (c.playable) return this.RadioPage_settle(w, '')
+    // "no friends" only once the station has stood — the friends (the account's %Pier rows) land with it, and before then an empty
+    //  list is "not loaded yet", not "nobody" (measured 2026-11-10: the splash waived at 4s, 37s before the account rehydrated)
+    let sw = this.Swarm_station_world ? this.Swarm_station_world() : null
+    let stood = !!(sw && sw.c && sw.c.station_up)
+    if (!piers.length && (stood || waited > 8000)) return this.RadioPage_settle(w, 'no friends yet')
+    if (!piers.length) return
+    // WHO WE EXPECT (owner 2026-11-10: *"it goes through to playing LOCAL rather than S … the peers we were connected to <1m ago should
+    //  be tried first"*): a friend online now, or one this tab heard in the minute before it reloaded, is worth waiting 20s for.  Nobody
+    //   is given up on until the relay says every friend is offline, or 8s pass with no sign of any of them.
+    let expected = online.length || piers.some((p) => this.RadioPage_recent(String(p.sc.pub)))
+    let all_off = piers.every((p) => this.Presence_offline && this.Presence_offline(String(p.sc.pub)))
+    if (!expected && (all_off || waited > 8000)) return this.RadioPage_settle(w, 'none of your friends are online')
+    if (waited > 20000) return this.RadioPage_settle(w, 'their music is still on its way')
+
+},
+// …a notch met, once (a later moot never un-meets it)
+RadioPage_once(w, key) {
+    let row = w.o({ Arrived: key })[0]
+    if (row && !row.sc.moot) return row
+    return this.RadioPage_met(w, key)
+
+},
+// …music settles (met when why is '', else moot), and every notch still open settles moot with the same why
+RadioPage_settle(w, why) {
+    for (const key of ['relay', 'friend', 'catalog']) {
+        if (!w.o({ Arrived: key }).length) this.RadioPage_met(w, key, why || 'not needed — the music is here')
+    }
+    return why ? this.RadioPage_met(w, 'music', why) : this.RadioPage_met(w, 'music')
+
+},
+// the station socket is open (Radio_relay_down's probe, the other way round): A:Clustation > w:Swarm's websocket transport
+RadioPage_relay_open() {
+    let A = this.top_House().o({ A: 'Clustation' })[0]
+    let sw = A ? A.o({ w: 'Swarm' })[0] : null
+    let port = sw ? sw.o({ transport: 1, type: 'websocket' })[0]?.c?.port : null
+    return !!(port && port.is_open && port.is_open())
+
+},
+// the live self's sealed friends, and whether one was heard in the last 30s (any vouched frame stamps heard_at)
+RadioPage_piers() {
+    let ident = this.Swarm_live_self ? this.Swarm_live_self() : null
+    return ident && this.Swarm_peering ? (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) : []
+},
+RadioPage_online(p) {
+    if (p.c && p.c.heard_at && (Date.now() - p.c.heard_at) < 30000) return true
+    return !!(this.Presence_here && this.Presence_here(String(p.sc.pub || '')) === true)
+
+},
+// RadioPage_recent — was this friend heard by this tab within the last minute before now (a reload included)?  The pulse writes every
+//  online friend's time to localStorage (RadioPage_remember); heard_at is .c and dies with the page.  A per-browser convenience only:
+//   storage that throws or is empty just means nobody is expected.
+RadioPage_recent(pub) {
+    try {
+        let seen = JSON.parse(localStorage.getItem('radio_recent_peers') || '{}')
+        return !!(seen[pub] && (Date.now() - +seen[pub]) < 60000)
+    } catch (er) { return false }
+},
+RadioPage_remember() {
+    let on = this.RadioPage_piers().filter((p) => this.RadioPage_online(p))
+    if (!on.length) return
+    try {
+        let seen = JSON.parse(localStorage.getItem('radio_recent_peers') || '{}')
+        let now = Date.now()
+        for (const p of on) seen[String(p.sc.pub)] = now
+        for (const k of Object.keys(seen)) { if (now - +seen[k] > 86400000) delete seen[k] }
+        localStorage.setItem('radio_recent_peers', JSON.stringify(seen))
+    } catch (er) {}
+
+},
+// RadioPage_latest — the friend to listen with: of those with a playable track, the one heard most recently.  Aims the radio at them,
+//  unpinned (the dial prefers their records and falls through to everyone's once theirs are heard); a human's pinned aim is left alone.
+RadioPage_latest(w, radio) {
+    if (radio.c.pinned) return ''
+    let heard = {}
+    for (const p of this.RadioPage_piers()) {
+        let pub = String(p.sc.pub)
+        heard[pub] = +(p.c?.heard_at || 0)
+        if (!heard[pub] && this.RadioPage_online(p)) heard[pub] = 2
+        if (!heard[pub] && this.RadioPage_recent(pub)) heard[pub] = 1
+    }
+    let best = ''
+    let at = -1
+    for (const home of w.o({ Theirs: 1 })) {
+        let pub = String(home.sc.pub || '')
+        if (!pub || !(heard[pub] > at)) continue
+        let shelf = home.o({ stock: 1, pub: pub })[0]
+        if (!shelf || !this.Ra_recs(shelf).some((r) => this.Radio_playable(r))) continue
+        best = pub
+        at = heard[pub]
+    }
+    if (best && radio.sc.aim !== best) {
+        radio.sc.aim = best
+        let name = this.Radio_friendly ? this.Radio_friendly(w, best) : ''
+        if (name) radio.sc.aim_by = name
+        if (!name) delete radio.sc.aim_by
+        radio.bump()
+    }
+    return best
 
 },
 // …one milestone met (or moot, with why) — said once; a moot that later comes true is said again, met
@@ -206,6 +331,7 @@ async RadioPage_pump_beat(w, n) {
         let sw = ident && M.Swarm_station_world ? M.Swarm_station_world() : null
         this.RadioPage_organs(w)
         this.RadioPage_listen(w)
+        this.RadioPage_remember()
         if (sw && n % 2 === 0) {
             if (M.Swarm_pulse_all) M.Swarm_pulse_all(sw, ident)
             if (M.Peeroleum_retx_sweep) M.Peeroleum_retx_sweep(sw)
@@ -227,15 +353,27 @@ async RadioPage_pump_beat(w, n) {
 //      solo, throttled, and skips to the friend pool the moment a friend's track is playable, which ends the "waiting on X" line.
 //   - OFF, AND NOTHING WAS PLAYABLE WHEN WE FIRST LOOKED: the first time a friend's track is playable, start (once a sitting, and never
 //      after the radio has played — a pause is somebody's decision).  Without a gesture Radio_go rolls deaf until the page is touched.
+//   - AND THE PAGE STARTS ITSELF (owner 2026-11-10: *"default to starting to play when we boot up completely"*): once the splash has
+//      lifted (%Arrived:music), an off radio that has never played is pressed — on the latest friend if one is playable, else on a
+//       stopgap (SoundPooling first, then the own shelf — Radio_dial), which the crossover leaves for the latest friend.
 RadioPage_listen(w) {
     let radio = w.o({ Radio: 1 })[0]
     if (!radio || !this.Radio_pool_census) return
     let state = radio.sc.Radio || 'off'
     if (state === 'playing') {
+        if (radio.sc.solo && !radio.c.crossed && this.Radio_pool_census(w, radio).playable) this.RadioPage_latest(w, radio)
         if (radio.sc.solo) this.Radio_crossover(w, radio)
         return
     }
     if (state !== 'off' || radio.c.ever_played || radio.c.auto_pressed) return
+    if (w.o({ Arrived: 'music' }).length && this.top_House().c.humdinger) {
+        radio.c.auto_pressed = 1
+        let who = this.RadioPage_latest(w, radio)
+        this.Radio_trace(null, { ev: 'autopress', why: who ? 'the latest friend' : 'arrived', of: who.slice(0, 8) })
+        let p0 = this.Radio_go(radio, null)
+        if (p0 && p0.catch) p0.catch((er) => {})
+        return
+    }
     let c = this.Radio_pool_census(w, radio)
     if (!c.playable) {
         radio.c.waited_alone = 1

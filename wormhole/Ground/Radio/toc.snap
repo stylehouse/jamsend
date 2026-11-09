@@ -12,4 +12,8 @@ Ground:Radio,desc:the music page as a Main — Radio stands on Mundo with no Boo
   Arrive:who,of:Identity,by:Who,stage:self,says:who you are
   Arrive:shelf,of:Radio,stage:share,says:a track is ready to play
   Arrive:radio,of:Radio,stage:sound,says:the radio is ready
-  Lift:radio
+  Arrive:relay,of:Radio,stage:share,says:reaching the relay
+  Arrive:friend,of:Radio,stage:share,says:finding a friend online
+  Arrive:catalog,of:Radio,stage:share,says:hearing what they have
+  Arrive:music,of:Radio,stage:sound,says:a friend's track ready to play
+  Lift:music

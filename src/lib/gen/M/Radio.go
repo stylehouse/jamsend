@@ -10,7 +10,7 @@ import { APP_DATA_DIR } from "$lib/app_data_dir"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return 'e08693d8c6e5ce55~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '017023ae41d28575~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -1996,6 +1996,22 @@ async Radio_dial(radio) {
             : 'looking for your friends'
         if (radio.sc.note !== waitnote) { radio.sc.note = waitnote; radio.bump() }
         return null
+    }
+    // THE POCKET BEFORE THE OWN SHELF, as a stopgap (owner 2026-11-10: *"we could try playing some soundpooling at first but switch to
+    //  the first peer that appears"*): on a live page, a fresh pooled track (friends' music kept here) plays before our own, marked solo
+    //   like it so the crossover still leaves it for a friend.  Fresh only — no heal, no replay: an empty or heard-through pocket falls to
+    //    the own shelf exactly as before.  Books (no humdinger) never take it.
+    if (!pocket && this.top_House().c.humdinger) {
+        let srec = this.Radio_dial_pool_local(w, radio)
+        if (srec) {
+            console.log('📻 next [pocket] ✓ ' + (srec.sc.title || srec.sc.id) + ' (a stopgap until a friend plays)')
+            let swhy = this.Radio_alone_why(w)
+            radio.sc.solo = swhy.tag
+            if (swhy.name) radio.sc.solo_by = swhy.name
+            if (!swhy.name) delete radio.sc.solo_by
+            radio.bump()
+            return srec
+        }
     }
     if (pocket) {
         let prec = await this.Radio_pocket_dial(w, radio)

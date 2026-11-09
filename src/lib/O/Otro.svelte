@@ -11,6 +11,7 @@
     import NaviScroll from "./ui/NaviScroll.svelte";
     import { boot_param } from "$lib/boot";
     import BootGate from "./ui/BootGate.svelte";
+    import SwarmStandup from "./ui/SwarmStandup.svelte";
     import ArriveFace from "./ui/ArriveFace.svelte";
     import Stuffmush from "./ui/Stuffmush.svelte";
     import ArriveSplash from "./ui/ArriveSplash.svelte";
@@ -195,7 +196,13 @@
     }
 </script>
 
-<BootGate {H} />
+<!-- a player page (/Radio) begs for its audio tap up front, as BigSoundland does (owner 2026-11-10: "why was OPEN SHARE got rid
+     of? it was correct"): it boots with boot_role runner, which hid the audio-only OPEN SHARE (ac_via_brink) and stood no gat -->
+<BootGate {H} proactive={on_player} audio_fullscreen={on_player} />
+<!-- …and stands its station + share with no face on it, as BigSoundland does (owner 2026-11-10: "it goes through to playing LOCAL rather
+     than S"): on /Radio only the Door's InvitePanel stood the station, so with the Radio the main cell nobody could reach a friend until
+     the Door was tapped (measured: the station socket opened at 40.9s, the instant of the tap).  SwarmStandup's header is that warning. -->
+{#if on_player}<SwarmStandup {H} />{/if}
 
 <NaviScroll {H} {houses}>
     {#snippet children({ scrollToHouseIdx, scrollToHouseIp, childrenOf })}
@@ -286,7 +293,7 @@
 {/if}
 
 {#if H}
-    <Ghost {H} />
+    <Ghost {H} tests={!on_player} />
 {/if}
 
 <style>

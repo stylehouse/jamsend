@@ -32,7 +32,6 @@
     //   call order.  Mostly free to reorder, except Lang must stay put: moving it up
     //   triggers the elvis-$this weirdness (see the inline note at its mount below).
 
-    import Machinery from "$lib/O/test/Machinery.svelte"
     import Story     from "$lib/O/Story.svelte"
     import Cyto      from "./Cyto.svelte"
     import Cello     from "./Cello.svelte"
@@ -50,7 +49,16 @@
     import Thangs from "./Thangs.svelte";
     import Census from "./Census.svelte";     // the wander's learned directory census, made durable (census_codec.ts)
 
-    let { H } = $props()   // H = H:Mundo (the real House)
+    let { H, tests = true } = $props()   // H = H:Mundo (the real House)
+
+    // THE TEST SUITE IS LOADED, NOT IMPORTED (owner 2026-11-10: "Machinery and MachReactivity is pulling in some test code on
+    //  /Radio … shall we focus the radio on the radio").  Machinery and everything it mounts (MachReactivity, MachReqy,
+    //   Mundane, the Understand* suite, TextLinestests, Diffmatication) are test Books' thinks — nothing else calls them — so
+    //    a music page (`tests={false}`, Otro's on_player) never fetches them.  Everywhere else the ghosts wait for the module
+    //     and mount in the same order as before, so deposit order (the call order, above) is unchanged.
+    let Machinery: any = $state(null)
+    if (tests) import("$lib/O/test/Machinery.svelte").then((m) => { Machinery = m.default })
+    const ready = $derived(!tests || !!Machinery)
 
     // shim presented to each ghost instead of H directly.
     // each ghost calls M.eatfunc(hash) on onMount.
@@ -62,9 +70,10 @@
     // so H can be used for lib/gen/ ghosts.
     // M.eatfunc(M)
 </script>
+{#if ready}
 <Hovercraft {M} />
 <!-- below are all AI -->
-<Machinery {M} />
+{#if Machinery}<Machinery {M} />{/if}
 <Story     {M} />
 <Cyto      {M} />
 <Cello     {M} {H} />
@@ -97,3 +106,4 @@
      none of the editor's duties, no relay channel: safe to open beside a working editor (which a second
      ?E= tab is not — it evicts the human's Cluster row).  Stands Atlas + Lagoon itself. -->
 <Hackarium {M} />
+{/if}

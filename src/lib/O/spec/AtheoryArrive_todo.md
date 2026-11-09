@@ -9,6 +9,15 @@ Started 2026-11-04 from the Supervisor talk (`AtheoryNexus_todo.md` E, "NEXT SES
 
 ## 0. What to get on with next
 
+- **2026-11-10 — /Radio goes straight in (owner: *"default to starting to play when we boot up completely … switch to the first peer that
+   appears … dropping through seems premature … it should be going straight in there"*).**  (a) Ground/Radio's Lift is now `music`
+    (RadioPage_music): the splash holds until a friend's track is playable — moot at once with no friends, after 5s with none online,
+     after 12s while one is online.  (b) RadioPage_listen presses an off, never-played radio once the splash lifts, aimed (unpinned) at
+      the friend heard most recently who has something playable (RadioPage_latest); playing a stopgap, the crossover re-aims at the
+       latest friend first.  (c) Radio_dial's stopgap tries a FRESH SoundPooling track before the own shelf on a live page (still solo,
+        so the crossover leaves it).  Also: /Radio no longer loads the test suite (Ghost.svelte `tests`, Machinery lazily imported).
+     Seen headless (a friendless stranger): splash up at 6s, lifted and pressed by 20s.  **Owed: the owner's look with a friend online**
+      (eed83 + S on djamsend), and audio needs the browser's autoplay grant — without one the radio rolls deaf until the first touch.
 - **Slice 1 BUILT + LIVE on the runner (2026-11-04, §3)**, its 1U rack in Mundo (`ArriveFace`), and **Housing's 🐕 drain dog
    retired** (0 rescues over ~20 Book starts; a stopped Desk is now named by its row's stall clock).  Owner's look at the rack owed.
 - **Detour done 2026-11-04: Stuffica matured first** (Aprac_todo §0 Newest — the door, Stuffmush, the rack + Storica as views).
