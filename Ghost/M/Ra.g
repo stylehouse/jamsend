@@ -1276,9 +1276,24 @@ async Ra_mag_warm(w, mirror):
             w.c.ra_wanted = w.c.ra_wanted || {}
             w.c.ra_want_ts = w.c.ra_want_ts || {}
             let nowms = Date.now()
+            // WHICH TWO (owner 2026-11-10: *"they are often the same two tracks"*): the warm start always took rows[0] and rows[1], so
+            //  after every boot those two were the only friend tracks the dial could play.  On a live page, two the listener hasn't
+            //   heard, drawn at random; all heard (or a Book) ⇒ the first two, as before.
+            let warm = rows
+            if (this.top_House().c.humdinger && typeof this.Radio_heard_recent === 'function') {
+                let heard = Object.assign({}, this.Radio_heard_recent())
+                let rw = this.top_House().c.radio_w
+                let me = rw && this.Radio_pub ? this.Radio_pub(rw) : ''
+                if (rw && me && this.Heard_set) Object.assign(heard, this.Heard_set(rw, me))
+                let fresh = rows.filter((r) => !heard[String(r.sc.id)])
+                if (fresh.length) {
+                    warm = []
+                    while (fresh.length && warm.length < 2) warm.push(fresh.splice(this.Ra_rand(w, fresh.length), 1)[0])
+                }
+            }
             let k = 0
-            while (k < 2 && k < rows.length) {
-                let rec = rows[k]
+            while (k < 2 && k < warm.length) {
+                let rec = warm[k]
                 k = k + 1
                 if (!(+(rec.sc.total || 0) > 0)) continue
                 if (!rec.c.rx || !rec.c.from || !w.c.repli_mirror_pier) continue

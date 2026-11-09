@@ -67,7 +67,7 @@ export function ground_from_toc(G: any): GroundRead {
 //   has no wormhole holding Grounds at all (a phone, a folderless body, a headless eye: no storage), so the Ground it boots from must
 //    ship with the code.  ⚠ vite's watcher ignores wormhole/ (vite.config), so in dev this copy can lag its file until the server
 //     restarts — the wormhole read is first for that reason.  A NEW toc is seen once this file is re-transformed (any edit here) or the
-//      server restarts (this note was re-touched 2026-11-10 for Ground/Radio's relay/friend/catalog/music rows).
+//      server restarts (this note was re-touched 2026-11-10 for Ground/Radio's relay/friend/catalog/music rows + the shelf's and catalog's wording).
 const SHIPPED = import.meta.glob(['/wormhole/Ground/*/toc.snap', '/wormhole/Ground/Hacky/*/toc.snap'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>
 export function ground_toc_shipped(name: string): string | undefined {
     return SHIPPED[`/wormhole/Ground/${name}/toc.snap`]

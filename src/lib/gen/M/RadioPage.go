@@ -10,7 +10,7 @@ import RadioPageFace from "$lib/O/ui/RadioPageFace.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_RadioPage(): string { return '82757a81bba5e368~g1' },
+    Ghostmeta_Ghost_M_RadioPage(): string { return '2ad36f8117774b3e~g1' },
 
 // RadioPage.g — the Radio as a page: /Radio, which is /Desk?I=<who>&G=Radio (spec/AtheoryArrive_todo.md §5).  Ground/Radio's Main is Radio, so Auto
 //  stands A:Radio/w:Radio on Mundo and its think is Radio(A,w) below — the music page with no Book under it.  On / the same organs
@@ -114,7 +114,7 @@ RadioPage_music(w) {
     if (online.length) this.RadioPage_once(w, 'friend')
     let c = this.Radio_pool_census(w, radio)
     if (c.known) this.RadioPage_once(w, 'catalog')
-    if (c.playable) return this.RadioPage_settle(w, '')
+    if (this.RadioPage_friend_ready(w, radio, c)) return this.RadioPage_settle(w, '')
     // "no friends" only once the station has stood — the friends (the account's %Pier rows) land with it, and before then an empty
     //  list is "not loaded yet", not "nobody" (measured 2026-11-10: the splash waived at 4s, 37s before the account rehydrated)
     let sw = this.Swarm_station_world ? this.Swarm_station_world() : null
@@ -163,6 +163,37 @@ RadioPage_online(p) {
     return !!(this.Presence_here && this.Presence_here(String(p.sc.pub || '')) === true)
 
 },
+// RadioPage_ask — ASK AGAIN FOR A FRIEND'S MUSIC WE DON'T HAVE (owner 2026-11-10: *"still waiting on S's music for a minute sometimes,
+//  but sometimes it all goes nice and fast… feels like forgetting to ask"*).  Our repli_ready reached S and S offered at once, but
+//   the offer (repli_lines, ephemeral) landed while our handshake with S was still finishing, and a frame in that window is not
+//    taken — so it was lost, and S's next offer waited out its 60s floor (Peeroleum's "KNOWN SEAM").  So every beat, each friend
+//     online whose catalog we still don't hold is greeted again (Swarm_share_greet: repli_ready; S answers with
+//      offer-now) — at most every 5s.  Once their records stand here it stops.  Live only (the pump is humdinger-only).
+RadioPage_ask(w) {
+    let M = this.top_House()
+    let ident = M.Swarm_live_self ? M.Swarm_live_self() : null
+    let sw = ident && M.Swarm_station_world ? M.Swarm_station_world() : null
+    if (!sw || !sw.c.station_up || !sw.c.share_up || !this.Swarm_share_greet) return 0
+    let now = Date.now()
+    let asked = 0
+    for (const p of this.RadioPage_piers()) {
+        let pub = String(p.sc.pub || '')
+        if (!pub || pub === String(ident.sc.prepub) || !this.RadioPage_online(p)) continue
+        let home = w.o({ Theirs: 1, pub: pub })[0]
+        let shelf = home ? home.o({ stock: 1, pub: pub })[0] : null
+        if (shelf && this.Ra_recs(shelf).length) continue
+        // (not gated on Peeroleum_peer_ready: a station route carries no %req:handshake, so it read false forever and nothing was
+        //  ever asked — measured 2026-11-10.  The greet re-registers the rx too, which is what lets the lines land.)
+        let route = this.Swarm_station_pier(sw, ident, pub)
+        if (!route) continue
+        if (p.c.music_asked_at && now - p.c.music_asked_at < 5000) continue
+        p.c.music_asked_at = now
+        this.Radio_trace(null, { ev: 'ask-music', of: pub.slice(0, 8) })
+        try { if (this.Swarm_share_greet(sw, ident, p)) asked = asked + 1 } catch (er) {}
+    }
+    return asked
+
+},
 // RadioPage_recent — was this friend heard by this tab within the last minute before now (a reload included)?  The pulse writes every
 //  online friend's time to localStorage (RadioPage_remember); heard_at is .c and dies with the page.  A per-browser convenience only:
 //   storage that throws or is empty just means nobody is expected.
@@ -182,6 +213,37 @@ RadioPage_remember() {
         for (const k of Object.keys(seen)) { if (now - +seen[k] > 86400000) delete seen[k] }
         localStorage.setItem('radio_recent_peers', JSON.stringify(seen))
     } catch (er) {}
+
+},
+// RadioPage_friend_ready — can the radio start a friend's track now?  Playable (warm here: Radio_pool_census), OR their catalog is
+//  known and the lineup holds one of their cards — the lineup rung hands a card out and its track streams on demand.  Waiting for
+//   "playable" alone held a stopgap until the local track ended (owner 2026-11-10: *"takes an end of a local track to kick over to S?"*):
+//    the next dial took S off the lineup at once, while the crossover was still waiting for a warmed record.
+RadioPage_friend_ready(w, radio, c) {
+    c = c || this.Radio_pool_census(w, radio)
+    // FRESH, not playable: a heard track is playable too, and crossing to it replays it (the dial's replay pass)
+    if (c.fresh) return true
+    if (!c.known || radio.sc.own) return false   // own-music mode lines up our own cards — never a friend's
+    if (this.Radio_lineup_fill) this.Radio_lineup_fill(w, radio)
+    let lu = w.o({ Mag: 'Lineup' })[0]
+    return !!(lu && lu.o({ Card: 1 }).some((k) => k.c.rec))
+
+},
+// RadioPage_cross — off the stopgap the moment a friend can be heard: Radio_crossover's gates (once a stopgap, only out of solo,
+//  throttled 1.5s) with RadioPage_friend_ready for its "something to play", aimed at the latest friend first.  It skips, as
+//   Radio_crossover does, so the dial (friend-first) picks what's next.
+RadioPage_cross(w, radio) {
+    if (radio.c.crossed || !radio.sc.solo) return 0
+    let now = Date.now()
+    if (radio.c.cross_at && now - radio.c.cross_at < 1500) return 0
+    radio.c.cross_at = now
+    if (!this.RadioPage_friend_ready(w, radio)) return 0
+    radio.c.crossed = 1
+    let who = this.RadioPage_latest(w, radio)
+    this.Radio_trace(null, { ev: 'crossover', of: who.slice(0, 8) })
+    console.log('📻⇢ crossing to ' + (radio.sc.aim_by || who.slice(0, 8) || 'a friend') + ' — off the stopgap')
+    this.Radio_skip(radio)
+    return 1
 
 },
 // RadioPage_latest — the friend to listen with: of those with a playable track, the one heard most recently.  Aims the radio at them,
@@ -332,6 +394,7 @@ async RadioPage_pump_beat(w, n) {
         this.RadioPage_organs(w)
         this.RadioPage_listen(w)
         this.RadioPage_remember()
+        this.RadioPage_ask(w)
         if (sw && n % 2 === 0) {
             if (M.Swarm_pulse_all) M.Swarm_pulse_all(sw, ident)
             if (M.Peeroleum_retx_sweep) M.Peeroleum_retx_sweep(sw)
@@ -361,8 +424,7 @@ RadioPage_listen(w) {
     if (!radio || !this.Radio_pool_census) return
     let state = radio.sc.Radio || 'off'
     if (state === 'playing') {
-        if (radio.sc.solo && !radio.c.crossed && this.Radio_pool_census(w, radio).playable) this.RadioPage_latest(w, radio)
-        if (radio.sc.solo) this.Radio_crossover(w, radio)
+        if (radio.sc.solo) this.RadioPage_cross(w, radio)
         return
     }
     if (state !== 'off' || radio.c.ever_played || radio.c.auto_pressed) return
@@ -430,7 +492,10 @@ Page_cast() {
     let piers = ident && this.Swarm_peering ? (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) : []
     // (no Riffle — the owner 2026-11-09: a forgotten organ, its Flip does nothing; no Supervisor row — "nobody has come online" twice
     //  is not a thing to show a listener.  Both still stand; the ▦ guts show the Supervisor.)
-    if (piers.length >= 1) add(w.o({ Pooling: 1 })[0])
+    // the Pooling cell once it stands (RadioPage_organs mints it only once a friend exists).  Not gated on the piers here: this
+    //  runs inside the glass's derive, where Swarm_live_self can read null mid-tick — the cell flapped in and out of the cast every
+    //   render (owner 2026-11-10, "Cello INTENT … cells=3 / cells=4" back and forth)
+    add(w.o({ Pooling: 1 })[0])
     add(w.o({ Yay: 1 })[0])
     let f = this.Page_focus_get()
     let linking = 0

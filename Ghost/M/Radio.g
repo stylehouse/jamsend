@@ -124,7 +124,10 @@ Radio_trace(radio, entry):
     //     per-chunk electrodes stay out of the set so this can never become the 2026-08-06 burn).
     if (M.c.humdinger) {
         let SPEAK = { 'dial': 1, 'open': 1, 'primed': 1, 'primed-open': 1, 'primed-fin': 1,
-            'primed-fin-use': 1, 'prime-drop': 1, 'starve': 1, 'unstarve': 1, 'tape-out': 1 }
+            'primed-fin-use': 1, 'prime-drop': 1, 'starve': 1, 'unstarve': 1, 'tape-out': 1,
+            // …and the friend handshake, both ends (2026-11-10: a friend's music took ~60s to reach a reloaded /Radio and neither
+            //  console said where the time went): the ask, the offer, the catalog landing, the first want, the first page, the cut-in
+            'repli-ready': 1, 'offer-now': 1, 'mirror-merge': 1, 'want-first': 1, 'page-first': 1, 'share-armed-by': 1, 'crossover': 1, 'autopress': 1, 'ask-music': 1 }
         if (SPEAK[entry.ev]) console.log('📻⟫ ' + entry.ev, JSON.stringify(entry))
     }
 //#endregion
@@ -1259,7 +1262,39 @@ Radio_friendly(w, pub):
 Radio_heard(radio):
     let w = radio ? radio.c.w : null
     if (!w) { return {} }
-    return this.Heard_set(w, this.Radio_pub(w) || '')
+    let set = this.Heard_set(w, this.Radio_pub(w) || '')
+    // …plus what this browser started lately (Radio_heard_recent): the heard Mag keeps a bare hearing only until the next reload
+    //  (the stash carries reactions), so every reload dealt the same first friend track again (owner 2026-11-10: "it keeps
+    //   playing the same track, Chunk Of Funk").  Live pages only — a Book's heard set is its own fixture.
+    let M = this.top_House()
+    if (M.c.humdinger && !(typeof this.Story_replaying === 'function' && this.Story_replaying())) {
+        for (const id of Object.keys(this.Radio_heard_recent())) set[id] = 1
+    }
+    return set
+
+// Radio_heard_recent — ids this browser started in the last 7 days ({id: ms}), kept in localStorage by Stoker_tell_listened.
+//  Read at most every 2s (the census asks every beat).  A per-browser convenience: storage that throws reads as nothing heard.
+Radio_heard_recent():
+    let M = this.top_House()
+    if (M.c.heard_recent && Date.now() - M.c.heard_recent_at < 2000) return M.c.heard_recent
+    let got = {}
+    try { got = JSON.parse(localStorage.getItem('radio_heard_recent') || '{}') || {} } catch (er) { got = {} }
+    M.c.heard_recent = got
+    M.c.heard_recent_at = Date.now()
+    return got
+Radio_heard_note(id):
+    try {
+        let got = JSON.parse(localStorage.getItem('radio_heard_recent') || '{}') || {}
+        let now = Date.now()
+        got[String(id)] = now
+        let ids = Object.keys(got)
+        for (const k of ids) { if (now - +got[k] > 7 * 86400000) delete got[k] }
+        ids = Object.keys(got).sort((a, b) => +got[a] - +got[b])
+        while (ids.length > 400) { delete got[ids.shift()] }
+        localStorage.setItem('radio_heard_recent', JSON.stringify(got))
+        this.top_House().c.heard_recent = got
+        this.top_House().c.heard_recent_at = now
+    } catch (er) {}
 // the supply loop: while the preview plays, transcode the %Stream continuation into being
 //  (the demand-driven encode, self-served — no Repli needed for one's own stock).  A record
 //   whose source is unreadable CAPS at its preview (the dead-source rule already dropped its
@@ -3777,6 +3812,7 @@ Stoker_tell_listened(w, rec):
     let me = this.Radio_pub(w) || ''
     let pub = this.Ra_pub_of ? String(this.Ra_pub_of(rec) || '') : ''
     if (!pub || pub === me) return 0
+    this.Radio_heard_note(rec.sc.id)
     let live = this.Swarm_live_self ? this.Swarm_live_self() : null
     let A = M.o({ A: 'Clustation' })[0]
     let sw = A ? A.o({ w: 'Swarm' })[0] : null

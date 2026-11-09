@@ -49,6 +49,15 @@ A node daemon that boots the whole jamsend machine headless and stays up: a stab
     container, so no headless newcomer can befriend it.  Owner: listen a while on a reloaded tab, then `/status` → `listening`.
   **Seen beside it, not caused by it:** the shelf climbs past the window (40 → 75 in a minute, 4 encodes) as listeners' mirrors
    ask for old ids and Ra_reheal_id stands them back up from radiostock; a want holds a record from the whittle for 10 min.
+**Owed — the cursor as a place in the radiostock Mag's scroll (owner 2026-11-10).**  *"I thought the listened cursor was based on the
+ time the radiostock was generated … that has to be given to the daemon … there's a main radiostock Mag scroll-space isn't there? that
+  was the plan ages ago.  Mags also have whatever in them, so it's a fuzzy idea — perhaps only applies to the Mag of radiostock."*
+   Today the daemon keeps a SET (`Listener / Heard,of`), and the listener's own memory of bare hearings dies on reload (the stash keeps
+    only reactions) — patched for now by `Radio_heard_recent` (localStorage, 7 days, live pages).  The plan: the radiostock Mag
+     (`Mag:shuffle`, records paged into `%Cloud,page:N` in mint order) is a scroll, and a listener's cursor is ONE place in it —
+      heard up to here — held by the daemon, given to the listener with the catalog so the dial and the warm start deal from past it,
+       and moved on by `listened`.  Only for that Mag: other Mags hold anything.  It gives the daemon its join for free (unheard = past
+        the cursor) and survives a reload on either side.  Read Mag_todo for the old scroll design first.
 **Found on dev (2026-11-09, the daemon moved to djamsend) — the inbound wedge has a shape, and the disk is full.**  With
  eed83 listening: `🧱 beliefs mutex held 130s+ by fn:handle_inbound`, ticks frozen, `/status` 0.5–2.5s to answer.  The probe
   showed ONE hold walking eed's `repli_want`s seq by seq at ~1–2s each, and the profile a native `read` at 100% with CPU at 2%:

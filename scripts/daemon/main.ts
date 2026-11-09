@@ -157,7 +157,7 @@ for (const k of ['log', 'warn', 'error'] as const) {
     console[k] = (...a: any[]) => {
         orig(...a)
         const m = typeof a[0] === 'string' ? a[0] : ''
-        if (!/^(🎬|◈⚠|🧱|👁|⏳⚠|🏊|🛰⚠|🎡|👂|🛰 inbound|🧹)/u.test(m)) return
+        if (!/^(🎬|◈⚠|🧱|👁|⏳⚠|🏊|🛰⚠|🎡|👂|🛰 inbound|🧹|📻⟫ (repli-ready|offer-now|mirror-merge|want-first|page-first))/u.test(m)) return
         try { const line = `[app ${((Date.now() - t0) / 1000).toFixed(1)}s] ${m}\n`; appendFileSync(LOG, line); log_size += Buffer.byteLength(line) } catch { /* never why the daemon dies */ }
     }
 }
@@ -196,7 +196,7 @@ setInterval(() => {
         answered = 1
         clearTimeout(timer)
         // innermost 8 (what it's doing) + outermost 22 (who asked) — the middle of a parser's recursion says nothing
-        const fmt = (f) => (f.functionName || '(anon)') + '  ' + String(f.url || urls.get(f.location.scriptId) || '?').replace(/\?.*$/, '').split('/').slice(-2).join('/') + ':' + (f.location.lineNumber + 1)
+        const fmt = (f) => (f.functionName || '(anon)') + '  ' + String(f.url || urls.get(f.location.scriptId) || '?').split('?')[0].split('/').slice(-2).join('/') + ':' + (f.location.lineNumber + 1)
         const all = m.params.callFrames
         const frames = all.length <= 30 ? all.map(fmt) : [...all.slice(0, 8).map(fmt), '… ' + (all.length - 30) + ' frames …', ...all.slice(-22).map(fmt)]
         log('🐕 LOOP BLOCKED ' + stuck + 's — the main thread is in:\\n    ' + frames.join('\\n    '))

@@ -18,6 +18,15 @@ Started 2026-11-04 from the Supervisor talk (`AtheoryNexus_todo.md` E, "NEXT SES
         so the crossover leaves it).  Also: /Radio no longer loads the test suite (Ghost.svelte `tests`, Machinery lazily imported).
      Seen headless (a friendless stranger): splash up at 6s, lifted and pressed by 20s.  **Owed: the owner's look with a friend online**
       (eed83 + S on djamsend), and audio needs the browser's autoplay grant — without one the radio rolls deaf until the first touch.
+   **Same day, tuned live with the owner (eed83 ↔ S on djamsend) — "it's very good now":**  Otro mounts `SwarmStandup` on a player
+    page (the station stood only when the Door's face mounted — S unreachable until a tap) and `BootGate proactive audio_fullscreen`
+     (a player boots boot_role runner, which hid the audio-only OPEN SHARE).  The splash has notches: relay → friend → catalog
+      ("tuning in") → music; "no friends" waits for the station, "none online" for presence, an expected friend gets 20s; last word
+       "in we go".  `RadioPage_cross` leaves the stopgap when a FRESH friend track is ready (playable or lined up), not at track end.
+        `RadioPage_ask` re-greets (repli_ready) a friend whose catalog we lack every 5s — the first offer can be lost mid-handshake
+         (Peeroleum's KNOWN SEAM; root not fixed).  Swarm's presence edge also greets.  `Radio_heard_recent` (localStorage 7 days)
+          joins the heard set on live pages; `Ra_mag_warm` warms two unheard records at random (was always rows[0..1]).  The Pooling
+           cell no longer flaps (Page_cast read the identity mid-derive).  `📻⟫` handshake events echo on both ends.
 - **Slice 1 BUILT + LIVE on the runner (2026-11-04, §3)**, its 1U rack in Mundo (`ArriveFace`), and **Housing's 🐕 drain dog
    retired** (0 rescues over ~20 Book starts; a stopped Desk is now named by its row's stall clock).  Owner's look at the rack owed.
 - **Detour done 2026-11-04: Stuffica matured first** (Aprac_todo §0 Newest — the door, Stuffmush, the rack + Storica as views).

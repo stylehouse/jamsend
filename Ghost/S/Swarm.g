@@ -1972,6 +1972,10 @@ Swarm_arm(w):
             let owed_edge = !sealed.c.heard_at || (Date.now() - sealed.c.heard_at) > 30000
             sealed.c.heard_at = Date.now()
             if (owed_edge) { try { this.Swarm_owed_settle(w2, ident, sealed) } catch (er) {} }
+            // …and the edge GREETS them when our share already stands (2026-11-10: a reloaded /Radio waited ~60s for S's catalog).
+            //  Swarm_share_up greets only the piers standing at that moment, and on a page whose share arms before its account
+            //   rehydrates that is nobody — no repli_ready went, so the source's offer waited out its 60s floor.  The far end dedups.
+            if (owed_edge && w2.c.station_up && w2.c.share_up) { try { this.Swarm_share_greet(w2, ident, sealed) } catch (er) {} }
         }
         // THE EPOCH, off ANY vouched frame (2026-08-04): a reborn peer announces itself on every
         //  swarm frame it sends (Swarm_deliver stamps era+saw), so recovery no longer hangs on one
