@@ -2,6 +2,6 @@ Snap:H
   H:MusuRaStream,Run
     A:MusuRaStream
       self,round	{"mung":["age"]}
-      w:MusuRaStream
+      w:MusuRaStream,now=1751980010
         self,round	{"mung":["age"]}
         req:wrangle,eternal,ok

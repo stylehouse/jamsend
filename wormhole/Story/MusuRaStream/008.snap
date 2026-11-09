@@ -1,30 +1,36 @@
 Snap:H
   H:MusuRaStream,Run
     A:MusuRaStream
-      self,round=26	{"mung":["age"]}
-      w:MusuRaStream
-        self,round=26	{"mung":["age"]}
+      self,round=15	{"mung":["age"]}
+      w:MusuRaStream,now=1751980080
+        self,round=15	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Account,of:DJ
           Identity:c012850d69de1318,prepub:c012850d69de1318,friendly:DJ
             Peering,name:c012850d69de1318,friendly:DJ
               Idzeug:rastream_1,to:Music,genre:Classical,spent
-              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1785076033
+              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1751980040
                 Peering,name:b317b9a776e39d30,friendly:Listener,pub:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e
-                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1785076033,sign:4f713b28a0cab0fb77a4505465e494182edb1fb9ae7610bc091ca471702cd60f2732de8d8fdd0fb95ec760a76a02d356560e6675a4df0585abe5efcd4a2cb40b,genre:Classical
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1785076033,sign:8bfdb4066a80371007f80c6614a3e5239a91cfd85739010cfb076945ee71d9f983f305c9b50835ba9d527a9853eab8d9b7e0c630be8ee4d6b118ab2d74c7c702,genre:Classical
+                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1751980040,sign:ca052a6f00083e2d7aa52d536f9b17af1fe2d74d74ea64930bd56374f2a417cd5f8fa5c6804ea85373d5dc1f656f326dd8ad38e1657c37f36ed42d3fad8b6705,genre:Classical
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1751980040,sign:b52dfb3af86ace8115e344b50bb5cb6acf5c9fac0cf8913f94a51af386209f47e31cb6f35729ff8b66d8fc62e1824e40854ee5cb61dd4d349d9cfb3392bd2705,genre:Classical
+            Crew,soul:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535
+              mate:c012850d69de1318,role:Captain,pub:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535
+              Key,pub:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535	{"mung":["secret"]}
             SocialGraph
-              Edge,a:c012850d69de1318,b:b317b9a776e39d30,at:1785076033
+              Edge,a:c012850d69de1318,b:b317b9a776e39d30,at:1751980040
         Account,of:Listener
           Identity:b317b9a776e39d30,prepub:b317b9a776e39d30,friendly:Listener
             Peering,name:b317b9a776e39d30,friendly:Listener
-              Pier,pub:c012850d69de1318,friendly:DJ,since:1785076033
+              Pier,pub:c012850d69de1318,friendly:DJ,since:1751980040
                 Peering,name:c012850d69de1318,friendly:DJ,pub:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535
-                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1785076033,sign:4f713b28a0cab0fb77a4505465e494182edb1fb9ae7610bc091ca471702cd60f2732de8d8fdd0fb95ec760a76a02d356560e6675a4df0585abe5efcd4a2cb40b,genre:Classical
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1785076033,sign:8bfdb4066a80371007f80c6614a3e5239a91cfd85739010cfb076945ee71d9f983f305c9b50835ba9d527a9853eab8d9b7e0c630be8ee4d6b118ab2d74c7c702,genre:Classical
+                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1751980040,sign:ca052a6f00083e2d7aa52d536f9b17af1fe2d74d74ea64930bd56374f2a417cd5f8fa5c6804ea85373d5dc1f656f326dd8ad38e1657c37f36ed42d3fad8b6705,genre:Classical
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1751980040,sign:b52dfb3af86ace8115e344b50bb5cb6acf5c9fac0cf8913f94a51af386209f47e31cb6f35729ff8b66d8fc62e1824e40854ee5cb61dd4d349d9cfb3392bd2705,genre:Classical
+            Crew,soul:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e
+              mate:b317b9a776e39d30,role:Captain,pub:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e
+              Key,pub:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e	{"mung":["secret"]}
             SocialGraph
-              Edge,a:b317b9a776e39d30,b:c012850d69de1318,at:1785076033
+              Edge,a:b317b9a776e39d30,b:c012850d69de1318,at:1751980040
         Peering,name:c012850d69de1318,req=2,ok
           Pier,pub:b317b9a776e39d30,req=2,ok
             req:handshake,finished
@@ -44,34 +50,12 @@ Snap:H
                 emit,type:hello,seq
                 emit=2,type:trust,seq=2
                 emit=3,type:pier_accept,seq=3
-                emit=4,type:repli_lines,seq=4
-                emit=5,type:repli_lines,seq=5
-                emit=6,type:repli_lines,seq=6
-                emit=7,type:repli_page,seq=7
-                emit=8,type:repli_page,seq=8
-                emit=9,type:repli_lines,seq=9
-                emit=10,type:repli_page,seq=10
-                emit=11,type:repli_page,seq=11
-                emit=12,type:repli_lines,seq=12
-                emit=13,type:repli_page,seq=13
-                emit=14,type:repli_page,seq=14
-                emit=15,type:repli_lines,seq=15
-                emit=16,type:repli_page,seq=16
-                emit=17,type:repli_page,seq=17
-              emit=18,type:repli_lines,seq=18,sent,body_hash:a5b73713d49f0a17220d4651fb59300f68c6b046692c2d01c97dcea4cd160e5a,body_len=321,acked
-              emit=19,type:repli_page,seq=19,sent,body_hash:2cc35a04310a7ad42dae8b64cafb15b5f0e8aeb7df88ef49a0fd2c30bea6b43f,body_len=32300,acked
-              emit=20,type:repli_page,seq=20,sent,body_hash:d2349eb37985140aeb5c6569fa2ab4ab0686d04ca04d2906be03c0c813eb0d28,body_len=32300,acked
             inbox
               recent
-                unemit,type:hello,seq
-                unemit=2,type:trust,seq=2
-                unemit=3,type:pier_hello,seq=3
-                unemit=4,type:pier_confirm,seq=4
-                unemit=5,type:repli_want,seq=5
-                unemit=6,type:repli_want,seq=6
-                unemit=7,type:repli_want,seq=7
-                unemit=8,type:repli_want,seq=8
-              req:unemit,seq=9,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
+                unemit:1,type:hello,seq:1
+                unemit:2,type:trust,seq:2
+                unemit:3,type:pier_hello,seq:3
+                unemit:4,type:pier_confirm,seq:4
             Ud,pubkey:b317b9a776e39d30
           active_transport,type:mock,open
         Peering,name:b317b9a776e39d30,req=3,ok
@@ -94,88 +78,84 @@ Snap:H
                 emit=2,type:trust,seq=2
                 emit=3,type:pier_hello,seq=3
                 emit=4,type:pier_confirm,seq=4
-                emit=5,type:repli_want,seq=5
-                emit=6,type:repli_want,seq=6
-                emit=7,type:repli_want,seq=7
-                emit=8,type:repli_want,seq=8
-              emit=9,type:repli_want,seq=9,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
             inbox
               recent
-                unemit,type:hello,seq
-                unemit=2,type:trust,seq=2
-                unemit=3,type:pier_accept,seq=3
-                unemit=4,type:repli_lines,seq=4
-                unemit=5,type:repli_lines,seq=5
-                unemit=6,type:repli_lines,seq=6
-                unemit=7,type:repli_page,seq=7
-                unemit=8,type:repli_page,seq=8
-                unemit=9,type:repli_lines,seq=9
-                unemit=10,type:repli_page,seq=10
-                unemit=11,type:repli_page,seq=11
-                unemit=12,type:repli_lines,seq=12
-                unemit=13,type:repli_page,seq=13
-                unemit=14,type:repli_page,seq=14
-                unemit=15,type:repli_lines,seq=15
-                unemit=16,type:repli_page,seq=16
-                unemit=17,type:repli_page,seq=17
-              req:unemit,seq=18,type:repli_lines,body_hash:a5b73713d49f0a17220d4651fb59300f68c6b046692c2d01c97dcea4cd160e5a,body_len=321,done,to:repli_lines,finished
-              req:unemit,seq=19,type:repli_page,body_hash:2cc35a04310a7ad42dae8b64cafb15b5f0e8aeb7df88ef49a0fd2c30bea6b43f,body_len=32300,done,to:repli_page,finished
-              req:unemit,seq=20,type:repli_page,body_hash:d2349eb37985140aeb5c6569fa2ab4ab0686d04ca04d2906be03c0c813eb0d28,body_len=32300,done,to:repli_page,finished
+                unemit:1,type:hello,seq:1
+                unemit:2,type:trust,seq:2
+                unemit:3,type:pier_accept,seq:3
+                unemit:4,type:repli_lines,seq:4,body_len:234
+                unemit:5,type:repli_lines,seq:5,body_len:234
+                unemit:6,type:repli_lines,seq:6,body_len:337
+                unemit:7,type:repli_page,seq:7,body_len:32620
+                unemit:8,type:repli_page,seq:8,body_len:32300
+                unemit:9,type:repli_lines,seq:9,body_len:320
+                unemit:10,type:repli_page,seq:10,body_len:32300
+                unemit:11,type:repli_page,seq:11,body_len:32300
+                unemit:12,type:repli_lines,seq:12,body_len:320
+                unemit:13,type:repli_page,seq:13,body_len:32300
+                unemit:14,type:repli_page,seq:14,body_len:32300
+                unemit:15,type:repli_lines,seq:15,body_len:320
+                unemit:16,type:repli_page,seq:16,body_len:32300
+                unemit:17,type:repli_page,seq:17,body_len:32300
+              req:unemit,seq=18,type:repli_lines,body_hash:ba1d39d4f74c93cadbc547c2584232ef54c789bd466ea717745b6f566cdf9e32,body_len=321,done,to:repli_lines,finished
+              req:unemit,seq=19,type:repli_page,body_hash:d43876ac23018315c936455a96cbc07ac70ff6d457db09dc40faa959511848b9,body_len=32300,done,to:repli_page,finished
+              req:unemit,seq=20,type:repli_page,body_hash:b02f718fd19b4cf8d8c50e8f953cd2d03a8ea28e73ba2ae7a7107a622e20f6d0,body_len=32300,done,to:repli_page,finished
             Ud,pubkey:c012850d69de1318
           active_transport,type:mock,open
         Mine,pub:c012850d69de1318
           stock,pub:c012850d69de1318
             Mag:shuffle
               Cloud,page:1
-                Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
-                  Preview,seq:0,head,preskip=312,cid:3ccd2f51f3f3b66e3115ee8cb2d1c43575a42bf9704abf44b8af40d1a8d74d7b	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:1,cid:144cde8bcbf6a150cae10b2f4115f1fd62f97576477adbaaa900bac3cfc53872	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:2,cid:224607ca4d58380a3271f7a0a2621c076034997f83423effb1cabda2252985e3	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:3,cid:bd7e4cd4018af8df29a4ce36cf8cf48ddf14f9265dafc3ce6499e71a5280320a	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:4,cid:e562bac3d0f1dfc9969825f34ffb0ddba65467e2df0ca90f1b224292f3c6154d	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:5,cid:774bf989acb4a0f4d775b5bfbe38c4ceb10372cdaf58dbd2738898a012d0d3fe	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:6,cid:d8bb01b9d2fb794a054c6061e89c76ceb106dab97115ba1821d7def09396f1c1	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:7,cid:95eab5bfd38f7a92de39a3b55fc20b94c189ac99b985f641fc86eebd42613155	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:8,cid:2cc35a04310a7ad42dae8b64cafb15b5f0e8aeb7df88ef49a0fd2c30bea6b43f	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:9,cid:d2349eb37985140aeb5c6569fa2ab4ab0686d04ca04d2906be03c0c813eb0d28	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:10,cid:31def79e6787801b908766a4a114a111239e2ca5f05cbff6439cf001824c56b9	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:11,cid:4a8468642f8ba5b3c7eaf5f7095c26a62795c02dde06dc3cdea6d9a7c9984228	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:12,cid:525a5cfa378c5b2e7e05ed44ed3d6283cb7dc2bb9412200bbb9fdc8fd492b681	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:13,cid:d01bb06dff81abc1b549cc048d6b72c2088e6275ea02d7f82bdc6fa0145202ad	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:14,cid:2850cb9adf1f9f0a22ecd7de7829804b4247a3a225ca45568cbb3af88b69bc44	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:15,cid:3ab52c6af8c8ee61b625c0831f959da0289a33ed976efd9f78e1b8d4547cc4ac	{"ref":{"buf":"Uint8Array()"}}
-                Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443
-                  Preview,seq:0,head,preskip=312,cid:3457aa775f90150bb7dfee2664537ff0249c76f412150375802373b5dcd6e379	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:1,cid:24e815ca6fe5761ede36e7deca8327236309956d788d7280dbc8ede8ca0bf23b	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:2,cid:264238c1c63afa12031ca91e07293c7c4c15bb886d1f94e8877bfe0541051a17	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:3,cid:aa9dbc861991e9abee3f88f0308a07e85fefc22daa4d1a816dbd6b7765d27131	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:4,cid:d8b306612ace71a39769d537ad436fd14a8db41f23523dea8e042656395f301f	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:5,cid:df55a0d0259400a835144f5c24fbcc22abdbf2279c8793f801035388489d5aff	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:6,cid:7421c8384159092728bb78fe76d5682ecb026174db64edccab1977888f77f0f4	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:7,cid:d9a2d18f38ffb6bdd34937145c07661db3eec2038149be1c6789ef23a13bd222	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:8,cid:e586d7742fecdc1c937679a523e5706bc668298fc7165c334f392203dc113ade	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:9,cid:35ec8c6044f14e537c8f6e93ef6d52e7def4736a98cd04122dc56529ebba9232	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:10,cid:71b1dca8905cc9b4924814a56978fbeef18307dea496f9a3d509dc45a158bc5d	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:11,cid:f4c6666305796bfc9ad844007c919329eb6968c28221335251b4c0a4dc6a7a22	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:12,cid:728b06eb6b132f11d4580345ab2e8614e0d1f5163a7c2cfb9826f1a603851063	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:13,cid:009ed34af0bea671c1bc2cab4e9a52f2932f89625fad01ecfa27967e9e1e2d97	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:14,cid:819beaabf2ab5742123998ed14ec1b8a6601aab545d4ce893119feca0bdb78a6	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:15,cid:82060ded7c33145ae7de702e7550c7641590f602f69b86c6f8771abf8b815413	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,path:testsounds/DJ Oscillo - Cosmic C.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
+                  Preview,seq:0,head,preskip=312,cid:98776195a343cf1e9bb2423c263ab510fd853ac8ed86290dc100fc21b3e2ca20	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:d87b9da70d2ab48d83f8995328934406ec0bdeb421f81033cbf3b516be81960f	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:bdd2598ed3187d9ddefecad4fbfab49cb283db869dc89b9e1fa95b1271c12d33	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:a12e0a3c3e83f0359515ba3febce3210faf725aa35b9c6cde7f5698c62affc17	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:4,cid:b6a2d848ceffbf578b36536626c053516bf599b044210db12ee5eb8f1230bb01	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:5,cid:7e104650f387e155cf53b3198cc079b369ebcd2b736b7cfbb4e3c7350cd12f6a	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:6,cid:5c1ebbd967ff5f1882ff817f8bfb7a8c56fbafaf4e63f64b907f82bf2a879005	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:7,cid:b9d91de8485fb96a6fc46d42b77332c00551e53fd5c88882e34cf0e03a132783	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:8,cid:d43876ac23018315c936455a96cbc07ac70ff6d457db09dc40faa959511848b9	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:9,cid:b02f718fd19b4cf8d8c50e8f953cd2d03a8ea28e73ba2ae7a7107a622e20f6d0	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:10,cid:8c1e0cb58456948c14004f63c464543890b51588cf4a65f6970fe893f97836af	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:11,cid:992afc5abe8c704bc4944c5dbaefdd7873efdf6e32ab73a5bb0fdc249c359edd	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:12,cid:043ac99b3688c875126328448d38afda7daa174bf79921a6531a381ec0fa163e	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:13,cid:6b29fb172351bf29757d022de48b1d8d4a2eea4f7d1b94b7b014cf74166f86b9	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:14,cid:89022ef65282ca8ba3171abc9c073b73b2b12b88c21f7749b7e6865c8c5b242c	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:15,cid:1969ef0376186dcfa831100be67ea834d0766a25ef9fb842a427526ff865d349	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,path:testsounds/DJ Oscillo - Dorian D.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443
+                  Preview,seq:0,head,preskip=312,cid:1cc5ebbe098e503ef79730ae1a200acd6c3c7e022c357d19925aa31cd3f9fb38	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:7c703e2d4f45d18d623d52c0647bfc15502c2e35f78a196616b6730ee1447e14	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:ccb0fbef0a4e7fe5eec938aa4231c15a87629c7eb535fdcac8b8f4c4a528c9f9	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:f4628954c6bea9690b1d96efac6c32f0930265dd5375da34dc1b0b7ed6b9abb4	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:4,cid:fcf98dd3c91b4ea6f1ec5e59f601b5e05d5e85d3ab65576fa592bb7c07b9d79e	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:5,cid:7923a871ca6449bf19409c3ea62a6f22412396e120598527b0b94cfd5717eaa9	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:6,cid:36996007fc60f04cb3bf0ebd352d65db8480f295f8b76888691ba9580352f702	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:7,cid:d4c901c535a12968d4ef984365b477f94754b674413ea323d151981da2b3f993	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:8,cid:494f54e32557264a8f18b13cc6ee73b8fb1de9b8df5c12c078e9b15497023940	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:9,cid:eac8f51601d14b1954b4f0755c6fddcddc342337640a719b42ee8ad9b42b803e	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:10,cid:76f75d0de9bc536176e61b6a6fded4900f33343a7cb25aac98634a25f3fbacb0	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:11,cid:26bd44c881216c24bcc246e0ae5ecebaf3feb816380361138bc7b765fd191967	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:12,cid:2eb5dd16183a2a9236f3075442e29754bc55db331bbfed7431ade2bb47bb5c57	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:13,cid:ec3c5b6c8b530f6299f40a0b50ec3c6e95383f275864bde881649be066f3b607	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:14,cid:a0357a043bb37f12595a2ee0a80346b1b2be97fcd5eff96a98d426e248fe7ba1	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:15,cid:b4281d115db3116379d573138d67fadd6264ef14f2f9f068c08937f728866592	{"ref":{"buf":"Uint8Array()"}}
         req:rastream_stock,finished
         req:witness,eternal,ok
+        req:crossing,eternal,ok
         reached:step_4
         Theirs,pub:b317b9a776e39d30
           stock,pub:b317b9a776e39d30
-            Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
-              Preview,seq:0,head,preskip=312,cid:3ccd2f51f3f3b66e3115ee8cb2d1c43575a42bf9704abf44b8af40d1a8d74d7b	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:1,cid:144cde8bcbf6a150cae10b2f4115f1fd62f97576477adbaaa900bac3cfc53872	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:2,cid:224607ca4d58380a3271f7a0a2621c076034997f83423effb1cabda2252985e3	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:3,cid:bd7e4cd4018af8df29a4ce36cf8cf48ddf14f9265dafc3ce6499e71a5280320a	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:4,cid:e562bac3d0f1dfc9969825f34ffb0ddba65467e2df0ca90f1b224292f3c6154d	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:5,cid:774bf989acb4a0f4d775b5bfbe38c4ceb10372cdaf58dbd2738898a012d0d3fe	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:6,cid:d8bb01b9d2fb794a054c6061e89c76ceb106dab97115ba1821d7def09396f1c1	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:7,cid:95eab5bfd38f7a92de39a3b55fc20b94c189ac99b985f641fc86eebd42613155	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:8,cid:2cc35a04310a7ad42dae8b64cafb15b5f0e8aeb7df88ef49a0fd2c30bea6b43f	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:9,cid:d2349eb37985140aeb5c6569fa2ab4ab0686d04ca04d2906be03c0c813eb0d28	{"ref":{"buf":"Uint8Array()"}}
-            Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443
+            Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,path:testsounds/DJ Oscillo - Cosmic C.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
+              Preview,seq:0,head,preskip=312,cid:98776195a343cf1e9bb2423c263ab510fd853ac8ed86290dc100fc21b3e2ca20	{"ref":{"buf":"Uint8Array()"}}
+              Preview,seq:1,cid:d87b9da70d2ab48d83f8995328934406ec0bdeb421f81033cbf3b516be81960f	{"ref":{"buf":"Uint8Array()"}}
+              Preview,seq:2,cid:bdd2598ed3187d9ddefecad4fbfab49cb283db869dc89b9e1fa95b1271c12d33	{"ref":{"buf":"Uint8Array()"}}
+              Preview,seq:3,cid:a12e0a3c3e83f0359515ba3febce3210faf725aa35b9c6cde7f5698c62affc17	{"ref":{"buf":"Uint8Array()"}}
+              Preview,seq:4,cid:b6a2d848ceffbf578b36536626c053516bf599b044210db12ee5eb8f1230bb01	{"ref":{"buf":"Uint8Array()"}}
+              Preview,seq:5,cid:7e104650f387e155cf53b3198cc079b369ebcd2b736b7cfbb4e3c7350cd12f6a	{"ref":{"buf":"Uint8Array()"}}
+              Preview,seq:6,cid:5c1ebbd967ff5f1882ff817f8bfb7a8c56fbafaf4e63f64b907f82bf2a879005	{"ref":{"buf":"Uint8Array()"}}
+              Preview,seq:7,cid:b9d91de8485fb96a6fc46d42b77332c00551e53fd5c88882e34cf0e03a132783	{"ref":{"buf":"Uint8Array()"}}
+              Preview,seq:8,cid:d43876ac23018315c936455a96cbc07ac70ff6d457db09dc40faa959511848b9	{"ref":{"buf":"Uint8Array()"}}
+              Preview,seq:9,cid:b02f718fd19b4cf8d8c50e8f953cd2d03a8ea28e73ba2ae7a7107a622e20f6d0	{"ref":{"buf":"Uint8Array()"}}
+            Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,path:testsounds/DJ Oscillo - Dorian D.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443
         see:two real opus Records stand at the caster — a session with stock to listen and a track to change to

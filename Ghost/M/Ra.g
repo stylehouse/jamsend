@@ -2721,6 +2721,14 @@ Ra_pcm_sweep():
     for (const rec of M.c.ra_pcm) {
         if (!rec || !rec.c.pcm) continue                       // already freed — drop off the registry
         let ra = rec.c.ra
+        // AN OPEN ENCODE NOBODY PUMPS IS ABANDONED (2026-11-09, MusuRaStream starving on a runner tab): the open-encode veto
+        //  assumed every open `ra` is being served, but an encode can stop being wanted before it is done — a capped session
+        //   (20 of 39 chunks) or a Book whose House fell away never finishes it — and the registry lives on the TOP House, so
+        //    nothing else ever lets go: each such run left two decoded tracks counted against admission for the life of the tab.
+        //     Every pump that finds the pcm restamps pcm_ts (Ra_transcode_ensure), so untouched for ABANDON means nobody is
+        //      serving it; Ra_pcm_drop closes the encoder and clears `ra`, so a pump that does come back just decodes again.
+        let ABANDON = (M.c.ra_pcm_abandon == null ? 120000 : +M.c.ra_pcm_abandon)
+        if (ra && !ra.done && now - (+(rec.c.pcm_ts || 0)) > ABANDON) { this.Ra_pcm_drop(rec, 'abandoned'); continue }
         if (ra && !ra.done) { live.push(rec); held = held + this.Ra_pcm_bytes(rec); continue }
         if (now - (rec.c.pcm_ts || 0) > IDLE) {
             this.Ra_pcm_drop(rec, 'idle')

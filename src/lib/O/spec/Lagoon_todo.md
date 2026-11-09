@@ -43,6 +43,9 @@ Home of: the **reader layer** (every answer asked of a census, in one place) and
     declared their swears: SwarmTesting 23, HeistTesting 17, VytoTesting 10 (VytoOrchestra, VytoMemo, VytoPosed), InvFerry 4,
      ErrchannelTesting 4 (SuperCull).  Each is a Book that would not red if its swear stopped firing — a re-record each, attended.
 
+**The measured half started 2026-11-09:** `wormhole/Story/<Book>/Exercise/toc.snap` (`runner_sweep --exercise`) — and the Hacky
+ flavour that makes its callers exact — live in `Electrode_todo` §0.
+
 **Next:** (a) the 56 site-only oaths → declare them (record or accept per Book, owner-attended); (b) the measured exercise
  (Electrode over a Book run, keyed by Book); (c) the subframe picture — a face over `Lagoon_oath_join` (Book frames, struts to
   methods and sentences), which wants the spaceship glass first; (d) maybe `top.`/`(top as any).` receivers in CALL_GAP_RE.

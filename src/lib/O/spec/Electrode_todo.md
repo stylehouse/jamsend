@@ -15,6 +15,37 @@ A **capture doc, not yet a plan** (the `Atheory_todo`/`Trust_todo` pattern — a
 
 ## 0. What to get on with next
 
+**☀ 2026-11-09 — the tap moves a little: a Book's EXERCISE, and the Hacky flavour designed.  START HERE.**
+- **Built:** the `exercise <Book>` verb (`Electrode_exercise`, writes:1 so a hacker room refuses it) keeps the tally since the last
+   reset as `wormhole/Story/<Book>/Exercise/toc.snap`: one `Flow,of:<callee>,from:<caller>` row per pair that ran, sorted, NO counts.
+    `runner_sweep --exercise` stands + arms Electrode (again after each reload), resets before each run, keeps only GREEN runs.
+     Pilot: AtlasStaple, 393 flows over 278 methods.  Counts were tried and dropped: 27 of 393 rows moved on a power-of-two bucket alone
+      between two green runs; the edge set moved 16, all real (a fresh tab loads code a warm one doesn't).
+- **The flaw, and the owner's question "are we computer sciencing good enough?" — no.**  Code after an `await` resumes as a microtask on
+   an EMPTY stack, and closures were never coated, so 26% of AtlasStaple's flows have no caller (missing, never wrong).  It is the same
+    hole Atheory_design names ("Guard the async handler … lands after the boundary with no from: — silently"); Atheory's answer is
+     causality as DATA (a run is one sync task, slow work a `%TheAWait` hold, every arrival carries from:/corr onto the tape).  So for
+      Atheory code, read Exercise off the tape (`%TheAHeard`), never the stack.
+- **Proven: save/restore of the frame across an await is exact** (scratch proof, two interleaved async methods across a setTimeout —
+   plain: `alpha after: leaf ← nobody`; flavoured: `leaf ← alpha`, `leaf ← beta`).  JS runs one thing at a time, and between a resume
+    and the next suspension nothing else runs, so: save before each await, restore on resume, clear at the next await or the end (in a
+     try/finally).  Mechanical for a compiler, so it belongs in a BUILD, not in hand-written code.
+- **DESIGNED (owner 2026-11-09), not built — Ground/Hacky/<Name>, the instrumented flavour:**
+   · same .g, compiled with `flavour:electrode` into `src/lib/gen-electrode/…`: the await save/restore, a call-site id (doc:line) at
+      every call, closures coated.  LocalGen `--flavour=electrode` builds it; the editor's frozen compiler is untouched;
+   · NO toc of its own: `Hacky/Land` = Ground/Land's Load: list, each from the flavoured tree; what it stands on loads plain unless
+      named (`Hacky/Glass`);
+   · chosen by the RUN REQUEST, never the URL: `runner_ask run <Book> --flavour=electrode` / `runner_sweep --exercise` put it on the
+      job, and the job stands the Book's Stands: as Hacky/<Ground>;
+   · one reality per tab (eatfunc last-wins, as --swap): `%Page,flavour:electrode` + the ping say so until a reload; the sweep
+      reloads before and after.  Two versions side by side waits for A**;
+   · Exercise rows then gain `line:` — exact callers, joined to Atlas's `%call` rows by line.
+- **Queue:** (1) the flavour, slice by slice (LocalGen flag → ground_include flavour → job flag → line on rows); (2) also tap elvis
+   dispatch (sender→handler) — the old world's own deliberate time-crossing; (3) Lagoon reads Exercise beside the oath join's static
+    exercise (Lagoon_todo §0); (4) declare the 56 site-only oaths (Lagoon_todo §0); (5) `Main:Land` so /Desk?G=Land is the code landscape —
+     Ground/Land is DERIVED by wafts_keep (ground_toc writes only Stands/Load/Beside/Advice), so a Main needs either a hand-kept row
+      wafts_keep preserves or a hand-kept Ground beside it; the room today is the Hackarium Book (role hacker, Run House, Lies+Lang).
+
 **BUILT 2026-09-08 night — `Ghost/L/Electrode.g` stands on the live runner.**  The plan below was
  followed with one addition: a ring alone loses edges past its cap, so beside the ring (the film strip)
   there is a LOSSLESS tally — one Map increment per call, keyed caller→callee — and it is the tally the

@@ -10,7 +10,7 @@ import { sha256_hex } from "$lib/Common"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_RaTesting(): string { return 'cece11e3f7388465~g1' },
+    Ghostmeta_Ghost_Story_RaTesting(): string { return '6e39b9e3d11669e3~g1' },
 
 // RaTesting.g — né Radiation.g (the `<Name>Testing.g` convention, owner ruling 2026-09-09;
 //  src/lib/L/testing.ts is the one predicate).  ⚠ `Ra` was a JUDGMENT CALL, not a derivation — say
@@ -187,7 +187,7 @@ MusuRaStream_at_boundary(w) {
 },
 // MusuRaStream_hold_boundary — while the head waits at the boundary, a one-shot %req:boundary gate per track carries a ttlilt (the
 //  only hold Story's poll_step reads) and wakes the next pass itself (the wire and the transcode are pass-driven); it finishes and
-//   drops the moment the chunk is on the mirror, so it leaves no fixture footprint.  20s is a bound: running out is the honest starve
+//   drops the moment the chunk is on the mirror, so it leaves no fixture footprint.  45s is a bound (a parked want may wait out Ra's PARK_CEIL of 20s plus a 4s re-ask): running out is the honest starve
 MusuRaStream_hold_boundary(w) {
     let p = w.c.play
     if (!p || !this.MusuRaStream_at_boundary(w)) return
@@ -203,7 +203,7 @@ MusuRaStream_hold_boundary(w) {
         w.finish(gate)
         w.drop(gate)
     })
-    this.i_req_ttlilt(w.o({ req: name })[0], 20)
+    this.i_req_ttlilt(w.o({ req: name })[0], 45)
 
 },
 // beat 4 — the seal over the wire: DJ mints an unbound Music offer, the Listener redeems; both ends land a

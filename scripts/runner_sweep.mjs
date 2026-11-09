@@ -19,6 +19,8 @@
 //      --quiet         print only reds, hollows and the tally
 //      --out=<file>    every line (as if not --quiet, digests included) also goes to <file> — an agent reads the tally, opens the file only on a red
 //      --list          print the Books a pattern picks (after Credence's unusual: skips) and run NOTHING
+//      --exercise      stand + arm Electrode, reset its tally before each run, and keep a GREEN run's reach as
+//                       wormhole/Story/<Book>/Exercise/toc.snap (the `exercise` verb, Electrode.g) — re-armed after every reload
 //    Exit 0 when nothing stayed red or hollow.
 //
 //  Verdicts:
@@ -177,6 +179,16 @@ let first = true
 // --reload-every=N: a fresh tab every N Books (owner 2026-11-03: keep the runner fresher) — reload, then 3 green pings
 const RELOAD_EVERY = Number(val('reload-every') || 0)
 let since_reload = 0
+// --exercise: the tap lives on the tab, so a reload drops it — stand and arm it now and after each reload
+const EXERCISE = !!flag('exercise')
+const ex_arm = () => {
+    if (!EXERCISE) return
+    ask('ghost_load', 'Ghost/L/Electrode.g', '--stand=Electrode')
+    const a = ask('electrode', 'arm')
+    if (a.code !== 0) say(`⚠ electrode would not arm: ${a.out.trim().split('\n').pop()}`, true)
+}
+const run_one = (b) => { if (EXERCISE) ask('electrode', 'reset'); return once(b) }
+ex_arm()
 for (const b of books) {
     if (!first) await sleep(SETTLE_MS)
     first = false
@@ -185,14 +197,15 @@ for (const b of books) {
         await ready(`after reload (every ${RELOAD_EVERY})`)
         say(`↻ reloaded the runner after ${since_reload} Books`, !quiet)
         since_reload = 0
+        ex_arm()
     }
     since_reload++
     const fx = fixtures(b)
-    let r = once(b)
+    let r = run_one(b)
     // a run that never started (another client's run, a lost ask) is tried once more before it is reported
     // a runner wants a beat between runs (memory fleet-sweep-measurement-confounds: release + settle) — back to back, one Book in
     //  ~36 sat at phase:begun (trial 2026-11-02); a non-start waits longer before its one retry
-    if (r.dead?.startsWith('NEVER STARTED') && !flag('no-rerun')) { await sleep(3000); r = once(b) }
+    if (r.dead?.startsWith('NEVER STARTED') && !flag('no-rerun')) { await sleep(3000); r = run_one(b) }
     let mark = '✓', note = ''
     if (r.dead) { mark = '✗'; note = r.dead }
     else if (!fx) { mark = '?'; note = `no fixtures — ran ${r.done}${r.gaps.length ? ', ' + r.gaps.length + ' oath gaps' : ''}` }
@@ -200,7 +213,7 @@ for (const b of books) {
     if (!r.dead && fx && !green(r)) {
         if (hollow(b, r.total)) { mark = '∅'; note = 'HOLLOW — method never ran (its toc lacks Stands:<Ground>?)' }
         else if (!flag('no-rerun')) {
-            const r2 = once(b)
+            const r2 = run_one(b)
             if (green(r2)) { mark = '~'; note = '(red, then green)'; r = r2 }
             else { mark = '✗'; r = r2 }
         } else mark = '✗'
@@ -213,6 +226,11 @@ for (const b of books) {
         + (timeouts.length ? `  ⏱ timeout step ${timeouts.join(',')}` : '')
     say(`${mark} ${b}${counts}${note ? '  ' + note : ''}`, !quiet || mark === '✗' || mark === '∅')
     if (mark === '✗' && !r.dead) say(digest(b, r), true)
+    // only a GREEN run's reach is kept — a red one stopped short, and its shorter Exercise would read as a path that moved
+    if (EXERCISE && (mark === '✓' || mark === '~')) {
+        const x = json_after(ask('exercise', b).out, 'exercise: ')
+        say(x && !x.error ? `    ⚡ exercise ${x.flows} flows over ${x.methods} methods${x.wrote ? ' — written' : ' — unchanged'}` : `    ⚠ exercise not kept: ${x?.error ?? 'no reply'}`, !quiet)
+    }
 }
 say(`${books.length} Books: ${tally['✓']} ✓ · ${tally['~']} ~ · ${tally['✗']} ✗ · ${tally['∅']} hollow · ${tally['?']} new`, true)
 process.exit(tally['✗'] || tally['∅'] ? 1 : 0)

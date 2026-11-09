@@ -233,6 +233,18 @@ Started 2026-11-04 from the Supervisor talk (`AtheoryNexus_todo.md` E, "NEXT SES
      first time a friend's track is playable, `Radio_go` (once a sitting, never after a play).  `Radio_crossover`'s latch now
       re-arms when a friend's track opens (once a stopgap, not once a sitting).  Untested live.
 
+**MusuRaStream, red since September — found + fixed 2026-11-09 (a detour from the Radio port):**
+- Not Repli, not the transcoder: the Book's boundary hold (`req:crossing`, RaTesting.g) held nothing — Story's poll_step reads only
+   ttlilts, an un-ok req holds only while something wakes the loop (Coding_guide "Wake ≠ Hold", corrected).  Now
+    `MusuRaStream_hold_boundary`: a one-shot gate req per track with a 45s ttlilt, armed in the beat that sent the ask, waking the
+     next pass while it waits, dropped when the chunk lands.  Re-recorded (the July fixture also lacked the `now=` pin, Crew rows,
+      the new ledger format).  Check mode: 3 of the last 4 green.
+- **Known flake** (in its Credence row): the first run on a freshly reloaded tab can starve — the DJ's first on-demand transcode
+   doesn't start inside 45s.  Guess, untested: the cold preview decodes hold both `MAXFLY=2` decode slots.  Arm socklog on the runner
+    and read the supply trace (`pcm-wait` rows) on a starve to name it.
+- Also in Ra.g: `Ra_pcm_sweep` frees an OPEN encode no pump has touched for 2 min (`M.c.ra_pcm_abandon`) — the registry lives on the
+   top House, so a capped session's never-finished encode was pinned for the life of the tab.  Real, but not shown to matter here.
+
 **(3) The cell inventory, by relevance (2026-11-09 — from who mints|casts each, Books aside):**
 - **In service on /Radio:** Radio · Door · Wikipedia · Yay · Pooling (≥1 friend) · Heist (a keep; its minicell is an icon now) · Link · PierView (both while focused).
 - **Only on / (Sounditron's glass), retire with it unless wanted:** Hauls (Yay covers "what became of it") · Caper (the flow organ, no-keep only) ·

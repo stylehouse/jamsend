@@ -84,7 +84,7 @@ import { DEAD_MS, SLUGGISH_MS, liveness } from '../src/lib/O/runner_liveness.mjs
 //  below for why this is safe (the tab, not the CLI, is the authority on what it will do).
 const UNKNOWN_OK = process.argv.includes('--unknown-ok')
 let PLAYER_PUB = ''   // set by --player=: the one music page a slot-addressed ask is for (sendAsk stamps it into ask.pub)
-const OPS = ['ping', 'probe', 'world', 'minisnap', 'pick', 'stemdex', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain', 'console', 'crew', 'tidy', 'ghost_load', 'atlas_callers', 'atlas_refresh', 'atlas_lint', 'electrode', 'lagoon', 'census', 'verbs', 'everything_check']
+const OPS = ['ping', 'probe', 'world', 'minisnap', 'pick', 'stemdex', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain', 'console', 'crew', 'tidy', 'ghost_load', 'atlas_callers', 'atlas_refresh', 'atlas_lint', 'electrode', 'exercise', 'lagoon', 'census', 'verbs', 'everything_check']
 
 // ── court a runner via Waft:Cluster ──────────────────────────────────────────────────────────
 //  deLines the registry snap (wormhole/Cluster/toc.snap — the durable HostedIdentity directory the editor
@@ -181,7 +181,7 @@ const watch = flags.has('--watch')
 //   every --key=value (or bare --switch) rides as ask[key]; the tab answers, or names the owner that is not loaded.
 const VERB = !!op && !OPS.includes(op) && /^[a-z][a-z0-9_]*$/.test(op)
 if (!op || (!OPS.includes(op) && !VERB)) {
-	console.error('usage: node scripts/runner_ask.mjs <ping|probe|supervisor|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|console [--tail=N] [--grep=PAT] [--follow]|pick <Ghost/X/Y.g> [<point>]|poke <verb>|crew|census|tidy <crew|rebuffs|forget:<pub>>|ghost_load <Ghost/X/Y.g> [--stand=Name] [--fresh] [--swap]|atlas_callers <name> [--stale]|atlas_refresh|atlas_lint [--sees] [--stale]|electrode [top|arm|disarm|reset|reduce|hangs|film|join] [--k=N] [--older=ms]|lagoon [seek|beads|defs|families|mentions|rot|rotwork|callers|lint|join|oaths|oath|figurines|errands] [<name>] [--k=N]> [@uid] [--runner=<id>|--player=<id>] [--live] [--watch]')
+	console.error('usage: node scripts/runner_ask.mjs <ping|probe|supervisor|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|console [--tail=N] [--grep=PAT] [--follow]|pick <Ghost/X/Y.g> [<point>]|poke <verb>|crew|census|tidy <crew|rebuffs|forget:<pub>>|ghost_load <Ghost/X/Y.g> [--stand=Name] [--fresh] [--swap]|atlas_callers <name> [--stale]|atlas_refresh|atlas_lint [--sees] [--stale]|electrode [top|arm|disarm|reset|reduce|hangs|film|join] [--k=N] [--older=ms]|exercise <Book>|lagoon [seek|beads|defs|families|mentions|rot|rotwork|callers|lint|join|oaths|oath|figurines|errands] [<name>] [--k=N]> [@uid] [--runner=<id>|--player=<id>] [--live] [--watch]')
 	process.exit(2)
 }
 
@@ -626,6 +626,11 @@ if (op === 'lagoon') {
 	const nm = argv[argv.indexOf(arg) + 1]
 	if (nm && !nm.startsWith('-')) ask.name = nm
 	const k = flagVal('--k'); if (k !== undefined) ask.k = Number(k)
+}
+if (op === 'exercise') {
+	// keep the tap's tally since its last reset as wormhole/Story/<Book>/Exercise/toc.snap (Electrode.g Electrode_exercise) — a WRITE
+	if (!arg) { console.error('exercise needs the Book: node scripts/runner_ask.mjs exercise <Book>'); process.exit(2) }
+	ask.name = arg
 }
 if (op === 'electrode') {
 	// Electrode (Ghost/L/Electrode.g) — both ends of every ghost call.  Needs A:Electrode standing

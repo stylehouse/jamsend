@@ -283,7 +283,16 @@ verbs_Electrode():
         { name: 'electrode', where: 'runner', writes: 0, args: 'top|arm|disarm|reset|reduce|hangs|film|join [--k=N] [--older=ms]',
           desc: 'both ends of every ghost call — arm coats every method; top lists the hottest flows; hangs lists frames never exited',
           run: (w, a) => H.Electrode_verb(w, a) },
+        // exercise WRITES (wormhole/Story/<Book>/Exercise), so it is its own verb: refused by name in a hacker room or a music page
+        { name: 'exercise', where: 'runner', writes: 1, args: '<Book>',
+          desc: 'keep what the tap measured since its reset as the Book\'s Exercise — caller-callee pairs bucketed and sorted so a re-run diffs only when a path moved',
+          run: (w, a) => H.Electrode_verb_exercise(w, a) },
     ]
+
+Electrode_verb_exercise(w, a):
+    let ew = this.top_House().o({ A: 'Electrode' })[0]?.o({ w: 'Electrode' })[0]
+    if (!ew) return { error: 'no A:Electrode standing — ghost_load Ghost/L/Electrode.g --stand=Electrode first' }
+    return this.Electrode_exercise(ew, String(a.name ?? ''))
 
 Electrode_verb(w, a):
     let ew = this.top_House().o({ A: 'Electrode' })[0]?.o({ w: 'Electrode' })[0]
@@ -302,4 +311,51 @@ Electrode_verb(w, a):
         return this.Lagoon_join(lw, Number(a.k ?? 40))
     }
     return this.Electrode_top(ew, Number(a.k ?? 20))
+//#endregion
+
+//#region exercise — a Book's measured reach, kept beside the Book (owner 2026-11-09, Lagoon_todo §0)
+// Electrode_exercise — fold the tally since the last reset into ONE small, stable file: wormhole/Story/<Book>/Exercise/toc.snap.
+//  The tap measures; this keeps a SHAPE of the measure that does not churn run to run, so the file diffs only when a code path does:
+//    · one row per caller→callee pair that ran — `Flow,of:<callee>,from:<caller>` (from absent = entered from outside the coats);
+//    · NO COUNT.  A power-of-two bucket was tried first (2026-11-09, AtlasStaple twice): 27 of 393 rows moved on the bucket alone —
+//       the ambient pulses (Lies_channel_live, Lies_ghost_get) scale with how long the run took.  The edge set alone moved 16, and
+//        those were real: a first run after a reload loads code (Ground_fetch, Lies_ghost_include) that a warm tab does not;
+//    · no ms, no async, no throws — wall clock and timing-dependent facts are exactly what reds a fixture for nothing;
+//    · sorted by caller then callee, so two runs that took the same paths write the same bytes.
+//  What it is NOT: what the Book alone caused.  The runner's own pulses (Lies, Supervisor, Peeroleum) ride along — a reader filters
+//   them by area — and a caller is lost across an await (the coat's `cur` is synchronous), so a call after one reads as from-nobody.
+//  Drive it from outside the run: `electrode arm` + `reset` before the Book, `exercise <Book>` once it is done (the CLI's
+//   `runner_sweep --exercise` does both).  Writes only when the text changed.  Lagoon reads these as the MEASURED half of the oath
+//    join's exercise (Lagoon_oath_join) — what a Book really reached, beside what its own methods declare they call.
+async Electrode_exercise(w, book):
+    if (!book) return { error: 'electrode exercise: name the Book' }
+    let T = this.Electrode_T()
+    let top = this.top_House()
+    let wh = top.o({ A: 'Wormhole' })[0]
+    let nav = wh ? wh.c.nav : null
+    if (!nav) return { error: 'no A:Wormhole nav — the tab needs its folder to write wormhole/Story/' + book + '/Exercise' }
+    let rows = []
+    for (const r of T.tally.values()) {
+        rows.push({ from: r.from || '', to: r.to })
+    }
+    rows.sort((a, b) => (a.from < b.from ? -1 : a.from > b.from ? 1 : a.to < b.to ? -1 : a.to > b.to ? 1 : 0))
+    let lines = ['Exercise:' + book + ',flows:' + rows.length]
+    for (const r of rows) {
+        lines.push('  Flow,of:' + r.to + (r.from ? ',from:' + r.from : ''))
+    }
+    let text = lines.join('\n') + '\n'
+    let dir = 'wormhole/Story/' + book + '/Exercise'
+    let was = null
+    try {
+        was = await nav.read_file(dir, 'toc.snap')
+    } catch (e) {
+        was = null
+    }
+    let wrote = 0
+    if (was !== text) {
+        await nav.write_file(dir, 'toc.snap', text)
+        wrote = 1
+    }
+    let methods = new Set(rows.map(r => r.to))
+    return { book: book, flows: rows.length, methods: methods.size, armed: T.armed, wrote: wrote, at: dir + '/toc.snap' }
 //#endregion
