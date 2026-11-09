@@ -83,10 +83,16 @@
         const opacity = +style.opacity || 1
         // horizontal-dominant journeys (strip↔belly is one) stretch along X; vertical along Y.
         const horiz = Math.abs(dx) >= Math.abs(dy)
-        // ARC height ~11% of travel (principle 2) — a real thrown stone lifts on the way over.
-        const arc = reduce_motion ? 0 : Math.min(140, d * 0.11)
+        // ORBIT (owner 2026-11-09: "physically orbit each other while exchanging primacy … I want it to feel physical").  Each body
+        //  bows off its straight path SIDEWAYS — perpendicular to its travel, always turning the same way — so in a swap, where the
+        //   two travel opposite ways, they bow to opposite sides and swing round their common middle like a pair of stones in a palm.
+        //    The bow is ~28% of the distance (a half-circle would be 50%), capped so a long belly↔strip swap doesn't sling off-screen.
+        const arc = reduce_motion ? 0 : Math.min(240, d * 0.28)
+        const px = d ? dy / d : 0, py = d ? -dx / d : 0      // unit perpendicular to the travel (to − from is (−dx, −dy))
+        // the one rising to primacy (growing) passes IN FRONT of the one stepping down
+        const growing = dw * dh < 1
         return {
-            duration: flight_dur(d),
+            duration: reduce_motion ? 0 : Math.min(900, flight_dur(d) * 1.15),
             easing: backOut,   // the body itself overshoots its seat a hair before the spring takes over
             css: (t: number, u: number) => {
                 // base box interpolation (identical maths to svelte crossfade: at t=0 sit on `from`)
@@ -102,14 +108,17 @@
                 const stretch_a = 1 + k, stretch_b = 1 / (1 + k)
                 const qx = horiz ? stretch_a : stretch_b
                 const qy = horiz ? stretch_b : stretch_a
-                // ARC (principle 2): a parabolic lift on top of the straight interpolation.
-                const lift = -arc * Math.sin(Math.PI * t)
+                // ORBIT: the sideways bow, peaking mid-flight, plus a little turn of the body with it (a thrown stone spins)
+                const bow = arc * Math.sin(Math.PI * t)
+                const ox = px * bow, oy = py * bow
+                const spin = 7 * v * (growing ? 1 : -1)
                 // Z-LIFT (principle 7): the stone rises off the copper — shadow deepens+spreads mid-flight.
                 const blur = 18 + 34 * v, spread = 8 + 18 * v, drop = 12 + 26 * v
                 return `
                     opacity:${0.35 + 0.65 * t};
                     transform-origin:top left;
-                    transform:${base} translate(${tx}px, ${ty + lift}px) scale(${sx * qx}, ${sy * qy});
+                    transform:${base} translate(${tx + ox}px, ${ty + oy}px) rotate(${spin}deg) scale(${sx * qx}, ${sy * qy});
+                    z-index:${growing ? 7 : 6};
                     filter: drop-shadow(0 ${drop}px ${blur}px rgba(0,0,0,${0.45 + 0.25 * v})) drop-shadow(0 0 ${spread}px rgba(0,0,0,0.3));
                     will-change: transform, filter, opacity;
                 `
@@ -755,6 +764,21 @@
         return list
     })
 
+    // ── at rest, ALONG THE EDGE (owner 2026-11-09: "the minicells should sit along the edge of the big cell — the off-edge belly
+    //  already perches them on its bulge, make that the resting layout too").  The strip is a straight column (a row when narrow);
+    //   the main's wall is a curve, so each minicell is nudged in by the square of its distance from the strip's middle — the ends
+    //    tuck toward the wall as it curves away, the middle ones stay on the bulge.  Rides the BUTTON's own `translate` property
+    //     (--arc-x|y), which composes apart from `transform` — so the swap's flight transform is untouched, and the whole minicell
+    //      (its hover glow and hit area too) moves, not just the drawing inside it (owner: the glow stayed in the old place).
+    function arc_nudge(i: number, n: number): string {
+        const s = i - (n - 1) / 2
+        const k = -(s * s) * 2.2
+        return narrow ? `--arc-x: 0; --arc-y: ${k}vh;` : `--arc-x: ${k}vw; --arc-y: 0;`
+    }
+    // QUIET cells shrink further (owner 2026-11-09: "the older or quieter ones (Wikipedia, Pooling) should shrink a bit more") —
+    //  standing furniture that rarely has news; the ones that do (Door, Yay, a keep) keep the full minicell size
+    const QUIET = new Set(['Wikipedia', 'Pooling', 'Supervisor'])
+
     // ── switcheroo — tap a satellite to make it main ───────────────────────────
     //  A true SWAP: the tapped cell erupts to the main slot; the old main falls to a
     //   satellite on the next derive (main_cell picks up the new main_key; the old main is
@@ -1246,11 +1270,12 @@
     <svelte:boundary onerror={bound_err}>
     {#if satellites.length}
         <div class="cello-satellites">
-            {#each satellites as cell (cell.key)}
+            {#each satellites as cell, i (cell.key)}
                 {@const tiny = false /* TODO: measure width < LABEL_FLOOR_W */}
                 <button
                     class="cello-sat"
                     class:tiny={tiny}
+                    class:quiet={QUIET.has(cell.mk)}
                     data-mk={cell.mk}
                     in:receive={{ key: cell.key }}
                     out:send={{ key: cell.key }}
@@ -1259,6 +1284,7 @@
                         --cell-bg:     {cell.colour.bg};
                         --cell-fg:     {cell.colour.color};
                         --cell-border: {cell.colour.border};
+                        {arc_nudge(i, satellites.length)}
                     "
                     onclick={() => switcheroo(cell)}
                     title={cell.label}
@@ -1521,7 +1547,8 @@
        fly the blob into/out of the main slot (the physical swap).  The nudge (drag-roll + wheel
         resize) moved to the inner .cello-sat-nudge wrapper so it can't fight that tween. */
     touch-action: none;
-    transition: width 0.4s ease;
+    translate: var(--arc-x, 0) var(--arc-y, 0);
+    transition: width 0.4s ease, translate 0.4s ease;
     flex-shrink: 0;
 }
 /* the nudge wrapper — the user's persisted roll (--nudge-x/y) + wheel resize (--nudge-s), off the
@@ -1535,11 +1562,16 @@
 /* while HELD the transform must track the pointer with no lag — kill the settle transition */
 .cello-sat.held { cursor: grabbing; z-index: 5; }
 .cello-sat.held .cello-sat-nudge { transition: none; }
-.cello-sat:hover { z-index: 3; }
+/* app.css's global button:hover paints a blue box glow (box-shadow + background) — a rectangle round a blob, left where the button's
+   box sits (owner 2026-11-09).  A minicell's hover is its wall stroke thickening, nothing else */
+.cello-sat:hover { z-index: 3; background: transparent; border-color: transparent; box-shadow: none; }
 .cello-sat:hover .wall-stroke { stroke-width: 2.2; }
 .cello-sat:focus-visible { outline: none; }
 .cello-sat:focus-visible .wall-stroke { stroke: #ffd479; stroke-width: 3.2; }
 .cello-sat.tiny { width: clamp(72px, 9vw, 110px); }
+.cello-sat.quiet { width: clamp(84px, 8.5vw, 128px); }
+.cello-stage.narrow .cello-sat.quiet { width: clamp(70px, 19vw, 110px); }
+.cello-stage.narrow.offedge .cello-sat.quiet { width: clamp(50px, 13vw, 80px); }
 
 /* the promote hit-target — above the (inert-preview) face so a tap anywhere switcheroos.  It fills
    the whole blob so a click|drag ANYWHERE on the stone routes to the button (never the inert Face). */

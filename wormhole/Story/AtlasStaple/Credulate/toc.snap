@@ -1,18 +1,18 @@
 Credulate,of_Book:AtlasStaple
-  TheACode:Ground/Core,dige:cb471fc583d7b86d
+  TheACode:Ground/Core,dige:2682d56be9e219ea
   TheACode:Ground/Story,dige:dc6e93d56e81459c
   TheACode:Ground/Glass,dige:e323f92d62cd7e52
-  TheACode:Ground/Land,dige:28a9f11eb0d6aabe
+  TheACode:Ground/Land,dige:ac718cc191062677
   TheACode:Ground/LandTesting,dige:6737a32f63b6c177
   GhostInclude:Ghost_A_Theory,dige:bc1f5fad74703498~g1
   GhostInclude:Ghost_A_Stuffica,dige:a6371235df378ec7~g1
-  GhostInclude:Ghost_A_Ground,dige:7861a13d0b95a377~g1
+  GhostInclude:Ghost_A_Ground,dige:470a1c17b0c9fb46~g1
   GhostInclude:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1
   GhostInclude:Ghost_V_Voro,dige:e0323dccaf9924f8~g1
   GhostInclude:Ghost_V_Vyto,dige:ba54bff0606590e3~g1
-  GhostInclude:Ghost_L_Atlas,dige:50f5d8020823e429~g1
+  GhostInclude:Ghost_L_Atlas,dige:667e5c17b8c39d7f~g1
   GhostInclude:Ghost_L_Electrode,dige:7058b5045ba4f814~g1
-  GhostInclude:Ghost_L_Lagoon,dige:899aa083bcb7ea9f~g1
+  GhostInclude:Ghost_L_Lagoon,dige:88a755669b9f0669~g1
   GhostInclude:Ghost_L_Workshop,dige:27e36e9ae751aee5~g1
   GhostInclude:Ghost_Play_Garden,dige:4e5061a1ef0f164b~g1
   GhostInclude:Ghost_Play_Pond,dige:92f278457599a9eb~g1
@@ -20,3 +20,25 @@ Credulate,of_Book:AtlasStaple
   GhostInclude:Ghost_L_AtlasTesting,dige:2f30ba8a5aa3e285~g1
   GhostInclude:Ghost_L_ElectrodeTesting,dige:bc3653d38188ea3d~g1
   GhostInclude:Ghost_L_LagoonTesting,dige:a558b162fb0e04ac~g1
+  last_ok,at=1794195667.816,ok_pct
+    TheACode:Ground/Core,dige:2682d56be9e219ea
+    TheACode:Ground/Story,dige:dc6e93d56e81459c
+    TheACode:Ground/Glass,dige:e323f92d62cd7e52
+    TheACode:Ground/Land,dige:ac718cc191062677
+    TheACode:Ground/LandTesting,dige:6737a32f63b6c177
+    uses:Ghost_A_Theory,dige:bc1f5fad74703498~g1
+    uses:Ghost_A_Stuffica,dige:a6371235df378ec7~g1
+    uses:Ghost_A_Ground,dige:470a1c17b0c9fb46~g1
+    uses:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1
+    uses:Ghost_V_Voro,dige:e0323dccaf9924f8~g1
+    uses:Ghost_V_Vyto,dige:ba54bff0606590e3~g1
+    uses:Ghost_L_Atlas,dige:667e5c17b8c39d7f~g1
+    uses:Ghost_L_Electrode,dige:7058b5045ba4f814~g1
+    uses:Ghost_L_Lagoon,dige:88a755669b9f0669~g1
+    uses:Ghost_L_Workshop,dige:27e36e9ae751aee5~g1
+    uses:Ghost_Play_Garden,dige:4e5061a1ef0f164b~g1
+    uses:Ghost_Play_Pond,dige:92f278457599a9eb~g1
+    uses:Ghost_L_WorkshopTesting,dige:e55f3111fc648e16~g1
+    uses:Ghost_L_AtlasTesting,dige:2f30ba8a5aa3e285~g1
+    uses:Ghost_L_ElectrodeTesting,dige:bc3653d38188ea3d~g1
+    uses:Ghost_L_LagoonTesting,dige:a558b162fb0e04ac~g1

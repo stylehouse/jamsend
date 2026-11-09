@@ -10,7 +10,7 @@ import { sha256_hex } from "$lib/Common"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_RaTesting(): string { return 'a1659c401247b460~g1' },
+    Ghostmeta_Ghost_Story_RaTesting(): string { return 'cece11e3f7388465~g1' },
 
 // RaTesting.g — né Radiation.g (the `<Name>Testing.g` convention, owner ruling 2026-09-09;
 //  src/lib/L/testing.ts is the one predicate).  ⚠ `Ra` was a JUDGMENT CALL, not a derivation — say
@@ -157,10 +157,53 @@ async MusuRaStream_setup(w) {
     //  BOUNDED on purpose: a genuine starve must still red the step rather than hang the Book to
     //   ledger_timeout, so the hold gives up after `waited` passes and lets the snap land WITHOUT
     //    the fed: row — which is the honest failure signal, not a papered-over one.
+    //  HELD ONLY WHILE IT MATTERS (2026-11-09): red since September, identically every run — the step the continuation was asked
+    //   on snapped two rounds in, the transcoded chunks landed a step late, and the head passed the boundary on a drop
+    //    (switched,a_dropped=2, no fed:).  Now it holds only from the first want past the boundary until the boundary chunk is on
+    //     the mirror.
+    //  AND A HOLD IS A TTLILT (found the same day): Story's poll_step reads only ttlilts (and leave_running) — an unfinished req
+    //   holds nothing by itself, it only halts descent; with nothing waking the loop the step went quiet and snapped with
+    //    req:crossing un-ok in the snap.  So the moment the head waits at the boundary, a one-shot %req:boundary gate carries a
+    //     ttlilt (MusuHeist_hold_for_a_pass's shape) and, while the chunk is still missing, wakes the next pass itself — the
+    //      wire and the transcode pumps are pass-driven, so passes are what bring the chunk.  It finishes and drops the moment the
+    //       chunk is on the mirror (no fixture footprint); the 20s is a bound, and running out of it is the honest starve.
+    //   Armed AT THE CAUSE (MusuRaStream_beat, the call that set the want), never a pass later from here: armed here it raced the
+    //    snap 1 run in 3.  Each track gets its own gate — B's continuation starved the same way (b_drops=2).
     w.doai({ req: 'crossing', eternal: 1 })?.(async (req) => {
-        if (!w.c.sess || w.c.fed_a || +(req.c.waited || 0) >= 400) { req.sc.ok = 1; return }
-        req.c.waited = (+(req.c.waited || 0)) + 1
+        this.MusuRaStream_hold_boundary(w)
+        req.sc.ok = 1
     })
+
+},
+// MusuRaStream_at_boundary — the playing track's continuation has been asked (the first want past its last preview) and the chunk
+//  at the boundary isn't on the listener's mirror yet: the one moment worth holding a step open for
+MusuRaStream_at_boundary(w) {
+    let p = w.c.play
+    if (!w.c.sess || !p || p.stream_want0 == null) return false
+    let rec = w.o({ Theirs: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]?.o({ Record: 1, id: p.id })[0]
+    if (!rec) return false
+    return this.Ra_chunk_map(rec)[p.preview] == null
+
+},
+// MusuRaStream_hold_boundary — while the head waits at the boundary, a one-shot %req:boundary gate per track carries a ttlilt (the
+//  only hold Story's poll_step reads) and wakes the next pass itself (the wire and the transcode are pass-driven); it finishes and
+//   drops the moment the chunk is on the mirror, so it leaves no fixture footprint.  20s is a bound: running out is the honest starve
+MusuRaStream_hold_boundary(w) {
+    let p = w.c.play
+    if (!p || !this.MusuRaStream_at_boundary(w)) return
+    let held = w.c.boundary_held || (w.c.boundary_held = {})
+    if (held[p.id]) return
+    held[p.id] = 1
+    let name = 'boundary_' + (p.id === w.c.a_id ? 'A' : 'B')
+    w.doai({ req: name })?.((gate) => {
+        if (this.MusuRaStream_at_boundary(w)) {
+            setTimeout(() => this.main(), 100)
+            return
+        }
+        w.finish(gate)
+        w.drop(gate)
+    })
+    this.i_req_ttlilt(w.o({ req: name })[0], 20)
 
 },
 // beat 4 — the seal over the wire: DJ mints an unbound Music offer, the Listener redeems; both ends land a
@@ -254,6 +297,7 @@ async MusuRaStream_beat(w) {
         w.c['want_' + p.id] = 1
         w.i({ stream_want: p.stream_want0, of: track, preview: p.preview })
     }
+    this.MusuRaStream_hold_boundary(w)
     // the boundary CROSSED on real bytes: the head passed the last preview chunk and the chunk AT the
     //  boundary was there to play — the stream FED (a drop there would be the starve tell instead).
     if (track === 'A' && !w.c.fed_a && p.head > p.preview) {

@@ -181,7 +181,7 @@ const watch = flags.has('--watch')
 //   every --key=value (or bare --switch) rides as ask[key]; the tab answers, or names the owner that is not loaded.
 const VERB = !!op && !OPS.includes(op) && /^[a-z][a-z0-9_]*$/.test(op)
 if (!op || (!OPS.includes(op) && !VERB)) {
-	console.error('usage: node scripts/runner_ask.mjs <ping|probe|supervisor|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|console [--tail=N] [--grep=PAT] [--follow]|pick <Ghost/X/Y.g> [<point>]|poke <verb>|crew|census|tidy <crew|rebuffs|forget:<pub>>|ghost_load <Ghost/X/Y.g> [--stand=Name] [--fresh] [--swap]|atlas_callers <name> [--stale]|atlas_refresh|atlas_lint [--sees] [--stale]|electrode [top|arm|disarm|reset|reduce|hangs|film|join] [--k=N] [--older=ms]|lagoon [seek|beads|defs|families|mentions|rot|rotwork|callers|lint|join|oaths|figurines|errands] [<name>] [--k=N]> [@uid] [--runner=<id>|--player=<id>] [--live] [--watch]')
+	console.error('usage: node scripts/runner_ask.mjs <ping|probe|supervisor|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|console [--tail=N] [--grep=PAT] [--follow]|pick <Ghost/X/Y.g> [<point>]|poke <verb>|crew|census|tidy <crew|rebuffs|forget:<pub>>|ghost_load <Ghost/X/Y.g> [--stand=Name] [--fresh] [--swap]|atlas_callers <name> [--stale]|atlas_refresh|atlas_lint [--sees] [--stale]|electrode [top|arm|disarm|reset|reduce|hangs|film|join] [--k=N] [--older=ms]|lagoon [seek|beads|defs|families|mentions|rot|rotwork|callers|lint|join|oaths|oath|figurines|errands] [<name>] [--k=N]> [@uid] [--runner=<id>|--player=<id>] [--live] [--watch]')
 	process.exit(2)
 }
 
@@ -1339,6 +1339,20 @@ else if (op === 'snap' && reply.result?.got_snap) {
 		for (const x of cap(r.sworn_gone, 40)) console.log(`    ✗ ${x.doc}:${x.line}  «${x.slug}»  — no Book declares it`)
 		for (const x of cap(r.book_gone, 40))  console.log(`    ✗ ${x.doc}:${x.line}  Book:${x.target}  — no such Book`)
 	}
+} else if (op === 'lagoon' && reply.result && !reply.result.error && reply.result.tally && Array.isArray(reply.result.rows)) {
+	// `lagoon oath [q]` — THE OATH CONSTELLATION (Lagoon_oath_join): one row per oath, its site · Book·step · citations joined.
+	//  ● whole (sworn in code AND declared by a Book) · ◐ site only (no Book declares it) · ○ declared only (no literal swear says it)
+	const r = reply.result, t = r.tally
+	console.log(`oath: ${t.oaths} oath(s) over ${r.tocs_read} toc(s) + ${r.docs_mapped} mapped doc(s) — ${t.whole} whole · ${t.site_only} site only · ${t.declared_only} declared only · ${t.cited} cited by a doc`)
+	if (r.q) console.log(`  q=${r.q}${r.home ? `  (def in ${r.home})` : ''}${r.exercised_by?.length ? ` · exercised by ${r.exercised_by.length} Book(s): ${r.exercised_by.join(' ')}` : ''}`)
+	const mark = { whole: '●', site_only: '◐', declared_only: '○' }
+	for (const x of r.rows) {
+		console.log(`  ${mark[x.shape] ?? '?'} ${x.sentence}`)
+		for (const b of x.books) console.log(`      Book:${b.book} step ${b.step}  «${b.slug}»`)
+		for (const st of x.sites) console.log(`      ${st.doc}:${st.line}${st.via ? `  in ${st.via}` : ''}`)
+		for (const c of x.cited) console.log(`      cited ${c.doc}:${c.line}`)
+	}
+	if (r.rows_total > r.rows.length) console.log(`  … ${r.rows_total - r.rows.length} more — --k=N`)
 } else if (op === 'console' && reply.result && Array.isArray(reply.result.lines)) {
 	// the live tab's console ring — the raw log/warn/error a human reads in DevTools, over the wire.
 	//  Each line prefixed with a wall-clock time + level, so ordering + severity read at a glance.

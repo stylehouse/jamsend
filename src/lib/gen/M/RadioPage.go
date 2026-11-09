@@ -10,7 +10,7 @@ import RadioPageFace from "$lib/O/ui/RadioPageFace.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_RadioPage(): string { return '7098ebaa28bc4a2e~g1' },
+    Ghostmeta_Ghost_M_RadioPage(): string { return '45e166972a8af198~g1' },
 
 // RadioPage.g — the Radio as a page: /Radio, which is /Desk?I=<who>&G=Radio (spec/AtheoryArrive_todo.md §5).  Ground/Radio's Main is Radio, so Auto
 //  stands A:Radio/w:Radio on Mundo and its think is Radio(A,w) below — the music page with no Book under it.  On / the same organs
@@ -205,6 +205,7 @@ async RadioPage_pump_beat(w, n) {
         let ident = M.Swarm_live_self ? M.Swarm_live_self() : null
         let sw = ident && M.Swarm_station_world ? M.Swarm_station_world() : null
         this.RadioPage_organs(w)
+        this.RadioPage_listen(w)
         if (sw && n % 2 === 0) {
             if (M.Swarm_pulse_all) M.Swarm_pulse_all(sw, ident)
             if (M.Peeroleum_retx_sweep) M.Peeroleum_retx_sweep(sw)
@@ -216,6 +217,35 @@ async RadioPage_pump_beat(w, n) {
         w.c.pump_warned = 1
     }
     setTimeout(() => { this.RadioPage_pump_beat(w, n + 1) }, 2500)
+
+},
+// RadioPage_listen — a friend's music arriving, heard on the pulse (owner 2026-11-09: *"the 'waiting on Vingas's music' is still there
+//  after Vingas has come online … if there were no peers, it should start playing that coming online peer's music automatically, when
+//   ready"*).  On / the Sounditron's beats did both; /Radio had neither — Radio_autopress leans on Sounditron_* (absent here), and the
+//    crossover was only reached per landed chunk, so a friend whose records were already warm never crossed in.
+//   - PLAYING ON A STOPGAP (sc.solo: our own music, still wishing for a friend): ask Radio_crossover every beat — it is gated cheap on
+//      solo, throttled, and skips to the friend pool the moment a friend's track is playable, which ends the "waiting on X" line.
+//   - OFF, AND NOTHING WAS PLAYABLE WHEN WE FIRST LOOKED: the first time a friend's track is playable, start (once a sitting, and never
+//      after the radio has played — a pause is somebody's decision).  Without a gesture Radio_go rolls deaf until the page is touched.
+RadioPage_listen(w) {
+    let radio = w.o({ Radio: 1 })[0]
+    if (!radio || !this.Radio_pool_census) return
+    let state = radio.sc.Radio || 'off'
+    if (state === 'playing') {
+        if (radio.sc.solo) this.Radio_crossover(w, radio)
+        return
+    }
+    if (state !== 'off' || radio.c.ever_played || radio.c.auto_pressed) return
+    let c = this.Radio_pool_census(w, radio)
+    if (!c.playable) {
+        radio.c.waited_alone = 1
+        return
+    }
+    if (!radio.c.waited_alone) return
+    radio.c.auto_pressed = 1
+    this.Radio_trace(null, { ev: 'autopress', why: 'a friend came', of: (c.names[0] || '') })
+    let p = this.Radio_go(radio, null)
+    if (p && p.catch) p.catch((er) => {})
 
 },
 // ── THE CAST (2026-11-09) — which cells the glass draws, decided here and only read by RadioPageFace.  Sounditron_commission's

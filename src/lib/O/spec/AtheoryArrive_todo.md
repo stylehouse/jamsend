@@ -21,8 +21,8 @@ Started 2026-11-04 from the Supervisor talk (`AtheoryNexus_todo.md` E, "NEXT SES
 - **With Radio:** a finished Book's watches linger on the runner roster (InvSeal's invite watch) — Radio registers watches too.
 - Owner's look at Stuffmush (C** on a `?G=` page) and the 1U rack still owed.
 - **v1.1 = the music page on A (owner 2026-11-09).  `/Radio` is canonical** (= `/Desk?G=Radio`; Ground/Player renamed Radio).
-   Owner tried it: "done, is good".  NEXT, in order (§6): (2) friends' shelves + the Yay cell and the heist rules, (3) the Wikipedia
-    cell + an eye over every cell kind (glass_kinds.ts), (4) `/` and `/BigSoundland` point at `/Radio` — some day.  No Story on the
+   Owner tried it: "done, is good".  (2) and (3) BUILT 2026-11-09, incl. the minicell edge+quiet note and `/Cells` (§6).  Left: the owner's
+    look at the Yay cell + the minicells with many cells on a real page; (4) `/` and `/BigSoundland` point at `/Radio` — some day.  No Story on the
      page for v1.1: the Supervisor's Health upload is the report; Story+Supervisor synergy is later (§6 "Later").
 - **Radio as a Main — slice 1 written 2026-11-07 (§5)**: `/Desk?I=…&G=Player` stands A:Radio on Mundo with no Book; its
    arrival is Ground/Player's Arrive rows; the splash is ArriveSplash reading their fold.  `/` (BigSoundland + Sounditron) untouched.
@@ -207,7 +207,7 @@ Started 2026-11-04 from the Supervisor talk (`AtheoryNexus_todo.md` E, "NEXT SES
    blag's.  Now Heist_keep_take_go waits for a pick the source named, and the pulling branch runs the supersede too (a ▶ pressed early).
     Probably as old as the blag on /; Books MusuHeist/MusuHeard/MusuPool*/Heistation green after.
 
-**(3) Every cell kind** lives in `src/lib/O/glass_kinds.ts` (mainkey → Face component, 27 of them) and `glass_faces.ts` (FACE_MAINKEYS).
+**(3) Every cell kind** — **`/Cells` BUILT 2026-11-09** (src/routes/Cells): every face in GLASS_KINDS on a bare particle and a ghostless House, at minicell and main size, each behind a boundary — so their EMPTY states, and which can't stand alone (all 16 draw).  Seen in the eye.  Their full look needs /Radio.  The registry lives in `src/lib/O/glass_kinds.ts` (mainkey → Face component, 27 of them) and `glass_faces.ts` (FACE_MAINKEYS).
  Owner: "we must have all these Cells defined somewhere I can eye them all?" — a page (or a Book) that stands one of each, for a look; then
   "furthering their artifice" after 1.1.  Sounditron's left-overs to move out the same way as Page_* (§5 slice 3): Screen_decide, the
    supervise registrations, the wiki cell, the keeps' belly ladder, the Theirs trickle.
@@ -216,6 +216,22 @@ Started 2026-11-04 from the Supervisor talk (`AtheoryNexus_todo.md` E, "NEXT SES
  minicells get a bit numerous: the older or quieter ones (Wikipedia, Pooling) should shrink a bit more, and the minicells should sit
   ALONG THE EDGE of the big cell (the off-edge belly already perches them on its bulge — make that the resting layout too).  Cellui's
    satellite strip: `satellites` derive + `.cello-satellites` CSS.
+ **DONE 2026-11-09:** `QUIET` (Wikipedia, Pooling, Supervisor) wear `.cello-sat.quiet`, about 70% of a minicell, in all three layouts.  Along the
+  edge: `arc_nudge(i, n)` pulls each minicell toward the main's wall by the square of its distance from the strip's middle (`--nudge-x`,
+   or `--nudge-y` on a narrow page, where the strip is a row under the main), so a long strip follows the curve instead of a straight
+    column.  Seen in the eye with two minicells (wide and narrow), not yet with five.  "Older" is not done: nothing knows a cell's age yet.
+
+**Owner, later 2026-11-09 — fixed same day:**
+- **The hover glow** stayed where the minicell was before the edge arc moved it: app.css's global `button:hover` box-shadow.  Off for
+   `.cello-sat`, and the arc rides the button's own `translate` (not the inner wrapper), so the whole minicell moves.
+- **Swapping primacy orbits**: Cellui's `flight` bows each body sideways off its path (always turning the same way), so the two in a
+   swap pass on opposite sides and swing round each other; the one rising to main passes in front, with a little spin.  Seen landing
+    in the eye, never mid-flight (its shots are too slow) — the owner's eye is the test.
+- **"waiting on Vingas's music" stayed after Vingas came**: /Radio had no Sounditron beats, so the crossover was reached only per
+   landed chunk (never, when a friend's records were already warm) and `Radio_autopress` leans on Sounditron_* (absent).
+    `RadioPage_listen` on the pulse: playing on a stopgap ⇒ `Radio_crossover` each beat; off and nothing playable at first ⇒ the
+     first time a friend's track is playable, `Radio_go` (once a sitting, never after a play).  `Radio_crossover`'s latch now
+      re-arms when a friend's track opens (once a stopgap, not once a sitting).  Untested live.
 
 **(3) The cell inventory, by relevance (2026-11-09 — from who mints|casts each, Books aside):**
 - **In service on /Radio:** Radio · Door · Wikipedia · Yay · Pooling (≥1 friend) · Heist (a keep; its minicell is an icon now) · Link · PierView (both while focused).

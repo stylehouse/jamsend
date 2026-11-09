@@ -473,11 +473,11 @@ export const LANG_COMPILE = {
         //    eatfunc); region_path = snapshot of region_stack when the entry was recorded.
         //  elvisto: {method, target?} — the DEFERRED cross-ghost call; target only when literal.
         //  mint:    {mainkey} — where a particle's mainkey is FIRST minted (.i/.oai({Mainkey:…})).
-        //  proves:  {sentence, desc?} — a %see (the sworn claim) or, with desc:1, a %desc (the beat).
+        //  proves:  {sentence, desc?|sworn?} — a %see (an observation), with desc:1 a %desc (the beat), with sworn:1 a story_swear (the oath).
         const words: Array<{ def?: 1, call?: 1, region?: 1, controlflow?: 1, elvisto?: 1, mint?: 1, proves?: 1, probe?: 1, o_elvis?: string, kind?: string, sugar?: 1,
                              method?: string, label?: string, keyword?: string, title?: string,
                              via?: string, class?: string, magic?: 1, target?: string, mainkey?: string,
-                             sentence?: string, desc?: 1,
+                             sentence?: string, desc?: 1, sworn?: 1,
                              from?: number, to?: number, rel_from?: number, rel_to?: number, line?: number,
                              region_path?: string[] }> = []
 
@@ -704,6 +704,17 @@ export const LANG_COMPILE = {
         const MINT_RE    = /\.(?:i|oai)\(\{\s*([A-Z][A-Za-z]*)\s*:/g
         const SEE_RE     = /%see:'([^']*)'/g
         const DESC_RE    = /%desc:'([^']*)'/g
+        // m17 (2026-11-09, Lagoon_todo §0 THE OATH CONSTELLATION): the SWORN oath's site — `story_swear(w, 'sentence')`, the live
+        //  assertion idiom (%see only observes now).  A literal sentence only ('…' or "…"): a template or a variable is a sentence
+        //   this sweep cannot know, and the join says so by finding a declared oath with no site.
+        //  An escaped quote stays in the sentence (`people\'s`, unescaped on the way in), and a doc's own one-line swear WRAPPERS count
+        //   too — `let say = (s) => { this.story_swear(w, s) }` makes every `say('…')` in that doc a site (HeistTesting has two).
+        const SWEAR_LIT  = String.raw`\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")`
+        const SWEAR_WRAP = /\b(?:let|const)\s+(\w+)\s*=\s*\(\s*\w+\s*\)\s*=>\s*\{?\s*this\.story_swear\(/g
+        const swear_by   = ['story_swear\\(\\s*[\\w.]+\\s*,']
+        for (const m of doc.toString().matchAll(SWEAR_WRAP)) swear_by.push('\\b' + m[1] + '\\(')
+        const SWEAR_RE   = new RegExp('(?:' + swear_by.join('|') + ')' + SWEAR_LIT, 'g')
+        const unescape   = (t: string) => t.replace(/\\(.)/g, '$1')
         // m16 (IOexpr_todo §0 items 1–2, 2026-10-28): the .g SUGAR mints and probes too — `i %X`, `oai %X`, `roai %X` mint,
         //  `oa %X` probes (lowercase mainkeys included: %req, %see, %desc are real ones) — and MINT_RE alone saw none of it.
         //   Only in a stho doc (sthoParser), where the sugar is the language and not a comment's prose.  Raw `.oa({X` probes
@@ -770,6 +781,10 @@ export const LANG_COMPILE = {
                 if (seen_here.has(m[1])) continue
                 seen_here.add(m[1])
                 words.push({ proves: 1, sentence: m[1], from: dline.from + m.index!,
+                            to: dline.from + m.index! + m[0].length, line: ln } as any)
+            }
+            for (const m of text.matchAll(SWEAR_RE)) {
+                words.push({ proves: 1, sentence: unescape(m[1] ?? m[2]), sworn: 1, from: dline.from + m.index!,
                             to: dline.from + m.index! + m[0].length, line: ln } as any)
             }
             for (const m of text.matchAll(DESC_RE)) {

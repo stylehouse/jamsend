@@ -49,9 +49,7 @@ IMPORT()
     const LAGOON_DISPATCHED = /^(req_|e_|Run_A_|_)/                  // twin: ATLAS_DISPATCHED
     const SNAP_NAME_RE      = /^\d+\.snap$/                          // twin: Atlas.g's own
     const SEE_LINE_RE       = /^\s*see:([^,\n]+)/gm                  // twin: Atlas.g's own
-    // a Book toc's declared oath — `Assertion:<slug>,sentence:…` under its latch step (CLAUDE.md's
-    //  Story section).  The SLUG is what a `«sworn»` link cites, so that is what this captures.
-    const OATH_LINE_RE      = /^\s*Assertion:([a-z0-9-]+),/gm
+    // (OATH_LINE_RE retired 2026-11-09 — a Book toc's oaths are read by Lagoon_toc_oaths, both encodings)
 
 // Lagoon(A, w) — the do_fn.  A reader has no work of its own: every verb is called by a query (the CLI
 //  op, a Book, later the room).  So the drive only reports what it can see, which is also the liveness
@@ -907,7 +905,7 @@ async Lagoon_unproven(w, nav):
         let map = d.o({ Map: 1 })[0]
         if (!map) continue
         for (const p of map.o({ proves: 1 })) {
-            if (p.sc.desc) continue
+            if (p.sc.desc || p.sc.sworn) continue     // a sworn oath is joined by Lagoon_oath_join, not by snap lines
             let s = p.sc.sentence
             if (!s || s.indexOf(' ') < 0) continue
             total = total + 1
@@ -941,8 +939,8 @@ async Lagoon_oaths(w, nav):
         let text = await nav.read_file('wormhole/Story/' + b.name, 'toc.snap')
         if (!text) continue
         read = read + 1
-        for (const m of text.matchAll(OATH_LINE_RE)) {
-            if (!sworn_in[m[1]]) sworn_in[m[1]] = b.name
+        for (const ot of this.Lagoon_toc_oaths(text)) {
+            if (!sworn_in[ot.slug]) sworn_in[ot.slug] = b.name
         }
     }
     let book_links = 0
@@ -970,6 +968,169 @@ async Lagoon_oaths(w, nav):
     return { tocs_read: read, books: Object.keys(known_book).length,
              oaths: Object.keys(sworn_in).length,
              book_links, book_gone, sworn_links, sworn_ok, sworn_gone }
+
+// Lagoon_toc_oaths — a Book toc's declared oaths, each with the step it latches under.  Line-wise and both encodings: a plain
+//  `Assertion:<slug>,sentence:…` and the JSON line the encoder falls back to when a sentence holds a comma (OATH_LINE_RE saw
+//   only the first, so a comma'd oath was invisible to Lagoon_oaths until 2026-11-09).  A plain `step` is step 1.
+Lagoon_toc_oaths(text):
+    let out = []
+    let step = 0
+    for (const raw of text.split('\n')) {
+        let t = raw.trim()
+        if (!t) continue
+        if (t[0] === '{') {
+            let rec = null
+            try {
+                rec = JSON.parse(t)
+            } catch (e) {
+                rec = null
+            }
+            if (!rec) continue
+            if (rec.Assertion) {
+                out.push({ step: step, slug: String(rec.Assertion), sentence: String(rec.sentence ?? '') })
+            } else if (rec.step != null) {
+                step = Number(rec.step) || 1
+            }
+            continue
+        }
+        if (t === 'step' || t.startsWith('step,')) {
+            step = 1
+        } else if (t.startsWith('step=')) {
+            step = parseInt(t.slice(5)) || step
+        } else if (t.startsWith('Assertion:')) {
+            let cut = t.indexOf(',sentence:')
+            if (cut < 0) continue
+            out.push({ step: step, slug: t.slice(10, cut), sentence: t.slice(cut + 10) })
+        }
+    }
+    return out
+
+// Lagoon_oath_join — THE OATH CONSTELLATION (owner 2026-11-09, Lagoon_todo §0): every oath as ONE row joining its three
+//  sightings, which until now were three readers that never met —
+//    · the SITE        — Atlas's %proves,sworn (a `story_swear(w,'…')` call: doc, line, via — mapper m17);
+//    · the DECLARATION — each Book toc's `Assertion:<slug>,sentence:…` under its latch step;
+//    · the CITATION    — a doc's «slug» link (%link,kind:sworn).
+//  The SENTENCE is the join (Cred_assertion_gaps joins on it too); a slug is unique only per step, so a citation lands on every
+//   oath wearing that slug.  Three ways a row can be lopsided, and each is a different thing to go and look at:
+//    · site_only     — code that swears what no Book declares: a beat that never fired in a recorded run (or a Book not re-recorded);
+//    · declared_only — a toc that expects what no literal swear says: a template/variable sentence (honest), or a swear deleted
+//                       from code — which reds that Book by name on its next run;
+//    · cited_gone    — the «slug» citations Lagoon_oaths already reports.
+//  EXERCISE (the Electrode bridge, half built): a Book's site docs are its Testing ghosts, and every call those docs make to a
+//   method defined OUTSIDE a Testing doc is what the Book DECLARES it exercises.  That makes "which Books prove Heard_take" a
+//    lookup (`q` = a method name).  The MEASURED half — Electrode's tally over a Book's run — is owed; this is the static road.
+//  `q` narrows: a Book name, a method (exercised or via), a doc path fragment, or words of a sentence.  `k` caps the rows.
+async Lagoon_oath_join(w, nav, q, k):
+    let atlas = this.Lagoon_atlas()
+    if (!atlas) return { error: 'no A:Atlas standing — ghost_load Ghost/L/Atlas.g --stand=Atlas first' }
+    let books = await nav.dir_at('wormhole/Story')
+    if (!books) return { error: 'no wormhole/Story under this nav' }
+    await books.expand()
+    // the declarations, off every Book's toc
+    let decl = new Map()
+    let tocs = 0
+    for (const b of books.directories) {
+        let text = await nav.read_file('wormhole/Story/' + b.name, 'toc.snap')
+        if (!text) continue
+        tocs = tocs + 1
+        for (const ot of this.Lagoon_toc_oaths(text)) {
+            if (!ot.sentence) continue
+            if (!decl.has(ot.sentence)) decl.set(ot.sentence, [])
+            decl.get(ot.sentence).push({ book: b.name, step: ot.step, slug: ot.slug })
+        }
+    }
+    // the sites and citations, and a def index (method → its non-Testing doc) for the exercise hop
+    let sites = new Map()
+    let cites = new Map()
+    let home = new Map()
+    let calls_of = new Map()
+    let mapped = 0
+    for (const d of atlas.o({ Doc: 1 })) {
+        let map = d.o({ Map: 1 })[0]
+        if (!map) continue
+        mapped = mapped + 1
+        let path = d.sc.Doc
+        for (const p of map.o({ proves: 1, sworn: 1 })) {
+            let s = p.sc.sentence
+            if (!s) continue
+            if (!sites.has(s)) sites.set(s, [])
+            sites.get(s).push({ doc: path, line: p.sc.line, via: p.sc.via })
+        }
+        for (const l of map.o({ link: 1, kind: 'sworn' })) {
+            if (!cites.has(l.sc.target)) cites.set(l.sc.target, [])
+            cites.get(l.sc.target).push({ doc: path, line: l.sc.line })
+        }
+        if (d.sc.testing) {
+            // by the CALLING method: one Testing doc holds many Books (RaTesting), so a Book owns only its `<Book>_*` beats' calls
+            for (const c of map.o({ call: 1 })) {
+                if (!c.sc.method || !c.sc.via) continue
+                if (!calls_of.has(c.sc.via)) calls_of.set(c.sc.via, new Set())
+                calls_of.get(c.sc.via).add(c.sc.method)
+            }
+        } else {
+            for (const df of map.o({ def: 1 })) {
+                if (df.sc.method && !home.has(df.sc.method)) home.set(df.sc.method, path)
+            }
+        }
+    }
+    // a Book's exercise: what its own methods (`<Book>_*` — the drive, its beats, helpers and witness) call outside the Testing
+    //  docs.  The static road: a shared helper without the Book's prefix, a by-name dispatch or an elvisto is not seen; Electrode's
+    //   measured tally is the owed other half.
+    let exercise = new Map()
+    for (const b of decl.values()) {
+        for (const x of b) {
+            if (exercise.has(x.book)) continue
+            let pre = x.book + '_'
+            let ex = new Set()
+            for (const [via, set] of calls_of) {
+                if (!via.startsWith(pre) && via !== x.book) continue
+                for (const m of set) {
+                    if (home.has(m)) ex.add(m)
+                }
+            }
+            exercise.set(x.book, ex)
+        }
+    }
+    // one row per oath sentence
+    let rows = []
+    let tally = { oaths: 0, whole: 0, site_only: 0, declared_only: 0, cited: 0 }
+    let all = new Set([...decl.keys(), ...sites.keys()])
+    for (const s of all) {
+        let ds = decl.get(s) ?? []
+        let ss = sites.get(s) ?? []
+        let cited = []
+        let slugs = new Set(ds.map(x => x.slug))
+        for (const slug of slugs) {
+            for (const c of (cites.get(slug) ?? [])) cited.push(Object.assign({ slug: slug }, c))
+        }
+        let shape = ds.length && ss.length ? 'whole' : ss.length ? 'site_only' : 'declared_only'
+        tally.oaths = tally.oaths + 1
+        tally[shape] = tally[shape] + 1
+        if (cited.length) tally.cited = tally.cited + 1
+        rows.push({ sentence: s, shape: shape, sites: ss, books: ds, cited: cited })
+    }
+    // narrow by q — a method answers with the Books that exercise it, as well as the oaths that mention it
+    let ex_books = []
+    if (q) {
+        let ql = q.toLowerCase()
+        for (const [book, ex] of exercise) {
+            if (ex.has(q)) ex_books.push(book)
+        }
+        let hit_book = new Set(ex_books)
+        rows = rows.filter(r => r.sentence.toLowerCase().includes(ql)
+            || r.books.some(b => b.book === q || hit_book.has(b.book))
+            || r.sites.some(x => x.via === q || x.doc.includes(q)))
+    }
+    rows.sort((a, b) => (a.shape === b.shape ? 0 : a.shape === 'whole' ? 1 : b.shape === 'whole' ? -1 : a.shape < b.shape ? -1 : 1)
+        || String(a.books[0]?.book ?? '').localeCompare(String(b.books[0]?.book ?? '')))
+    let shown = k ? rows.slice(0, k) : rows
+    let out = { tocs_read: tocs, docs_mapped: mapped, tally: tally, rows_total: rows.length, rows: shown }
+    if (q) {
+        out.q = q
+        out.exercised_by = ex_books.sort()
+        if (home.has(q)) out.home = home.get(q)
+    }
+    return out
 //#endregion
 
 //#region the join — declared (Atlas) vs measured (Electrode); moved from Electrode 2026-09-08
@@ -2371,11 +2532,15 @@ async Lagoon_verb(w, a):
     if (verb === 'rotwork') return this.Lagoon_rotwork(lw, k ?? 12)
     if (verb === 'figurines') return this.Lagoon_figurines(lw, k ?? 40)
     if (verb === 'errands') return this.Lagoon_errands(lw, k ?? 40)
+    if (verb === 'oath') {
+        let onav = this.Atlas_nav ? this.Atlas_nav() : null
+        return onav ? await this.Lagoon_oath_join(lw, onav, arg, k ?? 40) : { error: 'no nav — oath reads wormhole/Story/*/toc.snap off disk' }
+    }
     if (verb === 'oaths') {
         let onav = this.Atlas_nav ? this.Atlas_nav() : null
         return onav ? await this.Lagoon_oaths(lw, onav) : { error: 'no nav — oaths reads wormhole/Story/*/toc.snap off disk' }
     }
-    return { error: 'lagoon: unknown verb ' + verb + ' — seek|beads|defs|families|mentions|rot|rotwork|callers|lint|join|figurines|errands|oaths' }
+    return { error: 'lagoon: unknown verb ' + verb + ' — seek|beads|defs|families|mentions|rot|rotwork|callers|lint|join|figurines|errands|oaths|oath' }
 
 async Lagoon_verb_callers(w, a):
     let c = this.Lagoon_verb_census()

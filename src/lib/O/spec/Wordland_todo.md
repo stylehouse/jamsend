@@ -14,18 +14,10 @@
 
 ## 0. What to get on with next
 
-**⚠ RED, found 2026-11-09 (unattributed):** AtlasStaple (7 oaths ABSENT from step 2) and LagoonStaple (3) — Atlas maps NOTHING from its
- fixture corpus.  Runner log: `🗺 atlas dige index — 0 docs`.  Lead: the Books set `aw.c.roots = ['Ghost/L/test_corpus']` and
-  `Atlas_diges` asks `/__atlas/dige?roots=Ghost/L/test_corpus`, but `atlas_diges` (src/lib/server/dige.ts) refuses any root that
-   isn't ONE plain segment (`^[A-Za-z0-9_-]+$`), so it answers `docs:0` and Atlas takes the empty index as the truth.  Both were green
-    2026-11-03 and neither Atlas.g nor dige.ts changed since — so what moved is upstream (the runner's boot/Grounds, or its Dexie
-     supermap: "adopted 0 docs … 692 moved since").  Not the everything.js sublation (neither Book touches the map).
- **Half fixed 2026-11-09:** `atlas_diges` now takes nested roots (plain segments joined by '/'), the corpus serves `docs:1`, and
-  AtlasStaple's step 2 oaths came back.  STILL RED: AtlasStaple step 5 (a file written / changed / deleted after the roster isn't seen by
-   the next refresh) and LagoonStaple 3·5·6 (`seek defs:0` — the reader asks before the corpus is mapped).  During those runs no
-    mapping is logged; the supermap adopts the doc only AFTER the run.  Next look: Atlas_refresh's inline map with the Book's `w.c.roots`
-     + `Atlas_cache_adopt` now that `dige_of` is non-empty (before, an EMPTY index meant every doc fell through to its own read).
-
+**✓ The 2026-11-09 Atlas red is CLOSED.** AtlasStaple (6/6) and LagoonStaple (8/8) are green again.  Two causes: `atlas_diges`
+ (src/lib/server/dige.ts) refused a nested root such as `Ghost/L/test_corpus`, so it answered `docs:0` — fixed to take plain segments
+  joined by '/'; and the remaining reds (AtlasStaple step 5, LagoonStaple 3·5·6) were a STALE RUNNER TAB — `--reload` turned them green
+   with no code change.  A red after a server-side fix: reload the runner before reading the code.
 
 1. **Strings and groups (§1.2–1.3)**: the features that make Wordland more than a search box.  Neither is built.
 2. **The write seat** (`Editron.md` §8.2 A): a lease at the relay, wrested by the active tab, with `Lies_holds_seat`

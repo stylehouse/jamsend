@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '8b408c09cfcff2f2~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '6629d185b3c2e5df~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -1157,6 +1157,7 @@ Radio_open(radio, rec) {
         radio.sc.by_name = this.Radio_friendly(w, src)   // the friendly to SHOW ("from Lefto"), not a hex pub
         delete radio.sc.solo                             // a friend's track is playing — we are not alone any more
         delete radio.sc.solo_by
+        radio.c.crossed = 0                              // …so a later stopgap (they drop, we fill with ours) may cross in again
     } else {
         delete radio.sc.by
         delete radio.sc.by_name
@@ -3035,7 +3036,8 @@ Radio_autopress(w, radio) {
 //     thing they actually opened the app for.  Waiting was right for every later track and wrong for
 //      the first one, because the first one is the moment the app becomes what it is for.
 //  FOUR GATES, and every one of them is what keeps this from being the track-cutting bug it replaces:
-//   • ONCE A SITTING (`c.crossed`, runtime-only so a reload re-arms) — this is an arrival, not a policy.
+//   • ONCE A STOPGAP (`c.crossed`, runtime-only; re-armed when a friend's track opens, so each own-music stretch crosses at most
+//      once — 2026-11-09, it was once a sitting and a friend who dropped and came back never crossed in).
 //   • ONLY OUT OF SOLO (`sc.solo` is set ⇒ we are on our own shelf; Radio_open deletes it the instant
 //      a friend's track opens).  Cutting a friend's track to start another friend's track is just
 //       skipping someone's music at random, which nobody asked for.

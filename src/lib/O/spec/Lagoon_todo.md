@@ -21,7 +21,31 @@ Home of: the **reader layer** (every answer asked of a census, in one place) and
  Owed: one particle per oath joining all three (site · Book · step · docs citing it), plus the bridge to the code it EXERCISES (Electrode's
   Flow over a Book's run) — so "which Books prove Heard_take" is a lookup.  Then the picture: when the whole program is drawn as a
    sprawling generative spaceship (the glass over the map), the oaths are a SUBFRAME — each Book a frame of struts to the methods it
-    exercises and the sentences it swears.  Wants the AtlasStaple/LagoonStaple reds fixed first (Wordland_todo §0).
+    exercises and the sentences it swears.
+
+**BUILT 2026-11-09 — the join, as a reader.**
+- **The site was missing.**  `%proves` held only `%see`/`%desc` sentences; no `story_swear` call was ever mapped.  The collector
+   (`src/lib/O/lang/compile.ts`, `ATLAS_MAPPER` m18) now makes `%proves,sentence,sworn,via` for a literal swear.  An escaped quote
+    stays in the sentence, and a doc's one-line wrapper (`let say = (s) => { this.story_swear(w, s) }`) makes its calls sites too.
+     A template or variable sentence is not guessed.
+- **`Lagoon_oath_join(w, nav, q, k)`** (Lagoon.g) gives one row per sentence: its sites, its Books with step and slug, and the
+   docs citing it.  The sentence is the join, as in `Cred_assertion_gaps`.  `Lagoon_toc_oaths` reads a toc's Assertion lines in
+    both encodings; the old `OATH_LINE_RE` missed the JSON line a comma'd sentence becomes, and `Lagoon_oaths` now uses the parser.
+- **Exercise, the static half of the Electrode bridge:** a Book exercises what its own `<Book>_*` methods call outside the Testing
+   docs.  So `runner_ask lagoon oath Heard_take` answers "exercised by MusuBuddy MusuHandoff MusuMagnet MusuPoolRadio".  It does
+    not see `top.X(` calls (CALL_RE takes `this`/`H` receivers only — so `Atlas_refresh` shows no Books), shared helpers without
+     the Book prefix, by-name dispatch or elvisto.  The MEASURED half (Electrode armed over a Book's run) is owed.
+- **CLI:** `runner_ask lagoon oath [q] [--k=N]` — ● whole · ◐ site only · ○ declared only.  `q` is a Book, a method, a doc
+   fragment or words of a sentence.  Gate: `scripts/OathJoin.spec.ts` (4 tests: the collector, the toc parser, the join's
+    shapes, exercise not leaking to a neighbour Book in the same doc).
+- **First live reading (whole tree, 699 docs, 204 tocs):** 656 oaths — 596 whole · 56 site only · 4 declared only · 4 cited.
+   The 4 declared-only are AtheStoryInStory's template sentence, which is honest.  The 56 site-only are Books whose tocs never
+    declared their swears: SwarmTesting 23, HeistTesting 17, VytoTesting 10 (VytoOrchestra, VytoMemo, VytoPosed), InvFerry 4,
+     ErrchannelTesting 4 (SuperCull).  Each is a Book that would not red if its swear stopped firing — a re-record each, attended.
+
+**Next:** (a) the 56 site-only oaths → declare them (record or accept per Book, owner-attended); (b) the measured exercise
+ (Electrode over a Book run, keyed by Book); (c) the subframe picture — a face over `Lagoon_oath_join` (Book frames, struts to
+  methods and sentences), which wants the spaceship glass first; (d) maybe `top.`/`(top as any).` receivers in CALL_GAP_RE.
 
 
 ### ☀ 2026-09-09 EVENING — the day lined up, and where it is going.  READ THIS FIRST.

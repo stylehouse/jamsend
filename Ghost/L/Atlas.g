@@ -131,7 +131,11 @@ IMPORT()
     //       Bumped so every cached row re-derives with the new kinds.
     //     m16 (2026-10-28): the .g sugar mints (`i|oai|roai %X` → %mint,sugar) and probes (`oa %X`, `.oa({X` → %probe),
     //      %o_elvis:<type> per site a w method opens, and kind: on every %def (e|verbs|req|recipe|w|helper) — IOexpr_todo §0.
-    const ATLAS_MAPPER = 'm16'
+    //     m17 (2026-11-09): the SWORN oath's site — `story_swear(w, 'sentence')` → %proves,sentence,sworn,via (Lagoon_todo §0, the
+    //      oath constellation).  A literal sentence only; a template swear is joined as declared-without-site.
+    //     m18 (the same day): an escaped quote no longer cuts a sentence (`people\'s`), and a doc's one-line swear wrapper
+    //      (`let say = (s) => { this.story_swear(w, s) }`) makes its calls sites too — 13 declared-only oaths were these two.
+    const ATLAS_MAPPER = 'm18'
     // ATLAS_BUDGET — docs mapped per pass.  A %Map build is a real parse (the whole-doc tsstho tree
     //  walk on .svelte), so this is the Stemdex's "polite pass" idea: converge over passes, never thump.
     // ATLAS_SLICE_MS — THE POLITENESS BOUND, and it is a TIME not a count (2026-09-08).  The count-only
