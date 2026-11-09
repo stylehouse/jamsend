@@ -7,3 +7,4 @@ Ground:Hacky/Land,desc:Ground/Land built to be measured — the caller survives 
   Load:Ghost/L/Workshop.g
   Load:Ghost/Play/Garden.g
   Load:Ghost/Play/Pond.g
+  Load:Ghost/L/LandPage.g

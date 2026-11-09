@@ -13,6 +13,11 @@ Home of: the **reader layer** (every answer asked of a census, in one place) and
 
 ## 0. What to get on with next
 
+**✓ Declared vs measured, per Book (2026-11-09):** `lagoon join --book=<Book>` joins Atlas's `%call` rows with that Book's KEPT
+ Exercise (Electrode_todo §0) — coverage of declared paths, never-ran, undeclared.  /Desk?G=Land's Exercise list presses into it.
+  Its "never ran" still includes calls made inside closures the machinery runs (`w oai %req…` bodies — Atlas → Atlas_pass): that is
+   the call-site-id work (Electrode_todo §0 queue 1), not a reader bug.
+
 **THE OATH CONSTELLATION (owner 2026-11-09, Atheory_design §0.5 "Knowing ↔ Proving"): "we can locate the oaths right?" — yes, three ways
  already, never yet joined into one thing you can look at:**
 - the SITE — Atlas's `%Map` holds a `%proves,sentence,line,via` row per `story_swear` call (via = the enclosing def);

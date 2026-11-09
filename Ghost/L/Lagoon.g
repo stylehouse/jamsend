@@ -94,6 +94,11 @@ Lagoon(A, w):
 //   for runtime objects), set by whoever stands the world.  Absent — a CLI-stood Lagoon with no room —
 //    it falls back to `this`, which is the old behaviour and still right when there is no room to join.
 Lagoon_plan(w):
+    // a room that draws the reader's answers itself (the land page, LandFace) stands Lagoon faceless
+    if (w.c.faceless) {
+        w.c.faced = 1
+        return
+    }
     let home = w.c.face_on ?? this
     let uis = this.oai_enroll(home, { watched: 'UIs' })
     uis.oai({ UI: 'Lagoon' }, { component: Lagui })
@@ -1150,6 +1155,57 @@ Lagoon_join(w, k):
     let top = this.top_House()
     let T = top.c.electrode
     if (!T) return { error: 'no electrode tally — ghost_load Ghost/L/Electrode.g --stand=Electrode and arm it' }
+    let measured = new Map()
+    for (const row of T.tally.values()) {
+        if (!row.from) continue
+        let m = measured.get(row.from)
+        if (!m) {
+            m = new Map()
+            measured.set(row.from, m)
+        }
+        m.set(row.to, (m.get(row.to) || 0) + row.n)
+    }
+    return this.Lagoon_join_measured(atlas, measured, k)
+
+// Lagoon_join_exercise — the same join with a Book's KEPT Exercise as the measured side (wormhole/Story/<Book>/Exercise, written by
+//  Electrode_exercise after a flavoured run — runner_sweep --exercise): what that Book's run called, against what the code declares.
+//   Exercise keeps no counts, so every measured pair weighs 1; a flow with no caller (the from-nobody edges) joins nothing.
+async Lagoon_join_exercise(w, book, k):
+    let atlas = this.Lagoon_atlas()
+    if (!atlas) return { error: 'no A:Atlas standing — ghost_load Ghost/L/Atlas.g --stand=Atlas first' }
+    let nav = this.Atlas_nav ? this.Atlas_nav() : null
+    if (!nav) return { error: 'no nav — this tab reads no repo' }
+    let text = await nav.read_file('wormhole/Story/' + book + '/Exercise', 'toc.snap')
+    if (!text) return { error: 'no Exercise kept for ' + book + ' — runner_sweep --exercise ' + book }
+    let measured = new Map()
+    let flows = 0
+    let callerless = 0
+    for (const line of String(text).split('\n')) {
+        let m = /^\s+Flow,of:([^,]+)(?:,from:([^,]+))?\s*$/.exec(line)
+        if (!m) continue
+        flows = flows + 1
+        if (!m[2]) {
+            callerless = callerless + 1
+            continue
+        }
+        let tos = measured.get(m[2])
+        if (!tos) {
+            tos = new Map()
+            measured.set(m[2], tos)
+        }
+        tos.set(m[1], 1)
+    }
+    // every Atlas def is in the universe: this tab's ghost bag is not the runner's that measured the Book
+    let out = this.Lagoon_join_measured(atlas, measured, k, 1)
+    out.book = book
+    out.flows = flows
+    out.callerless = callerless
+    return out
+
+// Lagoon_join_measured — the join proper: measured is Map<from, Map<to, n>>.  every: judge every def Atlas holds, not only what this
+//  tab's tap can see (a kept Exercise was measured on another tab)
+Lagoon_join_measured(atlas, measured, k, every):
+    let top = this.top_House()
     let bag = top.ghosts || {}
     let seeable = new Set(Object.keys(bag).filter(n => typeof bag[n] === 'function'))
     let defs = new Set()
@@ -1158,8 +1214,10 @@ Lagoon_join(w, k):
     for (const doc of atlas.o({ Doc: 1 })) {
         let map = doc.o({ Map: 1 })[0]
         if (!map) continue
+        // every: a ghost lives in a .g or an eatfunc'd .svelte; a .ts holds classes (Housing's o/main/top_House) the tap never coats
+        let ghostly = !/\.ts$/.test(String(doc.sc.Doc))
         for (const d of map.o({ def: 1 })) {
-            if (!seeable.has(d.sc.method)) continue
+            if (every ? !ghostly : !seeable.has(d.sc.method)) continue
             defs.add(d.sc.method)
             if (!docs_of.has(d.sc.method)) docs_of.set(d.sc.method, doc.sc.Doc)
         }
@@ -1172,16 +1230,6 @@ Lagoon_join(w, k):
             }
             set.add(c.sc.method)
         }
-    }
-    let measured = new Map()
-    for (const row of T.tally.values()) {
-        if (!row.from) continue
-        let m = measured.get(row.from)
-        if (!m) {
-            m = new Map()
-            measured.set(row.from, m)
-        }
-        m.set(row.to, (m.get(row.to) || 0) + row.n)
     }
     let ran = 0
     let pairs_declared = 0
@@ -2528,6 +2576,7 @@ async Lagoon_verb(w, a):
     if (verb === 'rot') return this.Lagoon_prose_rot(lw, k ?? 60)
     if (verb === 'callers') return { name: arg, callers: this.Lagoon_callers(lw, arg) }
     if (verb === 'lint') return this.Lagoon_lint(lw)
+    if (verb === 'join' && a.book) return await this.Lagoon_join_exercise(lw, String(a.book), k ?? 40)
     if (verb === 'join') return this.Lagoon_join(lw, k ?? 40)
     if (verb === 'rotwork') return this.Lagoon_rotwork(lw, k ?? 12)
     if (verb === 'figurines') return this.Lagoon_figurines(lw, k ?? 40)

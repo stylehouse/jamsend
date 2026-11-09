@@ -1861,12 +1861,38 @@
             w.c.inbound_batch = []
             w.c.inbound_draining = 0   // cleared right after the snapshot (sync, atomic) so a frame arriving
                                        //  DURING the drain lands in a fresh batch and queues its own post_do
+            // WANTS ARE A LANE TOO (2026-11-09, the daemon wedged 130s+ in one hold): a listener re-asks a page every
+            //  ~4s while it waits, so a slow serve breeds wants — one express batch of a friend's repli_wants at
+            //   ~1s each held the mutex for minutes while the next batch grew behind it.  Repeats of one page
+            //    (from, id, stream, from_idx) fold to the newest — a re-ask makes the older copy redundant (repli_want
+            //     is ephemeral, nothing acks it) — and wants drain a bounded slice like chunk pages.
             const express: any[] = []
             const bulk: any[] = []
-            for (const f of batch) (((f as any)?.header?.type === 'repli_page') ? bulk : express).push(f)
+            const wants: any[] = []
+            const want_at = new Map<string, number>()
+            let folded = 0
+            for (const f of batch) {
+                const h = (f as any)?.header
+                if (h?.type === 'repli_page') { bulk.push(f); continue }
+                if (h?.type === 'repli_want') {
+                    const k = `${h.from}|${h.id}|${h.stream}|${h.from_idx}`
+                    const at = want_at.get(k)
+                    if (at != null) { wants[at] = null; folded++ }
+                    want_at.set(k, wants.length)
+                    wants.push(f)
+                    continue
+                }
+                express.push(f)
+            }
+            const live_wants = wants.filter(f => f)
+            if (folded && (!w.c.inbound_fold_said || Date.now() - w.c.inbound_fold_said > 30000)) {
+                w.c.inbound_fold_said = Date.now()
+                console.log(`🛰 inbound: folded ${folded} repeated repli_want(s), ${live_wants.length} distinct waiting`)
+            }
             const BULK_SLICE = (w.c as any).inbound_bulk_slice == null ? 24 : +(w.c as any).inbound_bulk_slice
-            const work = express.concat(bulk.slice(0, BULK_SLICE))
-            const rest = bulk.slice(BULK_SLICE)
+            const WANT_SLICE = (w.c as any).inbound_want_slice == null ? 12 : +(w.c as any).inbound_want_slice
+            const work = express.concat(live_wants.slice(0, WANT_SLICE), bulk.slice(0, BULK_SLICE))
+            const rest = live_wants.slice(WANT_SLICE).concat(bulk.slice(BULK_SLICE))
             if (rest.length) {
                 w.c.inbound_batch = rest.concat((w.c.inbound_batch ?? []) as any[])
                 w.c.inbound_draining = 1

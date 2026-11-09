@@ -70,6 +70,8 @@ export function wafts_parse(text) {
             if (r.kv.FromWhat) node.push('FromWhat:' + r.kv.FromWhat)
             if (r.kv.ground) node.push('Ground:' + r.kv.ground)
             for (const s of (r.kv.stands ? r.kv.stands.split('|') : [])) node.push('Stands:' + s)
+            if (r.kv.main) node.push('Main:' + r.kv.main)
+            if (r.kv.role) node.push('Role:' + r.kv.role)
             if (DERIVED_WHATS.includes(r.head)) { stack.push({ depth: r.depth, node: [] }); continue }
             ;(parent ?? tree).push(node)
             stack.push({ depth: r.depth, node })
@@ -160,10 +162,10 @@ export async function wafts_build(W, host) {
             const from = (typeof rest_[0] === 'string' && rest_[0].startsWith('FromWhat:')) ? rest_.shift().slice(9) : null
             const m = ground_marks(node)
             if (/,/.test(desc || '') || /,/.test(head)) problems.push(`${name}: comma in ${head}`)
-            lines.push(`${pad}${head}${desc ? ',desc:' + desc : ''}${from ? ',FromWhat:' + from : ''}${m.ground ? ',ground:' + m.ground : ''}${m.stands.length ? ',stands:' + m.stands.join('|') : ''}`)
+            lines.push(`${pad}${head}${desc ? ',desc:' + desc : ''}${from ? ',FromWhat:' + from : ''}${m.ground ? ',ground:' + m.ground : ''}${m.stands.length ? ',stands:' + m.stands.join('|') : ''}${m.main ? ',main:' + m.main : ''}${m.role ? ',role:' + m.role : ''}`)
             for (const c of rest_) {
                 if (Array.isArray(c)) { await emit(c, depth + 1); continue }
-                if (/^(Ground|Stands):/.test(c)) continue
+                if (/^(Ground|Stands|Main|Role):/.test(c)) continue
                 if (c.startsWith('Doc:')) {
                     lastDoc = c.slice(4)
                     if (!(await host.exists(lastDoc))) problems.push(`${name}: missing ${lastDoc}`)
@@ -186,7 +188,8 @@ export async function wafts_build(W, host) {
 
 // ── GROUNDS ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 //  A Ground is a list of .g a tab loads to stand some work (spec/Aprac_todo.md §0.5).  It is not authored: Waft:Everything's
-//   area Whats wear 'Ground:<Name>' (and 'Stands:<Name>' when it needs a Ground it doesn't cite), an inner What in an area
+//   area Whats wear 'Ground:<Name>' (and 'Stands:<Name>' when it needs a Ground it doesn't cite; 'Main:<A>' + 'Role:<role>' when the
+//    Ground is also a page, /Desk?G=<Name> — they ride into its toc and never into a twin), an inner What in an area
 //    Waft may wear its own, and this derives the bundles.  No diges in a Ground — Credulate keeps each .g's dige.
 //  Rules: a .g's HOME is the first Ground that cites it (map order); a Ground that cites another's .g stands on that one;
 //   a *Testing.g (or any .g under a What:the tests) goes to <Name>Testing, which stands on <Name>; Core is under every Ground and is never written as a stand.
@@ -194,13 +197,15 @@ export async function wafts_build(W, host) {
 //   from it with no wormhole, and a prod tab with no wormhole tree reads it too).
 export const GROUND_CORE     = 'Core'
 export const GROUND_MANIFEST = 'src/lib/A/grounds.gen.js'
-const MARK_RE = /^(Doc:|Point:|FromWhat:|Ground:|Stands:)/
+const MARK_RE = /^(Doc:|Point:|FromWhat:|Ground:|Stands:|Main:|Role:)/
 
 export function ground_marks(node) {
-    const m = { ground: null, stands: [] }
+    const m = { ground: null, stands: [], main: null, role: null }
     for (const c of node.slice(1)) {
         if (typeof c !== 'string') continue
         if (c.startsWith('Ground:')) m.ground = c.slice(7)
+        else if (c.startsWith('Main:')) m.main = c.slice(5)
+        else if (c.startsWith('Role:')) m.role = c.slice(5)
         else if (c.startsWith('Stands:')) m.stands.push(c.slice(7))
     }
     return m
@@ -241,6 +246,9 @@ export function grounds_derive(W, files, problems) {
         top.from = name
         top.desc = wdesc
         for (const s of area.stands) top.stands.add(s)
+        // a Ground that is also a PAGE (/Desk?G=<Name>): the area What's main:/role: tags say which A the page runs from and as what
+        if (area.main) top.main = area.main
+        if (area.role) top.role = area.role
         const walk = (node, ground, tests) => {
             const m = ground_marks(node)
             tests = tests || node[0] === 'What:the tests'
@@ -278,6 +286,8 @@ export function grounds_derive(W, files, problems) {
 export function ground_toc(g) {
     const lines = [`Ground:${g.name}${g.desc ? ',desc:' + g.desc : ''}${g.of ? ',FromWhat:Ground:' + g.of : g.from ? ',FromWhat:Waft:' + g.from : ''}`]
     if (g.flavour) lines.push(`  Flavour:${g.flavour}`)
+    if (g.main) lines.push(`  Main:${g.main}`)
+    if (g.role) lines.push(`  Role:${g.role}`)
     for (const s of g.stands) lines.push(`  Stands:${s}`)
     for (const p of g.load) lines.push(`  Load:${p}`)
     for (const p of g.beside) lines.push(`  Beside:${p}`)

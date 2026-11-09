@@ -1316,7 +1316,7 @@
             if (I) page.sc.I = I
             for (const m of top.o({ Main: 1 }) as TheC[]) page.oai({ Main: String(m.sc.Main) })
             // a player boots the runner machine (Otro: humdinger, no seat) — the role it boots as, not the role it is
-            if ((role === 'player' ? 'runner' : role) !== H.c.boot_role) console.warn(`⚠ Ground/${G} says Role:${role} but the tab booted as ${H.c.boot_role ?? 'nothing'} — a role can't change after boot`)
+            if (role !== 'hacker' && (role === 'player' ? 'runner' : role) !== H.c.boot_role) console.warn(`⚠ Ground/${G} says Role:${role} but the tab booted as ${H.c.boot_role ?? 'nothing'} — a role can't change after boot`)
             console.log(`⛰ page stands on Ground/${G} as ${role}`)
             // the Creduler holds until it can read this Ground's Spine (LiesLies Creduler_ghosts) — wake it now it can
             const lies_w = H.o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] as TheC | undefined

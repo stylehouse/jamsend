@@ -17,7 +17,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '43e8fd967a41b78a~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '957edd1cbd78d527~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -2100,6 +2100,7 @@ async Swarm_arm(w) {
         if (frame.header.type === 'ive_got') this.Swarm_ive_got(w2, ident, frame.swarm)
         if (frame.header.type === 'swarm_hi') this.Swarm_heard_hi(w2, ident, frame)
         if (frame.header.type === 'suggest') this.Swarm_suggested(w2, ident, frame.swarm)
+        if (frame.header.type === 'listened') this.Swarm_listened(w2, ident, frame.swarm)
         if (frame.header.type === 'borrow') this.Swarm_borrow_heard(w2, ident, frame.swarm, frame.header.from).catch((er) => console.log('⨳ borrow threw —', er))
         if (frame.header.type === 'seat_lost') this.Swarm_seat_lost(w2, ident, frame.swarm, frame.header.from)
         if (frame.header.type === 'borrow_give') this.Swarm_borrow_given(w2, ident, frame.swarm).catch((er) => console.log('⨳ borrow_give threw —', er))
@@ -2336,7 +2337,7 @@ async Swarm_arm(w) {
     // …AND `heard` (2026-10-04, Lump's ♥s that Inko never hauled): the heard-Mag mirror mile (Heard_gossip_beat) sends
     //  over this road and Swarm_heard_mirror was wired in the funnel above, but the kind was never armed here — every
     //   sibling's heard snap died on arrival, so no Cave ever saw its Captain's hearts.  Same shape as reach, above.
-    for (const kind of ['pier_hello', 'pier_accept', 'pier_confirm', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got', 'repli_ready', 'charter', 'roster', 'crew', 'ferry', 'ferry_want', 'ferry_cancel', 'ferry_got', 'ferry_held', 'reach', 'reach_done', 'borrow', 'borrow_give', 'seat_lost', 'heard']) w.c.on[kind] = hear
+    for (const kind of ['pier_hello', 'pier_accept', 'pier_confirm', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got', 'repli_ready', 'charter', 'roster', 'crew', 'ferry', 'ferry_want', 'ferry_cancel', 'ferry_got', 'ferry_held', 'reach', 'reach_done', 'borrow', 'borrow_give', 'seat_lost', 'heard', 'listened']) w.c.on[kind] = hear
 
 },
 // Swarm_voucher_ok — is this voucher a valid proof the sealed friend `from` sent the frame?
@@ -4967,6 +4968,19 @@ Swarm_suggest_resend(w, ident, prepub) {
         if (this.Swarm_suggest_send(w, ident, String(prepub), sug)) sent = sent + 1
     }
     return sent
+
+},
+// hear that a friend started one of our tracks (Radio.g, THE LISTENERS' CURSOR): sealed friends only — a stranger's is a
+//  %rebuff — and it lands only where the cursor is on (Stoker_listened)
+Swarm_listened(w, ident, frame) {
+    let from = frame.page?.prepub
+    let pier = from ? this.Swarm_peering(ident)?.o({ Pier: 1, pub: String(from) })[0] : null
+    if (!pier) {
+        this.Swarm_rebuff(ident, 'listened_stranger', from)
+        return
+    }
+    if (!frame.id || typeof this.Stoker_listened !== 'function') return
+    this.Stoker_listened(String(from), String(frame.id))
 
 },
 // hear a suggestion: sealed friends only (a stranger's is a %rebuff, nothing lands).  Mint

@@ -14,6 +14,47 @@
 
 ## 0. What to get on with next
 
+**✓ /Desk?G=Land — the land as a page (2026-11-09).**  Waft:Everything's land What wears `main:Land,role:hacker`; wafts_keep carries
+ those into the derived Ground/Land as `Main:Land` + `Role:hacker` (any area may: a Ground that is also a page).  Auto stands A:Land on
+  Mundo; its think (Ghost/L/LandPage.g) loads Ground/Land with its Glass, stands Atlas · Electrode · Lagoon on the top House (Lagoon's face
+   on the page), and says the land as rows — `%Census:Atlas,docs,mapped` · `%Census:Electrode,armed?,flavour?` · `%Census:Lagoon` ·
+    `%Exercise:<Book>,flows`.  The face (L/LandFace.svelte) draws them and holds a hole for `:verb args` through Verb_run, so a
+     writing verb is refused (role hacker).  Seen in the eye: `:verbs` and `:electrode top` answer; folderless, Atlas says why it waits.
+  TWO ROOMS, ONE LAND: /BigWordland (the Hackarium Book) has the docks, Langui and the cave — for READING code; /Desk?G=Land has no
+   Book under it — the place for the land's ORCHESTRATION (Electrode_todo §0 PARKED: build the flavour, arm, flavour on/off, prune twins).
+  ⚠ vite does not watch wormhole/: a changed Ground toc reaches a FOLDERLESS page (the shipped copy) only after a dev-server restart.
+  Each Exercise Book presses into `:lagoon join --book=X` (declared vs measured — Lagoon_todo §0).
+  ⚠ THE PAGE HAS NO RELAY CHANNEL (role hacker), so it cannot yet orchestrate a RUNNER — arm it, flavour it, sweep with --exercise.
+   Its verbs act on THIS tab, which runs no Book.  Orchestration needs either a channel for a hacker page or the editor terminal.
+  **ANSWERED 2026-11-09 — REBUILD THE FACE, REUSE THE MODULES; DON'T STAND Lies+Lang ON THE PAGE.**  The owner's want: *"multiple
+   codemirrors and multiple EditorStates, arbitrarily many, yet aligned by whatever, arranged however."*  Lang|Langui is built the
+    other way: Langui is ONE EditorView swapping per-path EditorStates (its header, "Option B"), Lang has ONE foreground
+     (`w.c.active_dock_path`, 34 sites in Lang.svelte, more in LangLang/LangHold/LiesCurse…), and `dock.c.view` is singular — so
+      two panes of one doc can't even be said.  Standing A:Lies/A:Lang here would also bring the Book-shaped req stack, the
+       editor-only Keep and the `hacker:1` recipe stamps the Ground is meant to replace (LiesLang_todo §11 "the recipe goes").
+   What IS reusable, as plain modules: `$lib/O/lang/lang.ts` (`lang(name)`, `lang_for_path` — grammar + a hue per mount),
+    `codemirror`'s basicSetup, `lang/compile.ts` (the translator — and Atlas already ran it into a `%Map` per doc, so Points
+     and def lines come from the census, not LangGraft), and Atlas's nav for text.  **BUILT, slice 1:** `:pane open|close|align|arrange`
+      (`verbs_Land`, a split read/land verb) — `%Pane:<n>,doc,line,at?` and `%Layout:grid|row|column` on w:Land, text on the row's
+       .c; L/LandPane.svelte is one EditorView+EditorState per pane, read-only, scrolling its row's line to its top.  `open` takes a
+        path[:line] or a method (Atlas finds its def, a .g first); `align <method>` moves every pane holding it to that def — panes
+         line up on a KEY.  Proven: runner (open by method/path, missing named, align lined 1 of 3, arrange row) and the eye (3 panes,
+          `Target` at lines 121 and 301 both at the pane tops).  Owed on the road:
+   - **Alignment beyond the top line**: spacer block-widgets so several keys line up at once down two panes (what @codemirror/merge
+      does for diff chunks — not installed; ours would key on Map rows: defs, calls, a Flow's caller/callee).  First press: a
+       join's "never ran" pair opens caller + callee panes aligned on the call.
+   - **Writing**: the panes are read-only until the page holds `%Seat:editor` — **the write seat and the relay channel ARE one
+      decision**: a seat is held on a relay socket (relay.ts `seat`), and the same channel is what lets this page orchestrate a
+       runner (arm, flavour, sweep).  Give the Land page a channel (hacker binds without editor duties, as BigWordland's room does)
+        before either.  Compile then rides LocalGen-in-node (LiesLang_todo §11 step 2 re-aimed), not Lang's Codebit.
+   - **Arrange however**: `%Layout` is three CSS modes; draggable/resizable panes would keep their sizes on the `%Pane` rows.
+   - **Lagui is off this page** (owner: *"is Lagui Stuffica era? it might not be worth keeping much of it"* — it is not: September, polls
+      the reader every 1.2s, its clicks go to `Lies_ghost_pick` which needs an A:Lies, so here each click was a `no House has A:Lies`).
+       Lagoon stands `faceless` on the land page (`Lagoon_plan`); LandFace asks `Lagoon_seek` on a keystroke and a hit opens as a
+        pane (`--reuse` moves the pane already on that doc, `--at=` names the method).  The clerk's desk goes with it.  Lagui stays in
+         the Book rooms until they move; its reported 2.5s remount was not reproduced (folderless eye: no remount) and is moot here.
+   ⚠ The `verbs_*` registry skipped split verbs (no `run`) — LiesFunk `Verbs_all` now takes `run` OR `read`.
+
 **✓ The 2026-11-09 Atlas red is CLOSED.** AtlasStaple (6/6) and LagoonStaple (8/8) are green again.  Two causes: `atlas_diges`
  (src/lib/server/dige.ts) refused a nested root such as `Ghost/L/test_corpus`, so it answered `docs:0` — fixed to take plain segments
   joined by '/'; and the remaining reds (AtlasStaple step 5, LagoonStaple 3·5·6) were a STALE RUNNER TAB — `--reload` turned them green

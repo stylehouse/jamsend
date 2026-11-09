@@ -2597,7 +2597,8 @@ await M.eatfunc({
                 if (defs && typeof defs.then === 'function') { console.warn('🗝 verbs: ' + k + ' returned a Promise — a verbs_* table must stay SYNC (the .g compiler asyncs any method holding an await, even inside an arrow — move the body into its own method)'); continue }
                 if (!Array.isArray(defs)) continue
                 for (const d of defs) {
-                    if (!d?.name || typeof d.run !== 'function' || seen.has(d.name)) continue
+                    // a verb runs whole (run) or SPLIT (read, with prepare?/land? — Verb_run) — either is a verb
+                    if (!d?.name || (typeof d.run !== 'function' && typeof d.read !== 'function') || seen.has(d.name)) continue
                     seen.add(d.name)
                     out.push({ ...d, owner: k.slice(6) })
                 }

@@ -1,0 +1,303 @@
+// LandPage.g — the land as a page: /Desk?I=<who>&G=Land, the code landscape (spec/Wordland_todo.md §0).  Waft:Everything's land
+//  What wears `main:Land,role:hacker`, so the derived Ground/Land carries Main:Land and Role:hacker, Auto stands A:Land/w:Land on
+//   Mundo, and its think is Land(A,w) below.  The Hackarium (/BigWordland) stands the same land inside a Book's Run House, with the
+//    docks and Langui; this is the land with no Book under it — what it knows, said as rows, and its controls, which are the verbs.
+//  Role hacker: a verb that writes is refused (Verb_run), the tab stands no relay channel and claims no editor seat.
+//
+//      A:Land / w:Land
+//        %Census:Atlas,docs,mapped          ← what the code SAYS — files rostered, and mapped so far
+//        %Census:Electrode,armed?,flavour?  ← what it DOES — the tap armed, and the build this tab stands its Books on
+//        %Census:Lagoon                     ← the reader standing (its face, UI:Lagoon, sits beside this one)
+//        %Exercise:<Book>,flows             ← each Book's measured edge set on disk (wormhole/Story/<Book>/Exercise, Electrode_exercise)
+//
+//  The face (L/LandFace.svelte) draws these and holds a hole for `:verb args` — `lagoon oath`, `electrode top`, `verbs`.
+//   And panes: `%Pane:<n>,doc,line,at?` + `%Layout` — docs side by side, each its own CodeMirror (L/LandPane.svelte), aligned on a
+//    method (`:pane …`, verbs_Land below; Wordland_todo §0 "ANSWERED" says why not Langui).
+//   Building the flavour, arming, flavour on/off and pruning twins are the controls it grows next (Electrode_todo §0, PARKED).
+
+IMPORT()
+    import LandFace from "$lib/L/LandFace.svelte"
+    import { ground_include } from "$lib/A/ground"
+    const LAND_GROUNDS = ['Land']
+    const LAND_TELL_MS = 2000
+
+// Land — the page's think: the face once, the land's Ground once (with what it stands on — the cave wants the glass), then the rows
+Land(A, w):
+    if (!w.c.face) {
+        w.c.face = 1
+        let uis = this.oai_enroll(this, { watched: 'UIs' })
+        uis.oai({ UI: 'Land' }, { component: LandFace })
+    }
+    if (!w.c.stood) {
+        w.c.stood = 1
+        // fire and forget, as Hackarium does: an include's eatfunc lands only on later ticks, and this think holds the mutex
+        ground_include(this.top_House(), LAND_GROUNDS)
+            .then((r) => {
+                if (r.failed.length) console.log(`🗺 Land — ${r.failed.length} .g did not load: ${r.failed.join(' ')}`)
+                this.i_elvisto(w, 'Land_grounded')
+            })
+            .catch((er) => console.log(`🗺 Land could not stand its Ground — ${String(er?.message ?? er)}`))
+    }
+    if (this.Land_tell(w)) w.c.ui?.commit?.()
+    // the censuses move on their own passes and tell nobody, so the page looks again in a while
+    if (w.c.tell_again) return
+    w.c.tell_again = setTimeout(() => {
+        w.c.tell_again = null
+        this.main()
+    }, LAND_TELL_MS)
+
+// e_Land_grounded — the land's code is in: stand its worlds on the top House, where every reader looks them up by name, with the
+//  reader's face on this page.  Then read what the Books measured, once
+e_Land_grounded(A, w, e):
+    let top = this.top_House()
+    for (const name of ['Atlas', 'Electrode', 'Lagoon']) {
+        if (!top.Lies_ghost_get('Ghost/L/' + name + '.g')) continue
+        let gw = top.oai({ A: name }).oai({ w: name })
+        // the reader stands FACELESS here: LandFace draws its seek and opens hits as panes (Lagui is the pre-Stuffica
+        //  rendering, polling on a leash, and its clicks go to Lies_ghost_pick — there is no A:Lies on this page)
+        if (name === 'Lagoon') gw.c.faceless = 1
+    }
+    if (this.Ground_stand) this.Ground_stand(A, LAND_GROUNDS)
+    this.Land_exercise_read(w)
+    this.i_elvisto(w, 'think')
+
+// Land_say — one census row, moved only when what it reports moved.  kv's absent keys are dropped (a flag rides 1 or absent)
+Land_say(w, name, kv):
+    let row = w.oai({ Census: name })
+    let moved = 0
+    for (const k of Object.keys(kv)) {
+        let v = kv[k]
+        if (v == null) {
+            if (row.sc[k] != null) {
+                delete row.sc[k]
+                moved = 1
+            }
+        } else if (row.sc[k] !== v) {
+            row.sc[k] = v
+            moved = 1
+        }
+    }
+    if (moved) row.bump_version?.()
+    return moved
+
+// Land_tell — the census rows, off the worlds that keep them.  Returns whether any moved
+Land_tell(w):
+    let top = this.top_House()
+    let moved = 0
+    let aw = top.o({ A: 'Atlas' })[0]?.o({ w: 'Atlas' })[0]
+    if (aw) {
+        let docs = aw.o({ Doc: 1 })
+        let mapped = docs.filter((d) => d.o({ Map: 1 }).length).length
+        let waiting = aw.o({ see: 'atlas' })[0]?.sc.waiting
+        moved |= this.Land_say(w, 'Atlas', { docs: '' + docs.length, mapped: '' + mapped, waiting: waiting ? String(waiting) : null })
+    }
+    if (top.o({ A: 'Electrode' })[0] && this.Electrode_T) {
+        let T = this.Electrode_T()
+        moved |= this.Land_say(w, 'Electrode', { armed: T.armed ? 1 : null, flavour: top.c.flavour || null })
+    }
+    if (top.o({ A: 'Lagoon' })[0]) moved |= this.Land_say(w, 'Lagoon', {})
+    return moved
+
+// Land_exercise_read — every Book's Exercise toc, read OUTSIDE Atime (a few hundred disk reads), landed by e_Land_exercised inside it
+async Land_exercise_read(w):
+    let nav = this.Atlas_nav ? this.Atlas_nav() : null
+    if (!nav) return
+    let books = await nav.dir_at('wormhole/Story')
+    if (!books) return
+    await books.expand()
+    let got = []
+    for (const b of books.directories) {
+        let text = await nav.read_file('wormhole/Story/' + b.name + '/Exercise', 'toc.snap')
+        if (!text) continue
+        let m = /^Exercise:[^,\n]*,flows:(\d+)/m.exec(text)
+        got.push({ book: b.name, flows: m ? m[1] : '?' })
+    }
+    w.c.exercise = got
+    this.i_elvisto(w, 'Land_exercised')
+
+e_Land_exercised(A, w, e):
+    let got = w.c.exercise || []
+    let have = new Set(got.map((x) => x.book))
+    for (const row of w.o({ Exercise: 1 })) {
+        if (!have.has(row.sc.Exercise)) w.drop(row)
+    }
+    for (const x of got) {
+        let row = w.oai({ Exercise: x.book })
+        if (row.sc.flows !== x.flows) row.sc.flows = x.flows
+    }
+    w.c.ui?.commit?.()
+
+// Land_verb — the face's hole: `:verb args`, parsed as the cave's command line is (Lagoon_cave_command), run through Verb_run, the
+//  gate the relay dispatch shares — so a writing verb is refused by name here, as in any hacker room
+async Land_verb(w, line):
+    let parts = String(line ?? '').trim().replace(/^:/, '').split(/\s+/).filter(Boolean)
+    let name = parts.shift() || 'verbs'
+    if (typeof this.Verb_run !== 'function') return { ok: false, result: { error: 'no verb registry on this tab' } }
+    if (name === 'verbs') return { ok: true, result: this.Verbs_all().map((v) => `${v.name}${v.writes ? ' ✎' : ''} ${v.args || ''} — ${v.desc || ''}`) }
+    let def = this.Verb_find(name)
+    let ask = {}
+    let pos = []
+    for (const p of parts) {
+        if (p.indexOf('--') === 0) {
+            let kv = p.slice(2).split('=')
+            ask[kv[0]] = kv.length > 1 ? kv.slice(1).join('=') : 1
+        } else {
+            pos.push(p)
+        }
+    }
+    // args beginning `verb` or a choice list (`top|arm|…`) take the first positional as the verb; a lone choice is the name too
+    //  (`flavour electrode` reads name, `electrode arm` reads verb)
+    let first = String(def?.args || '').split(/\s+/)[0]
+    if (def && (/^verb\b/.test(first) || first.indexOf('|') >= 0)) {
+        if (pos[0]) ask.verb = pos[0]
+        if (pos[1] || pos[0]) ask.name = pos[1] || pos[0]
+        ask.args = pos
+    } else if (pos[0]) {
+        ask.name = pos[0]
+    }
+    return await this.Verb_run(w, name, ask, { hand: 1 })
+
+// verbs_Land — the page's panes: several docs open at once, each its own CodeMirror (L/LandPane.svelte) with its own EditorState
+//  — Langui is ONE view swapping states by a single foreground doc; here a pane stands alone, so there can be any number.  The
+//   layout is particles on w:Land (`%Pane:<n>,doc,line,at?` in order, `%Layout:grid|row|column`); text rides each row's .c.
+//  ALIGN is by a key, not by position: `align <method>` sets every pane's line to where that method is defined in its doc, and
+//   each pane scrolls that line to its top — so the panes line up on it.  None writes: the page reads.
+verbs_Land():
+    let H = this
+    return [
+        { name: 'pane', where: 'terminal', writes: 0, args: 'open|close|align|arrange <path[:line]|method …|n|all|row|column|grid> [--at=method] [--reuse]',
+          desc: 'panes — open docs side by side (each its own CodeMirror) · close one · align them on a method · arrange them',
+          read: (w, a) => H.Land_pane_read(a),
+          land: (w, a, got) => H.Land_pane_land(a, got) },
+    ]
+
+// the w:Land this page holds — a verb arrives on whichever w asked (the face's, or a relay's), so find it by name
+Land_w():
+    return this.top_House().o({ A: 'Land' })[0]?.o({ w: 'Land' })[0]
+
+// where a method is defined, off Atlas's maps: [{ doc, line }], a .g first — the census already knows, no read
+Land_def_at(method, only_doc):
+    let aw = this.top_House().o({ A: 'Atlas' })[0]?.o({ w: 'Atlas' })[0]
+    let got = []
+    if (!aw) {
+        return got
+    }
+    for (const d of aw.o({ Doc: 1 })) {
+        let path = String(d.sc.Doc)
+        if (only_doc && path !== only_doc) continue
+        let map = d.o({ Map: 1 })[0]
+        if (!map) continue
+        for (const def of map.o({ def: 1 })) {
+            if (def.sc.method === method) got.push({ doc: path, line: Number(def.sc.line) || 1 })
+        }
+    }
+    got.sort((p, q) => (/\.g$/.test(q.doc) ? 1 : 0) - (/\.g$/.test(p.doc) ? 1 : 0))
+    return got
+
+// the read half, outside Atime: for `open`, each named thing's text — a path (`Ghost/L/Atlas.g:120`) or a method (found by Atlas)
+async Land_pane_read(a):
+    if (a.verb !== 'open') return {}
+    let nav = this.Atlas_nav ? this.Atlas_nav() : null
+    if (!nav) return { error: 'no repo on this tab — Atlas has no nav (open the page on a tab with a folder)' }
+    let names = a.args && a.args.length > 1 ? a.args.slice(1) : [a.name]
+    let opened = []
+    let missing = []
+    for (const name of names) {
+        if (!name) continue
+        let m = /^(.*?)(?::(\d+))?$/.exec(String(name))
+        let doc = m[1]
+        let line = m[2] ? Number(m[2]) : 1
+        let at = null
+        if (doc.indexOf('/') < 0) {
+            let defs = this.Land_def_at(doc)
+            if (!defs.length) {
+                missing.push(name)
+                continue
+            }
+            at = doc
+            doc = defs[0].doc
+            line = defs[0].line
+        }
+        let cut = doc.lastIndexOf('/')
+        let text = null
+        try {
+            text = await nav.read_file(doc.slice(0, cut), doc.slice(cut + 1))
+        } catch (er) {
+            text = null
+        }
+        if (text == null) {
+            missing.push(name)
+            continue
+        }
+        opened.push({ doc: doc, line: line, at: at || a.at || null, text: String(text) })
+    }
+    return { opened: opened, missing: missing }
+
+// the land half, in Atime: the rows move, the face redraws
+Land_pane_land(a, got):
+    let w = this.Land_w()
+    if (!w) return { error: 'no w:Land on this tab — the panes live on the land page (/Desk?G=Land)' }
+    let verb = a.verb
+    let said = null
+    if (verb === 'open') {
+        let n = 0
+        for (const p of w.o({ Pane: 1 })) n = Math.max(n, Number(p.sc.Pane) || 0)
+        let made = []
+        for (const x of got.opened || []) {
+            // --reuse (a seek hit): the last pane already on that doc moves to the line instead of a new one standing
+            let have = a.reuse ? w.o({ Pane: 1 }).filter((p) => p.sc.doc === x.doc).slice(-1)[0] : null
+            if (have) {
+                have.sc.line = '' + x.line
+                if (x.at) {
+                    have.sc.at = x.at
+                } else if (have.sc.at) {
+                    delete have.sc.at
+                }
+                have.c.text = x.text
+                have.bump_version?.()
+                made.push(`${have.sc.Pane} ${x.doc}:${x.line} (moved)`)
+                continue
+            }
+            n = n + 1
+            let row = w.i({ Pane: '' + n, doc: x.doc, line: '' + x.line })
+            if (x.at) row.sc.at = x.at
+            row.c.text = x.text
+            made.push(`${n} ${x.doc}:${x.line}`)
+        }
+        said = { opened: made, missing: got.missing || [] }
+    } else if (verb === 'close') {
+        let panes = w.o({ Pane: 1 })
+        let which = a.name === 'all' ? panes : a.name ? panes.filter((p) => p.sc.Pane === String(a.name)) : panes.slice(-1)
+        for (const p of which) w.drop(p)
+        said = { closed: which.map((p) => p.sc.Pane) }
+    } else if (verb === 'align') {
+        if (!a.name) return { error: 'align on what? — :pane align <method>' }
+        let lined = []
+        let without = []
+        for (const p of w.o({ Pane: 1 })) {
+            let defs = this.Land_def_at(String(a.name), p.sc.doc)
+            if (defs.length) {
+                p.sc.line = '' + defs[0].line
+                p.sc.at = String(a.name)
+                lined.push(p.sc.Pane)
+            } else {
+                without.push(p.sc.Pane)
+            }
+            p.bump_version?.()
+        }
+        said = { aligned_on: a.name, lined: lined, without: without }
+    } else if (verb === 'arrange') {
+        let how = ['row', 'column', 'grid'].indexOf(String(a.name)) >= 0 ? String(a.name) : 'grid'
+        let row = w.o({ Layout: 1 })[0]
+        if (row) {
+            row.sc.Layout = how
+            row.bump_version?.()
+        } else {
+            w.i({ Layout: how })
+        }
+        said = { arranged: how }
+    } else {
+        return { error: `pane what? — open|close|align|arrange (got '${verb ?? ''}')` }
+    }
+    w.c.ui?.commit?.()
+    return said

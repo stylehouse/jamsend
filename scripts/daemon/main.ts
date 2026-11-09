@@ -84,7 +84,7 @@ import http from 'node:http'
 import path from 'node:path'
 import crypto from 'node:crypto'
 import inspector from 'node:inspector'
-import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs'
+import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, writeFileSync } from 'node:fs'
 import { JSDOM } from 'jsdom'
 
 const ROOT     = process.env.SHARE   || process.cwd()
@@ -157,7 +157,7 @@ for (const k of ['log', 'warn', 'error'] as const) {
     console[k] = (...a: any[]) => {
         orig(...a)
         const m = typeof a[0] === 'string' ? a[0] : ''
-        if (!/^(🎬|◈⚠|🧱|👁|⏳⚠|🏊|🛰⚠)/u.test(m)) return
+        if (!/^(🎬|◈⚠|🧱|👁|⏳⚠|🏊|🛰⚠|🎡|👂|🛰 inbound|🧹)/u.test(m)) return
         try { const line = `[app ${((Date.now() - t0) / 1000).toFixed(1)}s] ${m}\n`; appendFileSync(LOG, line); log_size += Buffer.byteLength(line) } catch { /* never why the daemon dies */ }
     }
 }
@@ -756,6 +756,14 @@ const probe_line = () => probe.stack.map(m => `${m.tag}(${((Date.now() - m.at) /
 //   `ff` is the native provider's running tally, and its `last_why` is the single most useful line
 //    when the shelf will not grow — it names the track and the reason instead of leaving a silence
 //     that reads identically to "the collection is empty".
+// stock_files — radiostock files on disk, counted at most every 30s (the heartbeat reads stats() every 10s)
+let stock_files_at = 0, stock_files_n: number | null = null
+const stock_files = (): number | null => {
+    if (Date.now() - stock_files_at < 30_000) return stock_files_n
+    stock_files_at = Date.now()
+    try { const d = LIBRARY ? `${LIBRARY}/${APP_DATA_DIR}/radiostock` : ''; stock_files_n = d && existsSync(d) ? readdirSync(d).length : null } catch { stock_files_n = null }
+    return stock_files_n
+}
 const stock_state = () => {
     const out: any = { native: false, records: 0 }
     try {
@@ -769,6 +777,8 @@ const stock_state = () => {
         if (!pub) return out
         const shelf = (H as any).Ra_home_self?.(rw, pub)
         out.records = shelf ? ((H as any).Ra_recs?.(shelf)?.length ?? 0) : 0
+        // the disk cache beside it: the cap, and how many radiostock files are on disk (a readdir, ~60ms at 34k)
+        out.disk = { cap: +(top?.c?.ra_stock_cap || 100), files: stock_files() }
         // THE NUMBER THAT PROVES A FRIENDSHIP IS DOING ANYTHING.  A friend's cast mints a per-friend
         //  `%Theirs` crate in the radio world (`Swarm_share_up`'s `repli_mirror_by_from` +
         //   `repli_mirror_w`).  ZERO of them while sealed peers trade `ive_got` every few seconds is
@@ -925,7 +935,17 @@ const profile_for = (ms: number): Promise<any> => new Promise((resolve) => {
                 byFn[key] = (byFn[key] || 0) + t
             }
             const top = Object.entries(byFn).sort((a, b) => b[1] - a[1]).slice(0, 40).map(([k, t]) => ({ fn: k, ms: Math.round(t), pct: Math.round(1000 * t / Math.max(1, ms)) / 10 }))
-            done({ ms, sampled_ms: Math.round(total), top })
+            // WHO CALLED IT (2026-11-09: a flat `read :0` at 100% named nothing): the heaviest self nodes, each with
+            //  its caller chain, so a native frame says which JS put it there.
+            const up = new Map<number, any>()
+            for (const nd of p.nodes) for (const c of nd.children ?? []) up.set(c, nd)
+            const name = (nd: any) => (nd.callFrame.functionName || '(anon)') + ' ' + String(nd.callFrame.url || '').split('/').slice(-2).join('/') + ':' + (nd.callFrame.lineNumber + 1)
+            const stacks = p.nodes.filter((nd: any) => (self[nd.id] || 0) > 0).sort((a: any, b: any) => (self[b.id] || 0) - (self[a.id] || 0)).slice(0, 6).map((nd: any) => {
+                const chain: string[] = []
+                for (let n = nd; n && chain.length < 18; n = up.get(n.id)) chain.push(name(n))
+                return { ms: Math.round((self[nd.id] || 0) / 1000), chain }
+            })
+            done({ ms, sampled_ms: Math.round(total), top, stacks })
         }), ms)
     })))
 })
@@ -1062,6 +1082,21 @@ const parked_state = () => {
     }
     return out
 }
+// listening_state — the listeners' cursor (Radio.g Stoker_hunger): who is listening now, how much of the shelf each has left
+//  unheard, and every listener ever kept
+const listening_state = () => {
+    try {
+        const rw: any = (H as any).top_House?.()?.c?.radio_w
+        if (!rw?.c?.listening) return { on: 0 }
+        const me = (H as any).Radio_pub?.(rw) || ''
+        const shelf = me ? (H as any).Ra_home_self?.(rw, me) : null
+        const hunger = shelf ? (H as any).Stoker_hunger?.(rw, shelf) : null
+        const mag = rw.o?.({ Mag: 'Listening' })?.[0]
+        const now = Date.now()
+        return { on: 1, now: hunger?.now ?? [], hungry: hunger?.hungry ?? null, spent: hunger?.spent?.length ?? 0, mute: hunger?.mute ?? 0,
+            kept: (mag?.o?.({ Listener: 1 }) ?? []).map((L: any) => ({ who: String(L.sc.Listener).slice(0, 8), heard: L.o({ Heard: 1 }).length, ago_s: L.sc.at ? Math.round((now - L.sc.at) / 1000) : null })) }
+    } catch (e: any) { return { on: 1, err: String(e?.message ?? e).slice(0, 120) } }
+}
 const stats = () => {
     const hs = allHouses(H)
     return {
@@ -1084,6 +1119,7 @@ const stats = () => {
         book: book_state(),
         stock: stock_state(),
         parked: parked_state(),
+        listening: listening_state(),
         serve: serve_state(),
         vyto: vyto_state(),
         identity: identity_state(),
@@ -1530,6 +1566,9 @@ const ra_native_arm = async (): Promise<void> => {
     if (ra_native_armed) return
     if (!H || typeof (H as any).top_House !== 'function') return    // ghosts still mounting — retry
     ra_native_armed = true
+    // THE DISK CAP (Ra_stock_cap, top House .c): radiostock files kept before the oldest wear off; tabs keep 100.
+    //  Set here, before anything stocks, so no trim ever runs at the tab's 100.
+    try { const top_h: any = (H as any).top_House() || H; if (+(process.env.STOCK_CAP || 0) > 0) top_h.c.ra_stock_cap = +(process.env.STOCK_CAP as string) } catch {}
     try {
         const { make_ra_native } = await import('./ra_native.ts')
         const provider = await make_ra_native(nav as any, say)
@@ -1620,6 +1659,9 @@ const share_arm = (): void => {
     const rw = (H as any).top_House?.()?.c?.radio_w                        // stamped by Stoker_ensure
     if (!self || !w || !rw) return
     if (!CULL) { rw.c.ra_cull_at = Date.now(); rw.c.ra_cull_floor_ms = 1e15 }
+    // THE LISTENERS' CURSOR (Radio.g): each friend's tab says which of our tracks it started, and a full shelf stocks
+    //  only for a listener nearly out of unheard ones.  LISTENING=0 puts back the old gate (any friend heard in 10 min).
+    if (process.env.LISTENING !== '0') rw.c.listening = 1
     if ((H as any).Swarm_share_up(w, self)) {
         share_armed = true
         say(`📻 share ARMED — Repli rx registered; a friend's cast now mints %Theirs, and the share beat turns`

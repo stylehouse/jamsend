@@ -67,7 +67,13 @@ Waft:Ghost/Land/Wordland,desc:the land — the bet turned on the code itself —
     Point,method:Pond_heron,desc:comes when the pond is full — eats — leaves when it is thin
     Doc:Ghost/L/WorkshopTesting.g
     Point,method:WorkshopStaple,desc:the proof — step by hand and swear what happened
-  What:the rooms,desc:BigWordland is the room — the Hackarium the Clerkdesk the Educarium
+  What:the rooms,desc:BigWordland is the room — the Hackarium the Clerkdesk the Educarium — /Desk?G=Land is the land as a page
+    Doc:Ghost/L/LandPage.g
+    Point,method:Land,desc:the page's think — stands the land and says it
+    Point,method:verbs_Land,desc:panes — docs side by side each its own CodeMirror — aligned on a method
+    Point,method:Land_pane_land,desc:open close align arrange — the layout as rows
+    Doc:src/lib/L/LandFace.svelte
+    Doc:src/lib/L/LandPane.svelte
     Doc:src/lib/L/BigWordland.svelte
     Doc:src/lib/L/Hackarium.svelte
     Doc:src/lib/L/Clerkdesk.svelte

@@ -624,14 +624,30 @@ async Ra_stock_find(nav, pub, enid):
 //      cache that regenerates.  Per-pub (Ra_stock_ls already filters), so a shared .jamsend never has
 //       one identity evict another's shelf.  Best-effort: Ra_stock_drop no-ops on a read-only proxy.
 //        Returns the count dropped.  Runs once per churn that landed (Radio.g), never per look.
-async Ra_stock_gc_cap(nav, pub):
+//  A BOUNDED STEP, ONE LISTING (2026-11-09: the daemon's shelf stood at 33,997 files / 18GB on a full disk — its tour
+//   never called this).  Ra_stock_drop re-lists the directory after EVERY delete, which over a backlog that size is a
+//    listing per file; here the deletes go straight to deleteEntry, at most `limit` (default 400) a call with a yield
+//     every 50, and one re-expand at the end.  A backlog drains over successive calls without holding the loop.
+//  `keep` ({enid: 1}) spares the files of records standing on the shelf right now, whatever their age: a record
+//   stood back up from old stock (Ra_reheal_id) still reads its bytes from its file.
+async Ra_stock_gc_cap(nav, pub, limit, keep):
     let mine = await this.Ra_stock_ls(nav, pub)
     let cap = this.Ra_stock_cap()
     if (mine.length <= cap) return 0
+    let dl = await nav.dir_at(this.Ra_stock_dir())
+    if (!dl || typeof dl.deleteEntry !== 'function') return 0
+    let most = +(limit || 400)
     let dropped = 0
     for (const old of mine.slice(cap)) {
-        await this.Ra_stock_drop(nav, old.name)
-        dropped = dropped + 1
+        if (dropped >= most) break
+        if (keep && keep[old.enid]) continue
+        try { await dl.deleteEntry(old.name); dropped = dropped + 1 } catch (er) {}
+        if (nav.c && nav.c.stock_cards) nav.c.stock_cards.delete(old.name)
+        if (dropped % 50 === 0) await new Promise((r) => setTimeout(r, 0))
+    }
+    if (dropped) {
+        try { await dl.expand() } catch (er) {}
+        console.log('🧹 radiostock: wore off ' + dropped + ' file(s) past the cap of ' + cap + ' — ' + Math.max(0, mine.length - cap - dropped) + ' still over')
     }
     return dropped
 

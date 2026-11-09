@@ -40,7 +40,8 @@
     const on_ground = !!boot_param('G')
     // a player page's splash is the Ground's Face: the tree, told by the Supervisor's fold of its Arrive rows (ArriveSplash)
     //  (Ground/Radio's Role is player — its toc says so, but Otro boots before any toc is read, so the name is mapped here)
-    const BOOT_ROLE_OF: Record<string, string> = { radio: 'player' }
+    //  (Ground/Land's Role is hacker, the code landscape: read-only — no channel, no editor claim, a writing verb refused)
+    const BOOT_ROLE_OF: Record<string, string> = { radio: 'player', land: 'hacker' }
     const ground_boot_role = (g: string) => BOOT_ROLE_OF[g.toLowerCase()] ?? g.toLowerCase()
     const on_player = ground_boot_role(boot_param('G') || '') === 'player'
     let guts = $state(false)
@@ -121,6 +122,8 @@
             //  machine — the Creduler loads its Spine, the wire and the Supervisor stand — as a humdinger, an end-user page that
             //   claims no runner seat and is never dispatched a Book.  Its Main (A:Radio) is the page, not a Story
             else if (role === 'player') { h.c.boot_role = 'runner'; (h.c as any).humdinger = true }
+            // a hacker page (Ground/Land) boots no machine role: only the House role, which Lies_role reads
+            else if (role === 'hacker') h.c.role = 'hacker'
             else console.log(`⛰ ?G=${ground}: a page with no machine role — its Ground's Mains are the page`)
         }
         else if (on_grid) {                        h.c.boot_role = 'runner' }

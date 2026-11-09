@@ -174,7 +174,8 @@ A **snap** is the text serialisation of the C tree which Story makes between ste
   `Electrode.g` keeps what it DOES (both ends of every ghost call, reduced on demand to
    `w:Electrode/Graph/Method/Flow`), `L/BigWordland.svelte` is the room — **Wordland, the modern search-first editor
     being built (`role:hacker`, read-only), distinct from Editron, the current `role:editor` webapp whose organs it
-     repurposes**. L ghosts are NOT in the
+     repurposes**. **`/Desk?G=Land` is the land as a page** (Ghost/L/LandPage.g + L/LandFace.svelte — the censuses as rows, a `:verb` hole, `:pane` CodeMirrors aligned on a method;
+     no Book under it).  L ghosts are NOT in the
     spine manifest: a runner gets them via `runner_ask ghost_load Ghost/L/X.g --stand=X`, and a
      tab reload drops them (and makes their Books run hollow until re-loaded). Read
       `spec/Wordland_todo.md` first; `Stemdex_todo.md §0` has Atlas's history.

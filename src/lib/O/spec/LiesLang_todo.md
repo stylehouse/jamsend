@@ -28,7 +28,8 @@ The destination (owner, 2026-10-26): **BigWordland becomes the one editor** — 
        second read pipe through LiesStore; Atlas keeps dige/size/defs per doc but no text.
 2. **The write seat** (§11 step 1).
 3. **The compile authority off Editron** (§11 step 2).
-4. **Viewports in Langui** (§11 step 3).
+4. **Viewports** (§11 step 3) — **re-aimed 2026-11-09: built OUTSIDE Langui**, on `/Desk?G=Land` as one EditorView per `%Pane`
+    (Wordland_todo §0 "ANSWERED"): Langui's one-view/one-foreground shape is kept for the Book rooms, not retrofitted.
 5. The first Atheory seam (§9); diagrams owed in §3–§5.
 
 ## 1. The map in one breath

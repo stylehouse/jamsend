@@ -349,6 +349,9 @@ services:
       #  OFF by default: measuring costs seconds, transcoding costs minutes, and this box restarts on
       #   a timer.  Worth running by hand once after an image change.
       - FFTEST=${JAMSERVE_FFTEST:-}
+      # how many radiostock files (the encoded previews, <music>/.jamsend/radiostock) it keeps before the oldest wear
+      #  off.  A cache: a dropped one is one re-dig from the collection.  Records standing on the shelf are always kept.
+      - STOCK_CAP=${JAMSERVE_STOCK_CAP:-500}
       # bind the status endpoint to all interfaces INSIDE the container so the published port below
       #  reaches it.  Still only published to the docker bridge; /stop and /c both require the token.
       - HOST=0.0.0.0

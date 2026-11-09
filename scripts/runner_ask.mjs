@@ -626,6 +626,8 @@ if (op === 'lagoon') {
 	const nm = argv[argv.indexOf(arg) + 1]
 	if (nm && !nm.startsWith('-')) ask.name = nm
 	const k = flagVal('--k'); if (k !== undefined) ask.k = Number(k)
+	// join --book=<Book>: the measured side is that Book's kept Exercise, not the live tally
+	const book = flagVal('--book'); if (book) ask.book = book
 }
 if (op === 'flavour') {
 	// stand the next Books on Ground/Hacky/* — the measuring build (Electrode.g) — until the tab reloads; `off` stops that

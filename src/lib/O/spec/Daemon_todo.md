@@ -29,11 +29,38 @@ A node daemon that boots the whole jamsend machine headless and stays up: a stab
 **Open — the inbound wedge.**  Before the restarts: `🧱 beliefs mutex held 30s by H:Mundo fn:handle_inbound`, repeatedly —
  one `Peeroleum_deliver` await never resolving, the share beat queued 150s+ behind it.  Not seen again in four short boots.
   When it recurs, the ♥ line's "↳ inside:" names the frame.
-**Open — the listener's cursor (owner 2026-11-09, the design wanted).**  *"a cursor for what the client has listened to, stored
- in a Mag on our side … joined to radiostock to know if they're nearly out … 90% of visits find it all ready; the 10% who listen
-  long progress the population."*  Not built: exhaustion is judged only on the LISTENER's tab (the dial finding nothing unheard
-   pokes that tab's own Stoker_churn, which digs that tab's share), and the listener's `%Mag:heard` mirrors to their crew, not to
-    the source.  The daemon stocks blind: fill to the tour window (40), then one round per 90s while any pier was heard in 10 min.
+**Built — the listeners' cursor (owner 2026-11-09).**  *"a cursor for what the client has listened to, stored in a Mag on our
+ side … joined to radiostock to know if they're nearly out … 90% of visits find it all ready; the 10% who listen long progress
+  the population."*  A listener's tab, when one of a friend's tracks STARTS (Radio_open), sends that friend one `listened` swarm
+   frame `{id}` (Stoker_tell_listened, humdinger only).  Not the served pages: a listener warms the opening of every card on its
+    mirror, so "served" ≠ "heard".  The source (Swarm_listened, sealed friends only → Stoker_listened) keeps
+     `Mag:Listening / Listener:<prepub>,at / Heard,of:<rec id>` on the radio world, in `.jamsend/listening/toc.snap`
+      (Stoker_listening_keep, read once, written when it changed).  Stoker_hunger joins it to the shelf: each listener who
+       started something in the last 10 min, and how many shelf tracks they haven't (Heard rows for tracks gone from the shelf are
+        pruned).  Stoker_tour, with the cursor on: a full shelf RESTS unless a listener has < 8 left (`listening_low`), and while
+         one does it stocks at the filling gear (20s, 4 rounds); its whittle drops tracks every current listener has heard first.
+  On only where `rw.c.listening` is set: the daemon sets it at share arm (`LISTENING=0` turns it off); tabs keep the old gate,
+   no Book grows the Mag.  `/status` `listening` shows now/hungry/kept.  Old tabs send nothing, so they read as fresh listeners
+    (never hungry).  A MIXED FLEET: a friend heard in 10 min who has never reported (`mute`, an older tab) keeps the old cruise
+     (one round per 90s), so rotation never stops for them.  Log lines: `🎡👂 stocking for <who> — N unheard left`, `🎡⏸ tour
+      resting — …`.
+  **Verified:** the daemon boots with it on, rests on a full shelf with nobody listening, cruises with a mute friend heard.
+   **Not verified:** a real listener's `listened` reaching it — the daemon dials the PROD relay, unreachable from the claude
+    container, so no headless newcomer can befriend it.  Owner: listen a while on a reloaded tab, then `/status` → `listening`.
+  **Seen beside it, not caused by it:** the shelf climbs past the window (40 → 75 in a minute, 4 encodes) as listeners' mirrors
+   ask for old ids and Ra_reheal_id stands them back up from radiostock; a want holds a record from the whittle for 10 min.
+**Found on dev (2026-11-09, the daemon moved to djamsend) — the inbound wedge has a shape, and the disk is full.**  With
+ eed83 listening: `🧱 beliefs mutex held 130s+ by fn:handle_inbound`, ticks frozen, `/status` 0.5–2.5s to answer.  The probe
+  showed ONE hold walking eed's `repli_want`s seq by seq at ~1–2s each, and the profile a native `read` at 100% with CPU at 2%:
+   the main thread blocked in synchronous disk reads (NodeWormholeNav is all `*Sync`).  Beside it, `.jamsend/radiostock` held
+    **33,997 files / 18GB for 7950f300** on a 100%-full disk: the disk cap (Ra_stock_gc_cap) only ran after Stoker_look's own
+     digs, and the daemon stocks through the tour.  **Landed:** Lies_drain_inbound folds repeated wants for one page and drains
+      wants 12 a slice (mutex released between slices); Ra_stock_gc_cap deletes ≤400 a call with one listing, sparing the
+       shelf's records, and the tour runs it; the cap is `JAMSERVE_STOCK_CAP` (default 500, jamserve/README.md); `/status`
+        `stock.disk` = {cap, files}; `/profile` reports caller stacks.  **Open:** what the per-want `read` IS — take
+         `/profile?ms=8000` during a wedge and read `stacks`; and the sync-IO nav itself (any slow read freezes the process).
+  **Setup trap:** jamserve's ORIGIN / ID / TOKEN / PROD_* had lived only in a shell's exports; a plain `up -d` booted it with
+   no identity and no route.  They belong in `.env` (jamserve/README.md's table).
 **Open — rotation with the cull held.**  The daemon boots with `Ra_shuffle_cull held off (CULL=1 releases it)`, so heard
  tracks never leave the shelf (51 records against the tour's 40 window).  Whether listening exhausts and refreshes the stock
   sensibly is not checked.

@@ -61,10 +61,11 @@ A **capture doc, not yet a plan** (the `Atheory_todo`/`Trust_todo` pattern — a
      build the flavour, arm/disarm, flavour on/off, prune twins nobody derives (also owed in wafts_keep itself).
 - **Queue:** (1) CALL-SITE IDS in the flavour — each `this.X(` carries its doc:line, so a closure's call belongs to the method that
    WROTE it, and Exercise rows gain `line:` joined to Atlas's `%call` rows; (2) also tap elvis
-   dispatch (sender→handler) — the old world's own deliberate time-crossing; (3) Lagoon reads Exercise beside the oath join's static
-    exercise (Lagoon_todo §0); (4) declare the 56 site-only oaths (Lagoon_todo §0); (5) `Main:Land` so /Desk?G=Land is the code landscape —
-     Ground/Land is DERIVED by wafts_keep (ground_toc writes only Stands/Load/Beside/Advice), so a Main needs either a hand-kept row
-      wafts_keep preserves or a hand-kept Ground beside it; the room today is the Hackarium Book (role hacker, Run House, Lies+Lang).
+   dispatch (sender→handler) — the old world's own deliberate time-crossing; (3) ✓ BUILT 2026-11-09 — `lagoon join --book=<Book>` (Lagoon_join_exercise: the declared-vs-measured join with the
+    Book's kept Exercise as the measured side; every ghostly Atlas def is the universe, .ts classes left out; AtlasStaple: 275 of 505
+     declared paths ran, 54.5%) — was: Lagoon reads Exercise beside the oath join's static
+    exercise (Lagoon_todo §0); (4) declare the 56 site-only oaths (Lagoon_todo §0); (5) ✓ BUILT 2026-11-09: /Desk?G=Land is the code
+     landscape (Wordland_todo §0) — the PARKED controls above land on its face (L/LandFace.svelte), which already runs verbs.
 
 **BUILT 2026-09-08 night — `Ghost/L/Electrode.g` stands on the live runner.**  The plan below was
  followed with one addition: a ring alone loses edges past its cap, so beside the ring (the film strip)

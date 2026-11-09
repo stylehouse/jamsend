@@ -1,43 +1,45 @@
 Credulate,of_Book:LagoonCave
-  TheACode:Ground/Core,dige:45bcad169c771a95
-  TheACode:Ground/Story,dige:4e68d17d2644adca
+  TheACode:Ground/Core,dige:2682d56be9e219ea
+  TheACode:Ground/Story,dige:eeae0a8324ad76e5
   TheACode:Ground/Glass,dige:e323f92d62cd7e52
-  TheACode:Ground/Land,dige:8cc87135d74b2bd5
+  TheACode:Ground/Land,dige:484be8f18d3f05ac
   TheACode:Ground/LandTesting,dige:6737a32f63b6c177
-  GhostInclude:Ghost_A_Theory,dige:804ebab235555f08~g1
-  GhostInclude:Ghost_A_Stuffica,dige:1f0ec09474696daa~g1
-  GhostInclude:Ghost_A_Ground,dige:315f819fcbdd91d3~g1
-  GhostInclude:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
+  GhostInclude:Ghost_A_Theory,dige:bc1f5fad74703498~g1
+  GhostInclude:Ghost_A_Stuffica,dige:a6371235df378ec7~g1
+  GhostInclude:Ghost_A_Ground,dige:470a1c17b0c9fb46~g1
+  GhostInclude:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1
   GhostInclude:Ghost_V_Voro,dige:e0323dccaf9924f8~g1
   GhostInclude:Ghost_V_Vyto,dige:ba54bff0606590e3~g1
-  GhostInclude:Ghost_L_Atlas,dige:50f5d8020823e429~g1
-  GhostInclude:Ghost_L_Electrode,dige:7058b5045ba4f814~g1
-  GhostInclude:Ghost_L_Lagoon,dige:b7f9fb85f28690bf~g1
+  GhostInclude:Ghost_L_Atlas,dige:667e5c17b8c39d7f~g1
+  GhostInclude:Ghost_L_Electrode,dige:4a843707690f1758~g1
+  GhostInclude:Ghost_L_Lagoon,dige:a6c57142b318e0ba~g1
   GhostInclude:Ghost_L_Workshop,dige:27e36e9ae751aee5~g1
   GhostInclude:Ghost_Play_Garden,dige:4e5061a1ef0f164b~g1
   GhostInclude:Ghost_Play_Pond,dige:92f278457599a9eb~g1
+  GhostInclude:Ghost_L_LandPage,dige:c42fbb6e92adb014~g1
   GhostInclude:Ghost_L_WorkshopTesting,dige:e55f3111fc648e16~g1
   GhostInclude:Ghost_L_AtlasTesting,dige:2f30ba8a5aa3e285~g1
   GhostInclude:Ghost_L_ElectrodeTesting,dige:bc3653d38188ea3d~g1
   GhostInclude:Ghost_L_LagoonTesting,dige:a558b162fb0e04ac~g1
-  last_ok,at=1793699209.021,ok_pct
-    TheACode:Ground/Core,dige:45bcad169c771a95
-    TheACode:Ground/Story,dige:4e68d17d2644adca
+  last_ok,at=1794216592.254,ok_pct
+    TheACode:Ground/Core,dige:2682d56be9e219ea
+    TheACode:Ground/Story,dige:eeae0a8324ad76e5
     TheACode:Ground/Glass,dige:e323f92d62cd7e52
-    TheACode:Ground/Land,dige:8cc87135d74b2bd5
+    TheACode:Ground/Land,dige:484be8f18d3f05ac
     TheACode:Ground/LandTesting,dige:6737a32f63b6c177
-    uses:Ghost_A_Theory,dige:804ebab235555f08~g1
-    uses:Ghost_A_Stuffica,dige:1f0ec09474696daa~g1
-    uses:Ghost_A_Ground,dige:315f819fcbdd91d3~g1
-    uses:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
+    uses:Ghost_A_Theory,dige:bc1f5fad74703498~g1
+    uses:Ghost_A_Stuffica,dige:a6371235df378ec7~g1
+    uses:Ghost_A_Ground,dige:470a1c17b0c9fb46~g1
+    uses:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1
     uses:Ghost_V_Voro,dige:e0323dccaf9924f8~g1
     uses:Ghost_V_Vyto,dige:ba54bff0606590e3~g1
-    uses:Ghost_L_Atlas,dige:50f5d8020823e429~g1
-    uses:Ghost_L_Electrode,dige:7058b5045ba4f814~g1
-    uses:Ghost_L_Lagoon,dige:b7f9fb85f28690bf~g1
+    uses:Ghost_L_Atlas,dige:667e5c17b8c39d7f~g1
+    uses:Ghost_L_Electrode,dige:4a843707690f1758~g1
+    uses:Ghost_L_Lagoon,dige:a6c57142b318e0ba~g1
     uses:Ghost_L_Workshop,dige:27e36e9ae751aee5~g1
     uses:Ghost_Play_Garden,dige:4e5061a1ef0f164b~g1
     uses:Ghost_Play_Pond,dige:92f278457599a9eb~g1
+    uses:Ghost_L_LandPage,dige:c42fbb6e92adb014~g1
     uses:Ghost_L_WorkshopTesting,dige:e55f3111fc648e16~g1
     uses:Ghost_L_AtlasTesting,dige:2f30ba8a5aa3e285~g1
     uses:Ghost_L_ElectrodeTesting,dige:bc3653d38188ea3d~g1

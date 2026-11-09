@@ -29,6 +29,9 @@
 //    generalised stuff rail), sc title|artist|at|of|played|drops are the display.  Commas are
 //     sanitized out of title|artist (a comma inside an sc value would cut the snap line).
 
+IMPORT()
+    import { APP_DATA_DIR } from "$lib/app_data_dir"
+
 //#region face — the %Radio particle (find-or-create; the glass mounts RadioFace on sc.face)
 Radio_ensure(w):
     let radio = w.o({ Radio: 1 })[0]
@@ -1012,6 +1015,8 @@ Radio_open(radio, rec):
     // THE TRACK STARTED — one oblique Card per (id, pub) on the durable heard Mag (Heard.g).  This is
     //  the one place every route into the playhead passes through, which is why the mark lives here.
     this.Heard_mark(w, this.Radio_pub(w) || '', rec)
+    // …and tell the track's source, whose listeners' cursor counts what each of us has started (Stoker_tell_listened)
+    this.Stoker_tell_listened(w, rec)
     // SPEND THE PRIMED TRACK if this is the one we prepared (Radio_prime).  Its chunks are already
     //  decoded, so the sound starts on THIS tick instead of after a fresh decoder has been opened,
     //   fed and waited on.  A prime for a different record is stale — drop it and let the pump
@@ -3376,6 +3381,8 @@ Stoker_cull(st, shelf, radio):
 //    supplier rotates its own window on a plain clock and the ordinary catalog diff tells every
 //     friend what came and went — no per-listener ledger, nothing to get out of step, nothing to
 //      resume.  A listener that misses a track sees it again on some later turn of the wheel.
+//   (2026-11-09: the owner asked for a cursor after all — a SET each listener reports into, not a position the source
+//    advances: THE LISTENERS' CURSOR, by Stoker_has_audience.  What this paragraph warns against still stands.)
 //  LIVE ONLY BY CONSTRUCTION, and deliberately by that alone: the only caller is the share beat, and
 //   the share beat cannot run in a Book because Swarm_share_up is reached only from Stoker_ensure
 //    behind `!w.sc.w` and from InvitePanel's $effect, which no Book mounts.  That is exactly the
@@ -3402,17 +3409,41 @@ async Stoker_tour(w, shelf):
     //    the cull dropping heard records the tour still counted as its window.
     let W = +(w.c.tour_window || 40)
     let filling = this.Ra_recs(shelf).length < W
-    let floor = +(filling ? (w.c.tour_fill_ms == null ? 20000 : +w.c.tour_fill_ms) : (w.c.tour_floor_ms == null ? 90000 : +w.c.tour_floor_ms))
+    // THE LISTENERS' CURSOR, where it's on (the daemon): a full shelf stocks only for a listener nearly out of unheard
+    //  tracks, and stocks at the filling gear while they are.  Kept to its file first, whatever the tour decides.
+    try { await this.Stoker_listening_keep(w) } catch (er) {}
+    // …and the disk cap: Stoker_look wears radiostock off past Ra_stock_cap after its own digs, but the TOUR is how a
+    //  share stocks (the daemon's only road), and it never did — 33,997 files by 2026-11-09.  A bounded step a tour.
+    if (this.Ra_stock_gc_cap && this.Crate_nav) {
+        let gnav = this.Crate_nav()
+        let gpub = this.Radio_pub ? this.Radio_pub(w) : ''
+        let gkeep = {}
+        for (const r of this.Ra_recs(shelf)) gkeep[String(r.sc.id)] = 1
+        if (gnav && gpub) { try { await this.Ra_stock_gc_cap(gnav, gpub, 400, gkeep) } catch (er) {} }
+    }
+    let hunger = this.Stoker_hunger(w, shelf)
+    let hungry = !!(hunger && hunger.hungry)
+    let floor = +((filling || hungry) ? (w.c.tour_fill_ms == null ? 20000 : +w.c.tour_fill_ms) : (w.c.tour_floor_ms == null ? 90000 : +w.c.tour_floor_ms))
     if (st.c.tour_at && (Date.now() - st.c.tour_at) < floor) return 0
     // NO AUDIENCE, NO ROTATION (2026-10-07, the daemon idling at 60–80% CPU): a FULL shelf only
     //  rotates, and every rotation is a whole-file read + ffmpeg probe/measure/encode — 1,160 of them
     //   in 2.65 days with them=0 and nothing served.  Rotating for nobody is pure heat.  Filling stays
     //    ungated (a short shelf is real shortage); tour_at is NOT stamped here, so the first beat after
     //     a friend is heard again turns the wheel at once.
-    if (!filling && !this.Stoker_has_audience()) {
+    if (!filling && hunger && !hungry && !hunger.mute) {
+        let why = hunger.now.length ? (hunger.now.length + ' listening, the nearest out has ' + Math.min(...hunger.now.map((r) => r.left)) + ' unheard') : 'nobody listening'
+        if (st.c.tour_idle !== why) console.log('🎡⏸ tour resting — shelf full (' + W + '), ' + why)
+        st.c.tour_idle = why
+        return 0
+    }
+    if (!filling && (!hunger || hunger.mute) && !hungry && !this.Stoker_has_audience()) {
         if (!st.c.tour_idle) console.log('🎡⏸ tour resting — shelf full (' + W + ') and no friend heard in 10 min')
         st.c.tour_idle = 1
         return 0
+    }
+    if (hungry && st.c.tour_hungry !== hunger.hungry.who + ':' + hunger.hungry.left) {
+        st.c.tour_hungry = hunger.hungry.who + ':' + hunger.hungry.left
+        console.log('🎡👂 stocking for ' + hunger.hungry.who.slice(0, 8) + ' — ' + hunger.hungry.left + ' unheard left of ' + this.Ra_recs(shelf).length)
     }
     st.c.tour_idle = 0
     st.c.tour_at = Date.now()
@@ -3443,7 +3474,7 @@ async Stoker_tour(w, shelf):
     //    disk cannot help) and the moment the window is reached.  A breath between rounds, the same
     //     250ms Stoker_look uses, so a burst of transcodes never crowds the track actually playing.
     let rounds = 0
-    let MAXR = filling ? +(w.c.tour_rounds || 4) : 1
+    let MAXR = (filling || hungry) ? +(w.c.tour_rounds || 4) : 1
     let dug = 0
     // SUM THE ROUNDS, DON'T READ THE LAST ONE.  `st.c.dig_*` are per-CALL, and this loop breaks on the
     //  first dry round — so the round the trace was reading is, by construction, always the one that
@@ -3581,6 +3612,14 @@ async Stoker_tour(w, shelf):
         }
         droppable.push(r)
     }
+    // what every listener heard goes first (the listeners' cursor): when any of it is droppable, the whittle takes only
+    //  from it, so nobody listening loses a track they haven't started.  None of it droppable ⇒ the plain whittle.
+    if (hunger && hunger.now.length) {
+        let spent = {}
+        for (const id of hunger.spent) spent[id] = 1
+        let worn = droppable.filter((r) => spent[String(r.sc.id)])
+        if (worn.length) droppable = worn
+    }
     while (over > 0 && droppable.length) {
         let counts = {}
         for (const r of this.Ra_recs(shelf)) {
@@ -3696,6 +3735,128 @@ Stoker_has_audience():
         if (p.c && p.c.heard_at && (now - p.c.heard_at) < 600000) return true
     }
     return false
+
+// ── THE LISTENERS' CURSOR (the owner 2026-11-09: "a cursor for what the client has listened to, stored in a Mag on our
+//  side … joined to radiostock to know if they're nearly out … 90% of visits find it all ready").  The old ruling (below,
+//   at the whittle: "NO CURSORS", 2026-08-07) was against a cursor the BROADCASTER advanced off wire reports and that got
+//    out of step; this one is a SET, not a position, so a lost report costs one track of accuracy and nothing else.
+//  The listener's tab tells the source each time one of the source's tracks STARTS (Stoker_tell_listened, off
+//   Radio_open — a served page is not news: a listener warms the opening of every card on the mirror).  The source
+//    keeps, per listener, which of its tracks they've started:
+//      w (the radio world)
+//        Mag:Listening                     ← .jamsend/listening/toc.snap
+//          Listener:<their prepub>,at:<ms they last started one>
+//            Heard,of:<rec id>             ← only ids still on the shelf (the join prunes the rest)
+//  Joined to the shelf (Stoker_hunger), it says how many tracks each listener has left unheard.  The tour (Stoker_tour)
+//   stocks a full shelf only when a listener started something in the last 10 min AND has fewer than 8 left, and its
+//    whittle drops what every such listener has heard first.  A visitor who hears a few tracks costs nothing.
+//  ON ONLY WHERE `w.c.listening` IS SET — the daemon sets it (scripts/daemon/main.ts, at share arm).  A tab keeps the
+//   old gate (any friend heard in 10 min), and no Book grows the Mag.
+
+// Stoker_tell_listened — the listener's half: a friend's track started here, so tell its source.  Live only (humdinger):
+//  a Book's plays are fixtures.  Fire-and-forget through the station, like every swarm frame.
+Stoker_tell_listened(w, rec):
+    let M = this.top_House()
+    if (!M.c.humdinger || !rec || !rec.sc.id) return 0
+    let me = this.Radio_pub(w) || ''
+    let pub = this.Ra_pub_of ? String(this.Ra_pub_of(rec) || '') : ''
+    if (!pub || pub === me) return 0
+    let live = this.Swarm_live_self ? this.Swarm_live_self() : null
+    let A = M.o({ A: 'Clustation' })[0]
+    let sw = A ? A.o({ w: 'Swarm' })[0] : null
+    if (!live || !sw || !this.Swarm_deliver) return 0
+    if (pub === String(live.sc.prepub || '')) return 0
+    try {
+        return this.Swarm_deliver(sw, live, pub, { kind: 'listened', page: this.Swarm_page(live), id: String(rec.sc.id) }) ? 1 : 0
+    } catch (er) { return 0 }
+
+// Stoker_listened — the source's half (Swarm_listened, a sealed friend only): `who` started our track `id`
+Stoker_listened(who, id):
+    let w = this.top_House().c.radio_w
+    if (!w || !w.c.listening || !who || !id) return 0
+    let mag = w.oai({ Mag: 'Listening' })
+    let L = mag.oai({ Listener: String(who) }, { at: Date.now() })
+    if (!L.o({ Heard: 1, of: String(id) }).length) L.i({ Heard: 1, of: String(id) })
+    w.c.listening_dirty = 1
+    return 1
+
+// Stoker_hunger — the join: each listener heard in the last 10 min, and how much of the shelf they haven't started.
+//  Prunes Heard rows whose track has left the shelf, so a Listener never outgrows it.  Returns null when the cursor is
+//   off, else { now: [{ who, left, heard }], hungry: the one with least left if under LOW, spent: ids every one of them
+//    has heard, mute: friends heard in the last 10 min (Stoker_has_audience's test) who have never reported — an older tab,
+//     which the tour serves the old way }
+Stoker_hunger(w, shelf):
+    if (!w || !w.c.listening) return null
+    let mag = w.o({ Mag: 'Listening' })[0]
+    let ids = {}
+    for (const r of this.Ra_recs(shelf)) ids[String(r.sc.id)] = 1
+    let n = Object.keys(ids).length
+    let LOW = +(w.c.listening_low || 8)
+    let RECENT = +(w.c.listening_recent_ms || 600000)
+    let out = { now: [], hungry: null, spent: [], mute: 0 }
+    let nowms = Date.now()
+    let me = this.Swarm_live_self ? this.Swarm_live_self() : null
+    let pg = me && this.Swarm_peering ? this.Swarm_peering(me) : null
+    if (pg) {
+        for (const p of pg.o({ Pier: 1 })) {
+            if (!(p.c && p.c.heard_at && (nowms - p.c.heard_at) < RECENT)) continue
+            if (!(mag && mag.o({ Listener: String(p.sc.pub || '') }).length)) out.mute = out.mute + 1
+        }
+    }
+    if (!mag) return out
+    let counts = {}
+    for (const L of mag.o({ Listener: 1 })) {
+        let heard = 0
+        for (const h of L.o({ Heard: 1 })) {
+            if (!ids[String(h.sc.of)]) { L.drop(h); w.c.listening_dirty = 1; continue }
+            heard = heard + 1
+        }
+        if (!(nowms - (+(L.sc.at || 0)) < RECENT)) continue
+        let row = { who: String(L.sc.Listener), left: n - heard, heard: heard }
+        out.now.push(row)
+        for (const h of L.o({ Heard: 1 })) counts[String(h.sc.of)] = (counts[String(h.sc.of)] || 0) + 1
+        if (row.left < LOW && (!out.hungry || row.left < out.hungry.left)) out.hungry = row
+    }
+    if (out.now.length) {
+        for (const id of Object.keys(counts)) {
+            if (counts[id] === out.now.length) out.spent.push(id)
+        }
+    }
+    return out
+
+// Stoker_listening_keep — the Mag kept in its own file under the app's corner, read once and written when it changed.
+//  The source of truth is what listeners said; a lost file only makes everyone look fresh again (the cool direction)
+async Stoker_listening_keep(w):
+    if (!w || !w.c.listening) return 0
+    let nav = this.Crate_nav ? this.Crate_nav() : null
+    if (!nav || !nav.read_file || !nav.write_file) return 0
+    let dir = APP_DATA_DIR + '/listening'
+    if (!w.c.listening_opened) {
+        w.c.listening_opened = 1
+        let text = null
+        try { text = await nav.read_file(dir, 'toc.snap') } catch (er) { text = null }
+        let C = null
+        if (text) { try { C = this.decode_wh_lines(text).C } catch (er) { C = null } }
+        if (C && C.sc.Mag === 'Listening') {
+            let mag = w.oai({ Mag: 'Listening' })
+            for (const L of C.o({ Listener: 1 })) {
+                let mine = mag.oai({ Listener: String(L.sc.Listener) })
+                if (!(+(mine.sc.at || 0) >= +(L.sc.at || 0))) mag.oai({ Listener: String(L.sc.Listener) }, { at: +(L.sc.at || 0) })
+                for (const h of L.o({ Heard: 1 })) {
+                    if (!mine.o({ Heard: 1, of: String(h.sc.of) }).length) mine.i({ Heard: 1, of: String(h.sc.of) })
+                }
+            }
+            console.log('👂 listening cursor opened — ' + mag.o({ Listener: 1 }).length + ' listener(s)')
+        }
+    }
+    if (!w.c.listening_dirty) return 0
+    let mag = w.o({ Mag: 'Listening' })[0]
+    if (!mag) return 0
+    w.c.listening_dirty = 0
+    let out = await this.enWaft(mag)
+    if (out.errors && out.errors.length) { console.log('👂⚠ listening cursor will not encode — ' + String(out.errors.join('; ')).slice(0, 200)); return 0 }
+    try { await nav.write_file(dir, 'toc.snap', out.snap) } catch (er) { w.c.listening_dirty = 1; console.log('👂⚠ listening cursor not written — ' + String(er && er.message || er)); return 0 }
+    return 1
 
 // Stoker_mag_draw — the CULTURE trace of a churn (Radio_spec §2.3): every dig round that
 //  landed tracks mints one %Cloud draw of %Card referring rows on the radiostocking %Mag,

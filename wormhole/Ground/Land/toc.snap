@@ -1,4 +1,6 @@
 Ground:Land,desc:the land — the bet turned on the code itself — what the code says what it does and who asks,FromWhat:Waft:Ghost/Land/Wordland
+  Main:Land
+  Role:hacker
   Stands:Glass
   Load:Ghost/L/Atlas.g
   Load:Ghost/L/Electrode.g
@@ -6,11 +8,14 @@ Ground:Land,desc:the land — the bet turned on the code itself — what the cod
   Load:Ghost/L/Workshop.g
   Load:Ghost/Play/Garden.g
   Load:Ghost/Play/Pond.g
+  Load:Ghost/L/LandPage.g
   Beside:src/lib/server/dige.ts
   Beside:src/lib/O/lang/compile.ts
   Beside:src/lib/L/flavour_electrode.ts
   Beside:src/lib/O/LiesFunk.svelte
   Beside:src/lib/L/wafts_keep.js
+  Beside:src/lib/L/LandFace.svelte
+  Beside:src/lib/L/LandPane.svelte
   Beside:src/lib/L/BigWordland.svelte
   Beside:src/lib/L/Hackarium.svelte
   Beside:src/lib/L/Clerkdesk.svelte
