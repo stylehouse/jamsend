@@ -170,7 +170,9 @@
             //  2026-08-12).  Minting no longer plants a particle per invite — it winds one counter.
             // an invite opens the app at its ROOT (owner 2026-10-26: BigSoundland is `/`, "which the Invites should say") —
             //  a music page anywhere else (/BigSoundland) still mints for `/`; any other room keeps its own path.
-            const room = /^\/(BigSoundland\/?)?$/.test(location.pathname) ? '/' : location.pathname
+            //  /Radio too (2026-11-10, a headless newcomer): it mints no identity for a stranger and never redeems ?Iz yet, so an
+            //   invite from it landed on a splash stuck at "in we go".  Until / mounts Radio (AtheoryArrive_todo §5), arrivals go to /
+            const room = /^\/(BigSoundland\/?|Radio\/?)?$/.test(location.pathname) ? '/' : location.pathname
             url = await H.Swarm_invite_url(null, self, { Music: 1 }, location.origin + room)
             open_big()
         } catch (e) { err = String(e) }

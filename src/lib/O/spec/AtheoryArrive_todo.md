@@ -68,6 +68,12 @@ Started 2026-11-04 from the Supervisor talk (`AtheoryNexus_todo.md` E, "NEXT SES
     and a pulse from eed arriving meanwhile got a reply hi with NO voucher (swarm_hi bypasses Swarm_deliver's hold).  Swarm_hi_one
      now sends nothing while `w.c.voucher_signing` (≤10s); the on_open Swarm_hi_all greets everyone once it stands.  Needs a
       jamserve restart; Books never set station_up, so only a live restart shows it.  The Door row from today stays until cleared.
+   **Relay close leaves its clients (hygiene, 2026-11-10):** ws 8's `wss.close()` leaves open sockets and relay `close()` clears the
+    heartbeat, so an in-process vite restart would strand any non-tab client (a daemon) on the old closure.  relay.ts `close()` now
+     terminates them.  NOT what happened tonight — I read the daemon (moved to prod, `who_ok 0/30` there) as a zombie on dev.
+   **/Radio does not take arrivals yet:** no page-default identity (Otro has no `id_role`) and nothing redeems `?Iz`, so an invite
+    landing there sits on "in we go".  InvitePanel now mints `/` for invites made on /Radio (as for /BigSoundland).  Real fix =
+     §5's "/ mounts Radio": give the Desk page `id_role:'sound'` + the invite welcome.
    **How far ahead we pull (owner: "silly to load more than 4 … a function of how fast provisioning happens when wanted"):**
     `Ra_warm_ahead` caps the friend records BEGUN at once — 4 before the first play, then 4 + 2/s of the path's RTO, ≤12 —
      unheard first (a heard one only begins once no unheard waits; then the cap counts them all).  The boot walk of the whole

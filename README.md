@@ -4,17 +4,25 @@ modern music piracy in the browser
 
 ![at sea](static/screenshot.webp)
 
-An invite gets you the ability to invite other peers. Ideally you and your peer are present somewhere you have wifi, with your phones, to begin with...
+Someone sends you a link. You open it and you're listening to their music collection — dropped into the middle of a random track, like tuning a radio. Nothing to install, no account, no strangers.
 
-# the particle graph
+**🔥safety🏠** No strangers exist, only your contacts. Could be better, but it's fantastic.
 
-**🔥safety🏠** Could be better but is fantastic. No strangers exist, only your contacts.
+**🦊p2p🐉** Music comes from the connections you make. Manipulation is impossible.
 
-**🦊p2p🐉** Music comes from connections you make. Manipulation is impossible.
+**🌊experience🎶** of listening, jumping tracks, and plotting Heists...
 
-**🌊experience🎶** You listen to someone’s music collection, always jumping into the middle of a random track, like tuning a radio. Normal, everyday options spring up.
+**🚛Heists📦** Preserve directory structure, move whole albums, and may end up on another computer via Link Device.
 
-**🚛downloads📦** Preserve directory structure, tend to move whole albums, and restart if interrupted.
+# your devices
+
+The catch: A phone browser can't keep a music folder. A computer running Chrome can. So you **Link Device**: the device you started on shows a QR code, you open it on the other, and from then on they are both *you* — your friends see one person, not two.
+
+**Heists land on the computer.** A Heist you start on the phone is written into the computer's folder, album by album.
+
+**🏊 SoundPooling** keeps a fresh, shuffled handful of tracks inside the phone's browser, so there's always something to play with no signal. Whenever both devices are on at once, the pool is topped up and turned over. It's off until you switch it on, in its 🏊 cell: choose how many MB it may use, and whether it pools from your friends, your own devices, or both.
+
+That's the idea under all of it: your own little infrastructure, stretched across whatever devices you have, so music stays near you.
 
 # development
 
@@ -32,9 +40,9 @@ Lies+Lang are compiler|infra and code editor for a new language with more path e
 
 ## Atheory - metaphysics and H|A|w|req
 
-What are these types, really... Probably merge into A, but keep w, and r, which is distinct from n, e... the %Aw pointer somewhere in, and indeed method resolution and precise imports...
+Atheory is the model of reality underneath everything: the containers (H), the actors living in them (A), their works (w) and the machine of requirements (req) that drives them — done again so the program is made of the same legible stuff as the data it holds.
 
-It has a nice style+house pattern emerging: Stuff and Housing are very central to everything yet opposite in nature... universal and empirical. the players and the canopy lighting timeclock.
+A generalised sloped wall leading into the dialectic nestling of computation, so the program can see itself. Every part will declare where it stands, every event will leave a footprint, and nothing will happen that cannot be walked back to and looked at again. The code will become a landscape, and we will cross it on foot.
 
 ## Vyto - the attractor
 
@@ -56,13 +64,9 @@ So there's a "your personal infra" to work out how to stretch music availability
 
 # funding
 
-[You may send tips here!](https://ko-fi.com/ostylehouse) Funds may be for specifics soon, probably starting with educational videos...
+[You may send tips here!](https://ko-fi.com/ostylehouse) Funds may be for specifics soon, probably starting with education... Open issues about funding opportunities we could chase...
 
 # notes
-
-DevTools with 'pause on exception' will need to ignore the line in Decoder.ts with a meaningless RangeError, etc, it sometimes adds random breakpoints, which can be ignored or switched off in the expandy-rack to the right, between Watch and Scope.
-
-Identities (an OurPeering) can be copied out of and into the UI somewhere, if you defeat the FaceSucker
 
 ## objects, data layer
 
@@ -77,7 +81,7 @@ We can note the name of a C variable, and some relevant structure and properties
 
 ``Waft`` is well known, but ``%somethingelse`` (with a % sigil) may be clearer on its own...
 
-``Text%dige`` is a property of a thing: a Text's dige.
+``Text%dige`` equivalent to ``%Text,dige``, but with %dige emphasised.
 
 ``Waft/What**/Doc`` is about a %Doc inside perhaps many layers of %What, in a %Waft - `**` meaning recursing.
 
@@ -85,9 +89,7 @@ We can note the name of a C variable, and some relevant structure and properties
 
 *Stuffing* puts them on the screen efficiently, grouping like stuff, compressing communication.
 
-*Travel* does recursion into trees of C (aka C**, eg C/C, C/C/C, etc).
-
-*Selection* is *Travel* with change tracking and enough thinking to be useful for eg mirroring nodes into cytoscape. It should be a fairly universal type of stuff-going-on. We usually simply put something somewhere and realise it's the same thing we put there last time, and this is an attempt to formalise that part of reality... Wants lifecycles, beings, situations...
+*Seem* does recursion into trees of C (aka C**, eg C/C, C/C/C, etc) with change tracking and enough thinking to be useful for eg mirroring nodes into cytoscape. It should be a fairly universal type of stuff-going-on. We usually want to put something somewhere and realise it's the same thing we put there last time, and this is an attempt to formalise that part of reality... Wants lifecycles, beings, situations...
 
 *House* is an agenda to attend to, has a heartbeat, provides persistent memory.
 
@@ -97,10 +99,10 @@ Then many further *Objects* are not javascript classes of their own, but are *Th
 
 ### Ultimately
 
-- machine should be more visually pleasing and competent
-- C and everything in Stuff.svelte.ts
-- Stuff.replace() and Stuff.resolve() (aka re-identity) are important to adapt to and study academically, for a design pattern more suited to [merge](https://en.wikipedia.org/wiki/Merge_(linguistics))
-- Selection.process() as a care factory for intersecting realities
+- machine should be much more visually pleasing and competent
+- moving beyond C-like language
+- Seem as a care factory for intersecting realities
+- Stuff.replace() and Stuff.resolve() (aka re-identity) are important to adapt to and study academically, for a reductionist design pattern more suited to [merge](https://en.wikipedia.org/wiki/Merge_(linguistics)) 
 
 ## goals
 
@@ -152,9 +154,7 @@ Behind a port-forward + dynamic-DNS name, your own LAN usually can't reach your 
 
 A browser tab is a bad place to keep a server: it closes, it sleeps, it forgets. **jamserve** is the same
  jamsend app running on nodejs in its own container — it holds your collection, serves heists, and is
-  standing there when someone finally redeems an Invite you handed out weeks ago. A third thing
-   alongside dev (`docker compose up`) and prod (*prod.sh*) — it shares their compose file but sits
-    behind a profile, so it only ever starts when you name it.
+  standing there when someone finally redeems an Invite you handed out weeks ago.
 
 see [jamserve/README.md](jamserve/README.md)
 

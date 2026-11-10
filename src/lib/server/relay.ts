@@ -1438,6 +1438,12 @@ export function attachRelay(
 			clearInterval(tallyTimer)
 			watchDesk.close()
 			peerLink?.close()
+			// END OUR CLIENTS TOO (2026-11-10): ws 8's wss.close() leaves open connections alone, and the heartbeat that would reap them
+			//  was just cleared — so on an in-process vite restart every socket on the OLD relay lived on in a closure with nobody
+			//   in it.  Tabs escape (vite reloads them); the daemon is a node client and doesn't: S sat "open" for 45 min hearing
+			//    `who_ok 0/30` while eed was live on the new relay, and a newcomer's pier_hello to S vanished.  Terminated, it re-dials
+			//     (its own backoff) into the new relay
+			for (const c of wss.clients) { try { c.terminate() } catch {} }
 			wss.close()
 			delete (httpServer as any)[ATTACHED]
 		},

@@ -1,6 +1,12 @@
 <script lang="ts">
     import { page_nav } from "$lib/O/ui/page_nav"
-    // PoolFace — the %Pooling CELL as ONE SENTENCE (owner 2026-09-03, the final cut):
+    // PoolFace — the %Pooling CELL as ONE SENTENCE (owner 2026-11-11, the switch made a tickbox):
+    //   "SoundPooling [x] keeps rolling 212 / [ 300 ] MB of music in browser storage, sourced from …"
+    //  The TICKBOX is the switch: on = Ra_pool_start (consent, budget, one rolling compartment); off = Ra_pool_off,
+    //   which drops every pooled card, its file and the consent — the space comes back.  The first number is what
+    //    is pooled NOW (the pooled %Records' bytes, an estimate for any without), the second the budget (typing it
+    //     never switches pooling on or off).  Under it a live line: tracks, and the last one in.
+    //  (2026-09-03, the earlier cut, kept for its history):
     //   "SoundPool keeps rolling [ 300 ] MB of music in browser storage, sourced from [ ] friends (less
     //    predictable) and [x] crew (your devices, see Door)"
     //  One number, three checkboxes.  0 MB = off (Ra_pool_off cleans out).  A number = on (Ra_pool_start —
@@ -24,6 +30,9 @@
     let who = $state('crew')
     let recent = $state(true)
     let pooled = $state(0)
+    let cur_mb = $state(0)
+    let cur_est = $state(false)
+    let last_in = $state('')
     let free_gb = $state<number | null>(null)
     let persisted = $state<boolean | null>(null)
     // the origin's storage is evicted ALL AT ONCE under pressure (IndexedDB, OPFS, the identity stash together)
@@ -46,7 +55,16 @@
             recent = consent ? !!H.Ra_pool_recent_on?.(w) : true
             const pub = H.Radio_pub?.(w) || 'me'
             const shelf = H.Ra_pool_stock?.(w, pub) ?? null   // probed, never minted
-            pooled = shelf && H.Ra_recs ? (H.Ra_recs(shelf) as any[]).length : 0
+            const recs = shelf && H.Ra_recs ? (H.Ra_recs(shelf) as any[]) : []
+            pooled = recs.length
+            // what is pooled NOW: the bytes each pooled record says it holds; a record without a size counts at
+            //  the per-track guess (Ra_pool_track_mb) and the figure is marked approximate
+            let bytes = 0, unsized = 0
+            for (const r of recs) { const b = +(r.sc.bytes || 0); if (b > 0) bytes += b; else unsized++ }
+            cur_mb = Math.round(bytes / 1048576 + unsized * (+(H.Ra_pool_track_mb?.(w) || 0)))
+            cur_est = unsized > 0
+            const last = recs[recs.length - 1]
+            last_in = last ? [last.sc.artist, last.sc.title].filter(Boolean).map(String).join(' — ') : ''
         } catch {}
     })
     $effect(() => {
@@ -78,22 +96,39 @@
         if (!rs || !rs.length) return 0
         return rs.filter(r => r.state !== 'dead' && r.state !== 'refused').length
     })
+    // WHY NOT PLAYABLE — the report names each unplayable card's reason (Ra_pool_report's track rows); tallied so
+    //  "0/38 playable" says which of the three it is: no preview, a preview with no chunks behind it, no file
+    const unplayable = $derived.by(() => {
+        const t: Record<string, number> = {}
+        for (const r of (report?.tracks ?? []) as any[]) {
+            if (!r.why) continue
+            const k = /no preview/.test(r.why) ? 'no preview' : /no chunks/.test(r.why) ? 'preview but no chunks' : /no file/.test(r.why) ? 'no file' : r.why
+            t[k] = (t[k] ?? 0) + 1
+        }
+        return Object.entries(t)
+    })
     const friends = $derived(who === 'all' || who === 'friends')
     const crew = $derived(who === 'all' || who === 'crew')
+    // the budget: only moves the number — the tickbox is the switch
     function set_mb(v: number) {
         const w = world(); if (!w) return
         draft = clamp_mb(Math.max(0, Math.floor(v || 0)))
+        try { if (consent && draft > 0) { H.Ra_pool_budget_set?.(w, draft); bump() } } catch {}
+    }
+    // THE SWITCH.  On: the yes, the budget typed (300 if none), the who and recent as ticked.  Off: everything pooled
+    //  goes — cards, files, the yes (Ra_pool_off) — so unticking gives the space back.
+    function set_on(on: boolean) {
+        const w = world(); if (!w) return
         try {
-            if (draft === 0) { if (consent) { const p = H.Ra_pool_off?.(w); if (p && p.then) p.then(bump, bump); else bump() } }
-            else if (consent) { H.Ra_pool_budget_set?.(w, draft); bump() }
-            else {
-                H.Ra_pool_start?.(w, draft, Math.floor(Date.now() / 1000), who)
-                ask_persist()
-                // the FIRST yes is where the default is applied — one act, so a person who unticked it
-                //  before typing a number gets what they asked for and not what we assumed.
-                if (recent) { H.Ra_pool_recent_set?.(w, 1) }
-                bump()
-            }
+            if (!on) { if (consent) { const p = H.Ra_pool_off?.(w); if (p && p.then) p.then(bump, bump); else bump() } return }
+            if (consent) return
+            if (!(draft > 0)) draft = clamp_mb(300)
+            H.Ra_pool_start?.(w, draft, Math.floor(Date.now() / 1000), who)
+            ask_persist()
+            // the FIRST yes is where the recent default is applied — one act, so a person who unticked it first
+            //  gets what they asked for and not what we assumed.
+            if (recent) { H.Ra_pool_recent_set?.(w, 1) }
+            bump()
         } catch {}
     }
     function set_who(f: boolean, c: boolean) {
@@ -115,17 +150,24 @@
 {:else}
     <div class="pf pf-big">
         <p class="pf-sentence">
-            <b>SoundPool</b> keeps rolling
-            <input class="pf-mb" type="number" min="0" step="100" value={draft} onchange={(e) => set_mb(num(e))} title="megabytes of music to keep — 0 switches it off and clears it out" />
+            <b>SoundPooling</b>
+            <input class="pf-on" type="checkbox" checked={consent} onchange={(e) => set_on((e.currentTarget as HTMLInputElement).checked)}
+                title={consent ? 'on — untick to stop and delete everything pooled (the space comes back)' : 'off — tick to start keeping music in this browser'} />
+            keeps rolling
+            <span class="pf-nb"><b class="pf-cur" title={cur_est ? 'roughly — some tracks have no size recorded' : 'pooled now'}>{consent ? (cur_est ? '~' : '') + cur_mb : 0}</b> /
+            <input class="pf-mb" type="number" min="1" step="100" value={draft} onchange={(e) => set_mb(num(e))} title="megabytes of music to keep at most" /></span>
             <span class="pf-nb">MB of music</span> in browser storage{#if free_gb != null} <span class="pf-dim pf-nb">({free_gb} GB free{#if persisted === true} · persistent{:else if persisted === false} · <span title="the browser may clear this site's storage under pressure — everything at once, the pool and your identity with it">evictable</span>{/if})</span>{/if}, sourced from
             <label class="pf-ck"><input type="checkbox" checked={friends} onchange={(e) => set_who((e.currentTarget as HTMLInputElement).checked, crew)} /> friends <span class="pf-dim">(less predictable)</span></label>
             <label class="pf-ck"><input type="checkbox" checked={crew} onchange={(e) => set_who(friends, (e.currentTarget as HTMLInputElement).checked)} /> crew <span class="pf-dim">(your devices, see <button class="pf-link" onclick={() => page_nav(H, 'focus', 'Door')} title="opens the Door — your crew and friends">Door</button>)</span></label>
             and
-            <label class="pf-ck"><input type="checkbox" checked={recent} onchange={(e) => set_recent((e.currentTarget as HTMLInputElement).checked)} /> recent acquisitions <span class="pf-dim">(what you just downloaded)</span></label>{#if consent}<span class="pf-dim pf-nb"> · {pooled} pooled so far</span>{/if}
+            <label class="pf-ck"><input type="checkbox" checked={recent} onchange={(e) => set_recent((e.currentTarget as HTMLInputElement).checked)} /> recent acquisitions <span class="pf-dim">(what you just downloaded)</span></label>
+        </p>
+        <p class="pf-live pf-dim">
+            {#if consent}<span class="pf-nb">{pooled} track(s)</span>{#if last_in} · last in: <span class="pf-track" title={last_in}>{last_in}</span>{/if}{:else}<span class="pf-nb">off — nothing kept in this browser</span>{/if}
         </p>
         {#if report}
             <p class="pf-live pf-dim">
-                <span class="pf-nb">{report.ready}/{report.cards} playable</span> · <span class="pf-nb">{report.files} file(s) on disk</span>{#if report.uncatalogued} · <span class="pf-nb">{report.uncatalogued} uncatalogued</span>{/if}{#if report.lingering} · <span class="pf-nb">{report.lingering} evicted, lingering</span>{/if}{#if inflight} · <span class="pf-nb">{inflight} in flight</span>{/if}
+                <span class="pf-nb" title="a pooled track joins the radio only once it has a preview: carried from when you heard it, or encoded on a device with no folder or relay (the pocket). A never-heard circulation fill waits on disk, out of the radio (owner ruling 2026-10-04).">{report.ready}/{report.cards} dialable</span>{#if unplayable.length} <span class="pf-nb" title="why the rest cannot be dialled — from the pool report">({unplayable.map(([k, n]) => n + ' ' + k).join(' · ')})</span>{/if}{#if report.files !== report.cards} · <span class="pf-nb" title="files under pool/ — differs from the cards when a file lost its card or a card its file">{report.files} file(s) on disk</span>{/if}{#if report.uncatalogued} · <span class="pf-nb">{report.uncatalogued} uncatalogued</span>{/if}{#if report.lingering} · <span class="pf-nb">{report.lingering} evicted, lingering</span>{/if}{#if inflight} · <span class="pf-nb">{inflight} in flight</span>{/if}
             </p>
         {/if}
     </div>
@@ -145,6 +187,12 @@
     .pf-dim { opacity: .6; font-size: .85em; }
     .pf-mb { width: 4.5em; box-sizing: border-box; background: rgba(0, 0, 0, .35); color: inherit; border: 1px solid rgba(244, 230, 200, .35); border-radius: 6px; padding: .1rem .3rem; font: inherit; font-weight: 700; text-align: right; vertical-align: baseline; }
     .pf-ck { white-space: nowrap; cursor: pointer; }
+    .pf-on { width: 1.1em; height: 1.1em; vertical-align: -2px; margin: 0 .25em; cursor: pointer; }
+    .pf-cur { font-weight: 700; }
+    /* a track's own words stay in their box — a long or wild title must not run into the sentence around it */
+    .pf-track { display: inline-block; max-width: 22em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom;
+        font-style: italic; font-family: Georgia, 'Times New Roman', serif; padding: 0 .35em; border-radius: 4px; background: rgba(244, 230, 200, .08);
+        unicode-bidi: isolate; }
     .pf-ck input { vertical-align: -1px; margin: 0 .2em 0 0; }
     .pf-link { pointer-events: auto; cursor: pointer; background: none; border: none; padding: 0; color: inherit; font: inherit; text-decoration: underline; opacity: .9; }
 </style>
