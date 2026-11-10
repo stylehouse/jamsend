@@ -10,7 +10,7 @@ import { APP_DATA_DIR } from "$lib/app_data_dir"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '883d391a6c906ce4~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '8387d76277fdb02f~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -142,7 +142,7 @@ Radio_trace(radio, entry) {
             'primed-fin-use': 1, 'prime-drop': 1, 'starve': 1, 'unstarve': 1, 'tape-out': 1,
             // …and the friend handshake, both ends (2026-11-10: a friend's music took ~60s to reach a reloaded /Radio and neither
             //  console said where the time went): the ask, the offer, the catalog landing, the first want, the first page, the cut-in
-            'repli-ready': 1, 'offer-now': 1, 'mirror-merge': 1, 'want-first': 1, 'page-first': 1, 'share-armed-by': 1, 'crossover': 1, 'autopress': 1, 'ask-music': 1 }
+            'repli-ready': 1, 'offer-now': 1, 'mirror-merge': 1, 'want-first': 1, 'page-first': 1, 'share-armed-by': 1, 'crossover': 1, 'autopress': 1, 'ask-music': 1, 'rx-drop': 1 }
         if (SPEAK[entry.ev]) console.log('📻⟫ ' + entry.ev, JSON.stringify(entry))
     }
 },
@@ -193,7 +193,15 @@ async Radio_go(radio, opts) {
     //     supposed to mean.
     this.Radio_state(radio, 'digging')
     let gat = await this.Sound_gat()
-    if (radio.c.era !== era) return
+    if (radio.c.era !== era) {
+        // A NUDGE IS NOT A NEW PRESS (2026-11-10: autoplay at boot, OPEN SHARE tapped 2 min later, radio stuck 'digging').  The
+        //  await waits on the gesture; meanwhile every landed chunk Radio_nudge's this 'digging' radio, which bumps the era to
+        //   re-pump — so when the tap finally resolved it, this press bailed as superseded and the device was never adopted.
+        //    A pause or stop leaves 'digging' and a newer press brings its own gat, so: still digging and still deviceless ⇒
+        //     this press is the live one — adopt the device and pump at the current era.
+        if (!gat || radio.sc.Radio !== 'digging' || radio.c.gat) return
+        era = radio.c.era
+    }
     if (!gat) {
         radio.sc.note = 'no web audio here'
         this.Radio_state(radio, 'off')
@@ -1327,6 +1335,9 @@ Radio_heard_note(id) {
         let got = JSON.parse(localStorage.getItem('radio_heard_recent') || '{}') || {}
         let now = Date.now()
         got[String(id)] = now
+        // …and the 2s read cache with it: a skipper dials again inside 2s, and a stale cache re-dealt the track just played
+        let M = this.top_House()
+        if (M.c.heard_recent) M.c.heard_recent[String(id)] = now
         let ids = Object.keys(got)
         for (const k of ids) { if (now - +got[k] > 7 * 86400000) delete got[k] }
         ids = Object.keys(got).sort((a, b) => +got[a] - +got[b])
@@ -2955,6 +2966,17 @@ Radio_dial_pool(w, radio, all, peek) {
     let pool = aimed.length ? aimed : (aim && radio.c.pinned ? [] : cands)
     if (!pool.length) return null
     let pick = pool[this.Ra_rand(w, pool.length)]
+    // THE REPLAY GOES ROUND, IT DOESN'T DICE (owner 2026-11-10, skipping: *"hitting the same tracks a lot"* — Variation XXI three
+    //  times in five seconds).  Once everything warm is heard, a random pick among a handful repeats at once; on a live page take
+    //   the one heard LONGEST ago (Radio_heard_recent's stamps — Radio_heard_note re-stamps each play), so a replay cycles the set.
+    if (all && this.top_House().c.humdinger && typeof this.Radio_heard_recent === 'function') {
+        let at = this.Radio_heard_recent()
+        let oldest = null
+        for (const rec of pool) {
+            if (!oldest || +(at[String(rec.sc.id)] || 0) < +(at[String(oldest.sc.id)] || 0)) oldest = rec
+        }
+        if (oldest) pick = oldest
+    }
     if (!peek) this.Radio_aim_at(w, radio, pick)
     return pick
 
@@ -3642,7 +3664,9 @@ async Stoker_tour(w, shelf) {
         tdup = tdup + (+(st.c.dig_dup || 0))
         tbad = tbad + (+(st.c.dig_bad || 0))
         if (got < 1) break
-        if (this.Ra_recs(shelf).length >= W) break
+        // a HUNGRY listener digs every round past the window: the whittle below swaps their spent tracks out for these (2026-11-10:
+        //  a full shelf broke after one round, two new tracks per 20s, and a skipping listener was dealt the same few again)
+        if (!hungry && this.Ra_recs(shelf).length >= W) break
         // the shelf moved, so the skip set is stale — a round that re-offered what round one just
         //  stocked would waste a whole file read to land nothing (and then mark it barren, wrongly).
         for (const r of this.Ra_recs(shelf)) {
@@ -3940,7 +3964,7 @@ Stoker_hunger(w, shelf) {
     let ids = {}
     for (const r of this.Ra_recs(shelf)) ids[String(r.sc.id)] = 1
     let n = Object.keys(ids).length
-    let LOW = +(w.c.listening_low || 8)
+    let LOW = +(w.c.listening_low || 12)
     let RECENT = +(w.c.listening_recent_ms || 600000)
     let out = { now: [], hungry: null, spent: [], mute: 0 }
     let nowms = Date.now()

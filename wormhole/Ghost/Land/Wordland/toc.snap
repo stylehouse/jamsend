@@ -71,9 +71,11 @@ Waft:Ghost/Land/Wordland,desc:the land — the bet turned on the code itself —
     Doc:Ghost/L/LandPage.g
     Point,method:Land,desc:the page's think — stands the land and says it
     Point,method:verbs_Land,desc:panes — docs side by side each its own CodeMirror — aligned on a method
-    Point,method:Land_pane_land,desc:open close align arrange — the layout as rows
+    Point,method:Land_pane_land,desc:open close align arrange code fold weave — the layout as rows
+    Point,method:Land_wires,desc:the wires between members — declared calls coloured by a Book's Exercise
     Doc:src/lib/L/LandFace.svelte
     Doc:src/lib/L/LandPane.svelte
+    Doc:src/lib/L/LandMember.svelte
     Doc:src/lib/L/BigWordland.svelte
     Doc:src/lib/L/Hackarium.svelte
     Doc:src/lib/L/Clerkdesk.svelte

@@ -5,6 +5,7 @@
     //    Land_verb → Verb_run, so a writing verb is refused here by name.  The room with docks and Langui is /BigWordland.
     import { untrack } from "svelte"
     import LandPane from "./LandPane.svelte"
+    import LandMember from "./LandMember.svelte"
     let { H = null }: { H?: any } = $props()
     class Look { v = $state(0); commit() { this.v++ } }
     const look = new Look()
@@ -27,10 +28,19 @@
             const ex = (w?.o({ Exercise: 1 }) ?? []).map((r: any) => ({ book: String(r.sc.Exercise), flows: String(r.sc.flows) }))
             ex.sort((a: any, b: any) => a.book < b.book ? -1 : 1)
             // the panes, in order — each row's text rides its .c (never snapped); the row's line moves on an align
-            const panes = (w?.o({ Pane: 1 }) ?? []).map((r: any) => ({ n: String(r.sc.Pane), doc: String(r.sc.doc),
-                line: Number(r.sc.line) || 1, at: r.sc.at ? String(r.sc.at) : '', text: String(r.c.text ?? '') }))
+            // a member's body is the reader's beadchain, asked on the commit (Lagoon_beads: sync, off Atlas's map)
+            const lw = M?.o?.({ A: 'Lagoon' })[0]?.o?.({ w: 'Lagoon' })[0]
+            const wires = (w?.o({ Wire: 1 }) ?? []).map((r: any) => ({ ...r.sc }))
+            const lit = (n: string) => new Set<string>(wires.flatMap((x: any) => [x.from_pane === n ? x.from : null, x.to_pane === n ? x.to : null]).filter(Boolean))
+            const panes = (w?.o({ Pane: 1 }) ?? []).map((r: any) => {
+                const n = String(r.sc.Pane), code = !!r.sc.code
+                const b = !code && lw && typeof H?.Lagoon_beads === 'function' ? H.Lagoon_beads(lw, String(r.sc.doc)) : null
+                return { n, doc: String(r.sc.doc), code, line: Number(r.sc.line) || 1, at: r.sc.at ? String(r.sc.at) : '',
+                    text: String(r.c.text ?? ''), chain: b?.chain ?? [], error: b?.error ?? (!code && !lw ? 'no A:Lagoon standing yet' : ''), lit: lit(n) }
+            })
             const layout = String(w?.o({ Layout: 1 })[0]?.sc.Layout ?? 'grid')
-            return { atlas: cen('Atlas'), electrode: cen('Electrode'), lagoon: cen('Lagoon'), exercise: ex, panes, layout }
+            const weave = w?.o({ Weave: 1 })[0]?.sc ?? null
+            return { atlas: cen('Atlas'), electrode: cen('Electrode'), lagoon: cen('Lagoon'), exercise: ex, panes, layout, wires, weave }
         })
     })
 
@@ -68,8 +78,61 @@
         seek_t = setTimeout(() => untrack(ask_seek), 200)
         return () => clearTimeout(seek_t)
     })
+    // ── the wires: one curve per %Wire, from the caller's chip in its member to the callee's in another — found by data-pane /
+    //  data-mid each frame the layout may have moved (a commit, a scroll, a resize).  A chip scrolled out of its member pins to the
+    //   member's edge; a code pane (no chips) takes the wire at its bar.
+    let panes_el: HTMLElement | null = $state(null)
+    let curves: { d: string, state: string, tip: string }[] = $state([])
+    let svg_wh = $state({ w: 0, h: 0 })
+    function wire_end(pane: string, m: string, box: DOMRect, root: HTMLElement) {
+        const p = root.querySelector(`[data-pane="${CSS.escape(pane)}"]`) as HTMLElement | null
+        if (!p) return null
+        const pr = p.getBoundingClientRect()
+        const body = (p.querySelector('.body') ?? p) as HTMLElement
+        const br = body.getBoundingClientRect()
+        const chip = p.querySelector(`[data-mid="${CSS.escape(m)}"]`) as HTMLElement | null
+        const r = chip?.getBoundingClientRect()
+        let l = pr.left + pr.width / 2, rr = l, y = pr.top + 9
+        if (r && r.height) { l = r.left; rr = r.right; y = Math.max(br.top + 2, Math.min(br.bottom - 2, r.top + r.height / 2)) }
+        const sx = root.scrollLeft - box.left
+        return { l: l + sx, r: rr + sx, y: y - box.top + root.scrollTop, cx: pr.left + pr.width / 2 + sx }
+    }
+    function draw() {
+        const root = panes_el
+        if (!root) { curves = []; return }
+        const box = root.getBoundingClientRect()
+        svg_wh = { w: root.scrollWidth, h: root.scrollHeight }
+        const out: { d: string, state: string, tip: string }[] = []
+        for (const x of view.wires) {
+            const a = wire_end(x.from_pane, x.from, box, root), b = wire_end(x.to_pane, x.to, box, root)
+            if (!a || !b) continue
+            // leave by the chip's side that faces the other member, arrive on the near side of the far chip
+            const fwd = b.cx >= a.cx
+            const ax = fwd ? a.r : a.l, bx = fwd ? b.l : b.r
+            const dx = Math.max(40, Math.abs(bx - ax) / 2) * (fwd ? 1 : -1)
+            out.push({ d: `M ${ax} ${a.y} C ${ax + dx} ${a.y}, ${bx - dx} ${b.y}, ${bx} ${b.y}`, state: x.state ?? '',
+                tip: `${x.from} → ${x.to}${x.state ? ' · ' + x.state : ''}` })
+        }
+        curves = out
+    }
+    $effect(() => {
+        void look.v; void view
+        const raf = requestAnimationFrame(draw)
+        return () => cancelAnimationFrame(raf)
+    })
+    $effect(() => {
+        const root = panes_el
+        if (!root) return
+        const again = () => requestAnimationFrame(draw)
+        root.addEventListener('scroll', again, true)
+        window.addEventListener('resize', again)
+        const iv = setInterval(again, 1500)
+        return () => { root.removeEventListener('scroll', again, true); window.removeEventListener('resize', again); clearInterval(iv) }
+    })
+    let tally = $derived(view.wires.reduce((t: any, x: any) => { t[x.state || 'declared'] = (t[x.state || 'declared'] ?? 0) + 1; return t }, {}))
+
     const hit = (doc: string, line: any, at?: string) => run(`:pane open ${doc}:${Number(line) || 1} --reuse${at ? ` --at=${at}` : ''}`)
-    const QUICK = [':lagoon oath', ':electrode top', ':pane open Land Land_tell', ':pane align Land', ':verbs']
+    const QUICK = [':lagoon oath', ':electrode top', ':pane open Lagoon_join Atlas_nav Land_tell', ':pane arrange row', ':verbs']
 </script>
 
 <div class="land">
@@ -97,7 +160,8 @@
         <b>Exercise</b> <small>— what each Book's run called, measured (runner_sweep --exercise) — press one for declared vs measured</small>
         {#if view.exercise.length}
             <ul class="ex">
-                {#each view.exercise as x (x.book)}<li><a href="#join" title="what this Book's run called, against what the code declares (lagoon join --book)"
+                {#each view.exercise as x (x.book)}<li><button type="button" class="wv" class:on={view.weave?.Weave === x.book} title="colour the wires between the panes by what this Book's run called"
+                    onclick={() => run(view.weave?.Weave === x.book ? ':pane weave off' : `:pane weave ${x.book}`)}>⇄</button> <a href="#join" title="what this Book's run called, against what the code declares (lagoon join --book)"
                     onclick={(e) => { e.preventDefault(); const q = `:lagoon join --book=${x.book}`; line = q; run(q) }}>{x.book}</a> <small>{x.flows} flows</small></li>{/each}
             </ul>
         {:else}<div class="none">no Book measured yet</div>{/if}
@@ -128,10 +192,23 @@
         {/if}
     </section>
     {#if view.panes.length}
-        <section class="panes {view.layout}">
+        <div class="weavebar">
+            {#if view.weave}woven by <b>{view.weave.Weave}</b> ({view.weave.flows} flows){:else}no Book woven — press ⇄ by one{/if}
+            · {view.wires.length} wire(s){#each Object.entries(tally) as [k, v]} · <span class="k-{k}">{v} {k}</span>{/each}
+        </div>
+        <section class="panes {view.layout}" bind:this={panes_el}>
             {#each view.panes as p (p.n)}
-                <LandPane n={p.n} doc={p.doc} text={p.text} line={p.line} at={p.at} onclose={() => run(`:pane close ${p.n}`)} />
+                {#if p.code}
+                    <LandPane n={p.n} doc={p.doc} text={p.text} line={p.line} at={p.at} onclose={() => run(`:pane close ${p.n}`)}
+                        onfold={() => run(`:pane fold ${p.n}`)} />
+                {:else}
+                    <LandMember n={p.n} doc={p.doc} chain={p.chain} at={p.at} lit={p.lit} error={p.error}
+                        onpick={(m) => run(`:pane code ${p.n} ${m}`)} oncode={() => run(`:pane code ${p.n}`)} onclose={() => run(`:pane close ${p.n}`)} />
+                {/if}
             {/each}
+            <svg class="wires" width={svg_wh.w} height={svg_wh.h}>
+                {#each curves as c}<path d={c.d} class="w-{c.state || 'declared'}"><title>{c.tip}</title></path>{/each}
+            </svg>
         </section>
     {/if}
 </div>
@@ -162,6 +239,17 @@
     .hits { max-height: 30vh; overflow: auto; display: flex; flex-direction: column; margin-top: 4px }
     .hit { text-align: left; background: none; border: none; border-radius: 3px; padding: 1px 6px; font: 12px ui-monospace, monospace }
     .hit:hover { background: #1d3a2f }
+    .panes { position: relative }
+    .wires { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible }
+    .wires path { fill: none; stroke-width: 1.6; opacity: .85; pointer-events: stroke }
+    .w-declared { stroke: #6f9fd8; opacity: .45 !important }
+    .w-ran { stroke: #6fe39a }
+    .w-never { stroke: #e0a050; stroke-dasharray: 5 4 }
+    .w-undeclared { stroke: #e05a8a }
+    .k-ran { color: #6fe39a } .k-never { color: #e0a050 } .k-undeclared { color: #e05a8a } .k-declared { color: #6f9fd8 }
+    .weavebar { font-size: 12px; opacity: .85; margin: 6px 0 4px }
+    .wv { background: none; border: none; color: #8fd3b0; cursor: pointer; padding: 0 2px }
+    .wv.on { color: #6fe39a; text-shadow: 0 0 6px #6fe39a }
     .panes { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); grid-auto-rows: 52vh }
     .panes.row { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: minmax(380px, 1fr); overflow-x: auto }
     .panes.column { grid-template-columns: 1fr; grid-auto-rows: 40vh }

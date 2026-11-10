@@ -55,6 +55,42 @@
          the Book rooms until they move; its reported 2.5s remount was not reproduced (folderless eye: no remount) and is moot here.
    ⚠ The `verbs_*` registry skipped split verbs (no `run`) — LiesFunk `Verbs_all` now takes `run` OR `read`.
 
+**THE WEAVE — planning meeting, 2026-11-10 (owner's answers; Lies|Lang docs read: LiesEnd_spec, Lies_attention_todo, Story_future §13).**
+ The land page holds several docs; Exercise says what ran between them.  The aim: see *what is woven where*, and keep a record of
+  the looking that a person can reshape.
+- **Taken from Lies|Lang — the ideas, not the machinery.**  The medium (Waft → What → Doc → Point; "Doc" stays the word, as Atlas's
+   `%Doc` already is); one Interest per stream (Trail / Aside / Ting); **+time** (Story_future §13.4: at a significant change mint a
+    sibling What — engaged Points carry forward, new ones move, the rest ghost); the LE's origin/working Seems as the later write path.
+     Left behind: Langui's one view, `%Spotlight`, the P7 cursor debt, and **LiesStore** for this page — the nav writes directly
+      (`write_file`), and a hacker's own record contends with nobody, so it needs no seat.
+- **Slices are the user's to reshape (owner).**  A slice (the set held between two significant changes) shows its REASON and its
+   MATTER, and the user can split, merge and unmerge slices into commits; a run of them becomes a slideshow, or smoothly a new part of
+    the machine — "this part of the organ of language acquisition".  So the slice is a first-class row with a reason, never a log line.
+- **Three layers of seriousness** for remembering (owner: agreed; the visual "fold-uppity" is his to find): Trail (deliberate —
+   open, align, pin), Aside (passing — a seek hit moving a pane), Ting (dwell — fades, unsaved).  **Storage: hacker-instance-private**
+    — `wormhole/Hacker/<who>/Trail|Aside/…` written through Atlas's nav (Wordland_todo §0 5 already wanted the Keep and the Asides
+     under the person).  ○ unbuilt.
+- **The drawing wants a PLAINER UI than CodeMirror (owner).**  A pane is CodeMirror only when really opened; otherwise it is a
+   **stiff member** — the Doc as a hierarchical list of its objects: `Lagoon_beads` (regions in file order, defs under the bead their
+    author drew), each bead's defs laid as a **StemHive** (the minimap's stem-factoring hive, `ui/StemHive.svelte`, plain props,
+     `data-mid` on every chip).  Light is cast on each member's Map, and Exercise puts the edges in.
+- **Two zooms (owner).**  Far: members side by side, wires between their chips (declared calls from Atlas `%call,via,method`,
+   coloured by a chosen Book's Exercise — ran / never ran / undeclared).  Near: a member opened as CodeMirror — line-to-line wires
+    only there, where there's room.  The map beyond the panes goes on the glass (Vyto guise), not Cytoscape.
+- **✓ (1) BUILT 2026-11-10.**  A `%Pane` without `code` draws as **L/LandMember.svelte** (bead boxes of StemHives off
+   `Lagoon_beads`); `:pane code <n> [method|line]` / `fold <n>` flip it; `:pane weave <Book>|off` reads that Book's Exercise
+    (`%Weave:<Book>,flows`, the pairs on `w.c.weave`) and `Land_wires` keeps `%Wire,from,to,from_pane,to_pane,state?` — Atlas's declared
+     cross-pane calls, state ran|never, plus measured-but-undeclared pairs; rebuilt only when the set moves.  LandFace draws them as an
+      SVG layer (chip side to chip side, a scrolled-out chip pinned to its member's edge, a code pane wired at its bar), lights the
+       wired chips, tallies ran/never/undeclared; ⇄ by a Book weaves it.  Proven: runner (Atlas.g + Lagoon.g + AtlasTesting.g woven by
+        AtlasStaple → 10 wires, all Lagoon→Atlas `never` — true: that Book never runs Lagoon; the test↔Atlas wires are ABSENT because
+         its Exercise reaches Atlas callerless — `Flow,of:Atlas_pass` — the call-site gap, Electrode queue (1)); the eye (3 members,
+          25 chips, 6 staged wires drawn).  Owed: intra-member wires (a doc calling itself), more Books' Exercise (only AtlasStaple is
+           kept — `runner_sweep --exercise`), and the owner's look with real data.
+- **Order:** (1) members + wires — `%Pane` without `code` draws as a member, `:pane code|fold`, `:pane weave <Book>` → `%Wire`
+   rows; (2) slices as rows on w:Land (+time), reason + matter, split/merge; (3) the private Trail|Aside store; (4) slideshow /
+    becoming machine; (5) the glass map.
+
 **✓ The 2026-11-09 Atlas red is CLOSED.** AtlasStaple (6/6) and LagoonStaple (8/8) are green again.  Two causes: `atlas_diges`
  (src/lib/server/dige.ts) refused a nested root such as `Ghost/L/test_corpus`, so it answered `docs:0` — fixed to take plain segments
   joined by '/'; and the remaining reds (AtlasStaple step 5, LagoonStaple 3·5·6) were a STALE RUNNER TAB — `--reload` turned them green

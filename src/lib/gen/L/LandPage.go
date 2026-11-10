@@ -13,7 +13,7 @@ const LAND_TELL_MS = 2000
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_LandPage(): string { return 'ce1767e39ece3eb4~g1' },
+    Ghostmeta_Ghost_L_LandPage(): string { return 'b1a0507810fe7a31~g1' },
 
 // LandPage.g — the land as a page: /Desk?I=<who>&G=Land, the code landscape (spec/Wordland_todo.md §0).  Waft:Everything's land
 //  What wears `main:Land,role:hacker`, so the derived Ground/Land carries Main:Land and Role:hacker, Auto stands A:Land/w:Land on
@@ -183,8 +183,8 @@ async Land_verb(w, line) {
 verbs_Land() {
     let H = this
     return [
-        { name: 'pane', where: 'terminal', writes: 0, args: 'open|close|align|arrange <path[:line]|method …|n|all|row|column|grid> [--at=method] [--reuse]',
-          desc: 'panes — open docs side by side (each its own CodeMirror) · close one · align them on a method · arrange them',
+        { name: 'pane', where: 'terminal', writes: 0, args: 'open|close|align|arrange|code|fold|weave <path[:line]|method …|n|all|row|column|grid|n [method|line]|Book|off> [--at=method] [--reuse] [--code]',
+          desc: 'panes — docs side by side as members (their objects) or CodeMirror (code n) · wires between them · weave <Book> colours the wires by its Exercise',
           read: (w, a) => H.Land_pane_read(a),
           land: (w, a, got) => H.Land_pane_land(a, got) },
     ]
@@ -217,9 +217,10 @@ Land_def_at(method, only_doc) {
 },
 // the read half, outside Atime: for `open`, each named thing's text — a path (`Ghost/L/Atlas.g:120`) or a method (found by Atlas)
 async Land_pane_read(a) {
-    if (a.verb !== 'open') return {}
+    if (a.verb !== 'open' && a.verb !== 'weave') return {}
     let nav = this.Atlas_nav ? this.Atlas_nav() : null
     if (!nav) return { error: 'no repo on this tab — Atlas has no nav (open the page on a tab with a folder)' }
+    if (a.verb === 'weave') return await this.Land_weave_read(nav, a)
     let names = a.args && a.args.length > 1 ? a.args.slice(1) : [a.name]
     let opened = []
     let missing = []
@@ -283,10 +284,43 @@ Land_pane_land(a, got) {
             n = n + 1
             let row = w.i({ Pane: '' + n, doc: x.doc, line: '' + x.line })
             if (x.at) row.sc.at = x.at
+            if (a.code) row.sc.code = 1
             row.c.text = x.text
             made.push(`${n} ${x.doc}:${x.line}`)
         }
         said = { opened: made, missing: got.missing || [] }
+    } else if (verb === 'code' || verb === 'fold') {
+        // a member opened as CodeMirror (at a method or a line), or folded back to its member
+        let n = a.args && a.args[1] ? String(a.args[1]) : String(a.name ?? '')
+        let p = w.o({ Pane: n })[0]
+        if (!p) return { error: `no pane ${n}` }
+        if (verb === 'fold') {
+            if (p.sc.code) delete p.sc.code
+        } else {
+            p.sc.code = 1
+            let at = a.args && a.args[2] ? String(a.args[2]) : null
+            if (at && /^\d+$/.test(at)) {
+                p.sc.line = at
+            } else if (at) {
+                let defs = this.Land_def_at(at, p.sc.doc)
+                if (defs.length) {
+                    p.sc.line = '' + defs[0].line
+                    p.sc.at = at
+                }
+            }
+        }
+        p.bump_version?.()
+        said = { pane: n, code: p.sc.code ? 1 : 0, line: p.sc.line }
+    } else if (verb === 'weave') {
+        // the Book whose Exercise colours the wires — or off
+        let row = w.o({ Weave: 1 })[0]
+        if (row) w.drop(row)
+        w.c.weave = null
+        if (got.book) {
+            w.i({ Weave: got.book, flows: '' + got.flows.length })
+            w.c.weave = new Set(got.flows)
+        }
+        said = { weave: got.book || 'off', flows: got.flows ? got.flows.length : 0 }
     } else if (verb === 'close') {
         let panes = w.o({ Pane: 1 })
         let which = a.name === 'all' ? panes : a.name ? panes.filter((p) => p.sc.Pane === String(a.name)) : panes.slice(-1)
@@ -319,10 +353,88 @@ Land_pane_land(a, got) {
         }
         said = { arranged: how }
     } else {
-        return { error: `pane what? — open|close|align|arrange (got '${verb ?? ''}')` }
+        return { error: `pane what? — open|close|align|arrange|code|fold|weave (got '${verb ?? ''}')` }
     }
+    let wires = this.Land_wires(w)
+    if (wires) said.wires = wires
     w.c.ui?.commit?.()
     return said
+
+},
+// Land_weave_read — a Book's kept Exercise (Electrode_exercise's toc), outside Atime: the caller→callee pairs it measured
+async Land_weave_read(nav, a) {
+    let book = String(a.args && a.args[1] ? a.args[1] : a.name ?? '')
+    if (!book || book === 'off' || book === 'weave') return { book: null, flows: [] }
+    let text = null
+    try {
+        text = await nav.read_file('wormhole/Story/' + book + '/Exercise', 'toc.snap')
+    } catch (er) {
+        text = null
+    }
+    if (!text) return { error: `no Exercise kept for ${book} — runner_sweep --exercise measures one` }
+    let flows = []
+    for (const line of String(text).split('\n')) {
+        let m = /^\s+Flow,of:([^,]+)(?:,from:([^,]+))?\s*$/.exec(line)
+        if (m && m[2]) flows.push(m[2] + '>' + m[1])
+    }
+    return { book: book, flows: flows }
+
+},
+// Land_wires — the %Wire rows between members: every call Atlas declares from a method in one pane to a method defined in another
+//  (`%call,via,method`), plus — when a Book is woven — the measured pairs between panes the code never declared.  State is the
+//   Book's word on it: ran · never (declared, not measured) · undeclared (measured, not declared); no Book, no state.  Rebuilt only
+//    when the set moved.  Returns the count, or null when nothing changed
+Land_wires(w) {
+    let aw = this.top_House().o({ A: 'Atlas' })[0]?.o({ w: 'Atlas' })[0]
+    let where = new Map()
+    let calls = []
+    for (const p of w.o({ Pane: 1 })) {
+        let d = aw ? aw.o({ Doc: String(p.sc.doc) })[0] : null
+        let map = d ? d.o({ Map: 1 })[0] : null
+        if (!map) continue
+        for (const def of map.o({ def: 1 })) {
+            if (def.sc.method && !where.has(def.sc.method)) where.set(def.sc.method, p.sc.Pane)
+        }
+        for (const c of map.o({ call: 1 })) {
+            if (c.sc.via && c.sc.method) calls.push([c.sc.via, c.sc.method])
+        }
+    }
+    let flows = w.c.weave || null
+    let want = new Map()
+    for (const [from, to] of calls) {
+        let pa = where.get(from)
+        let pb = where.get(to)
+        if (!pa || !pb || pa === pb) continue
+        let k = from + '>' + to
+        let state = flows ? (flows.has(k) ? 'ran' : 'never') : ''
+        want.set(k, { from: from, to: to, from_pane: pa, to_pane: pb, state: state })
+    }
+    if (flows) {
+        for (const k of flows) {
+            if (want.has(k)) continue
+            let [from, to] = k.split('>')
+            let pa = where.get(from)
+            let pb = where.get(to)
+            if (!pa || !pb || pa === pb) continue
+            want.set(k, { from: from, to: to, from_pane: pa, to_pane: pb, state: 'undeclared' })
+        }
+    }
+    let have = w.o({ Wire: 1 })
+    let sig = (x) => `${x.from}>${x.to}@${x.from_pane}>${x.to_pane}:${x.state || ''}`
+    let had = new Set(have.map((r) => sig(r.sc)))
+    let same = had.size === want.size
+    if (same) {
+        for (const x of want.values()) {
+            if (!had.has(sig(x))) same = false
+        }
+    }
+    if (same) return null
+    for (const r of have) w.drop(r)
+    for (const x of want.values()) {
+        let row = w.i({ Wire: 1, from: x.from, to: x.to, from_pane: x.from_pane, to_pane: x.to_pane })
+        if (x.state) row.sc.state = x.state
+    }
+    return want.size
 
 },
 

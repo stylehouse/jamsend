@@ -1971,6 +1971,8 @@ Swarm_arm(w):
             //  is worth anything.  A mid-conversation frame is no edge and costs nothing here.
             let owed_edge = !sealed.c.heard_at || (Date.now() - sealed.c.heard_at) > 30000
             sealed.c.heard_at = Date.now()
+            // …and tells presence: hearing them is newer than the relay's last census (Presence_heard)
+            if (typeof this.Presence_heard === 'function') this.Presence_heard(sealed.sc.pub)
             if (owed_edge) { try { this.Swarm_owed_settle(w2, ident, sealed) } catch (er) {} }
             // …and the edge GREETS them when our share already stands (2026-11-10: a reloaded /Radio waited ~60s for S's catalog).
             //  Swarm_share_up greets only the piers standing at that moment, and on a page whose share arms before its account

@@ -11,7 +11,7 @@ import { sha256_hex } from "$lib/Common"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return '12b906c85e8b0d63~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return '75b83937ac4bfe91~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/MusuTesting.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -1269,7 +1269,11 @@ Repli_mirror_lib(w, from) {
 // Repli_recv_lines — B got a repli_lines frame: decode + merge into the mirror; for every merged particle that
 //  referenced objecties.buffer, open a holding %req:awaitbuf under the Pier (the extra unemit processing).
 async Repli_recv_lines(w, pier, frame) {
-    if (!this.Repli_rx_ok(w, pier)) return
+    if (!this.Repli_rx_ok(w, pier)) {
+        // a catalog dropped at the gate is silent but for this: the first offer lost mid-handshake (Daemon_todo §0) shows here
+        if (typeof this.Radio_trace === 'function') this.Radio_trace(null, { ev: 'rx-drop', from: String(frame.header.from || '').slice(0, 8), pier: pier ? String(pier.sc.Pier || pier.sc.pub || '?').slice(0, 8) : 'none' })
+        return
+    }
     this.Repli_meter(w, 'rx', 1, frame.buffer ? frame.buffer.length : 0)
     let text = new TextDecoder().decode(frame.buffer)
     let lib = this.Repli_mirror_lib(w, frame.header.from)
@@ -1618,7 +1622,7 @@ async Repli_want_next(w, rx, from, to, id, stream, fromIdx) {
         let wf = this.top_House().c.want_first || (this.top_House().c.want_first = {})
         if (!wf[id]) {
             wf[id] = 1
-            try { this.Radio_trace(null, { ev: 'want-first', id: String(id).slice(0, 8), at: fromIdx, of: String(to || '').slice(0, 8) }) } catch (er) {}
+            try { this.Radio_trace(null, { ev: 'want-first', id: String(id).slice(0, 8), at: fromIdx, of: String(to || '').slice(0, 8), stream: String(stream), by: String(new Error().stack || '').split('\n').slice(2, 4).map((l) => l.trim().split(' ')[1] || '').join('<') }) } catch (er) {}
         }
     }
     let body = new TextEncoder().encode('want')

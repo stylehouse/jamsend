@@ -8,8 +8,8 @@
     import { EditorView, basicSetup } from "codemirror"
     import { EditorState } from "@codemirror/state"
     import { lang, lang_for_path } from "$lib/O/lang/lang"
-    let { n, doc, text, line = 1, at = '', onclose }: {
-        n: string, doc: string, text: string, line?: number, at?: string, onclose?: () => void
+    let { n, doc, text, line = 1, at = '', onclose, onfold }: {
+        n: string, doc: string, text: string, line?: number, at?: string, onclose?: () => void, onfold?: () => void
     } = $props()
     let el: HTMLDivElement
     let view: EditorView | null = $state(null)
@@ -40,10 +40,11 @@
     })
 </script>
 
-<div class="pane">
+<div class="pane" data-pane={n}>
     <div class="bar">
         <b>{n}</b> <span class="doc" title={doc}>{doc}</span>{#if at}<span class="at">· {at}</span>{/if}
         <small>:{line}</small>
+        {#if onfold}<button type="button" title="fold back to the member" onclick={onfold}>▤</button>{/if}
         {#if onclose}<button type="button" title="close this pane" onclick={onclose}>×</button>{/if}
     </div>
     <div class="cm" bind:this={el}></div>
@@ -56,7 +57,8 @@
     .doc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 0 1 auto }
     .at { color: #8fd3b0 }
     small { opacity: .6 }
-    button { margin-left: auto; background: none; border: none; color: #cfe3d8; cursor: pointer; padding: 0 2px }
+    button:first-of-type { margin-left: auto }
+    button { background: none; border: none; color: #cfe3d8; cursor: pointer; padding: 0 2px }
     .cm { flex: 1 1 auto; min-height: 0; height: 100% }
     .cm :global(.cm-editor) { height: 100% }
     .cm :global(.cm-scroller) { overflow: auto }

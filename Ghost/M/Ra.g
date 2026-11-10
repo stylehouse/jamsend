@@ -1285,11 +1285,16 @@ async Ra_mag_warm(w, mirror):
                 let rw = this.top_House().c.radio_w
                 let me = rw && this.Radio_pub ? this.Radio_pub(rw) : ''
                 if (rw && me && this.Heard_set) Object.assign(heard, this.Heard_set(rw, me))
-                let fresh = rows.filter((r) => !heard[String(r.sc.id)])
-                if (fresh.length) {
-                    warm = []
-                    while (fresh.length && warm.length < 2) warm.push(fresh.splice(this.Ra_rand(w, fresh.length), 1)[0])
+                // DRAWN ONCE per Mag (mag.c.warm_pick), not per beat: this runs every share beat until the Mag goes warm, and
+                //  the warm test below judged rows[0] — which a random pair almost never holds — so each beat drew two NEW records
+                //   and a boot walked the whole catalog (~40 opening pages before the first track ended, 2026-11-10).
+                let picked = (mag.c.warm_pick || []).map((id) => rows.find((r) => String(r.sc.id) === id)).filter((r) => r)
+                if (!picked.length) {
+                    let fresh = rows.filter((r) => !heard[String(r.sc.id)])
+                    while (fresh.length && picked.length < 2) picked.push(fresh.splice(this.Ra_rand(w, fresh.length), 1)[0])
+                    mag.c.warm_pick = picked.map((r) => String(r.sc.id))
                 }
+                if (picked.length) warm = picked
             }
             let k = 0
             while (k < 2 && k < warm.length) {
@@ -1346,7 +1351,8 @@ async Ra_mag_warm(w, mirror):
         //  SURGICALLY NARROW: the fallback fires ONLY when row 0 has been disclaimed by its source, a
         //   state no Book can reach (`ra_missed` is empty there), so every recorded fixture is
         //    bit-identical.  A merely-slow row 0 still gates the mag exactly as before.
-        let head0 = rows[0]
+        // the warm start's own first pick, when it drew one (live) — the record it actually asked for
+        let head0 = (mag.c.warm_pick && rows.find((r) => String(r.sc.id) === mag.c.warm_pick[0])) || rows[0]
         if (typeof this.Repli_missed_hot === 'function' && this.Repli_missed_hot(w, head0.sc.id)) {
             for (const alt of rows) {
                 if (this.Repli_missed_hot(w, alt.sc.id)) continue
@@ -4058,6 +4064,7 @@ async Ra_restock_beat(w, mirror, budget):
     let LIVE = this.top_House().c.humdinger
     // how many of the K slots are LOCAL (rotation); the rest spread.  All local in a driven world.
     let LOC = LIVE ? Math.max(1, Math.floor(K / 2)) : K
+    let ahead = LIVE ? this.Ra_warm_ahead(w, recs, playing) : null
     let warm = 0
     let want = 0
     let considered = 0
@@ -4088,6 +4095,13 @@ async Ra_restock_beat(w, mirror, budget):
         if (typeof this.Repli_missed_hot === 'function' && this.Repli_missed_hot(w, rec.sc.id)) continue
         let P = Math.min(+(rec.sc.preview || 0), +(rec.sc.total || 0))
         if (!(P > 0)) continue
+        // HOW FAR AHEAD WE PULL (Ra_warm_ahead): a friend's record not yet begun waits while enough are already warm
+        //  …and a HEARD one is not begun while an unheard one waits: heard records never count toward the cap, so beginning them
+        //   walked the whole catalog unchecked (2026-11-10: eed's 7-day heard memory held most of S's shelf — 40 begun in 90s)
+        if (ahead && rec.c.from && !this.Ra_warm_begun(w, rec)) {
+            if ((ahead.fresh ? ahead.begun : ahead.begun_all) >= ahead.cap) continue
+            if (ahead.heard[rec.sc.id] && ahead.fresh) continue
+        }
         considered = considered + 1
         let map = this.Ra_chunk_have(rec)   // presence only — never reads the bytes below
         let whole = true
@@ -4184,6 +4198,54 @@ async Ra_restock_beat(w, mirror, budget):
         this.Ra_stage(w, rec)
     }
     return { warm: warm, want: want, of: considered }
+
+// Ra_warm_ahead — HOW FAR AHEAD OF THE LISTENER WE PULL (owner 2026-11-10: "before they've started playing one it would be silly to
+//  load more than 4 … could it be dynamic? … a function of how fast provisioning happens when wanted … just trying to get the
+//   tiny-handheld-computer clients a good time").  The fan-out above had no total: each beat began up to K more previews, and the
+//    golden spread meant a sitting walked the whole catalog (~40 first pages in two minutes, every byte a phone's).  Now a friend's
+//     record is only BEGUN while fewer than `cap` unheard friend records are begun:
+//      - nothing played yet this sitting → 4: enough to pick from, nothing a listener may never reach;
+//      - after → 4 + 2 per second of the path's RTO, capped at 12.  The RTO (Repli_rto: srtt + 4·rttvar, sampled want→page) IS how
+//         fast provisioning answers — encode, park and wire together — so a quick daemon keeps ~5 ahead and a slow or jittery one,
+//          or one never yet measured (4s), keeps 12.
+//  A begun record still finishes (its holes are re-asked as before), the playing one never counts, my own records cost no wire
+//   and are not capped.  LIVE only (the caller gates): a Book keeps the plain K window.  Returns { cap, begun, fresh (unheard
+//   friend records not yet begun), begun_all, heard } — the caller begins a heard record only once no fresh one is left, and
+//    then the cap counts every begun record, heard or not.
+Ra_warm_ahead(w, recs, playing):
+    let rw = this.top_House().c.radio_w
+    let radio = rw ? rw.o({ Radio: 1 })[0] : null
+    let heard = (radio && this.Radio_heard) ? this.Radio_heard(radio) : {}
+    let begun = 0
+    let fresh = 0
+    let rto = 0
+    let begun_all = 0
+    for (const rec of recs) {
+        if (!rec.c.from || rec.sc.id === playing) continue
+        let on = this.Ra_warm_begun(w, rec)
+        if (on) begun_all = begun_all + 1
+        if (heard[rec.sc.id]) continue
+        if (!on) {
+            fresh = fresh + 1
+            continue
+        }
+        begun = begun + 1
+        rto = Math.max(rto, this.Repli_rto ? this.Repli_rto(rec) : 4000)
+    }
+    if (!rto) {
+        let any = recs.find((r) => r.c.from)
+        rto = (any && this.Repli_rto) ? this.Repli_rto(any) : 4000
+    }
+    let cap = 4
+    if (radio && radio.c.ever_played) cap = Math.min(12, 4 + Math.ceil(2 * rto / 1000))
+    return { cap: cap, begun: begun, begun_all: begun_all, fresh: fresh, heard: heard }
+
+// Ra_warm_begun — has this record's preview been started: a chunk in hand, or its first page asked for
+Ra_warm_begun(w, rec):
+    for (const ch of rec.o({ seq: 1 })) {
+        if (this.Repli_chunk_bytes(ch) != null) return true
+    }
+    return !!(w.c.ra_want_ts && w.c.ra_want_ts[rec.sc.id + ':0'])
 
 // Ra_dial_next — the DIAL turn: pick the next record to play off the mirror catalog.  Never the
 //  playing one, only records whose preview stands promised, and only from sources still ONLINE —

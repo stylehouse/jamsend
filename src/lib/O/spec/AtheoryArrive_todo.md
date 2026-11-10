@@ -47,6 +47,27 @@ Started 2026-11-04 from the Supervisor talk (`AtheoryNexus_todo.md` E, "NEXT SES
     Next: the glass (slice 2), then the Door/Link cells and friends' shelves, then `/` mounts it.
 - §2's open questions get settled while building.
 
+   **Later the same day — two boot stalls, read off eed's console + the daemon log:**  (1) THE FIRST OFFER WAS NEVER SENT, not
+    dropped: a reload falls inside one presence census (`0/29 online` at :40), so the daemon's `Repli_offer` refused eed as
+     offline though eed's own repli_ready had just arrived; the re-ask covered it 2s later.  Fixed: `Presence_heard` (Presence.g),
+      stamped from Swarm's hear funnel — a frame heard since the last census outranks it.  Needs a DAEMON RESTART to take.
+       `rx-drop` (Repli.g, spoken) stays as the tell for the other road.  (2) A LATE OPEN SHARE LEFT THE RADIO 'digging' FOREVER:
+        the autopress's `Radio_go` awaits the gesture; landed chunks `Radio_nudge` the digging radio, bumping its era; the tap
+         resolved the await and the press bailed as superseded, never adopting the device.  Fixed in Radio_go (still digging +
+          deviceless ⇒ adopt + pump at the current era).  VERIFIED live after a daemon restart: catalog 150ms after share-armed,
+           autopress +2.5s, an OPEN SHARE tapped 5 min later played S at once.  NOT A BUG: the ~40 `want-first`s in two minutes are
+            Ra_restock_beat's golden-ratio preview spread (K=4, ≤4 wants/beat) — the "same 10 tracks" fix, by design.  SEEN ONCE, not
+             reproduced: a boot where eed's census said S offline for 36s (`0/7` → `1/7`) though the daemon's socket stood open —
+              relay-side; watch for it.
+   **How far ahead we pull (owner: "silly to load more than 4 … a function of how fast provisioning happens when wanted"):**
+    `Ra_warm_ahead` caps the friend records BEGUN at once — 4 before the first play, then 4 + 2/s of the path's RTO, ≤12 —
+     unheard first (a heard one only begins once no unheard waits; then the cap counts them all).  The boot walk of the whole
+      catalog was MY `Ra_mag_warm` random pair, redrawn every beat because the warm test judged rows[0] (now drawn once per Mag,
+       `mag.c.warm_pick`).  `want-first` now names its caller (`by`).  A SKIPPER then met the same few tracks: the replay rung
+        diced among the warm handful (now: the one heard longest ago; the 2s heard cache re-stamped on each play), and the daemon,
+         its shelf full at 40, broke the tour after one round — 2 new tracks per 20s.  Now a hungry listener digs all rounds (the
+          whittle swaps spent ones out) and LOW is 12, not 8 — DAEMON RESTART to take.  Unverified live; Books untouched (all live-gated).
+
 ## 1. Rulings (owner, 2026-11-04)
 
 1. **The Ground declares what to expect.**  A Ground knows what it should have when it starts up, so the milestones are

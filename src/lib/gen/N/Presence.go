@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Presence(): string { return '14efd88c08b5219c~g1' },
+    Ghostmeta_Ghost_N_Presence(): string { return '8ae1e053f96333ce~g1' },
 
 // Presence — WHO IS ONLINE, asked once instead of guessed a hundred times.
 //  The relay already holds the only authoritative answer: `locals`, its addr→sockets map, kept
@@ -155,8 +155,23 @@ Presence_live(w, pub) {
     let p = w.o({ Presence: 1 })[0]
     if (!p) return null
     let k = String(pub)
+    // a frame heard from them since the last census outranks it (Presence_heard)
+    if (+(p.c.heard?.[k] || 0) > +(p.c.answered_at || 0)) return true
     if (!(p.c.known && p.c.known[k])) return null
     return !!p.o({ Seen: 1, pub: k })[0]
+
+},
+// Presence_heard(pub) — a vouched frame just arrived from them (Swarm's hear funnel): they are there, whatever the last census
+//  said.  The census is a snapshot taken every ~10s, and a peer reloading inside one reads offline until the next — so a
+//   repli_ready answered in that gap had its offer suppressed (Repli_offer's offline gate) and the catalog waited for a re-ask
+//    (2026-11-10: eed reloaded, census 0/29 at :40, eed's greet at :44.9 refused, census 1/29 at :45).  The next census
+//     outranks this again, so a peer that really went is offline again on the next answer.  c-side only, never snapped.
+Presence_heard(pub) {
+    let w = this.top_House().c.presence_w
+    let p = w && w.o({ Presence: 1 })[0]
+    if (!p || !pub) return
+    p.c.heard = p.c.heard || {}
+    p.c.heard[String(pub)] = Date.now()
 
 },
 // Presence_here(pub) — Presence_live WITHOUT needing the station world in hand.  The readers that
