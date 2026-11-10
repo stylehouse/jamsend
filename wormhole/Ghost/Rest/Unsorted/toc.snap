@@ -1,4 +1,4 @@
-Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 225 of 420 — one What per directory — give each a home in its area and re-run
+Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 226 of 422 — one What per directory — give each a home in its area and re-run
   What:Ghost/A,desc:2 files with no area
     Doc:Ghost/A/AtheAside.g
     Doc:Ghost/A/Store.g
@@ -83,7 +83,7 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 225 o
     Doc:src/lib/O/lang/grammars/tsstho/index.ts
   What:src/lib/O/lang,desc:1 file with no area
     Doc:src/lib/O/lang/registry.ts
-  What:src/lib/O/spec,desc:63 files with no area
+  What:src/lib/O/spec,desc:64 files with no area
     Doc:src/lib/O/spec/App_todo.md
     Doc:src/lib/O/spec/Arrival_todo.md
     Doc:src/lib/O/spec/AtheoryArrive_todo.md
@@ -110,6 +110,7 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 225 o
     Doc:src/lib/O/spec/Grantwalk_handover.md
     Doc:src/lib/O/spec/IOexpr_todo.md
     Doc:src/lib/O/spec/InkSurprise_todo.md
+    Doc:src/lib/O/spec/Land_guide.md
     Doc:src/lib/O/spec/LangCompiler_TODO.md
     Doc:src/lib/O/spec/LangSolver_report.md
     Doc:src/lib/O/spec/LiesEnd_spec.md

@@ -4,16 +4,28 @@
     import { onMount } from "svelte"
 
 import LandFace from "$lib/L/LandFace.svelte"
-import { ground_include } from "$lib/A/ground"
+import { ground_include, ground_closure, ground_loads } from "$lib/A/ground"
+import { land_map } from "$lib/L/land_map"
+import DOCINDEX from "$lib/O/spec/DocIndex.md?raw"
+// the hand-kept map, shipped with the code for a folderless page (a page with a folder reads the wormhole — fresher: vite's
+//  watcher ignores wormhole/, so this copy can lag until the server restarts, as Ground's shipped tocs do)
+const SHIPPED_WAFTS = import.meta.glob(['/wormhole/Ghost/Everything/toc.snap', '/wormhole/Ghost/*/*/toc.snap', '!/wormhole/Ghost/Rest/**'],
+    { query: '?raw', import: 'default', eager: true })
 const LAND_GROUNDS = ['Land']
 const LAND_TELL_MS = 2000
+// a quiet this long between deliberate acts SUGGESTS a new slice (cut automatically, marked auto — merge it back if wrong)
+const LAND_SLICE_GAP_MS = 120000
+// how many neighbouring docs an erupt opens, busiest first
+const LAND_ERUPT_K = 3
+// how many of an area's docs open when it is pressed (the ones holding most of its main functions)
+const LAND_AREA_K = 4
 
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_LandPage(): string { return 'b1a0507810fe7a31~g1' },
+    Ghostmeta_Ghost_L_LandPage(): string { return '9ee1686e463d56a9~g1' },
 
 // LandPage.g — the land as a page: /Desk?I=<who>&G=Land, the code landscape (spec/Wordland_todo.md §0).  Waft:Everything's land
 //  What wears `main:Land,role:hacker`, so the derived Ground/Land carries Main:Land and Role:hacker, Auto stands A:Land/w:Land on
@@ -71,6 +83,7 @@ e_Land_grounded(A, w, e) {
     }
     if (this.Ground_stand) this.Ground_stand(A, LAND_GROUNDS)
     this.Land_exercise_read(w)
+    this.Land_map_read(w)
     this.i_elvisto(w, 'think')
 
 },
@@ -183,10 +196,13 @@ async Land_verb(w, line) {
 verbs_Land() {
     let H = this
     return [
-        { name: 'pane', where: 'terminal', writes: 0, args: 'open|close|align|arrange|code|fold|weave <path[:line]|method …|n|all|row|column|grid|n [method|line]|Book|off> [--at=method] [--reuse] [--code]',
+        { name: 'pane', where: 'terminal', writes: 0, args: 'open|close|align|arrange|code|fold|weave|erupt|aim|ghosts|area <path[:line]|method …|n|all|row|column|grid|n [method|line]|Book|off> [--at=method] [--reuse] [--code]',
           desc: 'panes — docs side by side as members (their objects) or CodeMirror (code n) · wires between them · weave <Book> colours the wires by its Exercise',
           read: (w, a) => H.Land_pane_read(a),
           land: (w, a, got) => H.Land_pane_land(a, got) },
+        { name: 'slice', where: 'terminal', writes: 0, args: 'cut|merge|split|go <k> [act]',
+          desc: 'the slices of looking — cut one now · merge k into the one before · split k before its act i · go back to k (acting there branches)',
+          run: (w, a) => H.Land_slice(a) },
     ]
 
 },
@@ -217,10 +233,23 @@ Land_def_at(method, only_doc) {
 },
 // the read half, outside Atime: for `open`, each named thing's text — a path (`Ghost/L/Atlas.g:120`) or a method (found by Atlas)
 async Land_pane_read(a) {
-    if (a.verb !== 'open' && a.verb !== 'weave') return {}
+    if (a.verb === 'erupt') return this.Land_erupt_plan(a)
+    if (a.verb !== 'open' && a.verb !== 'weave' && a.verb !== 'code') return {}
     let nav = this.Atlas_nav ? this.Atlas_nav() : null
     if (!nav) return { error: 'no repo on this tab — Atlas has no nav (open the page on a tab with a folder)' }
     if (a.verb === 'weave') return await this.Land_weave_read(nav, a)
+    if (a.verb === 'code') {
+        // a member opened as code wants its text — read it once, the first time
+        let p = this.Land_w()?.o({ Pane: String(a.args && a.args[1] ? a.args[1] : a.name ?? '') })[0]
+        if (!p || p.c.text) return {}
+        let doc = String(p.sc.doc)
+        let cut = doc.lastIndexOf('/')
+        try {
+            return { text: String(await nav.read_file(doc.slice(0, cut), doc.slice(cut + 1)) ?? '') }
+        } catch (er) {
+            return { text: '' }
+        }
+    }
     let names = a.args && a.args.length > 1 ? a.args.slice(1) : [a.name]
     let opened = []
     let missing = []
@@ -289,6 +318,68 @@ Land_pane_land(a, got) {
             made.push(`${n} ${x.doc}:${x.line}`)
         }
         said = { opened: made, missing: got.missing || [] }
+    } else if (verb === 'area') {
+        // an area of Everything opened: the docs its main functions live in, as members, those functions as each member's %Focus
+        //  (bold, their beads open, the rest folded) — the busiest docs first, LAND_AREA_K of them
+        let title = a.args && a.args.length > 1 ? a.args.slice(1).join(' ') : String(a.name ?? '')
+        let area = w.o({ Area: title })[0]
+        if (!area) return { error: `no area '${title}' — the map has: ${w.o({ Area: 1 }).map((x) => x.sc.Area).join(', ')}` }
+        let by = new Map()
+        for (const d of area.o({ Def: 1 })) {
+            let doc = String(d.sc.doc || '')
+            if (!doc) continue
+            if (!by.has(doc)) by.set(doc, [])
+            by.get(doc).push(String(d.sc.Def))
+        }
+        let docs = [...by.entries()].sort((p, q) => q[1].length - p[1].length)
+        let n = 0
+        for (const p of w.o({ Pane: 1 })) n = Math.max(n, Number(p.sc.Pane) || 0)
+        let made = []
+        for (const [doc, fns] of docs.slice(0, Number(a.k) || LAND_AREA_K)) {
+            let p = w.o({ Pane: 1 }).filter((x) => x.sc.doc === doc)[0]
+            if (!p) {
+                n = n + 1
+                p = w.i({ Pane: '' + n, doc: doc, line: '1' })
+            }
+            for (const fn of fns) p.oai({ Focus: fn })
+            p.bump_version?.()
+            made.push(`${p.sc.Pane} ${doc} (${fns.length})`)
+        }
+        said = { area: title, opened: made, more: docs.slice(Number(a.k) || LAND_AREA_K).map((x) => `${x[0]} (${x[1].length})`) }
+    } else if (verb === 'aim') {
+        // the Ground in view
+        let name = String(a.args && a.args[1] ? a.args[1] : a.name ?? '')
+        let aim = this.Land_aim(name)
+        if (aim.unknown.length) return { error: `no Ground ${name}` }
+        let row = w.o({ Aim: 1 })[0]
+        if (row) w.drop(row)
+        w.i({ Aim: name })
+        said = { aim: name, chain: [...aim.chain].reverse().join(' ← '), loads: aim.loads.length }
+    } else if (verb === 'ghosts') {
+        // a Ground's own .g (not what it stands on), opened as members — the patch a Ground IS
+        let name = String(a.args && a.args[1] ? a.args[1] : a.name ?? (w.o({ Aim: 1 })[0]?.sc.Aim ?? ''))
+        let open = new Set(w.o({ Pane: 1 }).map((p) => String(p.sc.doc)))
+        let n = 0
+        for (const p of w.o({ Pane: 1 })) n = Math.max(n, Number(p.sc.Pane) || 0)
+        let made = []
+        for (const g of ground_loads(name)) {
+            if (open.has(g)) continue
+            n = n + 1
+            w.i({ Pane: '' + n, doc: g, line: '1' })
+            made.push(`${n} ${g}`)
+        }
+        said = { ghosts_of: name, opened: made }
+    } else if (verb === 'erupt') {
+        // the neighbours a pane (or a method) calls and is called by, opened as members — busiest first
+        let n = 0
+        for (const p of w.o({ Pane: 1 })) n = Math.max(n, Number(p.sc.Pane) || 0)
+        let made = []
+        for (const x of got.docs || []) {
+            n = n + 1
+            w.i({ Pane: '' + n, doc: x.doc, line: '1' })
+            made.push(`${n} ${x.doc} (${x.out ? x.out + '→' : ''}${x.out && x.in ? ' ' : ''}${x.in ? '←' + x.in : ''})`)
+        }
+        said = { erupted: got.from, opened: made }
     } else if (verb === 'code' || verb === 'fold') {
         // a member opened as CodeMirror (at a method or a line), or folded back to its member
         let n = a.args && a.args[1] ? String(a.args[1]) : String(a.name ?? '')
@@ -298,6 +389,7 @@ Land_pane_land(a, got) {
             if (p.sc.code) delete p.sc.code
         } else {
             p.sc.code = 1
+            if (got.text != null && !p.c.text) p.c.text = got.text
             let at = a.args && a.args[2] ? String(a.args[2]) : null
             if (at && /^\d+$/.test(at)) {
                 p.sc.line = at
@@ -357,6 +449,11 @@ Land_pane_land(a, got) {
     }
     let wires = this.Land_wires(w)
     if (wires) said.wires = wires
+    // a deliberate act that changed what is held is an Act in the current slice (Trail); a seek hit only moving a pane is a glance
+    if (['open', 'close', 'align', 'weave', 'erupt', 'ghosts', 'aim', 'area'].indexOf(verb) >= 0) {
+        let rest = a.args && a.args.length > 1 ? a.args.slice(1).join(' ') : String(a.name ?? '')
+        this.Land_slice_note(w, (verb + ' ' + rest).trim(), a.reuse ? 1 : 0)
+    }
     w.c.ui?.commit?.()
     return said
 
@@ -406,8 +503,13 @@ Land_wires(w) {
         let pb = where.get(to)
         if (!pa || !pb || pa === pb) continue
         let k = from + '>' + to
+        // intensity: how many call sites the code declares for this pair
+        if (want.has(k)) {
+            want.get(k).n = want.get(k).n + 1
+            continue
+        }
         let state = flows ? (flows.has(k) ? 'ran' : 'never') : ''
-        want.set(k, { from: from, to: to, from_pane: pa, to_pane: pb, state: state })
+        want.set(k, { from: from, to: to, from_pane: pa, to_pane: pb, state: state, n: 1 })
     }
     if (flows) {
         for (const k of flows) {
@@ -416,11 +518,11 @@ Land_wires(w) {
             let pa = where.get(from)
             let pb = where.get(to)
             if (!pa || !pb || pa === pb) continue
-            want.set(k, { from: from, to: to, from_pane: pa, to_pane: pb, state: 'undeclared' })
+            want.set(k, { from: from, to: to, from_pane: pa, to_pane: pb, state: 'undeclared', n: 1 })
         }
     }
     let have = w.o({ Wire: 1 })
-    let sig = (x) => `${x.from}>${x.to}@${x.from_pane}>${x.to_pane}:${x.state || ''}`
+    let sig = (x) => `${x.from}>${x.to}@${x.from_pane}>${x.to_pane}:${x.state || ''}*${x.n || 1}`
     let had = new Set(have.map((r) => sig(r.sc)))
     let same = had.size === want.size
     if (same) {
@@ -431,10 +533,266 @@ Land_wires(w) {
     if (same) return null
     for (const r of have) w.drop(r)
     for (const x of want.values()) {
-        let row = w.i({ Wire: 1, from: x.from, to: x.to, from_pane: x.from_pane, to_pane: x.to_pane })
+        let row = w.i({ Wire: 1, from: x.from, to: x.to, from_pane: x.from_pane, to_pane: x.to_pane, n: '' + x.n })
         if (x.state) row.sc.state = x.state
     }
     return want.size
+
+},
+// Land_erupt_plan — read off Atlas (outside Atime; reads only): which docs hold the other ends of a pane's calls, or one method's.
+//  Out-edges are the calls its methods make to defs elsewhere; in-edges are calls elsewhere to its methods.  Ranked by both
+Land_erupt_plan(a) {
+    let w = this.Land_w()
+    let aw = this.top_House().o({ A: 'Atlas' })[0]?.o({ w: 'Atlas' })[0]
+    if (!w || !aw) return { error: 'no w:Land or no A:Atlas here' }
+    let what = String(a.args && a.args[1] ? a.args[1] : a.name ?? '')
+    let pane = w.o({ Pane: what })[0]
+    let own = pane ? String(pane.sc.doc) : null
+    let mine = new Set()
+    let def_doc = new Map()
+    for (const d of aw.o({ Doc: 1 })) {
+        let map = d.o({ Map: 1 })[0]
+        if (!map) continue
+        let path = String(d.sc.Doc)
+        for (const def of map.o({ def: 1 })) {
+            let m = def.sc.method
+            if (!m) continue
+            if (!def_doc.has(m) || (/\.g$/.test(path) && !/\.g$/.test(def_doc.get(m)))) def_doc.set(m, path)
+            if (own && path === own) mine.add(m)
+        }
+    }
+    if (!own) {
+        if (!def_doc.has(what)) return { error: `erupt what? — a pane number or a method (${what} is neither)` }
+        mine.add(what)
+        own = def_doc.get(what)
+    }
+    let open = new Set(w.o({ Pane: 1 }).map((p) => String(p.sc.doc)))
+    let tally = new Map()
+    // a .ts holds the House's own primitives (o, i, oai, top_House) that every ghost calls — the join's rule: skip them unless --all
+    let bump = (doc, dir) => {
+        if (!doc || doc === own || open.has(doc)) return
+        if (!a.all && /\.ts$/.test(doc)) return
+        let t = tally.get(doc)
+        if (!t) {
+            t = { doc: doc, out: 0, in: 0 }
+            tally.set(doc, t)
+        }
+        t[dir] = t[dir] + 1
+    }
+    for (const d of aw.o({ Doc: 1 })) {
+        let map = d.o({ Map: 1 })[0]
+        if (!map) continue
+        let path = String(d.sc.Doc)
+        for (const c of map.o({ call: 1 })) {
+            if (!c.sc.via || !c.sc.method) continue
+            if (mine.has(c.sc.via) && path === own) bump(def_doc.get(c.sc.method), 'out')
+            if (mine.has(c.sc.method) && path !== own) bump(path, 'in')
+        }
+    }
+    let k = Number(a.k) || LAND_ERUPT_K
+    let docs = [...tally.values()].sort((p, q) => (q.out + q.in) - (p.out + p.in)).slice(0, k)
+    return { from: pane ? `pane ${what} (${own})` : what, docs: docs }
+
+},
+// Land_slice_note — a deliberate act joins the current slice, or begins one: by hand (`slice cut` sets w.c.slice_cut), or by a quiet
+//  longer than LAND_SLICE_GAP_MS (then marked auto — a suggestion the user can merge back).  The slice's MATTER is its %Doc rows,
+//   the docs held over its acts; its REASON is its %Act rows, in order.  Acting after `slice go` branches: the new slice says from:
+Land_slice_note(w, reason, glance) {
+    let now = Date.now()
+    let slices = w.o({ Slice: 1 })
+    let cur = slices.slice(-1)[0]
+    let quiet = cur && cur.c.t_last ? now - cur.c.t_last : 0
+    if (!cur || w.c.slice_cut || quiet > LAND_SLICE_GAP_MS) {
+        let k = 0
+        for (const s of slices) k = Math.max(k, Number(s.sc.Slice) || 0)
+        cur = w.i({ Slice: '' + (k + 1) })
+        if (!w.c.slice_cut && slices.length) cur.sc.auto = 1
+        if (w.c.branch_from) cur.sc.from = w.c.branch_from
+        w.c.slice_cut = null
+        w.c.branch_from = null
+    }
+    cur.c.t_last = now
+    let docs = w.o({ Pane: 1 }).map((p) => String(p.sc.doc))
+    let act = cur.i({ Act: reason, docs: docs.join(' ') })
+    if (glance) act.sc.glance = 1
+    for (const d of docs) cur.oai({ Doc: d })
+    cur.bump_version?.()
+
+},
+// Land_slice_matter — a slice's %Doc rows re-derived from its acts (after a merge or a split moved acts between slices)
+Land_slice_matter(s) {
+    for (const d of s.o({ Doc: 1 })) s.drop(d)
+    let seen = new Set()
+    for (const act of s.o({ Act: 1 })) {
+        for (const d of String(act.sc.docs || '').split(' ')) {
+            if (d && !seen.has(d)) {
+                seen.add(d)
+                s.i({ Doc: d })
+            }
+        }
+    }
+    s.bump_version?.()
+
+},
+// Land_slice — the slices reshaped by hand: cut (the next act begins a slice) · merge k (into the one before it) · split k i (acts
+//  from i on become a new slice after k) · go k (the panes become k's matter, as members; the next act branches from k)
+Land_slice(a) {
+    let w = this.Land_w()
+    if (!w) return { error: 'no w:Land on this tab' }
+    let verb = String(a.verb ?? '')
+    let args = a.args || [verb, a.name]
+    let k = String(args[1] ?? a.name ?? '')
+    let slices = w.o({ Slice: 1 })
+    let s = slices.filter((x) => x.sc.Slice === k)[0]
+    let said = null
+    if (verb === 'cut') {
+        w.c.slice_cut = 1
+        said = { cut: 'the next act begins a slice' }
+    } else if (verb === 'merge') {
+        let at = slices.indexOf(s)
+        if (at < 1) return { error: `merge what? — a slice with one before it (got ${k})` }
+        let into = slices[at - 1]
+        for (const act of s.o({ Act: 1 })) into.i({ ...act.sc })
+        w.drop(s)
+        this.Land_slice_matter(into)
+        said = { merged: k, into: into.sc.Slice }
+    } else if (verb === 'split') {
+        if (!s) return { error: `no slice ${k}` }
+        let i = Number(args[2] ?? a.at)
+        let acts = s.o({ Act: 1 })
+        if (!(i > 0 && i < acts.length)) return { error: `split ${k} where? — an act index 1..${acts.length - 1}` }
+        let n = 0
+        for (const x of slices) n = Math.max(n, Number(x.sc.Slice) || 0)
+        // a new slice placed right after k: everything after k is re-minted behind it, so order on w stays file order
+        let tail = slices.slice(slices.indexOf(s) + 1)
+        let neu = w.i({ Slice: '' + (n + 1) })
+        for (const act of acts.slice(i)) {
+            neu.i({ ...act.sc })
+            s.drop(act)
+        }
+        for (const x of tail) {
+            let again = w.i({ ...x.sc })
+            for (const kid of x.o()) again.i({ ...kid.sc })
+            w.drop(x)
+        }
+        this.Land_slice_matter(s)
+        this.Land_slice_matter(neu)
+        said = { split: k, at: i, into: neu.sc.Slice }
+    } else if (verb === 'go') {
+        if (!s) return { error: `no slice ${k}` }
+        for (const p of w.o({ Pane: 1 })) w.drop(p)
+        let n = 0
+        for (const d of s.o({ Doc: 1 })) {
+            n = n + 1
+            w.i({ Pane: '' + n, doc: String(d.sc.Doc), line: '1' })
+        }
+        w.c.slice_cut = 1
+        w.c.branch_from = k
+        this.Land_wires(w)
+        said = { went: k, panes: n }
+    } else {
+        return { error: `slice what? — cut|merge|split|go (got '${verb}')` }
+    }
+    w.c.ui?.commit?.()
+    return said
+
+},
+// Land_map_read — the top-down view (src/lib/L/land_map.ts): Waft:Everything's areas joined to DocIndex's topics, read OUTSIDE Atime
+//  through Atlas's nav when this tab has a folder, else from the copy shipped with the code; landed as rows by e_Land_mapped
+async Land_map_read(w) {
+    let nav = this.Atlas_nav ? this.Atlas_nav() : null
+    let toc = async (key) => {
+        if (nav) {
+            try {
+                let t = await nav.read_file('wormhole/' + key, 'toc.snap')
+                if (t) return String(t)
+            } catch (er) {
+                // fall through to the shipped copy
+            }
+        }
+        return SHIPPED_WAFTS['/wormhole/' + key + '/toc.snap']
+    }
+    w.c.map = await land_map(toc, DOCINDEX)
+    if (w.c.map.problems.length) console.log('🗺 Land map — ' + w.c.map.problems.join(' · '))
+    this.i_elvisto(w, 'Land_mapped')
+
+},
+//  %Area:<title>,waft,ground?,stands?,sec?,main?,hue,desc   ← an area of Everything, in DocIndex's section
+//    %Topic:<title>,doc,n · %Def:<method>,doc?,desc? · %Cites:<path> · %Tests:<Book>
+//  %Aim:<Ground>                                            ← the Ground in view: what the page measures and builds for
+e_Land_mapped(A, w, e) {
+    let map = w.c.map
+    if (!map) return
+    for (const row of w.o({ Area: 1 })) w.drop(row)
+    for (const a of map.areas) {
+        let row = w.i({ Area: a.title, waft: a.waft, hue: '' + a.hue })
+        if (a.ground) row.sc.ground = a.ground
+        if (a.stands.length) row.sc.stands = a.stands.join('|')
+        if (a.sec) row.sc.sec = a.sec
+        if (a.main) row.sc.main = a.main
+        if (a.desc) row.sc.desc = a.desc
+        for (const t of a.topics) row.i({ Topic: t.title, doc: t.doc, n: t.n })
+        for (const d of a.defs) {
+            let r = row.i({ Def: d.method })
+            if (d.doc) r.sc.doc = d.doc
+            if (d.desc) r.sc.desc = d.desc
+        }
+        for (const c of a.cites) row.i({ Cites: c })
+        for (const b of a.books) row.i({ Tests: b })
+    }
+    if (!w.o({ Aim: 1 })[0]) w.i({ Aim: 'Land' })
+    w.c.ui?.commit?.()
+
+},
+// Land_aim — the Ground in view: its closure (what it stands on, Core first) and every .g that closure loads — the set the page
+//  addresses Electrode by (its measuring twin is Hacky/<Name>), and the set `ghosts` opens
+Land_aim(name) {
+    let { order, unknown } = ground_closure([name])
+    let loads = []
+    for (const step of order) {
+        for (const p of ground_loads(step.name)) {
+            if (loads.indexOf(p) < 0) loads.push(p)
+        }
+    }
+    return { name: name, chain: order.map((x) => x.name), loads: loads, unknown: unknown }
+
+},
+// Land_reach — one method's neighbourhood, off Atlas (sync — a press, never a sweep): who calls it and what it calls, grouped by
+//  the doc each lives in, busiest first.  The light rendering a member draws when a def is pressed, to pull panes in from
+Land_reach(method, own) {
+    let aw = this.top_House().o({ A: 'Atlas' })[0]?.o({ w: 'Atlas' })[0]
+    if (!aw) return { error: 'no A:Atlas standing' }
+    let def_doc = new Map()
+    let callers = new Map()
+    let callees = []
+    for (const d of aw.o({ Doc: 1 })) {
+        let map = d.o({ Map: 1 })[0]
+        if (!map) continue
+        let path = String(d.sc.Doc)
+        for (const def of map.o({ def: 1 })) {
+            let m = def.sc.method
+            if (m && (!def_doc.has(m) || (/\.g$/.test(path) && !/\.g$/.test(def_doc.get(m))))) def_doc.set(m, path)
+        }
+        for (const c of map.o({ call: 1 })) {
+            if (c.sc.method === method && c.sc.via) {
+                if (!callers.has(path)) callers.set(path, new Map())
+                let g = callers.get(path)
+                g.set(c.sc.via, (g.get(c.sc.via) || 0) + 1)
+            }
+            if (c.sc.via === method && c.sc.method && (!own || path === own)) callees.push(c.sc.method)
+        }
+    }
+    let out_by = new Map()
+    for (const m of callees) {
+        let doc = def_doc.get(m)
+        if (!doc) continue
+        if (!out_by.has(doc)) out_by.set(doc, new Map())
+        let g = out_by.get(doc)
+        g.set(m, (g.get(m) || 0) + 1)
+    }
+    let shape = (by) => [...by.entries()].map(([doc, g]) => ({ doc: doc, n: [...g.values()].reduce((p, q) => p + q, 0),
+        methods: [...g.entries()].sort((p, q) => q[1] - p[1]).map((x) => x[0]) })).sort((p, q) => q.n - p.n)
+    return { method: method, doc: own || def_doc.get(method) || '', callers: shape(callers), callees: shape(out_by) }
 
 },
 

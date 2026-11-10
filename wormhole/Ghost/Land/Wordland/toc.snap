@@ -73,9 +73,16 @@ Waft:Ghost/Land/Wordland,desc:the land — the bet turned on the code itself —
     Point,method:verbs_Land,desc:panes — docs side by side each its own CodeMirror — aligned on a method
     Point,method:Land_pane_land,desc:open close align arrange code fold weave — the layout as rows
     Point,method:Land_wires,desc:the wires between members — declared calls coloured by a Book's Exercise
+    Point,method:Land_erupt_plan,desc:erupt — the docs at the other ends of a pane's calls
+    Point,method:Land_slice,desc:the slices of looking — cut merge split go — acting after go branches
+    Point,method:Land_map_read,desc:the map — Everything's areas joined to DocIndex's topics
+    Point,method:Land_aim,desc:the Ground in view — its chain and its .g
+    Point,method:Land_reach,desc:a def's reach — callers and callees by file — the light graph to pull panes from
     Doc:src/lib/L/LandFace.svelte
     Doc:src/lib/L/LandPane.svelte
     Doc:src/lib/L/LandMember.svelte
+    Doc:src/lib/L/land_map.ts
+    Point,method:land_map,desc:areas in sections — the top-down view
     Doc:src/lib/L/BigWordland.svelte
     Doc:src/lib/L/Hackarium.svelte
     Doc:src/lib/L/Clerkdesk.svelte

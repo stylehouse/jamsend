@@ -8,8 +8,8 @@
     import { EditorView, basicSetup } from "codemirror"
     import { EditorState } from "@codemirror/state"
     import { lang, lang_for_path } from "$lib/O/lang/lang"
-    let { n, doc, text, line = 1, at = '', onclose, onfold }: {
-        n: string, doc: string, text: string, line?: number, at?: string, onclose?: () => void, onfold?: () => void
+    let { n, doc, tint = '', home = false, text, line = 1, at = '', onclose, onfold }: {
+        n: string, doc: string, tint?: string, home?: boolean, text: string, line?: number, at?: string, onclose?: () => void, onfold?: () => void
     } = $props()
     let el: HTMLDivElement
     let view: EditorView | null = $state(null)
@@ -40,9 +40,9 @@
     })
 </script>
 
-<div class="pane" data-pane={n}>
+<div class="pane" data-pane={n} style={tint ? `--tint:${tint}` : ''}>
     <div class="bar">
-        <b>{n}</b> <span class="doc" title={doc}>{doc}</span>{#if at}<span class="at">· {at}</span>{/if}
+        <b>{n}</b>{#if home}<span class="home" title="in the Ground in view">⌂</span>{/if} <span class="doc" title={doc}>{doc}</span>{#if at}<span class="at">· {at}</span>{/if}
         <small>:{line}</small>
         {#if onfold}<button type="button" title="fold back to the member" onclick={onfold}>▤</button>{/if}
         {#if onclose}<button type="button" title="close this pane" onclick={onclose}>×</button>{/if}
@@ -53,7 +53,8 @@
 <style>
     .pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; border: 1px solid #23453a; border-radius: 6px; overflow: hidden;
         background: #0b1310 }
-    .bar { display: flex; gap: 6px; align-items: baseline; padding: 2px 8px; background: #16281f; font: 11px ui-monospace, monospace }
+    .home { color: var(--tint, #8fd3b0) }
+    .bar { border-left: 4px solid var(--tint, transparent); display: flex; gap: 6px; align-items: baseline; padding: 2px 8px; background: #16281f; font: 11px ui-monospace, monospace }
     .doc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 0 1 auto }
     .at { color: #8fd3b0 }
     small { opacity: .6 }

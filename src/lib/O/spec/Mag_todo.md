@@ -997,6 +997,10 @@ The owner's challenge, same day the table landed: *"one way replication without 
 
 ---
 
+**Next field — the Mag UI, at a resolution (owner, 2026-11-10; unbuilt, wants design).**  One Mag** presented at a chosen resolution,
+ its presentation a spec on rows (fold, style, edges, arrangement, warp), CRUD only where the resolution makes it sensible.  The first
+  evidence and the vocabulary are on the land page: `Wordland_todo.md` §0 "THE WEAVE" → "RESOLUTION" and "The Mag UI is where these belong".
+
 ## 0b. Residue — landing-Mag loose ends (verify + fix, 2026-07-21)
 
 Small cleanups the landing-Mag cut left behind (they lived only in a task-tracker + memory before

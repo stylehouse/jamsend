@@ -87,6 +87,41 @@
          its Exercise reaches Atlas callerless — `Flow,of:Atlas_pass` — the call-site gap, Electrode queue (1)); the eye (3 members,
           25 chips, 6 staged wires drawn).  Owed: intra-member wires (a doc calling itself), more Books' Exercise (only AtlasStaple is
            kept — `runner_sweep --exercise`), and the owner's look with real data.
+- **✓ (2) slices + erupt + direction/intensity BUILT 2026-11-10** (owner: *"mostly manual goo-partitioning, with some suggestion based
+   on activity gaps which are taken automatically in some cases"*; *"something that explodes sets of Docs … the edges need direction and
+    intensity"*).  `%Slice:<k>,auto?,from?` on w:Land holds `%Act:<reason>,docs,glance?` (each deliberate pane verb, in order — the
+     REASON) and `%Doc:<path>` (the union held — the MATTER).  A quiet > LAND_SLICE_GAP_MS (2 min) cuts automatically, marked `auto`
+      (dashed chip — a suggestion; ⊕ merges it back).  `:slice cut|merge k|split k i|go k`; acting after `go` mints `from:k` — a
+       branch.  `:pane erupt <n|method>` opens the docs at the other ends of its calls (out + in, busiest first, `.ts` House primitives
+        skipped unless `--all` — the join's rule; without it Housing.svelte.ts tops every erupt).  Wires carry `n` = declared call sites
+         (stroke width) and an arrowhead to the callee.  Proven on the runner (erupt LandPage → LiesFunk 3, Atlas 2, Electrode 1;
+          cut/merge/split/go→branch `Slice:3,from:1`) and the eye.  Slices live on .c-free rows but die on reload (no store yet).
+   Owner's storage thought: `wormhole/Hacker/<who>/<session>/Trail|Aside/…` — "everything's regroupable in this Waft|Mag-like C**";
+    Trail and Aside are datestamped already, and time is tricky.  Owed: a Doc row's carried-vs-new mark per slice; the store.
+- **✓ The map + focus + reach BUILT 2026-11-10** (spec/Land_guide.md is the manual).  The top is Everything's areas in DocIndex's
+   sections (`src/lib/L/land_map.ts`), a Ground line (`%Aim`).  Pressing an area runs `:pane area <title>`: its busiest docs (4) open
+    as members with the area's main functions as `%Focus` rows — bold, their beads open, beads without one folded.  A member scrolls to
+     `at` or its first focus.  Pressing a def shows its REACH over the member (`Land_reach`: callers / callees grouped by file, off
+      Atlas) — a file or method there opens as a member aimed at it; `{ } read` makes it code.
+- **The Mag UI is where these belong (owner, 2026-11-10: *"perhaps we have to really expand the Mag UI (which is nowhere yet, but
+   prototyped with Waft), so we can lay all these specifications on it, like folding areas, styleings, edges, arrangement, warp"*).**
+    This page is already a hand-written renderer of exactly that vocabulary, as rows: folding/emphasis = `%Focus` (+ fold state, today
+     local to the member), styling = `%Area,hue` and its tint by `%Cites`, edges = `%Wire,state,n`, arrangement = `%Pane` order +
+      `%Layout`, time = `%Slice/%Act/%Doc`, the frame = `%Aim`.  So it is a catalogue of what a Mag UI must take as specifications;
+       "warp" (relevance distorting the layout — the Lens idea, Lies_attention_todo §5) is the one not here yet.  Unbuilt; read
+        Pile_todo §0.0 / Mag_todo with Waft.svelte before starting it.
+- **RESOLUTION — the universal order that is missing (owner, 2026-11-10; a big project, wants human design work first).**
+   *"we have loads of vague objects in Everything, then the minimap pane, then a codemirror pane … the minimap is supposed to be a Mag**
+    structure styled to look like a minimap, and having no ability to CRUD … having a way to adjust the resolution the Mag was presented
+     in to be able to CRUD it sometimes, is the universal order."*  Today the land page has three resolutions, each a different component
+      with its own data path: an area chip (Everything — a What), a member (Atlas's Map as beads + hives — read-only), CodeMirror (the
+       text — where editing would live).  The order wanted: ONE structure (a Mag** — the same C** a Waft prototypes) presented at a chosen
+        resolution, the presentation a spec on rows (fold, style, edges, arrangement, warp — the bullet above), and CRUD appearing only at
+         a resolution where it makes sense (text at the finest; renaming/moving a def at the member's; regrouping at the area's).
+   What this page already proves about it: the levels share KEYS (a method name is one hop from area Def → member chip → CodeMirror line,
+    which is why `--at` and `%Focus` work across all three), and every level change so far is a pane verb (`area`, `code`, `fold`) — a
+     resolution dial would be those verbs made continuous.  Open, for the owner: what a Mag** of code IS (rows per def? per bead?), whether
+      Atlas's `%Map` becomes that Mag or feeds it, and what CRUD at a coarse resolution writes back (to the .g? to Everything's tocs?).
 - **Order:** (1) members + wires — `%Pane` without `code` draws as a member, `:pane code|fold`, `:pane weave <Book>` → `%Wire`
    rows; (2) slices as rows on w:Land (+time), reason + matter, split/merge; (3) the private Trail|Aside store; (4) slideshow /
     becoming machine; (5) the glass map.
