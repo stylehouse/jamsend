@@ -81,6 +81,7 @@ Waft:Ghost/Land/Wordland,desc:the land — the bet turned on the code itself —
     Doc:src/lib/L/LandFace.svelte
     Doc:src/lib/L/LandPane.svelte
     Doc:src/lib/L/LandMember.svelte
+    Doc:src/lib/L/LandGlyph.svelte
     Doc:src/lib/L/land_map.ts
     Point,method:land_map,desc:areas in sections — the top-down view
     Doc:src/lib/L/BigWordland.svelte

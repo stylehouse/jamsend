@@ -48,7 +48,7 @@
             const weave = w?.o({ Weave: 1 })[0]?.sc ?? null
             // the slices of looking, in order: reason (its acts) and matter (its docs); auto = cut by a quiet, a suggestion
             const slices = (w?.o({ Slice: 1 }) ?? []).map((x: any) => ({ k: String(x.sc.Slice), auto: !!x.sc.auto, from: x.sc.from ? String(x.sc.from) : '',
-                acts: x.o({ Act: 1 }).map((t: any) => ({ say: String(t.sc.Act), glance: !!t.sc.glance })), docs: x.o({ Doc: 1 }).map((d: any) => String(d.sc.Doc)) }))
+                acts: x.o({ Act: 1 }).map((t: any) => ({ say: String(t.sc.Act), glance: !!t.sc.glance })), docs: x.o({ Doc: 1 }).map((d: any) => String(d.sc.Doc)), fresh: x.o({ Doc: 1 }).filter((d: any) => d.sc.fresh).length }))
             // the map: Everything's areas (rows minted by e_Land_mapped), and which area each cited doc belongs to (its tint)
             const areas = (w?.o({ Area: 1 }) ?? []).map((x: any) => ({ title: String(x.sc.Area), ground: x.sc.ground ? String(x.sc.ground) : '',
                 sec: x.sc.sec ? String(x.sc.sec) : '', hue: Number(x.sc.hue) || 0, main: x.sc.main ? String(x.sc.main) : '', desc: String(x.sc.desc ?? ''),
@@ -219,7 +219,7 @@
         </div>
         {#if open_area}
             {@const a = open_area}
-            <div class="drawer" style="--h:{a.hue}">
+            <div class="drawer scrollbig" style="--h:{a.hue}">
                 <div class="dh"><b>{a.title}</b> <span class="dim">— {a.desc}</span>
                     <button type="button" class="x" onclick={() => opened = ''}>×</button></div>
                 <div class="drow">
@@ -258,14 +258,14 @@
             <button disabled={busy}>{busy ? '…' : 'run'}</button>
             {#each QUICK as q}<button type="button" class="q" disabled={busy} onclick={() => { line = q; run(q) }}>{q}</button>{/each}
         </form>
-        {#if answer}<pre class:bad={!answer.ok}>{answer.q}
+        {#if answer}<pre class="scrollbig" class:bad={!answer.ok}>{answer.q}
 {answer.text}</pre>{/if}
     </section>
     <section>
         <input class="seek" bind:value={q} spellcheck="false" placeholder="seek — a method, a phrase, or doc:Heist for a file's shape" />
         {#if seek?.error}<div class="none">{seek.error}</div>
         {:else if seek}
-            <div class="hits">
+            <div class="hits scrollbig">
                 {#each seek.defs ?? [] as d (d.doc + d.name + d.line)}
                     <button type="button" class="hit" title="{d.doc}:{d.line}" onclick={() => hit(d.doc, d.line, d.name)}>ƒ <b>{d.name}</b>{#if d.bead} <small>◆ {d.bead}</small>{/if} <small>{d.doc}:{d.line}</small></button>
                 {/each}
@@ -284,7 +284,7 @@
                 <span class="slice" class:auto={sl.auto} title={sl.acts.map((t, j) => `${j}. ${t.say}${t.glance ? ' (glance)' : ''}`).join('\n') + '\n— ' + sl.docs.join('\n— ')}>
                     {#if i > 0}<button type="button" class="sx" title={sl.auto ? 'a quiet cut this — merge it back into the slice before' : 'merge into the slice before'} onclick={() => run(`:slice merge ${sl.k}`)}>⊕</button>{/if}
                     <button type="button" class="sgo" title="go back to this slice's docs — acting there branches" onclick={() => run(`:slice go ${sl.k}`)}>
-                        {sl.k}{#if sl.from}<small>⑂{sl.from}</small>{/if} · {sl.acts[0]?.say ?? ''}{sl.acts.length > 1 ? ` +${sl.acts.length - 1}` : ''} <small>{sl.docs.length} doc(s)</small>
+                        {sl.k}{#if sl.from}<small>⑂{sl.from}</small>{/if} · {sl.acts[0]?.say ?? ''}{sl.acts.length > 1 ? ` +${sl.acts.length - 1}` : ''} <small>{sl.docs.length} doc(s){sl.fresh && sl.fresh < sl.docs.length ? ` · ${sl.fresh} new` : ''}</small>
                     </button>
                     {#if sl.acts.length > 1}<select class="sx" title="split this slice before an act" onchange={(e) => { const v = (e.target as HTMLSelectElement).value; if (v) run(`:slice split ${sl.k} ${v}`) }}>
                         <option value="">✂</option>{#each sl.acts.slice(1) as t, j}<option value={j + 1}>before {t.say}</option>{/each}</select>{/if}
@@ -299,7 +299,7 @@
             {#if view.weave}woven by <b>{view.weave.Weave}</b> ({view.weave.flows} flows){:else}no Book woven — press ⇄ by one{/if}
             · {view.wires.length} wire(s){#each Object.entries(tally) as [k, v]} · <span class="k-{k}">{v} {k}</span>{/each}
         </div>
-        <section class="panes {view.layout}" bind:this={panes_el}>
+        <section class="panes scrollbig {view.layout}" bind:this={panes_el}>
             {#each view.panes as p (p.n)}
                 {#if p.code}
                     <LandPane n={p.n} doc={p.doc} text={p.text} line={p.line} at={p.at} tint={tint(p.doc)} home={home(p.doc)} onclose={() => run(`:pane close ${p.n}`)}

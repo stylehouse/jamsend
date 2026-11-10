@@ -17,6 +17,7 @@ Ground:Land,desc:the land — the bet turned on the code itself — what the cod
   Beside:src/lib/L/LandFace.svelte
   Beside:src/lib/L/LandPane.svelte
   Beside:src/lib/L/LandMember.svelte
+  Beside:src/lib/L/LandGlyph.svelte
   Beside:src/lib/L/land_map.ts
   Beside:src/lib/L/BigWordland.svelte
   Beside:src/lib/L/Hackarium.svelte

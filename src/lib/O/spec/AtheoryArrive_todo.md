@@ -58,7 +58,16 @@ Started 2026-11-04 from the Supervisor talk (`AtheoryNexus_todo.md` E, "NEXT SES
            autopress +2.5s, an OPEN SHARE tapped 5 min later played S at once.  NOT A BUG: the ~40 `want-first`s in two minutes are
             Ra_restock_beat's golden-ratio preview spread (K=4, ≤4 wants/beat) — the "same 10 tracks" fix, by design.  SEEN ONCE, not
              reproduced: a boot where eed's census said S offline for 36s (`0/7` → `1/7`) though the daemon's socket stood open —
-              relay-side; watch for it.
+              most likely a jamserve restart (owner); dropped.
+   **"name contested" on every eed boot was eed greeting ITSELF:** eed's peering held `Pier,pub:eed831f1…,friendly:Grav` (no
+    Grants, one of a September batch), so each rebirth `swarm_hi` went to its own name and came back as "another live body".
+     The relay's table (`RELAY_ROWS=1 runner_ask ping`, no sticky target) showed one tab: Swarm socket + the Lies channel's
+      courtesy bind.  `Swarm_peers` now never returns my own prepub; `Swarm_hi_one` refuses it; the row itself is left.  The
+       contested line now prints the frame type, `to`, and body.  8 Swarm Books green; verified on eed 2026-11-10 (gone).
+   **`🚪 unvouched_swarm_hi — 7950f300` in eed's Door after each daemon restart:** S's socket opens, its relay hello takes a while,
+    and a pulse from eed arriving meanwhile got a reply hi with NO voucher (swarm_hi bypasses Swarm_deliver's hold).  Swarm_hi_one
+     now sends nothing while `w.c.voucher_signing` (≤10s); the on_open Swarm_hi_all greets everyone once it stands.  Needs a
+      jamserve restart; Books never set station_up, so only a live restart shows it.  The Door row from today stays until cleared.
    **How far ahead we pull (owner: "silly to load more than 4 … a function of how fast provisioning happens when wanted"):**
     `Ra_warm_ahead` caps the friend records BEGUN at once — 4 before the first play, then 4 + 2/s of the path's RTO, ≤12 —
      unheard first (a heard one only begins once no unheard waits; then the cap counts them all).  The boot walk of the whole

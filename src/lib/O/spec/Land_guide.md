@@ -42,6 +42,10 @@ The quickest view: **press an area** — its busiest docs open as members, its m
   it and what it calls, by file; press a file or a method there to pull it in as a member aimed at it, or **{ } read** for the code.
    ✺ erupts a whole member's neighbourhood; ⇄ weaves a Book.
 
+**The glyph** is the common frame of reference: a tiny Everything — sections, area cells in their hues, one tick per code file —
+ with whatever is in question MAGNIFIED where it sits (methods stemmed), its cell stretching to hold it.  Above the panes it places the
+  open panes (#n; press to scroll to one).  In a def's reach it places every caller (⟵) and callee (⟶) — press a method to pull it in.
+
 ## 2. Putting a view together — the recipe
 
 1. **Get one doc in.**  Either type in the seek box and press a hit, or type `:pane open <method>` (Atlas finds where it is

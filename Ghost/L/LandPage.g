@@ -589,7 +589,16 @@ Land_slice_note(w, reason, glance):
     let docs = w.o({ Pane: 1 }).map((p) => String(p.sc.doc))
     let act = cur.i({ Act: reason, docs: docs.join(' ') })
     if (glance) act.sc.glance = 1
-    for (const d of docs) cur.oai({ Doc: d })
+    // +time (Story_future §13.4): a doc the slice before also held is CARRIED; one it didn't is fresh here (not `new` — a session key the encoder strips)
+    // read the list again: a slice minted just now is not in `slices`
+    let all = w.o({ Slice: 1 })
+    let at = all.indexOf(cur)
+    let before = at > 0 ? all[at - 1] : null
+    for (const d of docs) {
+        if (cur.o({ Doc: d })[0]) continue
+        let row = cur.i({ Doc: d })
+        if (!before || !before.o({ Doc: d })[0]) row.sc.fresh = 1
+    }
     cur.bump_version?.()
 
 // Land_slice_matter — a slice's %Doc rows re-derived from its acts (after a merge or a split moved acts between slices)

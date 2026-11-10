@@ -97,7 +97,7 @@
          (stroke width) and an arrowhead to the callee.  Proven on the runner (erupt LandPage → LiesFunk 3, Atlas 2, Electrode 1;
           cut/merge/split/go→branch `Slice:3,from:1`) and the eye.  Slices live on .c-free rows but die on reload (no store yet).
    Owner's storage thought: `wormhole/Hacker/<who>/<session>/Trail|Aside/…` — "everything's regroupable in this Waft|Mag-like C**";
-    Trail and Aside are datestamped already, and time is tricky.  Owed: a Doc row's carried-vs-new mark per slice; the store.
+    Trail and Aside are datestamped already, and time is tricky.  ✓ carried-vs-fresh (2026-11-10): a slice's `%Doc` the slice before didn't hold wears `fresh` (NOT `new` — a session key the encoder strips, so it vanished from every snap).  Owed: the store.
 - **✓ The map + focus + reach BUILT 2026-11-10** (spec/Land_guide.md is the manual).  The top is Everything's areas in DocIndex's
    sections (`src/lib/L/land_map.ts`), a Ground line (`%Aim`).  Pressing an area runs `:pane area <title>`: its busiest docs (4) open
     as members with the area's main functions as `%Focus` rows — bold, their beads open, beads without one folded.  A member scrolls to
@@ -110,6 +110,14 @@
       `%Layout`, time = `%Slice/%Act/%Doc`, the frame = `%Aim`.  So it is a catalogue of what a Mag UI must take as specifications;
        "warp" (relevance distorting the layout — the Lens idea, Lies_attention_todo §5) is the one not here yet.  Unbuilt; read
         Pile_todo §0.0 / Mag_todo with Waft.svelte before starting it.
+- **✓ The glyph — the common frame of reference BUILT 2026-11-10** (owner: *"present this glyph-looking thing that is a tiny overview of
+   Everything, with whatever placed inside it where it goes … Repli.g would be sitting magnified in amongst the entire structure, and if
+    there were a list of such things, the glyph would stretch and hold multiple branchings"*).  `src/lib/L/LandGlyph.svelte`: sections →
+     area cells (hue) → one tick per code file the area cites (its Waft's order; a file is at home in the FIRST area citing it) → a file
+      in `things` magnified in place of its tick, its method lists stemmed (StemHive), its cell stretching; files no area cites in a last
+       dashed cell.  Used twice: a def's REACH (callers ⟵ / callees ⟶ placed where they sit) and above the panes (the open panes, tagged
+        #n — press one to scroll to it).  The flow arrangement is a stand-in: **the spaceship's layout** (owner: "we shall soon have a
+         layout for the spaceship") replaces it; the frame — sections → areas → files → methods — stays.
 - **RESOLUTION — the universal order that is missing (owner, 2026-11-10; a big project, wants human design work first).**
    *"we have loads of vague objects in Everything, then the minimap pane, then a codemirror pane … the minimap is supposed to be a Mag**
     structure styled to look like a minimap, and having no ability to CRUD … having a way to adjust the resolution the Mag was presented

@@ -1896,7 +1896,7 @@ Swarm_arm(w):
                 return false
             }
             let by = String(frame.header.from || 'unknown_place')
-            if (this.Swarm_note_theft(ident, by, null)) console.log('👥⚠ another live body of ' + String(ident.sc.prepub).slice(0, 8) + ' is on the wire (' + by + ') — name contested. This body keeps the write; resolution is the human\'s (close one body, or Steal Back).')
+            if (this.Swarm_note_theft(ident, by, null)) console.log('👥⚠ another live body of ' + String(ident.sc.prepub).slice(0, 8) + ' is on the wire (' + by + ', ' + frame.header.type + ' to ' + String(frame.header.to || '?').slice(0, 22) + ', body ' + String(frame.swarm?.body || '-').slice(0, 8) + (frame.swarm?.body && String(frame.swarm.body) === String(this.Swarm_body_key(ident)?.pub || '') ? ' = MINE' : '') + ') — name contested. This body keeps the write; resolution is the human\'s (close one body, or Steal Back).')
             return false
         }
         let sealed = from ? this.Swarm_peering(ident)?.o({ Pier: 1, pub: from })[0] : null
@@ -2727,6 +2727,7 @@ Swarm_station_up(w, ident):
             //  RE-SEND an unacknowledged one (the latch above).  Cleared on every (re)open: a new socket
             //   has no binds, whatever the old one had.
             delete w.c.soul_hello_ok_at; delete w.c.body_hello_ok_at; delete w.c.hello_tries
+            w.c.voucher_signing = Date.now()   // no greeting leaves until the voucher below stands (Swarm_hi_one; 10s at most)
             w.c.station_ident = ident
             await this.Swarm_station_hello(w, ident, port, false)
             // the per-era VOUCHER: the relay authenticates the LINK (the hello above) but ROUTES
@@ -2775,6 +2776,7 @@ Swarm_station_up(w, ident):
             // the rebirth greeting rides every (re)connect, right behind the hello-bind — same
             //  socket, ordered, so the relay routes it the moment the bind lands.  Routes first:
             //   a reconnect may follow a reload that hasn't re-minted them yet.
+            delete w.c.voucher_signing
             this.Swarm_station_routes(w, ident)
             this.Swarm_hi_all(w, ident)
         })
@@ -3164,10 +3166,16 @@ Swarm_note_era(w, route, sf, may_reset):
 
 // one greeting to one friend; reply:1 marks an answer (answers are never re-answered).
 Swarm_hi_one(w, ident, prepub, reply):
+    if (String(prepub) === String(ident.sc.prepub)) return false   // never greet myself (see Swarm_peers)
     let route = this.Swarm_station_pier(w, ident, prepub)
     if (!route) return false
     let station = w.o({ Peering: 1 }).find(p => p.sc.name === ident.sc.prepub)
     if (!w.c.station_up || !this.Peeroleum_carrier(station, w)) return false
+    // NOT BEFORE THE VOUCHER (2026-11-10, eed's Door: `unvouched_swarm_hi — 7950f300` on every daemon restart): the socket opens,
+    //  the relay hello takes its time, and a friend's pulse arriving meanwhile was answered with a hi carrying NO voucher — a
+    //   sealed friend rebuffs that.  Swarm_deliver holds such frames; a hi bypasses it, so it waits here.  The on_open's
+    //    Swarm_hi_all greets everyone the moment the voucher stands
+    if (w.c.voucher_signing && Date.now() - w.c.voucher_signing < 10000) return false
     let hi = { kind: 'swarm_hi', era: this.Swarm_era(w), page: this.Swarm_page(ident) }
     // echo THEIR era back so they learn we hold it (the confirmation half of the epoch handshake)
     if (route.c.peer_era) hi.saw = route.c.peer_era
@@ -6268,6 +6276,10 @@ Swarm_pier_granted(pier):
 Swarm_peers(ident, opts):
     let peering = this.Swarm_peering(ident)
     let all = (peering && peering.o) ? peering.o({ Pier: 1 }) : []
+    // NEVER MYSELF (2026-11-10, eed): a %Pier wearing my own prepub (Grav, a September import) got a swarm_hi every rebirth,
+    //  which came back as "another live body of me — name contested".  A friend is someone else; the row is left alone
+    let me = String(ident?.sc?.prepub || '')
+    if (me) all = all.filter((p) => String(p.sc.pub || '') !== me)
     let live = (opts && opts.live !== undefined) ? opts.live : null
     if (live === 'all') { return all }
     if (live === true) { return all.filter((p) => this.Swarm_pier_granted(p)) }

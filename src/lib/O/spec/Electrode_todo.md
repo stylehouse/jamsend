@@ -242,6 +242,13 @@ The owner is right that async will not stack on its own: every `await` breaks th
 
 ## Open
 
+- **Measuring the hand-written `.svelte` ghosts across an await** (asked 2026-11-10: "everything in src/lib/** is not able to be electroded?").
+   Inspection already covers all of src/lib (Atlas maps .svelte and .ts).  Measurement: .svelte ghosts ARE coated (eatfunc puts them on
+    `H.ghosts`) but lose their caller after an await — the flavour rewrite only runs over `gen/**.go`.  The rewrite is plain script text
+     (FlavourElectrode.spec: byte-identical with the rewrite off), so the road is a VITE TRANSFORM over src/lib/O/*.svelte, not the .g
+      compiler — but spine ghosts are static imports, so it cannot be per-tab like Ground/Hacky: a whole dev server in measuring mode,
+       best a private one (SVELTEKIT_OUTDIR, and `touch vite.config.ts` after — the shared-deps trap).  Plain .ts (Housing/Stuff
+        primitives) stays unmeasured by choice.  Call-site ids (queue 1) would want the same transform for .svelte.  Parked.
 - **Compiler or runtime tap.**  The `.g` compiler can emit a mark at each lowered method and is the only
    thing that can see BRANCHES (which the owner also wants); a runtime wrapper at `ghostsHaunt` needs no
     compiler change and covers hand-written `.svelte` methods too, but sees calls only.  Unruled.

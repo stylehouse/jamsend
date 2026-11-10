@@ -54,8 +54,11 @@
         void beads
         if (!want || !body) return
         tick().then(() => {
+            // scroll THIS body only — scrollIntoView also scrolls every ancestor, the page among them (pressing an area jumped it)
             const el = body.querySelector(`[data-mid="${CSS.escape(want)}"]`) as HTMLElement | null
-            el?.scrollIntoView({ block: 'center', inline: 'nearest' })
+            if (!el) return
+            const r = el.getBoundingClientRect(), br = body.getBoundingClientRect()
+            body.scrollTop += (r.top - br.top) - br.height / 2 + r.height / 2
         })
     })
 
@@ -85,7 +88,7 @@
         {#if oncode}<button type="button" title="open as code" onclick={() => oncode?.()}>{'{ }'}</button>{/if}
         {#if onclose}<button type="button" title="close this pane" onclick={onclose}>×</button>{/if}
     </div>
-    <div class="body" bind:this={body}>
+    <div class="body scrollbig" bind:this={body}>
         {#if error}<div class="none">{error}</div>{/if}
         {#each beads as b (b.label)}
             <div class="bead" data-bead={b.label} style="margin-left:{Math.max(0, b.depth - 1) * 0.8}rem">
@@ -99,7 +102,7 @@
         {/each}
     </div>
     {#if reach}
-        <div class="reach">
+        <div class="reach scrollbig">
             <div class="rh">
                 <b>ƒ {reach.method}</b>
                 <button type="button" title="read it — this pane as code at it" onclick={() => { const m = reach.method; reach = null; oncode?.(m) }}>{'{ }'} read</button>

@@ -31,7 +31,8 @@
         const v = view, want = line
         if (!v) return
         const l = v.state.doc.line(Math.max(1, Math.min(want || 1, v.state.doc.lines)))
-        requestAnimationFrame(() => v.dispatch({ effects: EditorView.scrollIntoView(l.from, { y: 'start' }) }))
+        // the editor's own scroller only — CM's scrollIntoView effect also scrolls the page to bring the editor into view
+        requestAnimationFrame(() => { v.scrollDOM.scrollTop = v.lineBlockAt(l.from).top })
     })
     // a re-read that brought new text
     $effect(() => {
@@ -63,4 +64,8 @@
     .cm { flex: 1 1 auto; min-height: 0; height: 100% }
     .cm :global(.cm-editor) { height: 100% }
     .cm :global(.cm-scroller) { overflow: auto }
+    /* the copper anode handle — Langui's rule: .scrollbig (app.css) is too weak to beat CodeMirror's injected scroller styles */
+    .cm :global(.cm-scroller)::-webkit-scrollbar { width: 14px; height: 14px }
+    .cm :global(.cm-scroller)::-webkit-scrollbar-thumb { background: #6e4e2e url(/i/copper_anodes.jpg); border-radius: 1em; min-height: 3em }
+    .cm :global(.cm-scroller)::-webkit-scrollbar-track { background: #0e0e0e; border-radius: 1em }
 </style>

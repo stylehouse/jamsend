@@ -835,6 +835,8 @@ if (TARGET === 'runner') {
 	if (TARGET === 'runner') {
 		const rows = await relayCensus(ws)
 		if (rows === null) censusRefused = 1
+		// RELAY_ROWS=1 prints the relay's own bound list (addr, sockets, roles) — who is on the wire, from the relay's tables
+		if (process.env.RELAY_ROWS) for (const r of rows ?? []) console.log(`  ${r.addr.padEnd(28)} sockets:${r.sockets} roles:${r.roles.join(',')}`)
 		// A TAB THAT ALSO DECLARED `player` IS A MUSIC PAGE, whatever else it declared (measured live
 		//  2026-09-09, the first thing role-keeping showed: eed had THREE sockets and one of them had
 		//   declared `runner`, so it was sitting in the shared runner seat — the exact thing Auto.svelte's
