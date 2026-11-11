@@ -17,7 +17,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '167e2c5ddee7a091~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'bcaafd8a6f1e31b9~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -2800,7 +2800,9 @@ async Swarm_station_up(w, ident) {
             let bname_ack = bk_ack && bk_ack.pub ? String(bk_ack.prepub || prepubOf(String(bk_ack.pub))) : ''
             // (a fresh identity's body name IS its soul name — then one ack answers both hellos; only a
             //  distinct body name returns here, or the soul latch below would never stamp)
-            if (bname_ack && String(granted) === bname_ack) { self_w.c.body_hello_ok_at = Date.now(); if (bname_ack !== String(ident.sc.prepub)) { return } }
+            // (a sibling tab's body hello wants <body>_N — Swarm_body_want — so its ack is that seat)
+            let body_seat = bname_ack ? (this.Swarm_body_want(ident, bname_ack) || bname_ack) : ''
+            if (bname_ack && String(granted) === body_seat) { self_w.c.body_hello_ok_at = Date.now(); if (bname_ack !== String(ident.sc.prepub)) { return } }
             // ONLY A SOUL-FAMILY ANSWER MOVES THE DOOR (2026-09-02 night — the rehome ping-pong).
             //  This hook hears EVERY hello_ok on the socket, and the station sends TWO hellos: the
             //   soul's and the BODY key's. The body hello's own ack (its key-derived name, a foreign
@@ -3035,8 +3037,8 @@ async Swarm_station_hello(w, ident, port, retry) {
       }
     } catch (e) { console.log('⨳⚠ station hello failed (relay down?)', e) }
     // LAND-OF-PREPUB (Division §0 ⚑⚑⚑, 2026-09-02): the body ALSO binds its own key-derived
-    //  name on the same socket — NO want (a body IS its address; there is nothing to
-    //   arbitrate, a collision is impossible by construction), and handleHello already binds
+    //  name on the same socket — NO want for the primary tab (a body IS its address; across DEVICES
+    //   nothing collides — but two tabs of one profile share the body key: see Swarm_body_want), and handleHello already binds
     //    prepubOf(pub) for any self-signed key. The soul hello above stays: the soul name is
     //     the DOOR (first-come — the Seat is whoever holds that one binding). Sibling frames
     //      and a friend's body-dials land here from now on. Body key not hydrated yet →
@@ -3050,7 +3052,12 @@ async Swarm_station_hello(w, ident, port, retry) {
         if (bk && bk.pub && bk.key && !w.c.body_hello_ok_at) {
             let bh = { control: 'hello', from: String(bk.prepub || prepubOf(String(bk.pub))), pub: bk.pub, ts: Date.now() }
             let bsign = await signHeader(bh, bk.key)
-            port.ws?.send(JSON.stringify(Object.assign({}, bh, { sign: bsign })))
+            // A SIBLING TAB'S BODY HELLO WANTS A SUFFIX (2026-11-11): two tabs in one profile share the stash, so a device
+            //  with its own body key (a cert-crew Cave) had both tabs granted the bare body name, and every to:<body>
+            //   reached both.  The sibling asks for <body>_N — N its soul session suffix's — and the relay delivers a
+            //    seated name to its seat holder, not to every courtesy bind (relay.ts deliverLocal).
+            let bwant = this.Swarm_body_want(ident, bh.from)
+            port.ws?.send(JSON.stringify(Object.assign({}, bh, { sign: bsign }, bwant ? { want: bwant } : {})))
         }
     } catch (e) { console.log('⨳⚠ body hello failed', e) }
 
@@ -6160,6 +6167,11 @@ async Swarm_share_beat(w, ident) {
     // THE LOFI STREAM'S OUTLINE (SoundPooling_todo §0.a.7 build order 2): my stock shelf publishes an empty Mag:Pooling, which the
     //  offer loop below carries to every friend beside Mag:shuffle.  Nothing reads it yet; a reader's cursor starts generation (owed).
     if (typeof this.Ra_pooling_publish === 'function') { try { this.Ra_pooling_publish(stock) } catch (er) {} }
+    // …and the release sweep holds the bodies those pages name (Heist_keep_beat, owed (a)) — it needs the shelf
+    w.c.pooling_shelf = stock
+    // …and the holder's cursor wanders my collection for the next pages while anyone is reading them — DETACHED: a meander is
+    //  several directory hops, and this beat has a 600ms busy budget (Ra_pooling_wander_beat guards its own re-entry)
+    if (typeof this.Ra_pooling_wander_beat === 'function') { this.Ra_pooling_wander_beat(w, stock).catch(() => {}) }
     // THE AUTO-LEND (GrantBorrowing): while I'm the Captain, every online Cave holds a live loan per friend.
     try { await this.Swarm_lend_beat(w, ident) } catch (er) { console.log('⨳ lend beat threw —', er) }
     for (const p of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
@@ -6952,6 +6964,18 @@ Swarm_address(ident) {
     if (vs) { return vs }
     let peering = this.Swarm_peering(ident)
     return peering?.sc?.address ?? peering?.sc?.name
+
+},
+// Swarm_body_want — the seat a body hello asks for: none for the primary tab (the bare body name, granted with no want),
+//  <body>_N for a sibling tab of this profile, N the soul's session suffix (Swarm_station_up's cohort consult) — the
+//   cohort already made N unique among this profile's tabs.  Null when there is nothing to ask.
+Swarm_body_want(ident, bname) {
+    if (!bname || !ident?.sc?.prepub) { return null }
+    if (String(bname) === String(ident.sc.prepub)) { return null }
+    let vs = this.top_House()?.c?.vessel_addr?.[ident.sc.prepub]
+    let fam = String(ident.sc.prepub) + '_'
+    if (!vs || !String(vs).startsWith(fam)) { return null }
+    return String(bname) + '_' + String(vs).slice(fam.length)
 
 },
 // Swarm_next_suffix — the next free <prepub>_N not among `taken` (the addresses we can see held). The

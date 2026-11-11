@@ -10,7 +10,7 @@ import { sha256_hex } from "$lib/Common"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Pool(): string { return 'f274b14bb8fce64c~g1' },
+    Ghostmeta_Ghost_M_Pool(): string { return '30b90b8c94c41e8a~g1' },
 
 // Pool.g — SOUNDPOOLING's home (split out of Ra.g 2026-09-17, SoundPooling_todo.md §0.2a — the owner:
 //  "yes to Pool.g, definitely looks big enough"). Three regions, in the order a reader should meet them:
@@ -128,13 +128,21 @@ Pool_facts_summary(f) {
 //     ahead of the furthest: `Cloud,page:N` of %Card rows naming its own records (id, title, artist, seconds).  The pool's
 //      random draw then reads those Cards (Pool_shared_rows `paged`), and the fill heists them by id as before.  Two readers
 //       reading the same pages draw the same tracks, which is the elasticity: one page, many sinks.  Owed: stable lofi ids (one
-//        transcode for every sink), the pages surviving a holder reload, the light cone choosing the cards, the fog view.
+//        transcode for every sink), the pages surviving a holder reload, the holder's cursor choosing the cards, the fog view.
 Ra_pooling_cards(shelf) {
     let mag = this.Ra_pooling_mag ? this.Ra_pooling_mag(shelf) : null
     if (!mag) { return [] }
     let out = []
     for (const pg of this.Ra_pooling_pages(mag)) { for (const c of pg.o({ Card: 1 })) { out.push(c) } }
     return out
+},
+// Ra_pooling_card_of — one holder's page Card by id, off my mirror of them (probe only)
+Ra_pooling_card_of(mw, pub, id) {
+    let them = mw ? mw.o({ Theirs: 1, pub: String(pub) })[0] : null
+    let stock = them ? them.o({ stock: 1 })[0] : null
+    if (!stock) { return null }
+    for (const c of this.Ra_pooling_cards(stock)) { if (String(c.sc.Card) === String(id)) { return c } }
+    return null
 },
 // Ra_pooling_pages — the CURRENT era's pages, in page order (a page is `Cloud,page:<era>-<n>,n:<n>`; Ra_pooling_publish)
 Ra_pooling_pages(mag) {
@@ -154,6 +162,32 @@ Ra_pooling_page_size() {
 Ra_pooling_keep_pages() {
     return 25
 },
+// Ra_pooling_hold_ids — THE HOLDER KEEPS WHAT IT HAS PAGED (SoundPooling_todo §0.a.7 owed (a)).  Every card on my current era's
+//  pages, ranked newest page first (0 = the newest): the pages are made just ahead of the furthest reader, so the newest is what
+//   someone is about to pull, and the oldest is what everyone has most likely passed.  The release sweep (Heist_keep_beat) holds a
+//    served lofi body whose card is here, newest first, within Ra_pooling_hold_cap — so the next sink reading the same page gets the
+//     bytes without another transcode.
+Ra_pooling_hold_ids(shelf) {
+    let mag = this.Ra_pooling_mag ? this.Ra_pooling_mag(shelf) : null
+    let out = {}
+    if (!mag) { return out }
+    let pages = this.Ra_pooling_pages(mag).slice().reverse()
+    let rank = 0
+    for (const pg of pages) {
+        for (const c of pg.o({ Card: 1 })) {
+            let id = String(c.sc.Card)
+            if (out[id] == null) { out[id] = rank }
+        }
+        rank = rank + 1
+    }
+    return out
+},
+// Ra_pooling_hold_cap — the byte budget for those held bodies: a browser holder is a phone or a laptop tab (64MB ≈ 10 lofis), a
+//  node holder (jamserve) has room (512MB).  `w.c.pooling_hold_cap` overrides; 0 holds nothing (release-after-serve, as before).
+Ra_pooling_hold_cap(w) {
+    if (w && w.c && w.c.pooling_hold_cap != null) { return +w.c.pooling_hold_cap }
+    return (typeof window === 'undefined') ? 536870912 : 67108864
+},
 // Ra_pooling_wanted — THE HOLDER HEARS A PAGE WANT.  `lib` is the stock shelf this pier serves.  Each reader's furthest want is
 //  kept (runtime, on the Mag's .c — a cursor is nobody else's business, and the Mag crosses to every friend); one page is made
 //   per want heard, so a reader racing ahead is paced by its own asking.  Returns the pages made (0|1).
@@ -167,8 +201,8 @@ Ra_pooling_wanted(w, lib, from, upto) {
     for (const k of Object.keys(mag.c.readers)) { furthest = Math.max(furthest, mag.c.readers[k]) }
     let born = +(mag.sc.born || 0)
     if (born >= furthest) { return 0 }
-    let made = this.Ra_pooling_generate(lib, mag, born + 1)
-    if (made && born + 1 < furthest) { made = made + this.Ra_pooling_generate(lib, mag, born + 2) }
+    let made = this.Ra_pooling_generate(lib, mag, born + 1, w)
+    if (made && born + 1 < furthest) { made = made + this.Ra_pooling_generate(lib, mag, born + 2, w) }
     if (made) {
         // re-offer soon: every caster's mark goes stale, so the next share beat carries the new page to everyone reading
         for (const pier of (w.c.repli_casters || [])) { pier.c.offered_at = 0 }
@@ -176,31 +210,138 @@ Ra_pooling_wanted(w, lib, from, upto) {
     }
     return made
 },
-// Ra_pooling_generate — mint page N: up to page_size of my records no page names yet, hash-ranked by page (the same page from
-//  the same shelf every time — no Math.random, the fixture law).  Nothing fresh to name ⇒ no page (the radio shelf rolls, so
-//   fresh ones come).  Old pages beyond keep_pages scroll off the top.  Returns the cards made.
-Ra_pooling_generate(lib, mag, page) {
+// Ra_pooling_generate — mint page N from THE HOLDER'S CURSOR (Ra_pooling_cursor_picks): up to page_size tracks no page names
+//  yet.  Nothing to name ⇒ no page (the wander and the radio shelf both move on, so fresh ones come).  Old pages beyond keep_pages
+//   scroll off the top.  Returns the cards made.
+Ra_pooling_generate(lib, mag, page, w) {
     let named = {}
-    for (const c of this.Ra_pooling_cards(lib)) { named[String(c.sc.Card)] = 1 }
-    let fresh = this.Ra_recs(lib).filter((r) => r.sc.id && !named[String(r.sc.id)] && !r.sc.husk && !r.sc.rummage && !r.sc.of)
-    if (!fresh.length) { return 0 }
-    let key = {}
-    for (const r of fresh) { key[String(r.sc.id)] = this.Ra_pool_hash('page:' + page + ':' + String(r.sc.id)) }
-    fresh.sort((a, b) => (key[String(a.sc.id)] < key[String(b.sc.id)] ? -1 : 1))
+    for (const c of this.Ra_pooling_cards(lib)) {
+        named[String(c.sc.Card)] = 1
+        if (c.sc.path) { named['path:' + String(c.sc.base || '') + '/' + String(c.sc.path)] = 1 }
+    }
+    let picks = this.Ra_pooling_cursor_picks(w, lib, mag, page, named, this.Ra_pooling_page_size())
+    if (!picks.length) { return 0 }
     let pg = mag.i({ Cloud: 1, page: String(mag.sc.era || '') + '-' + page, n: page })
     pg.c.up = mag
     pg.c.repli_loc = ['Cloud', 'page']
     let n = 0
-    for (const r of fresh.slice(0, this.Ra_pooling_page_size())) {
-        let c = pg.i({ Card: String(r.sc.id), title: String(r.sc.title || '') })
-        if (r.sc.artist) { c.sc.artist = String(r.sc.artist) }
-        if (r.sc.seconds) { c.sc.seconds = String(r.sc.seconds) }
+    for (const p of picks) {
+        let c = pg.i({ Card: p.id, title: p.title })
+        if (p.artist) { c.sc.artist = p.artist }
+        if (p.seconds) { c.sc.seconds = p.seconds }
+        if (p.path) { c.sc.path = p.path }
+        if (p.base) { c.sc.base = p.base }
+        if (p.why) { c.sc.why = p.why }
         n = n + 1
     }
     mag.sc.born = String(page)
     let pages = this.Ra_pooling_pages(mag)
     for (const old of pages.slice(0, Math.max(0, pages.length - this.Ra_pooling_keep_pages()))) { mag.drop(old) }
     mag.bump()
+    return n
+},
+// Ra_pooling_cursor_picks — THE HOLDER'S CURSOR: what goes on page N (owner 2026-11-11: *"a SP quota half-liked and half-random"*).
+//  Half from what I LIKE (my current Yays I can find on my stock shelf, newest first — Ra_pooling_liked_recs), the rest from the
+//   WANDER (Crate_nav_meander picks the share beat queued — Ra_pooling_wander_beat — anywhere in my collection, named by their
+//    path-derived keep id and carrying the path, so a sink can ask for a track I have never stocked), and the rolling radio shelf
+//     fills whatever is left, hash-ranked by page as before.  Each pick: {id, title, artist?, seconds?, path?, base?, why?}.
+Ra_pooling_cursor_picks(w, lib, mag, page, named, size) {
+    let me = String(lib.sc.pub || '')
+    let out = []
+    let took = {}
+    let half = Math.ceil(size / 2)
+    for (const r of this.Ra_pooling_liked_recs(w, lib, me)) {
+        if (out.length >= half) { break }
+        let id = String(r.sc.id)
+        if (named[id] || took[id]) { continue }
+        took[id] = 1
+        out.push(this.Ra_pooling_pick_of(r, 'liked'))
+    }
+    let q = mag.c.wander || []
+    while (out.length < size && q.length) {
+        let p = q.shift()
+        let pk = 'path:' + String(p.base || '') + '/' + String(p.path)
+        if (named[pk]) { continue }
+        let id = this.Heist_keep_id(me, p.base || '', p.path)
+        if (named[id] || took[id]) { continue }
+        took[id] = 1
+        named[pk] = 1
+        let pm = this.Crate_meta_from_path ? this.Crate_meta_from_path(String(p.path)) : {}
+        let pick = { id: id, title: String(pm.title || String(p.path).split('/').pop()), path: String(p.path), why: 'wander' }
+        if (pm.artist) { pick.artist = String(pm.artist) }
+        if (p.base) { pick.base = String(p.base) }
+        out.push(pick)
+    }
+    if (out.length < size) {
+        let fresh = this.Ra_recs(lib).filter((r) => r.sc.id && !named[String(r.sc.id)] && !took[String(r.sc.id)] && !r.sc.husk && !r.sc.rummage && !r.sc.of)
+        let key = {}
+        for (const r of fresh) { key[String(r.sc.id)] = this.Ra_pool_hash('page:' + page + ':' + String(r.sc.id)) }
+        fresh.sort((a, b) => (key[String(a.sc.id)] < key[String(b.sc.id)] ? -1 : 1))
+        for (const r of fresh) {
+            if (out.length >= size) { break }
+            out.push(this.Ra_pooling_pick_of(r, ''))
+        }
+    }
+    return out
+},
+// Ra_pooling_pick_of — a stocked record as a page pick
+Ra_pooling_pick_of(r, why) {
+    let p = { id: String(r.sc.id), title: String(r.sc.title || '') }
+    if (r.sc.artist) { p.artist = String(r.sc.artist) }
+    if (r.sc.seconds) { p.seconds = String(r.sc.seconds) }
+    if (why) { p.why = why }
+    return p
+},
+// Ra_pooling_liked_recs — my current Yays (a later Nay or Meh ends one; the machine's own presses aren't taste) that sit on my stock
+//  shelf, newest heart first.  A Yay I hold only in the collection proper isn't reachable yet: a landed take keeps no path on its
+//   Card (owed — stamp the landed path, then it can ride the wander's road).
+Ra_pooling_liked_recs(w, lib, me) {
+    if (!w || !this.Heard_cards_union || !this.Heard_landed) { return [] }
+    let cards = []
+    try { cards = this.Heard_cards_union(w, me) } catch (er) { cards = [] }
+    cards = cards.filter((c) => !this.Heard_is_machine(c) && this.Heard_reaction(c) === 'take')
+    cards.sort((a, b) => (+(b.sc.hearted_at || 0)) - (+(a.sc.hearted_at || 0)))
+    let out = []
+    let seen = {}
+    for (const c of cards) {
+        let r = this.Heard_landed(lib, c)
+        if (!r || !r.sc.id || r.sc.husk || r.sc.rummage || r.sc.of || seen[String(r.sc.id)]) { continue }
+        seen[String(r.sc.id)] = 1
+        out.push(r)
+    }
+    return out
+},
+// Ra_pooling_wander_beat — THE HOLDER'S CURSOR MOVES: while someone is reading my Pooling pages, keep a short queue (two pages'
+//  worth) of tracks from a wander through my whole collection — Crate_nav_meander, the radio digger's walk (one directory per hop,
+//   never a scan), skipping what a page or the queue already names.  Runtime only (`mag.c.wander`); a reload starts a new era anyway.
+//    Pumped from the share beat, at most every 4s.  Returns the picks queued.
+async Ra_pooling_wander_beat(w, stock) {
+    let mag = this.Ra_pooling_mag ? this.Ra_pooling_mag(stock) : null
+    if (!mag || !mag.c.readers || !Object.keys(mag.c.readers).length) { return 0 }
+    mag.c.wander = mag.c.wander || []
+    if (mag.c.wander.length >= 2 * this.Ra_pooling_page_size()) { return 0 }
+    if (mag.c.wander_busy || Date.now() - (+mag.c.wander_ts || 0) < 4000) { return 0 }
+    mag.c.wander_ts = Date.now()
+    let nav = this.Crate_nav ? this.Crate_nav() : null
+    if (!nav || !this.Crate_nav_meander) { return 0 }
+    let skip = {}
+    for (const c of this.Ra_pooling_cards(stock)) { if (c.sc.path) { skip[String(c.sc.path)] = 1 } }
+    for (const p of mag.c.wander) { skip[String(p.path)] = 1 }
+    let bases = ['music', '']
+    mag.c.wander_i = (+mag.c.wander_i || 0) + 1
+    let base = bases[mag.c.wander_i % bases.length]
+    let picks = []
+    mag.c.wander_busy = 1
+    try { picks = await this.Crate_nav_meander(nav, base, 2, skip) } catch (er) { picks = [] }
+    mag.c.wander_busy = 0
+    let n = 0
+    for (const p of (picks || [])) {
+        let path = String(p)
+        if (!path || skip[path]) { continue }
+        skip[path] = 1
+        mag.c.wander.push({ path: path, base: base })
+        n = n + 1
+    }
     return n
 },
 // Ra_pooling_cursor — THE READER'S EYES on one holder's mirrored Pooling Mag: the first page still holding a card this tab hasn't
@@ -340,7 +481,7 @@ Pool_draw_radio(pd, f) {
     let hold = (f.pooled_raw || []).map((c) => c.id).filter(Boolean)
     return hold.slice(Math.max(0, hold.length - pd.cap))
 },
-// Pool_draw_tally — a 'liked' compartment wearing `keep_days` is THE LIKED HALF OF THE LIGHT CONE (owner
+// Pool_draw_tally — a 'liked' compartment wearing `keep_days` is THE LIKED HALF OF THE POOL (owner
 //  2026-11-11: *"do we keep tracks they liked in there for a month or something?"* … *"have that switched on"*):
 //   only a CURRENT Yay (Heard_reaction — a later Nay or Meh ends it, and Pool_goal bars those anyway) hearted
 //    within the window, and only one that can ARRIVE (held, so a press, or some mirror holds it) — a wish with
@@ -1360,6 +1501,8 @@ Pool_shared_rows(w) {
             if (!id || seen[id]) { continue }
             let row = { id: id, from: from, title: String(c.sc.title || ''), pages: 1, paged: 1 }
             if (c.sc.artist) { row.artist = String(c.sc.artist) }
+            if (c.sc.path) { row.path = String(c.sc.path) }
+            if (c.sc.base) { row.base = String(c.sc.base) }
             if (c.sc.seconds) { row.seconds = +c.sc.seconds }
             if (crewish(from)) { row.crew = 1 }
             out.push(row)
@@ -1960,9 +2103,16 @@ async Ra_pool_fill_land(w, ident) {
             }
             let srec = null
             if (homes.mw.oa({ Theirs: 1, pub: to })) { srec = this.Ra_rec_find(this.Ra_home_them(homes.mw, to), { Record: 1, id: of }) }
-            let title = srec && srec.sc.title ? String(srec.sc.title) : of.slice(0, 8)
+            // a WANDER card (the holder's cursor, Ra_pooling_cursor_picks) names a track the holder never stocked: its path rides the keep
+            //  into the describe ask, and the holder self-certifies the seed from it (Heist_rummage_folder)
+            let pcard = (!srec && this.Ra_pooling_card_of) ? this.Ra_pooling_card_of(homes.mw, to, of) : null
+            let title = srec && srec.sc.title ? String(srec.sc.title) : (pcard && pcard.sc.title ? String(pcard.sc.title) : of.slice(0, 8))
             let k = shop.i({ Heist: this.Radio_clean ? this.Radio_clean(title) : title, seed: of, pub: to, state: 'primed', into: 'pool', why: 'fill' })
             k.c.up = shop
+            if (pcard && pcard.sc.path) {
+                k.sc.seed_path = String(pcard.sc.path)
+                if (pcard.sc.base) { k.sc.seed_base = String(pcard.sc.base) }
+            }
             k.c.last_touch = Date.now()
             // THE MACHINE'S OWN PRESS (rung 4, SoundPooling_todo §0.0): the SAME Card a human ♥ mints,
             //  on the machine page (Heard_is_machine) — so Heard_clone_beat's verdict/listing machinery

@@ -608,6 +608,46 @@ async function main() {
 		}
 	}
 
+	// ⓘ TWIN TABS OF A CAVE (2026-11-11, Identity_persist_todo §0.1).  Two tabs in one browser profile share the stash, so
+	//  a device with its OWN body key (a cert-crew Cave) has both tabs hello that body name.  With no want, both are
+	//   granted it as a seat and every to:<body> reached both — neither station dials ?addr=<body>, so no socket owns the
+	//    door.  The cure: the sibling's body hello wants `<body>_N` (Swarm_station_hello), and with no door-owner the relay
+	//     delivers to the SEAT holder, not to every courtesy bind.  With nobody seated at the bare name it still fans out.
+	log('\n— twin tabs of a Cave: the seat before the courtesy bind —')
+	{
+		const attach3 = process.env.RELAY_MOD ? (await import(process.env.RELAY_MOD)).attachRelay : attachRelay
+		const srv = createServer(); const port = await listen(srv)
+		const relay = attach3(srv, { editorRelayUrl: 'off' })
+		try {
+			const soul = await mint(), body = await mint()
+			const SOUL = prepubOf(soul.pubHex), BODY = prepubOf(body.pubHex)
+			const hello = async (b: any, k: any, want?: string) => {
+				const h = { control: 'hello', from: prepubOf(k.pubHex), pub: k.pubHex, ts: Date.now() }
+				b.send({ ...h, sign: await signHeader(h, k.privHex), ...(want ? { want } : {}) })
+			}
+			const a = browser(port, SOUL), b = browser(port, `${SOUL}_1`), far = browser(port, 'FAR')
+			await Promise.all([a.open, b.open, far.open])
+			await hello(a, body)                       // the primary: its body name, no want
+			await until(() => a.ctrl.some((m: any) => m.control === 'hello_ok' && m.addr === BODY))
+			await hello(b, body, `${BODY}_1`)          // the sibling tab: the same key, at a session suffix
+			const bOk = await until(() => b.ctrl.some((m: any) => m.control === 'hello_ok' && m.addr === `${BODY}_1`))
+			check('the sibling tab is granted <body>_1', bOk)
+			far.frame(BODY, 'chunk', 70)
+			await until(() => a.got.some((m: any) => m.header?.seq === 70)); await wait(150)
+			check('to:<body> reaches the primary tab', a.got.some((m: any) => m.header?.seq === 70))
+			check('…and NOT the sibling (only courtesy-bound to <body>)', !b.got.some((m: any) => m.header?.seq === 70))
+			far.frame(`${BODY}_1`, 'chunk', 71)
+			check('to:<body>_1 reaches the sibling', await until(() => b.got.some((m: any) => m.header?.seq === 71)))
+			// the primary goes: nobody holds the bare seat any more, so to:<body> falls back to the courtesy binds
+			a.ws.close(); await wait(150)
+			far.frame(BODY, 'chunk', 72)
+			check('primary gone → to:<body> still reaches the sibling (the room fallback)', await until(() => b.got.some((m: any) => m.header?.seq === 72)))
+			b.ws.close(); far.ws.close()
+		} finally {
+			relay.close(); await wait(50); srv.close()
+		}
+	}
+
 	editor2.close()
 	runner.close()
 	await wait(50)

@@ -5,8 +5,7 @@ story:VytoOrchestra
     For
   Stands:GlassTesting
   TimeSpool
-    TimeTotal:beliefs,avg=0.217
-      sample=0.357,at=1791010260
+    TimeTotal:beliefs,avg=0.197
       sample=0.196,at=1791092971
       sample=0.354,at=1791110336
       sample=0.288,at=1791111038
@@ -16,8 +15,8 @@ story:VytoOrchestra
       sample=0.06,at=1793624377
       sample=0.07,at=1793668046
       sample=0.162,at=1794382095
-    TimeTotal:step,avg=0.027
-      sample=0.045,at=1791010260
+      sample=0.161,at=1794388405
+    TimeTotal:step,avg=0.025
       sample=0.025,at=1791092971
       sample=0.044,at=1791110336
       sample=0.036,at=1791111038
@@ -27,6 +26,7 @@ story:VytoOrchestra
       sample=0.008,at=1793624377
       sample=0.009,at=1793668046
       sample=0.02,at=1794382095
+      sample=0.02,at=1794388405
   step,dige:4d8d5b4a1abafbd1
   step=2,dige:d516aa5f8f793f5e,desc:seed the orchestra — a stuffed band beside three kin songs and two loose strays
   step=3,dige:9d653dccb345c38e,desc:commission the glass foam-cut and nested — six top cells with the band carrying three

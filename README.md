@@ -153,6 +153,8 @@ docker compose build
 docker run --rm -v .:/app jamsend-app:latest npm install
 # thence
 docker compose up
+# < not sure if these flags really do help the tab stay awake
+scripts/chrome.sh
 # maybe eventually
 cd ..; git clone jamsend prod-jamsend; cd prod-jamsend; ./prod.sh
 # having already configured leproxy to tunnel or not, etc.

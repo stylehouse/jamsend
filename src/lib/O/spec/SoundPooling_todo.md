@@ -78,12 +78,12 @@
       exists yet: today every shelf pages into one `Mag:shuffle` (`Ra.g` ~835), and the pool is MY `%SoundPooling/stock/Mag:shuffle`,
        filled by my steward drawing random ids off the friend's RADIO mirror and heisting each under a rummage id (`of:` join).
         All of that goes; consent and budget stay.
-    **What goes on the Pooling pages — a light cone** (owner 2026-11-11: *"a SP quota half-liked and half-random … do we keep tracks
+    **What goes on the Pooling pages — the holder's cursor** (owner 2026-11-11: *"a SP quota half-liked and half-random … do we keep tracks
      they liked in there for a month or something? it's a light cone wandering around their music collection"*).  Today's Cell:Pooling
       splits the budget between compartments: `rolling` (random) and `recent` (my landed takes, the "recent" tickbox), 50/50 by
        `share`; a `tally` compartment (liked/kept) exists in `Pool_goal` but switch-on never declares it, and nothing keeps by age —
-        the roll evicts only over cap.  The Pooling Mag should carry the cone: part LIKED (stays a while — "a month or something",
-         unruled), part a random WANDER through the collection that moves on; minus what this listener Nay'd.  Which side the cone
+        the roll evicts only over cap.  The Pooling Mag should carry the cursor's picks: part LIKED (stays a while — "a month or something",
+         unruled), part a random WANDER through the collection that moves on; minus what this listener Nay'd.  Which side the cursor
           lives on (the holder's pages, or this tab's reading of them) is the open design question.
 
     **The liked half — BUILT 2026-11-11, this tab's side** (owner: *"that's a good feature, have that switched on... be working
@@ -240,16 +240,30 @@
       path)` is deterministic, and `Heist_materialise_one` is idempotent per mode, so two sinks asking for one card share one
        transcode while the body is held.  What's lost is the RELEASE-after-serve: a later sink re-transcodes.  So owed: hold the lofi
         body of a card on a page some reader hasn't passed, within a memory budget (a browser holder can't hold 100 × 6 MB).
+       **BUILT 2026-11-11 23:06** (Heist_keep_beat's release sweep + Pool.g `Ra_pooling_hold_ids`/`Ra_pooling_hold_cap`): a served lofi
+        whose card (`rec.sc.re || rec.sc.id`) is on one of my current-era pages is not released; the candidates are kept newest page
+         first (the pages are made just ahead of the furthest reader) within 64MB in a browser / 512MB under node
+          (`w.c.pooling_hold_cap`), the rest release as before.  The share beat hands the sweep its shelf (`w.c.pooling_shelf`).
+           Logs `🏊⇉ holding N paged lofi(s), xMB of yMB` when N changes.  Limits: the serve-lib TTL (30 min) still drops a whole lib;
+            the holder doesn't know a reader's cursor (a want carries the horizon), so "unpassed" is approximated by page age.
+            **Live check owed:** a second reader of a page pulls its card with no `⇊♪ lofi: … → ogg128` line on the holder.
      (b) **A holder reload — eras, BUILT 2026-11-11 night.**  `Mag:Pooling,era:<6 chars>`, minted per holder life
       (`Ra_pooling_publish`; a Mag published before eras gets one and drops its pages).  Pages are `Cloud,page:<era>-<n>,n:<n>`, so
        a reloaded holder's fresh page 1 never merges into the old page 1 at a mirror (Repli locates a page by its name).  The reader
         reads only the current era (`Ra_pooling_pages`), drops the old (`Ra_pooling_shed`), counts `born` off its current pages
          (a merge never deletes the old `born`), and re-asks at once.  What it pooled from the old life stays pooled.
-         **Not yet live:** the 21:38 hot update failed on the tabs (Vite "Failed to reload Ra.go/Pool.go", transient — both transform
-          200 now), and eed still runs the pre-era code.  Needs a reload of eed and Vingas, then: eed's mirror shows
-           `Mag:Pooling,era:…` with `<era>-1…` pages, and the log says "started a new Pooling stream — 13 old page(s) dropped".
-     (c) The light cone choosing the cards: the liked half from the holder's taste, the wander through its whole collection rather
-      than just its rolling radio shelf.
+         **LIVE 2026-11-11 22:20** (after the relay restart reloaded every tab): eed's mirror of Vingas (b8bc9a68) reads
+          `Mag:Pooling,era:zd53ou,born:5` with pages `zd53ou-1…5` holding Cards; eed's own Mine Mag is `era:1oh5h0`, empty (nothing lent).
+     (c) **The holder's cursor choosing the cards — BUILT 2026-11-11 night** (named so by the owner: "light cone" belongs elsewhere).
+      `Ra_pooling_cursor_picks` fills page N: **half liked** (my current Yays found on my stock shelf, newest heart first —
+       `Ra_pooling_liked_recs`), then **the wander** (`Ra_pooling_wander_beat`, detached off the share beat while anyone reads my
+        pages: `Crate_nav_meander` over bases music|'', a two-page queue on `mag.c.wander`), then the rolling radio shelf as before.
+         A wander card is named by its keep id `Heist_keep_id(me, base, path)` and carries `path` (+ `base`, + `why:wander|liked`).
+          The road for a track the holder never stocked: the sink's fill finds the card (`Ra_pooling_card_of`) and puts
+           `seed_path`/`seed_base` on its keep → the describe ask carries them (`Heist_rummage_ask`'s seedHint) → the holder's
+            `Heist_rummage_folder` self-certifies the seed by the same equation the want side uses → census, pick, materialise unchanged.
+             **Owed:** a landed take keeps no path on its Card, so a Yay held only in the collection proper can't be paged yet (stamp
+              the landed path at landing).  **Live check owed:** a Pooling page on Vingas carrying `why:wander` cards, and eed pooling one.
      (d) The fog view (build order 3) over `Theirs/stock/Mag:Pooling`.
      (e) Radiostock onto the same road.
 **Build order, smallest real thing first:**

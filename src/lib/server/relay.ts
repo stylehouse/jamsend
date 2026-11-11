@@ -410,11 +410,19 @@ export function attachRelay(
 		//         so the bucket fans out to both, which is what a role bucket has always meant.
 		const ownsDoor = (ws: WebSocket) =>
 			String((ws as any).qaddr || '') === to || String((ws as any).declaredRole || '') === to
-		let own = false
-		for (const ws of set) if (ws.readyState === WebSocket.OPEN && ownsDoor(ws)) { own = true; break }
+		// THE SEAT, BEFORE THE COURTESY BIND (2026-11-11, twin tabs of a Cave): with no door-owner, a name a hello
+		//  GRANTED as a socket's seat goes to that seat's holders, not to every socket merely courtesy-bound to it
+		//   (handleHello binds the bare prepub for every verified hello, want or no want).  Two tabs in one browser
+		//    profile share the stash and so the body key: the sibling hellos its body name wanting `<body>_N`, and
+		//     `to:<body>` then reaches the primary alone — the body-name twin of the soul door (heldByAnother already
+		//      reads a seat the same way).  No seat-holder (every body at a suffix) still fans out to the room.
+		const holdsSeat = (ws: WebSocket) => !!((ws as any).seats as Set<string> | undefined)?.has(to)
+		let own = false, seated = false
+		for (const ws of set) if (ws.readyState === WebSocket.OPEN) { if (ownsDoor(ws)) own = true; if (holdsSeat(ws)) seated = true }
+		const gets = (ws: WebSocket) => own ? ownsDoor(ws) : seated ? holdsSeat(ws) : true
 		let delivered = false
 		for (const ws of set)
-			if (ws.readyState === WebSocket.OPEN && (!own || ownsDoor(ws))) {
+			if (ws.readyState === WebSocket.OPEN && gets(ws)) {
 				ws.send(payload)
 				delivered = true
 			}

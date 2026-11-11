@@ -1,13 +1,13 @@
 Credulate,of_Book:SwarmBody
   TheACode:Ground/Core,dige:2682d56be9e219ea
   TheACode:Ground/Story,dige:eeae0a8324ad76e5
-  TheACode:Ground/Wire,dige:f3495ae8a4338620
+  TheACode:Ground/Wire,dige:632cc4b0528a352d
   TheACode:Ground/WireTesting,dige:3bc004187ec40057
-  TheACode:Ground/Music,dige:d59683785b1e7fef
+  TheACode:Ground/Music,dige:a28de243c4433865
   TheACode:Ground/MusicTesting,dige:9bc87d7f3854ac1e
   TheACode:Ground/Cave,dige:f57c9b28879b32a7
   TheACode:Ground/CaveTesting,dige:20ecb37c449e4690
-  TheACode:Ground/Swarm,dige:38608992430c8e14
+  TheACode:Ground/Swarm,dige:fa3c45edf1c248de
   TheACode:Ground/SwarmTesting,dige:91e40db6d5fcc44b
   GhostInclude:Ghost_A_Theory,dige:bc1f5fad74703498~g1
   GhostInclude:Ghost_A_Stuffica,dige:a6371235df378ec7~g1
@@ -16,14 +16,14 @@ Credulate,of_Book:SwarmBody
   GhostInclude:Ghost_N_Tribunal,dige:a3d82cb8e0a8910f~g1
   GhostInclude:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
   GhostInclude:Ghost_N_Presence,dige:8ae1e053f96333ce~g1
-  GhostInclude:Ghost_N_Repli,dige:75b83937ac4bfe91~g1
+  GhostInclude:Ghost_N_Repli,dige:4f60621d6ba754b0~g1
   GhostInclude:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1
   GhostInclude:Ghost_Story_PeerTesting,dige:0f932bb96f66ab47~g1
   GhostInclude:Ghost_Story_Sounditron,dige:0de272b54e59b42d~g1
-  GhostInclude:Ghost_M_Ra,dige:0a9f6eafdd0ea1c6~g1
+  GhostInclude:Ghost_M_Ra,dige:cc5449c49b2be7e8~g1
   GhostInclude:Ghost_M_Orig,dige:a8cd03dd83707cd5~g1
-  GhostInclude:Ghost_M_Pool,dige:24b27e100267d8fc~g1
-  GhostInclude:Ghost_M_Radio,dige:6413039a27747e0f~g1
+  GhostInclude:Ghost_M_Pool,dige:f274b14bb8fce64c~g1
+  GhostInclude:Ghost_M_Radio,dige:4056fd6f9eaa783d~g1
   GhostInclude:Ghost_M_Sound,dige:d268520b99127556~g1
   GhostInclude:Ghost_M_Crate,dige:777bc6317a563cc9~g1
   GhostInclude:Ghost_Story_MusuTesting,dige:cc6c2069f7d38332~g1
@@ -32,21 +32,21 @@ Credulate,of_Book:SwarmBody
   GhostInclude:Ghost_M_Heard,dige:a3576d412519f650~g1
   GhostInclude:Ghost_Story_HeistTesting,dige:1f756586dbe9de34~g1
   GhostInclude:Ghost_Story_BerthTesting,dige:25d25e655deaa666~g1
-  GhostInclude:Ghost_S_Swarm,dige:488454e62b7a5745~g1
+  GhostInclude:Ghost_S_Swarm,dige:198d6c9eee5133e4~g1
   GhostInclude:Ghost_Story_SwarmTesting,dige:5dfa1e42dc3daac3~g1
   GhostInclude:Ghost_Story_InvSeal,dige:3be936ab81f63e26~g1
   GhostInclude:Ghost_Story_InvFerry,dige:25d7e048c292e562~g1
   GhostInclude:Ghost_Story_InvWalk,dige:e3dd6a1629d67c5c~g1
-  last_ok,at=1794383928.253,ok_pct
+  last_ok,at=1794389899.082,ok_pct
     TheACode:Ground/Core,dige:2682d56be9e219ea
     TheACode:Ground/Story,dige:eeae0a8324ad76e5
-    TheACode:Ground/Wire,dige:f3495ae8a4338620
+    TheACode:Ground/Wire,dige:632cc4b0528a352d
     TheACode:Ground/WireTesting,dige:3bc004187ec40057
-    TheACode:Ground/Music,dige:d59683785b1e7fef
+    TheACode:Ground/Music,dige:a28de243c4433865
     TheACode:Ground/MusicTesting,dige:9bc87d7f3854ac1e
     TheACode:Ground/Cave,dige:f57c9b28879b32a7
     TheACode:Ground/CaveTesting,dige:20ecb37c449e4690
-    TheACode:Ground/Swarm,dige:38608992430c8e14
+    TheACode:Ground/Swarm,dige:fa3c45edf1c248de
     TheACode:Ground/SwarmTesting,dige:91e40db6d5fcc44b
     uses:Ghost_A_Theory,dige:bc1f5fad74703498~g1
     uses:Ghost_A_Stuffica,dige:a6371235df378ec7~g1
@@ -55,14 +55,14 @@ Credulate,of_Book:SwarmBody
     uses:Ghost_N_Tribunal,dige:a3d82cb8e0a8910f~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Presence,dige:8ae1e053f96333ce~g1
-    uses:Ghost_N_Repli,dige:75b83937ac4bfe91~g1
+    uses:Ghost_N_Repli,dige:4f60621d6ba754b0~g1
     uses:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1
     uses:Ghost_Story_PeerTesting,dige:0f932bb96f66ab47~g1
     uses:Ghost_Story_Sounditron,dige:0de272b54e59b42d~g1
-    uses:Ghost_M_Ra,dige:0a9f6eafdd0ea1c6~g1
+    uses:Ghost_M_Ra,dige:cc5449c49b2be7e8~g1
     uses:Ghost_M_Orig,dige:a8cd03dd83707cd5~g1
-    uses:Ghost_M_Pool,dige:24b27e100267d8fc~g1
-    uses:Ghost_M_Radio,dige:6413039a27747e0f~g1
+    uses:Ghost_M_Pool,dige:f274b14bb8fce64c~g1
+    uses:Ghost_M_Radio,dige:4056fd6f9eaa783d~g1
     uses:Ghost_M_Sound,dige:d268520b99127556~g1
     uses:Ghost_M_Crate,dige:777bc6317a563cc9~g1
     uses:Ghost_Story_MusuTesting,dige:cc6c2069f7d38332~g1
@@ -71,7 +71,7 @@ Credulate,of_Book:SwarmBody
     uses:Ghost_M_Heard,dige:a3576d412519f650~g1
     uses:Ghost_Story_HeistTesting,dige:1f756586dbe9de34~g1
     uses:Ghost_Story_BerthTesting,dige:25d25e655deaa666~g1
-    uses:Ghost_S_Swarm,dige:488454e62b7a5745~g1
+    uses:Ghost_S_Swarm,dige:198d6c9eee5133e4~g1
     uses:Ghost_Story_SwarmTesting,dige:5dfa1e42dc3daac3~g1
     uses:Ghost_Story_InvSeal,dige:3be936ab81f63e26~g1
     uses:Ghost_Story_InvFerry,dige:25d7e048c292e562~g1

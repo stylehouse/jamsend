@@ -1776,11 +1776,17 @@ Heist_keep_memo_wanted(w):
 //      builder that already exists) walks that folder into one chunkless-offerable %Record per audio file,
 //       kid-safe non-audio skipped.  Returns the scoped RummageLib, or null when the seed is unknown here or
 //        its source folder is gone.  Read-only against disk; mints only the (dontSnap) scratch lib.
-async Heist_rummage_folder(w, nav, me, seed):
+async Heist_rummage_folder(w, nav, me, seed, hintPath, hintBase):
     if (!nav || !seed) return null
     let hit = (await this.Ra_stock_ls(nav, me)).find((p) => p.enid === seed)
-    if (!hit) return null
-    let card = await this.Ra_stock_peek(nav, hit.name)
+    let card = null
+    if (hit) {
+        card = await this.Ra_stock_peek(nav, hit.name)
+    } else if (hintPath && this.Heist_want_path_ok(hintPath) && this.Heist_keep_id(me, hintBase || '', hintPath) === String(seed)) {
+        // A POOLING WANDER CARD (Ra_pooling_cursor_picks): I named it by its keep id off a wander, never stocked it.  The id
+        //  re-derives from (me, base, path), which certifies the path is mine to describe — the same equation the want side uses.
+        card = { path: String(hintPath), base: String(hintBase || '') }
+    }
     if (!card || !card.path) return null
     let base = card.base || ''
     let cparts = String(card.path).split('/').filter(Boolean)
@@ -2073,7 +2079,7 @@ Heist_dir_of(path):
 // `hintPath` (optional, want-asks only, 2026-08-13): the source-relative path the asker knows this ref by
 //  (persisted per-%Pick) — rides the ask so a reloaded source can SELF-CERTIFY the id from the path alone
 //   (Heist_materialise_one) instead of leaning on runtime maps + the re-census ladder.  Guarded stamp.
-async Heist_rummage_ask(w, tx, me, them, seed, want, lofi, hintPath):
+async Heist_rummage_ask(w, tx, me, them, seed, want, lofi, hintPath, seedHint):
     let bay = this.Ra_home_bay(w, me, them)
     let key = want ? { Rummage: 1, want: String(want), pier: them } : { Rummage: 1, seed: seed, pier: them }
     let ask = bay.o(key)[0]
@@ -2085,6 +2091,11 @@ async Heist_rummage_ask(w, tx, me, them, seed, want, lofi, hintPath):
         ask.c.repli_loc = want ? ['Rummage', 'want', 'pier'] : ['Rummage', 'seed', 'pier']
     }
     if (want && hintPath) ask.sc.path = String(hintPath)
+    // a DESCRIBE of a seed the source never stocked (a Pooling wander card) carries its path, so the source can self-certify it
+    if (!want && seedHint && seedHint.path) {
+        ask.sc.path = String(seedHint.path)
+        if (seedHint.base) ask.sc.base = String(seedHint.base)
+    }
     // ASK EPISODE (2026-08-06) — a monotonic attempt number, so the SOURCE can tell a genuinely fresh
     //  ask from the identical particle it already answered.  It cannot otherwise: this ask is idempotent
     //   by key (bay.o(key)[0] above), it rides `repli_loc` so the landing UPSERTS onto the same mirror
@@ -2124,7 +2135,7 @@ async Heist_rummage_answer(w, tx, me, asker, rummageMirror, nav):
         return (await this.Repli_offer(w, tx, me, asker, rec)) ? 1 : 0
     }
     // DESCRIBE: the folder's metadata heads (Heist_census_heads — no reads).
-    let lib = await this.Heist_rummage_folder(w, nav, me, String(rummageMirror.sc.seed))
+    let lib = await this.Heist_rummage_folder(w, nav, me, String(rummageMirror.sc.seed), rummageMirror.sc.path, rummageMirror.sc.base)
     if (!lib) return 0
     return await this.Heist_offer_all(w, tx, me, asker, lib, null)
 
@@ -2191,6 +2202,11 @@ async Heist_keep_beat(w, ident):
         let held_recs = []
         let held_bytes = 0
         let parked_ids = this.Heist_parked_ids(w)
+        // PAGED LOFIS ARE HELD (SoundPooling_todo §0.a.7 owed (a)): a lofi whose card is on one of my Pooling pages is about to be
+        //  asked for again by the next reader of that page, so release-after-serve would buy a re-transcode per sink.  Collected
+        //   here instead of released, then kept newest page first within the pooling budget; the rest release as before.
+        let pool_rank = (this.Ra_pooling_hold_ids && w.c.pooling_shelf) ? this.Ra_pooling_hold_ids(w.c.pooling_shelf) : {}
+        let pool_cands = []
         for (const rl of w.c.rummage_libs) {
             if (rl && rl.c && (now - (rl.c.born || now)) < LIB_TTL) {
                 live.push(rl)
@@ -2224,8 +2240,14 @@ async Heist_keep_beat(w, ident):
                     //       done rather than guessing from its own send frontier; this makes the guess cheap
                     //        to be wrong about instead of pretending it is right.
                     let idle_need = RELEASE_IDLE * Math.pow(2, Math.min(4, +(rec.c.remats || 0)))
+                    let paged = rec.sc.lofi ? pool_rank[String(rec.sc.re || rec.sc.id || '')] : null
                     if (!promised && bod > 0 && tot > 0 && +(rec.c.sent || 0) >= tot && now - (rec.c.want_ts || 0) > idle_need) {
-                        this.Heist_release_rec(rec)
+                        if (paged != null) {
+                            rec.c.pool_rank = paged
+                            pool_cands.push(rec)
+                        } else {
+                            this.Heist_release_rec(rec)
+                        }
                     } else if (bod > 0) {
                         rec.c.promised = promised ? 1 : 0
                         held_recs.push(rec)
@@ -2237,6 +2259,29 @@ async Heist_keep_beat(w, ident):
             }
         }
         w.c.rummage_libs = live
+        // the paged holds: newest page first, while they fit the pooling budget; a body that doesn't fit releases now
+        if (pool_cands.length) {
+            pool_cands.sort((a, b) => (+a.c.pool_rank) - (+b.c.pool_rank))
+            let cap = this.Ra_pooling_hold_cap ? this.Ra_pooling_hold_cap(w) : 0
+            let pool_bytes = 0
+            let kept = 0
+            for (const rec of pool_cands) {
+                let b = +(rec.sc.bytes || 0)
+                if (pool_bytes + b <= cap) {
+                    pool_bytes = pool_bytes + b
+                    kept = kept + 1
+                    rec.c.promised = 0
+                    held_recs.push(rec)
+                    held_bytes = held_bytes + b
+                } else {
+                    this.Heist_release_rec(rec)
+                }
+            }
+            if (w.c.pooling_held_n !== kept) {
+                w.c.pooling_held_n = kept
+                console.log('🏊⇉ holding ' + kept + ' paged lofi(s), ' + Math.round(pool_bytes / 1048576) + 'MB of ' + Math.round(cap / 1048576) + 'MB')
+            }
+        }
         // BYTE-CAP BELT: if the still-held bufs blow the cap (a future parallel regression, or many mid-flight),
         //  release the OLDEST-served first until under it.  Makes the 3GB cliff structurally unreachable; silent
         //   in serialized health.  A released-but-still-wanted rec re-parks + re-materialises (A3), so it heals.
@@ -2545,7 +2590,7 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
                 keep.c.desc_ts = Date.now()
                 keep.sc.asks = +(keep.sc.asks || 0) + 1
                 keep.bump()
-                await this.Heist_rummage_ask(w, route, me, at, seed)
+                await this.Heist_rummage_ask(w, route, me, at, seed, null, false, null, keep.sc.seed_path ? { path: keep.sc.seed_path, base: keep.sc.seed_base } : null)
             }
         }
         // …and gate the handover on the PICKS, not only on `.c.blagged`.  `.c` dies with the process
@@ -2755,7 +2800,7 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
                                                      unanswered: +(pick.c.asks_out || 0), told: told ? 1 : 0 })
                         }
                         console.log(`⇊⟲ ${pick.c.asks_out} unanswered materialise asks — re-censusing the source folder (its keep-id map is runtime-only and a reload wipes it)`)
-                        await this.Heist_rummage_ask(w, route, me, at, seed)
+                        await this.Heist_rummage_ask(w, route, me, at, seed, null, false, null, keep.sc.seed_path ? { path: keep.sc.seed_path, base: keep.sc.seed_base } : null)
                     }
                     await this.Heist_rummage_ask(w, route, me, at, seed, ref, !!keep.sc.lofi, pick.sc.path)
                 }

@@ -149,9 +149,17 @@ One browser profile = one Dexie (`thangs`) = one shelf of identities, shared by 
    name never collides.  It does: a crew of one's body name IS its soul name, and tabs in one profile share the body key.  So the
     second tab's door-yield re-dialled the bare door and BOTH owned it — every frame to the identity, music chunks too, delivered
      twice.  Reproduced and verified with two `/BigSoundland` pages in one headless browser context.
-- **Still open**: a device whose body key is DISTINCT from its soul (a Cave on a cert) with two tabs open — both tabs bind that body
-   name with no want, so `to:<body>` frames reach both.  And across machines, a second live writer is caught by no liveness probe
-    (§7.4; the "two of you" nib).
+- **Fixed 2026-11-11, the body name too**: a device whose body key is DISTINCT from its soul (a Cave on a cert) with two tabs open
+   had both tabs granted the bare body name, so `to:<body>` reached both (neither station dials `?addr=<body>`, so no socket owned
+    that door).  Now the sibling's body hello wants `<body>_N` (`Swarm_body_want`, N = its soul session suffix), and the relay's
+     `deliverLocal` delivers a SEATED name to its seat holder before any courtesy bind: door-owner (`qaddr`/role) → seat holder →
+      everyone bound.  Pinned by `scripts/relay-test.ts` "twin tabs of a Cave" (red on the old relay, green on the new).  Not seen
+       live: `twin_eye` stands up a fresh identity (body name = soul name); it has no cert-device mode yet.
+- **Still open — what a second tab is FOR**: a sibling tab still sends to friends `from: <soul>` (the station's name), so their
+   replies land on the primary, not on it.  Harmless while one tab per profile does the music; a design question if a second tab
+    should ever hold its own conversations (Cluster_spec §3.2a's duty split).  Across machines, a second live writer is caught by no
+     liveness probe (§7.4; the "two of you" nib) — the owner, 2026-11-11: one Radio at a time, and the hacker takes the editor seat, so
+      it is parked.
 
 ## 1. What EXISTS (verified against code, 2026-07-27)
 

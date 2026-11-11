@@ -556,14 +556,19 @@ if (op === 'minisnap' && !arg) { console.error('minisnap needs a pointer path: n
 //  Prefer the claude cluster prepub (.env.cluster-claude → CLUSTER_IDENTO_CLAUDE_PUB, first 16 hex) so the
 //   lease is STABLE across invocations — the runner can tell "was it you?" and let us re-attach to our own
 //    held runner instead of refusing.  Override with RUNNER_CLIENT; fall back to a fixed tag if no key.
+//  Every claude session on this box shares that prepub, so two agents looked like ONE client and re-attached
+//   to each other's runner mid-sweep (2026-11-11).  CLAUDE_CODE_SESSION_ID goes FIRST — a lease prints only
+//    `client.slice(0, 8)`, so the session is what you see in "engaged by …".
 function clientId() {
 	if (process.env.RUNNER_CLIENT) return process.env.RUNNER_CLIENT
+	const sid = (process.env.CLAUDE_CODE_SESSION_ID || '').replace(/[^0-9a-fA-F]/g, '').slice(0, 8)
+	let base = 'claude-cli'
 	try {
 		const env = readFileSync(new URL('../.env.cluster-claude', import.meta.url), 'utf8')
 		const m = env.match(/CLUSTER_IDENTO_CLAUDE_PUB=([0-9a-fA-F]{16,})/)
-		if (m) return m[1].slice(0, 16)
+		if (m) base = m[1].slice(0, 16)
 	} catch { /* no key file — fall through */ }
-	return 'claude-cli'
+	return sid ? `${sid}.${base}` : base
 }
 const CLIENT = clientId()
 
