@@ -200,22 +200,17 @@ Every `Ghost/M/*.g` is Jamsend's own: the app foundation (crew, wire, trust) liv
     fought (evict 6 → re-encode 6, every pass).
 - **The pool is not a radio source (ruled 2026-10-04)** except as the last rung when friends run dry, and in the pocket.
 
-**The oddities, for the owner to rule on:**
-1. **Two smuggling systems for one track.**  The pool picks from Road 1's catalog and fetches by Road 2.  The cheap move the
-    design wants is Road 1's: a pooled track could simply be its Record's `%Preview` chunks (≈1/7 the bytes), wanted by Repli
-     from the same holder, kept in OPFS.  Then every pooled track is dialable, the pool holds 7× more tracks per MB, and the whole
-      file is Road 2's job only when someone ♥s it.  Question: should SoundPooling keep **previews** (Road 1) rather than files?
-2. **Your own library never plays as the original.**  Every own track is transcoded to Opus first (and its stream re-transcoded per
-    play).  On a computer with the file right there, playing the original directly would skip ffmpeg/WebCodecs entirely.  Cost: a
-     second player road (decode a file, seek mid-track) beside the chunk player.
-3. **A small file could be kept whole.**  If a source is already a small Ogg (≤~150k), Road 2 needn't re-encode it to lofi — ship
-    it as is.  It does NOT help Road 1: radio chunks are raw Opus packets, and a Vorbis Ogg can't feed that decoder without a
-     transcode (an Opus Ogg could be re-sliced without one — a later nicety).
-4. **The preview's head only, for flitting.**  Owner, 2026-11-10: later, offer just the first tiny bit of a `%Preview` for scanning
-    a wide expanse fast.  Road 1 already supports it by construction — a want for seqs 0..k is a prefix; what's missing is a dial
-     mode that skims and a cap that says "k, not the window".
-5. **"Pocket"** is a bad name for "no folder, or no relay — the pool is the music".  Rename when SoundPooling_todo gets its front
-    door (it is 2,200 lines of dated evenings with several §0.0s — due the 2026-10-15 front-door treatment).
+**The direction (owner, 2026-11-10; detail in `SoundPooling_todo.md` §0.a):**
+1. **Find by Preview, keep the %Lofi.**  A track is FOUND through its `%Preview` on the radio, as usual; if it isn't Nay'd the pool
+    keeps the WHOLE track as a `%Lofi` (one small Ogg in OPFS, in a Mag of %Lofi), never the preview chunks.  The two roads stay
+     two: Road 1 to discover, Road 2 to keep.
+2. **The radio plays files.**  Own originals (today always transcoded to Opus first) and pool %Lofis should play directly off the
+    file, mid-track.  That ends the carry/heal contortion and the pocket's on-device encode.
+3. **A close-enough source is the %Lofi.**  An original that is already an Ogg near the lofi bitrate (≲150k) is kept whole, not
+    re-encoded.  (Radio chunks stay raw Opus; the lofi today is Vorbis, so the two don't share bytes — except possibly via
+     `Orig_ogg_export`, which muxes a fully-heard track's Opus chunks into an Ogg with no re-encode: SoundPooling_todo §0.a.5.)
+4. **The preview's head only, for flitting** (later): a want for seqs 0..k is already a prefix; missing is a dial mode that skims.
+5. **"Pocket"** (no folder, or no relay — the pool is the music) wants a better name.
 
 ## 0.1 log
 

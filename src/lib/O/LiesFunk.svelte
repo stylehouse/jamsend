@@ -3620,6 +3620,8 @@ await M.eatfunc({
                     //        that seals, grants, writes fixtures or moves bytes stays OUT.
                     const POKES: Record<string, string> = {
                         Radio_toggle: 'Radio', Radio_skip: 'Radio', Radio_source_toggle: 'Radio',
+                        // the radio's file road on|off (2026-11-11, Radio_file_road): plays a file already on this device; opt-in while proven
+                        Radio_file_road_toggle: 'Radio',
                         Sounditron_diag_toggle: 'w', Sounditron_seat_toggle: 'w',
                         Sounditron_focus_step: 'w', Sounditron_focus_home: 'w',
                         // the pool REPORT (2026-09-05): a pure read that prints what decides whether a pooled
@@ -3629,6 +3631,8 @@ await M.eatfunc({
                         // let a body take itself out of circulation entirely (2026-09-06): a headless
                         //  machine that can never listen has no taste to curate a pool with.
                         Ra_pool_excuse: 'w',
+                        // the pool's liked half on|off (2026-11-11, Ra_pool_liked_set): Yays kept for a month
+                        Ra_pool_liked_toggle: 'w',
                         // FORGET EVERYTHING THE HEIST MACHINE THINKS IT HAS DONE (2026-09-12): ledgers, keeps, pool
                         //  copies — never the music.  A human-pressable reset for a polluted Haul.
                         Heist_start_over: 'w',

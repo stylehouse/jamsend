@@ -29,6 +29,11 @@
     let budget = $state(0)
     let who = $state('crew')
     let recent = $state(true)
+    // ── AND [x] WHAT YOU YAY, FOR A MONTH (owner 2026-11-11: *"half-liked and half-random … keep tracks they liked
+    //  in there for a month or something … have that switched on"*) — Ra_pool_liked_set: half the budget, a 30-day
+    //   window on current Yays (a Nay ends one), its unfilled room lent to the random wander.  Defaulted at the
+    //    first yes like recent, then the human's.
+    let liked = $state(true)
     let pooled = $state(0)
     let cur_mb = $state(0)
     let cur_est = $state(false)
@@ -53,6 +58,7 @@
             // before the first yes there is no compartment to read, so the checkbox shows the DEFAULT it
             //  will act on; afterwards it shows what actually stands.
             recent = consent ? !!H.Ra_pool_recent_on?.(w) : true
+            liked = consent ? !!H.Ra_pool_liked_on?.(w) : true
             const pub = H.Radio_pub?.(w) || 'me'
             const shelf = H.Ra_pool_stock?.(w, pub) ?? null   // probed, never minted
             const recs = shelf && H.Ra_recs ? (H.Ra_recs(shelf) as any[]) : []
@@ -128,6 +134,7 @@
             // the FIRST yes is where the recent default is applied — one act, so a person who unticked it first
             //  gets what they asked for and not what we assumed.
             if (recent) { H.Ra_pool_recent_set?.(w, 1) }
+            if (liked) { H.Ra_pool_liked_set?.(w, 1) }
             bump()
         } catch {}
     }
@@ -141,6 +148,11 @@
         const w = world(); if (!w) return
         recent = on
         try { if (consent) { H.Ra_pool_recent_set?.(w, on ? 1 : 0); bump() } } catch {}
+    }
+    function set_liked(on: boolean) {
+        const w = world(); if (!w) return
+        liked = on
+        try { if (consent) { H.Ra_pool_liked_set?.(w, on ? 1 : 0); bump() } } catch {}
     }
     const num = (e: Event) => +((e.currentTarget as HTMLInputElement).value)
 </script>
@@ -160,14 +172,16 @@
             <label class="pf-ck"><input type="checkbox" checked={friends} onchange={(e) => set_who((e.currentTarget as HTMLInputElement).checked, crew)} /> friends <span class="pf-dim">(less predictable)</span></label>
             <label class="pf-ck"><input type="checkbox" checked={crew} onchange={(e) => set_who(friends, (e.currentTarget as HTMLInputElement).checked)} /> crew <span class="pf-dim">(your devices, see <button class="pf-link" onclick={() => page_nav(H, 'focus', 'Door')} title="opens the Door — your crew and friends">Door</button>)</span></label>
             and
-            <label class="pf-ck"><input type="checkbox" checked={recent} onchange={(e) => set_recent((e.currentTarget as HTMLInputElement).checked)} /> recent acquisitions <span class="pf-dim">(what you just downloaded)</span></label>
+            <label class="pf-ck"><input type="checkbox" checked={recent} onchange={(e) => set_recent((e.currentTarget as HTMLInputElement).checked)} /> recent acquisitions <span class="pf-dim">(what you just downloaded)</span></label>,
+            keeping
+            <label class="pf-ck" title="half the budget holds tracks you Yay'd in the last month (a Nay lets one go); until there are enough, that room goes to the random wander"><input type="checkbox" checked={liked} onchange={(e) => set_liked((e.currentTarget as HTMLInputElement).checked)} /> what you Yay <span class="pf-dim">(for a month)</span></label>
         </p>
         <p class="pf-live pf-dim">
             {#if consent}<span class="pf-nb">{pooled} track(s)</span>{#if last_in} · last in: <span class="pf-track" title={last_in}>{last_in}</span>{/if}{:else}<span class="pf-nb">off — nothing kept in this browser</span>{/if}
         </p>
         {#if report}
             <p class="pf-live pf-dim">
-                <span class="pf-nb" title="a pooled track joins the radio only once it has a preview: carried from when you heard it, or encoded on a device with no folder or relay (the pocket). A never-heard circulation fill waits on disk, out of the radio (owner ruling 2026-10-04).">{report.ready}/{report.cards} dialable</span>{#if unplayable.length} <span class="pf-nb" title="why the rest cannot be dialled — from the pool report">({unplayable.map(([k, n]) => n + ' ' + k).join(' · ')})</span>{/if}{#if report.files !== report.cards} · <span class="pf-nb" title="files under pool/ — differs from the cards when a file lost its card or a card its file">{report.files} file(s) on disk</span>{/if}{#if report.uncatalogued} · <span class="pf-nb">{report.uncatalogued} uncatalogued</span>{/if}{#if report.lingering} · <span class="pf-nb">{report.lingering} evicted, lingering</span>{/if}{#if inflight} · <span class="pf-nb">{inflight} in flight</span>{/if}
+                <span class="pf-nb" title="a pooled track plays as its own file on this device (the radio’s file road); a Book, or a card whose file is gone, still needs a preview carried from when you heard it">{report.ready}/{report.cards} dialable</span>{#if unplayable.length} <span class="pf-nb" title="why the rest cannot be dialled — from the pool report">({unplayable.map(([k, n]) => n + ' ' + k).join(' · ')})</span>{/if}{#if report.files !== report.cards} · <span class="pf-nb" title="files under pool/ — differs from the cards when a file lost its card or a card its file">{report.files} file(s) on disk</span>{/if}{#if report.uncatalogued} · <span class="pf-nb">{report.uncatalogued} uncatalogued</span>{/if}{#if report.lingering} · <span class="pf-nb">{report.lingering} evicted, lingering</span>{/if}{#if inflight} · <span class="pf-nb">{inflight} in flight</span>{/if}
             </p>
         {/if}
     </div>

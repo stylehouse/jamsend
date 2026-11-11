@@ -12,7 +12,7 @@ import { APP_DATA_DIR } from "$lib/app_data_dir"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return 'f03c3947d15b42eb~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return 'a1b8947860468e69~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -240,8 +240,17 @@ async Ra_lufs(channels, sr) {
     let done
     let promise = new Promise((res) => { done = res })
     meter.on('dataavailable', (event) => { done(event.data.value) })
+    // NEVER WAIT FOREVER (2026-11-11): the meter's answer comes from a worker; if it never comes, this await pinned the whole
+    //  track twice over (the decode and this render) for the life of the tab.  15s, then no measure — Ra_gain_for gains nothing.
+    let timer = null
+    let late = new Promise((res) => { timer = setTimeout(() => res(null), 15000) })
     meter.start()
-    let lufs = await promise
+    let lufs = await Promise.race([promise, late])
+    clearTimeout(timer)
+    if (lufs == null) {
+        try { if (meter.stop) meter.stop() } catch (er) {}
+        console.warn('♪⚠ Ra_lufs: the loudness meter never answered in 15s — no gain for this one')
+    }
     return (typeof lufs === 'number' && isFinite(lufs)) ? +lufs.toFixed(2) : null
 
 },
@@ -4401,7 +4410,8 @@ Ra_dial_next(w, mirror, opts) {
     let cands = []
     for (const rec of recs) {
         if (rec.sc.id === playing) continue
-        if (!(+(rec.sc.preview || 0) > 0)) continue
+        // no preview, no pick — unless the caller says it plays another way (`playable`: the radio's file road)
+        if (!(+(rec.sc.preview || 0) > 0) && !(o.playable && o.playable(rec))) continue
         if (o.skip_src && rec.c.from === o.skip_src) continue
         if (o.skip_ids && o.skip_ids[rec.sc.id]) continue
         if (w.c.ra_source_live && !w.c.ra_source_live(rec.c.from)) continue

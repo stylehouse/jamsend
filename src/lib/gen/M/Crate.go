@@ -9,7 +9,7 @@ import { parseBuffer } from "music-metadata"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Crate(): string { return '4d88a3a38a436428~g1' },
+    Ghostmeta_Ghost_M_Crate(): string { return '777bc6317a563cc9~g1' },
 
 // Crate.g — rifling through a music collection.  A modern port of the old Directory.svelte tree-walk +
 //  Agency.svelte's meander() random-walk, redesigned for THIS platform: raw File System Access API (no
@@ -1011,6 +1011,9 @@ async Crate_meta_from_tags(bytes, path) {
     //   lossless, AAC-in-.m4a is not; FLAC-in-.ogg vs Vorbis-in-.ogg), which the extension alone cannot
     //    tell — so prefer it, and fall back to the ext allowlist only when the parse surfaces nothing.
     let lossless = null
+    // codec + kbps — what Heist_lofi_near reads to keep a close-enough Ogg whole as the %Lofi (absent when unknown)
+    let codec = ''
+    let kbps = 0
     try {
         let u8 = (bytes instanceof Uint8Array) ? bytes : new Uint8Array(bytes)
         let md = await parseBuffer(u8, this.Crate_tag_mime(path))
@@ -1031,6 +1034,9 @@ async Crate_meta_from_tags(bytes, path) {
         if (common.track && common.track.of) tag.trackof = '' + common.track.of
         if (common.date || common.year) tag.date = '' + (common.date || common.year)
         if (md && md.format && typeof md.format.lossless === 'boolean') lossless = md.format.lossless
+        if (md && md.format && md.format.codec) codec = String(md.format.codec)
+        if (md && md.format && +md.format.bitrate > 0) kbps = Math.round(+md.format.bitrate / 1000)
+        if (!kbps && md && md.format && +md.format.duration > 0) kbps = Math.round(u8.length * 8 / +md.format.duration / 1000)
     } catch (er) {
         // a truncated|malformed|unrecognised file rejects here — NOT a crash: leave tag empty so all three
         //  fields fall back to the path, exactly as the old bounds-check-stops-the-walk did.
@@ -1048,6 +1054,8 @@ async Crate_meta_from_tags(bytes, path) {
     if (tag.track) out.track = tag.track
     if (tag.trackof) out.trackof = tag.trackof
     if (tag.date) out.date = tag.date
+    if (codec) out.codec = codec
+    if (kbps) out.kbps = kbps
     return out
 
 },

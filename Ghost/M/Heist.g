@@ -1261,6 +1261,15 @@ async Heist_census_heads(w, lib, nav, walkdir, base, me, prefix, seedName, seed)
 //     SEED itself — Ra_stock_ls → card → base+path), materialised under a fresh keep-id carrying `re:<seed>`
 //      so the asker matches the arriving head back to its keep.  Idempotent: a re-ask over an already-full
 //       rec returns it without re-reading.  Returns the materialised %Record (total/body_hash stamped), or null.
+// Heist_lofi_near — is this source already a lofi?  'vorbis' | 'opus' for an Ogg at or under 160 kbit/s (the lofi is ogg128),
+//  else ''.  Off the tag parse (Crate_meta_from_tags' codec + kbps), never the extension alone: an .ogg can hold FLAC.
+Heist_lofi_near(meta, ext):
+    if (!meta || !['ogg', 'oga', 'opus'].includes(String(ext || '').toLowerCase())) return ''
+    let codec = String(meta.codec || '').toLowerCase()
+    let kind = codec.includes('vorbis') ? 'vorbis' : (codec.includes('opus') ? 'opus' : '')
+    if (!kind || !(+meta.kbps > 0) || +meta.kbps > 160) return ''
+    return kind
+
 // `lofi` — serve the ogg128 RENDITION rather than the original file (the human 2026-08-07: "transcoding
 //  to ogg for people's phones will be important").  This is the ONLY seam it needs: everything below the
 //   transcode — per-chunk cids, body_hash, total, the wire, resume, the sink's read-back verification —
@@ -1381,9 +1390,17 @@ async Heist_materialise_one(w, nav, me, ref, lofi, hintPath):
     if (meta.genre) rec.sc.genre = meta.genre
     let dot = filename.lastIndexOf('.')
     if (dot >= 0) rec.sc.ext = filename.slice(dot + 1)
+    // A CLOSE-ENOUGH SOURCE IS THE LOFI (SoundPooling_todo §0.a.4, the owner 2026-11-10: *"when the source is ogg of close
+    //  bitrate we could just call that %Lofi? yes!"*).  An Ogg Vorbis|Opus already at about the lofi bitrate is served whole:
+    //   a re-encode would cost the holder a decode and the track a generation of loss, to save almost nothing.
+    let near = lofi ? this.Heist_lofi_near(meta, rec.sc.ext) : ''
+    if (near) {
+        rec.sc.lofi = 1
+        console.log(`⇊♪ lofi: ${filename} is already ${near} at ${meta.kbps}k — kept whole`)
+    }
     // THE LOFI SWAP — decode the source and re-encode from sample 0 (never the radio's chunks; see
     //  Orig_ogg_from_source for why muxing those would silently produce a file starting mid-song).
-    if (lofi && typeof this.Orig_ogg_from_source === 'function') {
+    if (lofi && !near && typeof this.Orig_ogg_from_source === 'function') {
         let og = null
         try { og = await this.Orig_ogg_from_source(w, raw, meta) } catch (er) { og = null }
         if (og && og.bytes && og.bytes.length) {

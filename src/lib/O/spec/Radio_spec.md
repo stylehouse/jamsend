@@ -225,6 +225,10 @@ A Heist is a desire hardening into bytes; every phase is the SAME particle weari
        origin/own/census → self, mirror/follower → them; the census walk `Swarm_music_census` walks the new
         home. `%Original/%Chunk` and the `%Blob` re-home into this shelf|shop still owed.)* The settled trio:
 
+> **SUPERSEDED 2026-11-10 (owner):** the trio below is replaced by ONE `%Record` holding its renditions as chunk kinds —
+>  `%Record/(%Original|%Preview|%Stream|%Lofi)` — no top-level `%Original` master, no `%Blob,grade:`.  See `SoundPooling_todo.md` §0.a.2.
+
+
 ```
 stock/
   %Original,id:<enid>               ← THE master — held where it is GIVEN as such; never travels

@@ -6011,7 +6011,9 @@ async Swarm_share_beat(w, ident):
     //       rebirth reset like every other pull, so a lost want is re-askable.
     let radio = rw.o({ Radio: 1 })[0]
     let playing = radio ? radio.c.rec : null
-    if (playing && playing.c.from && playing.c.rx && playing.sc.id) {
+    // …unless it plays from a file here (the radio's file road — a pooled copy of their track): then the wire has nothing to do
+    let fileroad = playing && radio.c.file && radio.c.file.id === String(playing.sc.id)
+    if (playing && playing.c.from && playing.c.rx && playing.sc.id && !fileroad) {
         let seg_s = +(playing.sc.seg_secs || 2)
         let head = Math.floor((+(radio.sc.at || 0)) / seg_s)
         let total = +(playing.sc.total || 0)

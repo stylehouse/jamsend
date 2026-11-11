@@ -26,6 +26,18 @@ The catch: A phone browser can't keep a music folder. A computer running Chrome 
 
 That's the idea under all of it: your own little infrastructure, stretched across whatever devices you have, so music stays near you.
 
+# try it
+
+You need a link from someone already here... Or run your own instance: set up the app and a *jamserve* (see setup below), and invite your friends.
+
+# funding
+
+[You may send tips here!](https://ko-fi.com/ostylehouse) Funds may be for specifics soon, probably starting with education... Open issues about funding opportunities we could chase...
+
+---
+
+*Everything below is for programmers.*
+
 # development
 
 Get this to your programmers! I'm wanting to promote myself to management. Do you have 10hr/week? If you aren't allowed to make $3/hr you'll have to volunteer. Make noise as Issues on github, especially grandiose new feature requests that introduce your creative mind.
@@ -63,10 +75,6 @@ What we're doing here... Nice and simple. The system has active (Heist) and pass
 *your devices* above is the listener's view. Underneath: a phone has no filesystem access (FSA), so Heists ride the Link Device crew to a computer, and SoundPooling lives in the browser's own storage (OPFS).
 
 So there's a "your personal infra" to work out how to stretch music availability across. Lots of this could be slightly different or better! It's the central metaphysical drama that should keep giving to the above four arms of academic development until they're rounded out.
-
-# funding
-
-[You may send tips here!](https://ko-fi.com/ostylehouse) Funds may be for specifics soon, probably starting with education... Open issues about funding opportunities we could chase...
 
 # notes
 

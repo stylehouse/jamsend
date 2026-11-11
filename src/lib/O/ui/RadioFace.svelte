@@ -338,8 +338,13 @@
                         <button class="rf-menu-row rf-menu-any" class:rf-menu-on={!!face.own && face.source !== 'pool'} onclick={aim_own} title={s.tracks + ' of your own records playable'}>
                             <span class="rf-menu-name">♪ LOCAL</span><span class="rf-menu-n">{s.tracks}</span></button>
                     {/each}
-                    <!-- no ♪ SOUNDPOOL row (owner 2026-10-04): the pool isn't a radio source to choose — it only stands in when
-                         every friend runs dry (Radio_lineup_fill's exhausted fallback). -->
+                    <!-- ♪ SOUNDPOOL is a row again (2026-11-11, the owner: *"claims to have 11 tracks but doesn't appear as a possible
+                         source"*).  It left on 2026-10-04 because a pooled track could only play through previews encoded onto the
+                         phone; the file road (Radio_file_road) plays the pooled file itself, so a row stands whenever any do. -->
+                    {#if pool_ok && pool_n}
+                        <button class="rf-menu-row rf-menu-any" class:rf-menu-on={face.source === 'pool'} onclick={aim_pool} title={pool_n + ' pooled tracks playable on this device'}>
+                            <span class="rf-menu-name">♪ SOUNDPOOL</span><span class="rf-menu-n">{pool_n}</span></button>
+                    {/if}
                 </div>
             {/if}
             {#if face.source === 'pool'}

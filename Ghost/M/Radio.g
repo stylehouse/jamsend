@@ -207,7 +207,9 @@ Radio_pause(radio):
     let era = (radio.c.era || 0) + 1
     radio.c.era = era
     let AC = radio.c.gat ? radio.c.gat.AC : null
-    if (AC && radio.c.rec) {
+    if (AC && radio.c.rec && radio.c.file) {
+        this.Radio_file_pause(radio, AC)
+    } else if (AC && radio.c.rec) {
         let SEG = this.Ra_seg_secs() * 48000
         let left = Math.max(0, (radio.c.end || 0) - AC.currentTime)
         let heard = Math.max(0, (radio.c.sched || 0) - Math.round(left * 48000))
@@ -248,7 +250,10 @@ Radio_skip(radio):
         this.Radio_dec_close(radio.c.dec)
         radio.c.dec = null
     }
+    let left = radio.c.rec
     radio.c.rec = null
+    radio.c.file = null
+    this.Radio_file_let_go(radio, left)
     radio.c.end = 0
     // HOW THIS TRACK ENDED, for the next open to read (Radio_hbase).  A turn of the dial is a TUNE-IN
     //  again — the next track drops the needle mid-song — while playing one out earns the next its
@@ -509,8 +514,13 @@ async Radio_pump_tick(radio, era):
             radio.c.ever_played = 1
             this.Radio_trace(radio, { ev: 'primed-open', id: pu.id.slice(0, 8), seq: pu.seq })
         }
-        this.Radio_supply_go(radio, era, rec)
+        if (!radio.c.file) this.Radio_supply_go(radio, era, rec)
         if (radio.sc.Radio !== 'playing') this.Radio_state(radio, 'playing')
+    }
+    // THE FILE ROAD takes the look (Radio_file_tick) — the chunk map below is not consulted
+    if (radio.c.file && radio.c.file.id === String(rec.sc.id)) {
+        await this.Radio_file_tick(radio, era, rec)
+        return
     }
     // the played timeline is head-then-offer, so both the map and its length carry the head chunks.
     //  `cap` stays an OFFER count (Radio_supply sets it from total/preview) and is shifted to match.
@@ -686,23 +696,7 @@ async Radio_pump_tick(radio, era):
         //  while this track still plays out — the next record's first chunks decode and land
         //   AT the seam (Radio_open never resets c.end; Radio_place chains at max(end, now)).
         //    Gapless, and the first bit is standing before it is due — never a 400ms hole.
-        if (now >= (radio.c.end || 0) - 2.0) {
-            radio.sc.played = (+(radio.sc.played || 0)) + 1
-            // PLAYED ALL THE WAY THROUGH — the one transition that earns the next track its beginning
-            //  (Radio_hbase).  Its twin is `went = 'skip'` in Radio_skip; between them every route that
-            //   drops `c.rec` says which it was, and an open that arrives with neither said gets the
-            //    conservative answer (mid-song).
-            radio.c.went = 'finish'
-            // PLAYED THROUGH WITH A PERSON IN THE ROOM ⇒ mire +1 on the heard Card (Heard_through,
-            //  humdinger-gated inside).  Here and not in Radio_skip: people skip songs they love, so a
-            //   skip is worth exactly nothing, while sitting through a track is the one ambient signal
-            //    the app can honestly read.  No bump — a play-through must never cost a disk write.
-            if (radio.c.rec) { this.Heard_through(w, this.Radio_pub(w) || '', radio.c.rec) }
-            radio.c.rec = null
-            radio.c.drained = 0
-            w.c.play = null
-            radio.bump()
-        }
+        if (now >= (radio.c.end || 0) - 2.0) this.Radio_played_out(radio)
     }
     this.Radio_face_tick(radio, AC)
     this.Radio_render_note(radio, gat)
@@ -718,6 +712,28 @@ async Radio_pump_tick(radio, era):
     }
     if (radio.c.era !== era) return
     this.Radio_pump_soon(radio, era, 400)
+
+// Radio_played_out — the track played to its end: count it, earn the next its beginning, drop it so the next look dials.
+//  The chunk road and the file road (Radio_file_tick) both end here.
+Radio_played_out(radio):
+    let w = radio.c.w
+    radio.sc.played = (+(radio.sc.played || 0)) + 1
+    // PLAYED ALL THE WAY THROUGH — the one transition that earns the next track its beginning
+    //  (Radio_hbase).  Its twin is `went = 'skip'` in Radio_skip; between them every route that
+    //   drops `c.rec` says which it was, and an open that arrives with neither said gets the
+    //    conservative answer (mid-song).
+    radio.c.went = 'finish'
+    // PLAYED THROUGH WITH A PERSON IN THE ROOM ⇒ mire +1 on the heard Card (Heard_through,
+    //  humdinger-gated inside).  Here and not in Radio_skip: people skip songs they love, so a
+    //   skip is worth exactly nothing, while sitting through a track is the one ambient signal
+    //    the app can honestly read.  No bump — a play-through must never cost a disk write.
+    if (radio.c.rec) { this.Heard_through(w, this.Radio_pub(w) || '', radio.c.rec) }
+    let left = radio.c.rec
+    radio.c.rec = null
+    this.Radio_file_let_go(radio, left)
+    radio.c.drained = 0
+    w.c.play = null
+    radio.bump()
 
 // stand the playhead on a fresh record.  Ra_term_stream_open keeps the w.c.play bookkeeping
 //  (the dial's never-the-playing-one exclusion reads it); the radio's own cursor is c.seq.
@@ -788,7 +804,7 @@ Radio_peek_next(radio):
     if (st) {
         for (const oc of st.o({ Card: 1 })) {
             let orec = oc.c.rec
-            if (orec && (oc.sc.own ? 1 : 0) === own && !heard[String(orec.sc.id)] && this.Radio_playable(orec)) return orec
+            if (orec && (oc.sc.own ? 1 : 0) === own && !heard[String(orec.sc.id)] && (this.Radio_playable(orec) || this.Radio_file_road(radio, orec))) return orec
             st.drop(oc)
             st.bump()
         }
@@ -915,6 +931,14 @@ async Radio_prime(radio, era):
     if (radio.c.priming) return
     let rec = this.Radio_peek_next(radio)
     if (!rec || !rec.sc.id) return
+    // THE FILE ROAD PRIMES BY DECODING (Radio_file_kick): the next record's whole PCM, so its open lays sound on the spot.
+    //  A dead decode takes it off the file road (Radio_file_road answers ''), and the chunk prime below covers it.
+    let froad = this.Radio_file_road(radio, rec)
+    if (froad) {
+        radio.c.file_next = rec
+        this.Radio_file_kick(radio, rec, froad)
+        return
+    }
     // THE SKIP SHAPE IS THE STANDING BET — see the 2026-08-12 reasoning below — but it is no longer
     //  the ONLY prime.  The finish stopped being coverable by its 2s of slack once the head landed:
     //   a finish-onto-a-whole-head opens with hbase>0, the skip-shape prime gets DROPPED for it
@@ -1077,6 +1101,12 @@ Radio_open(radio, rec):
     //  Swarm_share_beat reads to aim its want-ahead window.  Zero unless we tuned in late.
     radio.c.at0 = start * (+(rec.sc.seg_secs || 2))
     radio.c.primed_use = ready || null
+    // THE FILE ROAD (Radio_file_choose): a file here whose PCM stands, or a record with no chunks to play, opens from the
+    //  file — the chunk prime is spent on nothing, and a whole-track open draws its bar against the whole track.
+    if (this.Radio_file_choose(radio, rec, hbase, start)) {
+        radio.c.primed_use = null
+        if (radio.c.file.whole) radio.c.at0 = 0
+    }
     radio.c.dec = null
     radio.c.dec_bad_at = -1
     radio.c.pre = 0
@@ -1092,7 +1122,7 @@ Radio_open(radio, rec):
     //  `went` rides beside it because hbase alone cannot tell a refused head from an absent one: a
     //   skip and a finish-onto-a-headless-record both stamp 0, and only one of those is a policy
     //    decision.  Without it, "why did this open mid-song" is unanswerable from the ring.
-    this.Radio_trace(radio, { ev: 'open', total: +(rec.sc.total || 0), preview: +(rec.sc.preview || 0), hbase: hbase, went: went || 'none', pv_off: +(rec.sc.pv_off || 0), wire: rec.c.from ? 1 : 0 })
+    this.Radio_trace(radio, { ev: 'open', total: +(rec.sc.total || 0), preview: +(rec.sc.preview || 0), hbase: hbase, went: went || 'none', pv_off: +(rec.sc.pv_off || 0), wire: rec.c.from ? 1 : 0, ...(radio.c.file ? { file: radio.c.file.road } : {}) })
     radio.c.nch = Math.min(2, +(rec.sc.nch || 1))
     radio.sc.title = this.Radio_clean(rec.sc.title || rec.sc.id || 'unknown')
     let artist = this.Radio_clean(rec.sc.artist || '')
@@ -1108,7 +1138,8 @@ Radio_open(radio, rec):
     //     pv_off × seg_secs still to go — 20–30s of a bar pegged at the end while music kept playing.
     //      The owner saw exactly that and read it as a stall before the next track (2026-08-12).
     //  So: head ⇒ the file's duration; no head ⇒ the offer's, the old number exactly.
-    radio.sc.of = (+(radio.c.hbase || 0) > 0)
+    let whole = (+(radio.c.hbase || 0) > 0) || !!(radio.c.file && radio.c.file.whole)
+    radio.sc.of = whole
         ? Math.round(Math.max(0, +(rec.sc.seconds || 0)))
         : Math.round(Math.max(0, +(rec.sc.seconds || 0) - (+(rec.sc.pv_off || 0) * this.Ra_seg_secs())))
     radio.sc.at = Math.round(+(radio.c.at0 || 0))
@@ -1121,7 +1152,7 @@ Radio_open(radio, rec):
     //  AND ZERO WHEN A HEAD RIDES: `skip` is what the offer's cut threw away, so a track opened at
     //   its beginning has skipped NOTHING.  Leaving it set would have the face draw "0:32 + elapsed /
     //    2:45" over a play that started at 0:00 — the same lie as the bar above, in words.
-    let skip = (+(radio.c.hbase || 0) > 0) ? 0 : Math.round((+(rec.sc.pv_off || 0)) * this.Ra_seg_secs())
+    let skip = whole ? 0 : Math.round((+(rec.sc.pv_off || 0)) * this.Ra_seg_secs())
     if (skip > 0) {
         radio.sc.skip = skip
     } else {
@@ -1191,6 +1222,7 @@ Radio_pool_catch(w, radio, rec):
     if (!seed) { return 0 }
     let shop = this.Ra_home_shop(w, me)
     if (shop.o({ Heist: 1, seed: seed })[0]) { return 0 }  // already keeping this one
+    if (this.Radio_pool_card(radio, rec)) { return 0 }       // already pooled (by id or of:) — nothing to fetch
     // THE CAP MUST COUNT INTENT, NOT JUST SEDIMENT.  A landed track and a keep still in flight both
     //  spend the same room, and an evening of radio mints far more keeps than it lands tracks — so
     //   counting only the pool shelf would let a cap of 12 grow a hundred outstanding %Heists behind
@@ -1642,8 +1674,10 @@ Radio_dial_pool_local(w, radio, retry):
     let pub = this.Radio_pub(w) || 'me'
     let shelf = this.Ra_pool_stock(w, pub)
     if (!shelf) { return null }
-    if (retry) { return this.Ra_dial_next(w, shelf, {}) }
-    return this.Ra_dial_next(w, shelf, { skip_ids: this.Radio_heard(radio) })
+    // a pooled card whose file plays here needs no preview (the file road, Radio_file_road)
+    let playable = (r) => !!(this.Ra_pool_file_plays && this.Ra_pool_file_plays(w, r))
+    if (retry) { return this.Ra_dial_next(w, shelf, { playable }) }
+    return this.Ra_dial_next(w, shelf, { skip_ids: this.Radio_heard(radio), playable })
 // Radio_pocket_why — is the SoundPool THE music on this body, rather than a chip below the friends?  '' when not;
 //  'norelay' when the relay socket has been down past a grace (nobody can reach us); 'nofolder' when the body has no
 //   FSA folder (`listen_only`: no picker, or thin by choice — a phone, an installed PWA) so its own shelf is empty.
@@ -1818,7 +1852,7 @@ async Radio_dial(radio):
                 pmag.drop(oc)
                 pmag.bump()
                 if (!orec || oc.sc.own || pheard[String(orec.sc.id)]) continue
-                if (!this.Radio_rec_pooled(radio, orec) || !this.Radio_playable(orec)) continue
+                if (!this.Radio_rec_pooled(radio, orec) || !(this.Radio_playable(orec) || this.Radio_file_road(radio, orec))) continue
                 console.log('📻 next [pool] ✓ ' + pname(orec) + ' (primed)' + pwl)
                 return orec
             }
@@ -2936,6 +2970,7 @@ Radio_pool_census(w, radio):
     let playable = 0
     let fresh = 0
     let names = []
+    let by = {}
     for (const home of w.o({ Theirs: 1 })) {
         if (!home.sc.pub) continue
         let pub = String(home.sc.pub)
@@ -2946,12 +2981,13 @@ Radio_pool_census(w, radio):
         for (const rec of recs) {
             if (!this.Radio_playable(rec)) continue
             playable = playable + 1
+            by[pub] = (by[pub] || 0) + 1
             if (!heard[rec.sc.id]) fresh = fresh + 1
         }
         let nm = this.Radio_friendly ? this.Radio_friendly(w, pub) : ''
         names.push(nm || pub.slice(0, 8))
     }
-    return { friends: friends, known: known, playable: playable, fresh: fresh, names: names }
+    return { friends: friends, known: known, playable: playable, fresh: fresh, names: names, by: by }
 
 // Radio_nudge — the stoker's landing announcement: stock JUST stood, and a digging radio must
 //  not wait out its 800ms dig poll (Radio_pump_tick's own tail call; this said "3s" until
@@ -3055,6 +3091,25 @@ Radio_crossover(w, radio):
     radio.c.cross_at = now
     let c = this.Radio_pool_census(w, radio)
     if (!c.playable) return 0
+    // THE AIM MUST BE ABLE TO ANSWER (2026-11-11, eed "still waiting on Vingas's music" while Vingas had 4 playable): the census
+    //  counts every friend, but the dial obeys a PINNED aim (Radio_dial_pool) — aimed at S, who had nothing, the skip below landed
+    //   straight back on my own shelf and the latch spent the crossover.  So when the aimed friend has nothing playable and
+    //    another does, aim at that one (the pin goes too: a choice of someone silent is not one the radio can keep).
+    let aim = String(radio.sc.aim || '')
+    if (aim && !(c.by[aim] > 0)) {
+        let to = Object.keys(c.by).find((p) => c.by[p] > 0) || ''
+        if (to) {
+            console.log('📻 crossover: ' + (this.Radio_friendly(w, aim) || aim.slice(0, 8)) + ' has nothing playable — aiming at ' + (this.Radio_friendly(w, to) || to.slice(0, 8)))
+            delete radio.c.pinned
+            radio.sc.aim = to
+            let tname = this.Radio_friendly(w, to)
+            if (tname) radio.sc.aim_by = tname
+            if (!tname) delete radio.sc.aim_by
+            this.Radio_queue_clear(radio)
+            radio.c.ready = null
+            radio.c.ready_fin = null
+        }
+    }
     radio.c.crossed = 1
     this.Radio_trace(null, { ev: 'crossover', playable: c.playable, of: (c.names[0] || '') })
     this.Radio_skip(radio)
@@ -5008,4 +5063,300 @@ Radio_place(radio, got):
 
 Radio_spill(radio):
     this.Radio_place(radio, this.Radio_dec_harvest(radio.c.dec))
+//#endregion
+
+//#region file — THE FILE ROAD: a file on this device plays straight onto the timeline, no chunks (SoundPooling_todo §0.a.3)
+//  The owner, 2026-11-10: *"it needs to 'get' how to play local originals directly on the Radio and do similar for Pool
+//   tracks"*.  Until now every track went Opus chunks → AudioDecoder → the timeline, even my own original (decoded, re-encoded
+//    to Opus, decoded again) and even a whole pooled %Lofi sitting in OPFS — which could only play once a preview had been
+//     lent to it (Ra_rec_previews_carry) or encoded on the phone (the pocket encode).  The file road decodes the FILE once
+//      (rec.c.pcm, the same registry Ra_source_pcm feeds, so the belt frees it) and lays ~2s slices on the same timeline
+//       Radio_place chains, so seams, fades, pause and the advance are the chunk road's own.
+//  Two roads in: 'own' — my library's original, read through its radiostock card (Ra_source_pcm, gain baked as the preview's
+//   was); 'lofi' — a pooled card's file under pool/ (Radio_file_lofi_pcm, gain measured to the same target).  Live pages only
+//    (humdinger, Ra_pool_file_plays): a Book keeps the chunk road it recorded.  `top.c.file_road_off = 1` turns it off live.
+//  WHEN: Radio_open takes the file road when the PCM is already decoded (the prime decodes the next track's ahead of time), or
+//   when the record has no chunks to play at all (a never-heard pool fill) and must wait for its decode.  Otherwise the chunk
+//    road plays this one and the decode lands for next time.
+
+// Radio_file_road — can this record play from a file on THIS device?  '' when not, 'lofi' for a pooled card's own file,
+//  'own' for my own library's original.  A wire record (rec.c.from) is a friend's, never a file here.
+Radio_file_road(radio, rec):
+    if (!rec || !rec.sc || !rec.sc.id || rec.c.file_dead) return ''
+    let top = this.top_House()
+    // OPT-IN (2026-11-11): its first live run leaked eed to 6GB — `H.top_House().c.file_road = 1` to try it
+    if (!top.c.humdinger || !top.c.file_road) return ''
+    if (typeof OfflineAudioContext === 'undefined') return ''
+    if (this.Radio_pool_file(radio, rec)) return 'lofi'
+    let w = radio.c.w
+    let me = this.Radio_pub(w) || ''
+    if (!rec.c.from && me && this.Ra_pub_of(rec) === me && !this.Radio_rec_pooled(radio, rec)) return 'own'
+    return ''
+
+// Radio_file_road_toggle — the file road on|off for this page life (a poke verb; .c, so a reload turns it off again)
+Radio_file_road_toggle(radio):
+    let top = this.top_House()
+    if (top.c.file_road) {
+        delete top.c.file_road
+    } else {
+        top.c.file_road = 1
+    }
+    console.log("📻 file road " + (top.c.file_road ? "ON" : "off"))
+    radio.bump()
+
+// Radio_pool_file — the pool card behind this record, when its file is on this device and can play (Ra_pool_file_plays).
+//  By id (the card itself, or a mirror card it was pressed from) or by `of:` — a lofi copy wears its own id and names the
+//   friend's record it came from.  So a FRIEND's record already in my pool plays from my disk, not their wire (the owner
+//    2026-11-11: *"we might as well not peer-Radio play what's also pooling-Radio playable"*).
+Radio_pool_file(radio, rec):
+    let card = this.Radio_pool_card(radio, rec)
+    if (!card || !this.Ra_pool_file_plays(radio.c.w, card)) return null
+    return card
+
+// Radio_pool_card — the pool card for this record, by id or by of:, whether or not its file plays here
+Radio_pool_card(radio, rec):
+    let w = radio.c.w
+    if (!rec || !rec.sc || !rec.sc.id || !this.Ra_pool_stock || !this.Ra_pool_file_plays) return null
+    let shelf = this.Ra_pool_stock(w, this.Radio_pub(w) || 'me')
+    if (!shelf) return null
+    let id = String(rec.sc.id)
+    return this.Ra_rec_find(shelf, { Record: 1, id: id }) || this.Ra_rec_find(shelf, { Record: 1, of: id }) || null
+
+// Radio_file_pcm — the decoded whole-track PCM when it stands (never a partial — Ra_source_pcm's head-only decode), else null
+Radio_file_pcm(rec):
+    if (!rec || !rec.c.pcm || rec.c.pcm_partial || !rec.c.pcm[0]) return null
+    return rec.c.pcm
+
+// Radio_file_kick — make sure the PCM is coming: 1 when it already stands, 0 while it is decoding (or must wait its turn).
+//  ONE FILE DECODE AT A TIME, TAB-WIDE (top.c.file_decoding), and none may hang: a job not landed in 25s is abandoned — its
+//   record goes off the file road (rec.c.file_dead) and the slot frees (Radio_file_abandon).  The first live run had neither
+//    rule: every skipped-to pool track kicked a decode, none landed, each held its whole decode, and eed grew to 6GB.
+Radio_file_kick(radio, rec, road):
+    let top = this.top_House()
+    let busy = top.c.file_decoding
+    if (busy && !busy.done && Date.now() - busy.at > 25000) this.Radio_file_abandon(busy, 'timeout')
+    if (this.Radio_file_pcm(rec)) {
+        // the prime asks every pump pass, minutes ahead of the open: each ask keeps the belt (Ra_pcm_sweep, 30s idle) off it
+        rec.c.pcm_ts = Date.now()
+        return 1
+    }
+    if (rec.c.pcm_pending || rec.c.file_dead) return 0
+    if (+(rec.c.pcm_retry_at || 0) > Date.now()) return 0
+    busy = top.c.file_decoding
+    if (busy && !busy.done) return 0
+    let w = radio.c.w
+    if (this.Ra_pcm_admit && !this.Ra_pcm_admit(w, rec)) return 0
+    if (rec.c.pcm) {
+        // a head-only partial under an open encode is that encode's; leave it, the chunk road plays this one
+        if (rec.c.ra && !rec.c.ra.done) return 0
+        this.Ra_pcm_drop(rec, 'file-road')
+    }
+    let job = { rec: rec, road: road, at: Date.now(), stage: 'start', done: 0 }
+    top.c.file_decoding = job
+    rec.c.file_job = job
+    rec.c.pcm_pending = job.at
+    let go = road === 'lofi' ? this.Radio_file_lofi_pcm(radio, rec, job) : this.Ra_source_pcm(w, rec)
+    go.then((p) => this.Radio_file_landed(radio, job, p, null)).catch((er) => this.Radio_file_landed(radio, job, null, er))
+    return 0
+
+// Radio_file_landed — a decode settled.  An abandoned job's late PCM is let go at once; a failed one takes its record off the
+//  file road; one for a track the listener has already moved past (neither playing nor next) is let go too.
+Radio_file_landed(radio, job, p, er):
+    let rec = job.rec
+    let top = this.top_House()
+    if (job.done) {
+        if (p && rec.c.pcm === p) this.Ra_pcm_drop(rec, 'file-late')
+        return
+    }
+    job.done = 1
+    if (top.c.file_decoding === job) top.c.file_decoding = null
+    rec.c.file_job = null
+    rec.c.pcm_pending = 0
+    let title = String(rec.sc.title || rec.sc.id).slice(0, 40)
+    if (er || !p) {
+        rec.c.file_dead = 1
+        console.log('📻⚠ file road: ' + title + ' would not decode at ' + job.stage + (er ? ' — ' + String(er).slice(0, 80) : ''))
+        return
+    }
+    if (rec !== radio.c.rec && rec !== radio.c.file_next && !(rec.c.ra && !rec.c.ra.done)) {
+        this.Ra_pcm_drop(rec, 'file-unwanted')
+        return
+    }
+    console.log('📻 file road: ' + title + ' decoded in ' + (Date.now() - job.at) + 'ms (' + job.road + ')')
+
+// Radio_file_abandon — give up on a decode that never settled: free its slot, take its record off the file road, say where it stuck
+Radio_file_abandon(job, why):
+    let top = this.top_House()
+    job.done = 1
+    if (top.c.file_decoding === job) top.c.file_decoding = null
+    job.rec.c.file_job = null
+    job.rec.c.pcm_pending = 0
+    job.rec.c.file_dead = 1
+    console.log('📻⚠ file road: ' + String(job.rec.sc.title || job.rec.sc.id).slice(0, 40) + ' stuck at ' + job.stage + ' for ' + Math.round((Date.now() - job.at) / 1000) + 's — ' + why + ', abandoned')
+
+// Radio_file_let_go — the listener left this track (skip, or played out): free its decode unless it is next, or an open encode
+//  is serving a friend from it.  Live only — a Book's PCM lifetime stays the belt's.
+Radio_file_let_go(radio, rec):
+    if (!rec || !rec.c || !rec.c.pcm || !this.top_House().c.humdinger) return
+    if (rec === radio.c.file_next) return
+    if (rec.c.ra && !rec.c.ra.done) return
+    this.Ra_pcm_drop(rec, 'file-left')
+
+// Radio_file_lofi_pcm — read a pooled card's file off pool/ and decode it whole, gained to the previews' loudness target
+//  (Ra_target_lufs) so a pooled track sits level beside a friend's.  `job.stage` says how far it got, for the abandon line.
+//   No copy of the decode (the channel views ARE the PCM; a copy only past stereo), no second render for loudness.
+async Radio_file_lofi_pcm(radio, rec, job):
+    let w = radio.c.w
+    let card = this.Radio_pool_file(radio, rec)
+    let nav = w.c.ra_nav || this.Crate_nav()
+    if (!card || !nav) return null
+    let parts = ('pool/' + String(card.sc.path)).split('/').filter(Boolean)
+    let name = parts.pop()
+    let dir = parts.join('/')
+    job.stage = 'read'
+    let raw = null
+    if (nav.read_range) {
+        let got = await nav.read_range(dir, name, 0)
+        raw = got ? got.buffer : null
+    } else {
+        raw = await nav.bin_read(dir, name)
+    }
+    if (raw && raw.buffer && raw.byteLength != null && !(raw instanceof ArrayBuffer)) raw = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength)
+    if (!raw || !raw.byteLength || job.done) return null
+    job.stage = 'decode ' + Math.round(raw.byteLength / 1024) + 'KB'
+    let decoded = await new OfflineAudioContext(1, 1, 48000).decodeAudioData(raw)
+    raw = null
+    if (job.done) return null
+    let nch = Math.min(2, decoded.numberOfChannels)
+    let channels = []
+    let ch = 0
+    while (ch < nch) {
+        channels.push(decoded.numberOfChannels > 2 ? new Float32Array(decoded.getChannelData(ch)) : decoded.getChannelData(ch))
+        ch = ch + 1
+    }
+    decoded = null
+    // LOUDNESS WITHOUT A SECOND RENDER: Ra_lufs re-renders the whole track in another OfflineAudioContext and waits on a meter
+    //  worker, doubling the memory of every decode.  A sampled RMS read as a rough LUFS, through the same gain decision and its
+    //   peak ceiling, is good enough to sit a pooled track level beside a friend's.
+    job.stage = 'gain'
+    let lufs = this.Radio_file_rms_lufs(channels)
+    let g = this.Ra_gain_for(w, lufs, this.Ra_peak(channels))
+    await this.Ra_bake_gentle(channels, g.linear)
+    if (job.done) return null
+    rec.c.pcm = channels
+    rec.c.pcm_partial = 0
+    this.Ra_pcm_hold(rec)
+    this.Radio_trace(radio, { ev: 'file-decoded', id: String(rec.sc.id).slice(0, 8), ms: Date.now() - job.at, secs: Math.round(channels[0].length / 48000), db: g.db })
+    return channels
+
+// Radio_file_rms_lufs — a rough integrated loudness off every 16th sample: 20·log10(rms) − 0.7.  null on silence.
+Radio_file_rms_lufs(channels):
+    let sum = 0
+    let n = 0
+    for (const chan of channels) {
+        let i = 0
+        while (i < chan.length) {
+            sum = sum + chan[i] * chan[i]
+            n = n + 1
+            i = i + 16
+        }
+    }
+    if (!(n > 0) || !(sum > 0)) return null
+    return 20 * Math.log10(Math.sqrt(sum / n)) - 0.7
+
+// Radio_file_choose — at the open: take the file road for this record?  Yes when its PCM stands, or when the chunk road has
+//  nothing to play (it must wait for the decode).  `whole` opens at 0:00 (a pooled track, or a head the policy earned); else
+//   the needle lands where the chunk road's would (the offer's cut, plus the tune-in start), so the face reads the same.
+Radio_file_choose(radio, rec, hbase, start):
+    radio.c.file = null
+    if (radio.c.file_next === rec) radio.c.file_next = null
+    let road = this.Radio_file_road(radio, rec)
+    if (!road) return null
+    let have = this.Radio_file_kick(radio, rec, road)
+    if (!have && this.Radio_playable(rec)) return null
+    let whole = (road === 'lofi' || hbase > 0) ? 1 : 0
+    let secs = whole ? 0 : (+(rec.sc.pv_off || 0)) * this.Ra_seg_secs() + start * (+(rec.sc.seg_secs || 2))
+    radio.c.file = { id: String(rec.sc.id), road: road, whole: whole, start: Math.round(secs * 48000), at: Math.round(secs * 48000), since: Date.now(), ch: null, n: 0 }
+    return radio.c.file
+
+// Radio_file_tick — the pump's look while the file road plays: wait for the decode, lay slices up to the ahead-window,
+//  advance at the end.  The chunk road's own advance (Radio_played_out), face and prime.
+async Radio_file_tick(radio, era, rec):
+    let w = radio.c.w
+    let AC = radio.c.gat.AC
+    let f = radio.c.file
+    if (!f.ch) {
+        let pcm = this.Radio_file_kick(radio, rec, f.road) ? this.Radio_file_pcm(rec) : null
+        if (!pcm) {
+            // STILL DECODING — or it never will.  Give up after 30s or on a dead decode: back to the chunks if any stand,
+            //  else the dial turns.  Meanwhile the face says 'digging', not a silent 'playing'.
+            if (rec.c.file_dead || Date.now() - f.since > 30000) {
+                this.Radio_trace(radio, { ev: 'file-give-up', road: f.road, dead: rec.c.file_dead ? 1 : 0 })
+                radio.c.file = null
+                if (this.Radio_playable(rec)) {
+                    this.Radio_supply_go(radio, era, rec)
+                } else {
+                    radio.c.rec = null
+                    w.c.play = null
+                    radio.bump()
+                }
+                this.Radio_pump_soon(radio, era, 50)
+                return
+            }
+            if (radio.sc.Radio === 'playing' && !(radio.c.end > AC.currentTime)) this.Radio_state(radio, 'digging')
+            this.Radio_pump_soon(radio, era, 250)
+            return
+        }
+        f.ch = pcm
+        f.n = pcm[0].length
+        if (f.at >= f.n) {
+            f.at = 0
+            f.start = 0
+        }
+        // a pool card often knows no length — the decode does
+        if (!(+(rec.sc.seconds || 0) > 0)) {
+            radio.sc.of = Math.round(f.n / 48000)
+            radio.bump()
+        }
+        this.Radio_trace(radio, { ev: 'file-open', road: f.road, at: Math.round(f.at / 48000), secs: Math.round(f.n / 48000), waited: Date.now() - f.since })
+    }
+    // the belt (Ra_pcm_sweep) frees what nobody touched for 30s — we are touching it
+    rec.c.pcm_ts = Date.now()
+    let now = AC.currentTime
+    let SLICE = 96000
+    let fed = 0
+    while (((radio.c.end || now) - now) < 8 && f.at < f.n && fed < 4) {
+        let to = Math.min(f.n, f.at + SLICE)
+        let chans = []
+        for (const c2 of f.ch) chans.push(c2.subarray(f.at, to))
+        this.Radio_place(radio, { channels: chans, n: to - f.at })
+        f.at = to
+        fed = fed + 1
+    }
+    if (fed > 0) {
+        radio.c.first_feed = 1
+        radio.c.ever_played = 1
+        if (radio.sc.Radio !== 'playing') this.Radio_state(radio, 'playing')
+    }
+    now = AC.currentTime
+    if (f.at >= f.n && now >= (radio.c.end || 0) - 2.0) {
+        radio.c.file = null
+        this.Radio_played_out(radio)
+    }
+    this.Radio_face_tick(radio, AC)
+    this.Radio_render_note(radio, radio.c.gat)
+    if (((radio.c.end || 0) - now) > 4) {
+        await this.Radio_prime(radio, era)
+        if (radio.c.era !== era) return
+    }
+    if (radio.c.era !== era) return
+    this.Radio_pump_soon(radio, era, 400)
+
+// Radio_file_pause — rewind the file cursor to what was actually heard (the scheduled-but-unplayed tail dies with the voice)
+Radio_file_pause(radio, AC):
+    let f = radio.c.file
+    let left = Math.max(0, (radio.c.end || 0) - AC.currentTime)
+    let heard = Math.max(0, (radio.c.sched || 0) - Math.round(left * 48000))
+    if (f.ch) f.at = Math.min(f.n, f.start + heard)
+    radio.c.sched = heard
 //#endregion

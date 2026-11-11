@@ -10,7 +10,7 @@ import { sha256_hex } from "$lib/Common"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Pool(): string { return '309aa16c2fe1b958~g1' },
+    Ghostmeta_Ghost_M_Pool(): string { return 'e5f973c0cda40f50~g1' },
 
 // Pool.g — SOUNDPOOLING's home (split out of Ra.g 2026-09-17, SoundPooling_todo.md §0.2a — the owner:
 //  "yes to Pool.g, definitely looks big enough"). Three regions, in the order a reader should meet them:
@@ -65,7 +65,8 @@ Pool_facts(w, ident) {
     let home = this.Ra_pool_home(w)
     f.budget_mb = home && home.sc.budget_mb ? +home.sc.budget_mb : 0
     f.weight_mb = Math.round(this.Ra_pool_track_mb(w) * 10) / 10
-    f.compartments = this.Ra_pool_defs(w, 0).filter((d) => d.name).map((d) => ({ name: d.name, take: d.take, who: d.who || '', share: d.share, cap: d.cap, salt: d.salt || '' }))
+    f.compartments = this.Ra_pool_defs(w, 0).filter((d) => d.name).map((d) => this.Pool_def_row(d))
+    f.now_s = this.Heard_now ? this.Heard_now(w) : Math.floor(f.now / 1000)
     let src = this.Ra_pool_sources(w)
     f.sources = { crew: src.filter((x) => x.crew).length, friend: src.filter((x) => !x.crew).length }
     f.sources_raw = src
@@ -114,8 +115,15 @@ Pool_facts(w, ident) {
 // Pool_facts_summary — the facts without their *_raw arrays (hundreds of ids) and without the clock: what gets logged.
 Pool_facts_summary(f) {
     let out = {}
-    for (const k of Object.keys(f)) { if (k !== 'now' && !k.endsWith('_raw')) { out[k] = f[k] } }
+    for (const k of Object.keys(f)) { if (k !== 'now' && k !== 'now_s' && !k.endsWith('_raw')) { out[k] = f[k] } }
     return out
+},
+// Pool_def_row — one declared compartment as the plain row the policy reads
+Pool_def_row(d) {
+    let row = { name: d.name, take: d.take, who: d.who || '', share: d.share, cap: d.cap, salt: d.salt || '' }
+    if (d.keep_days) { row.keep_days = d.keep_days }
+    if (d.lends) { row.lends = 1 }
+    return row
 },
 // Pool_cards_raw — a pooled shelf's records as the plain rows the policy reads: {id, of, bytes}, shelf order kept
 //  (the 'radio' draw uses that order as its clock).
@@ -167,11 +175,29 @@ Pool_draw_radio(pd, f) {
     let hold = (f.pooled_raw || []).map((c) => c.id).filter(Boolean)
     return hold.slice(Math.max(0, hold.length - pd.cap))
 },
-Pool_draw_tally(kind, f) {
+// Pool_draw_tally — a 'liked' compartment wearing `keep_days` is THE LIKED HALF OF THE LIGHT CONE (owner
+//  2026-11-11: *"do we keep tracks they liked in there for a month or something?"* … *"have that switched on"*):
+//   only a CURRENT Yay (Heard_reaction — a later Nay or Meh ends it, and Pool_goal bars those anyway) hearted
+//    within the window, and only one that can ARRIVE (held, so a press, or some mirror holds it) — a wish with
+//     no road would sit on the half of the budget it lends back otherwise.  Past the window the track leaves
+//      the goal and the roll lets it go like any other.  No window without a clock: `f.now_s` is only set on
+//       live pages, so a Book's hand-built facts draw the whole liked list as before.
+Pool_draw_tally(kind, f, pd) {
     let tally = f.tally_raw || {}
     let ids = Object.keys(tally)
     if (kind === 'liked') {
         ids = ids.filter((id) => tally[id].took > 0)
+        let days = pd ? +(pd.keep_days || 0) : 0
+        if (days > 0 && f.now_s) {
+            let since = f.now_s - days * 86400
+            ids = ids.filter((id) => (+tally[id].at || 0) >= since)
+        }
+        if (days > 0) {
+            let held = {}
+            for (const id of (f.held_raw || [])) { held[id] = 1 }
+            let holders = this.Pool_holders(f.sources_raw)
+            ids = ids.filter((id) => held[id] || holders[id])
+        }
         return ids.sort((a, b) => (tally[b].at - tally[a].at) || (tally[b].score - tally[a].score) || (a < b ? -1 : 1))
     }
     ids = ids.filter((id) => (kind === 'kept' ? tally[id].kept > 0 : tally[id].score > 0))
@@ -182,7 +208,7 @@ Pool_draw(pd, f) {
     if (pd.take === 'radio') { return this.Pool_draw_radio(pd, f) }
     if (pd.take === 'recent') { return (f.recent_raw || []).slice() }
     if (pd.take === 'latest') { return (f.latest_raw || []).slice() }
-    return this.Pool_draw_tally(pd.take, f)
+    return this.Pool_draw_tally(pd.take, f, pd)
 },
 // Pool_holders — WHO HAS IT NOW, the one resolver (rung 5, SoundPooling_todo §0.0): every source row folded
 //  to {id → from}, CREW FIRST (a sibling body's mirror is the cheap, consenting road), then by name so the
@@ -214,6 +240,7 @@ Pool_goal(f) {
     let holders = this.Pool_holders(f.sources_raw)
     let taken = {}
     let goal = []
+    let spare = 0
     for (const pd of (f.compartments || [])) {
         let picked = 0
         for (const id of this.Pool_draw(pd, f)) {
@@ -226,6 +253,24 @@ Pool_goal(f) {
             if (holders[id]) { g.from = holders[id] }
             goal.push(g)
             picked = picked + 1
+        }
+        if (pd.lends && picked < pd.cap) { spare = spare + (pd.cap - picked) }
+    }
+    // LENT ROOM (2026-11-11): the liked half is short until there is a month of Yays — a pool that can't fill
+    //  shouldn't hold the others back, so what it leaves goes to the random wander, and comes back to it as
+    //   the Yays arrive (the goal is re-derived every sit-down; the roll trims the wander as liked lands).
+    for (const pd of (f.compartments || [])) {
+        if (spare <= 0) { break }
+        if (pd.take !== 'random') { continue }
+        for (const id of this.Pool_draw(pd, f)) {
+            if (spare <= 0) { break }
+            if (taken[id] || barred[id]) { continue }
+            taken[id] = 1
+            let t = tally[id]
+            let g = { id: id, score: t ? t.score : 0, why: t ? t.why : 'circulating from ' + String(holders[id] || '').slice(0, 8), pool: pd.name }
+            if (holders[id]) { g.from = holders[id] }
+            goal.push(g)
+            spare = spare - 1
         }
     }
     return goal
@@ -471,6 +516,30 @@ Ra_pool_unexcuse(w) {
     return 1
 
 },
+// Ra_pool_file_plays — CAN THIS POOL CARD PLAY AS ITS OWN FILE?  The radio's file road (Radio_file_road, SoundPooling_todo
+//  §0.a.3, 2026-11-11) decodes a pooled file straight onto the timeline, so a card needs no preview: only its file under pool/
+//   and a live page that can decode.  An unlisted disk (no walk yet) says yes and lets the read decide; a failed decode marks
+//    the card (`c.file_dead`) and it falls back to needing a preview.  Live only: a Book keeps the preview rule it recorded.
+// Ra_pool_file_why — why a pooled card WITH its file still cannot play as one: '' when it can.  A preview is never the
+//  reason on a live page (the owner 2026-11-11: *"who cares if it has no Preview?"*) — only the road or the decode.
+Ra_pool_file_why(rw, rec) {
+    if (this.Ra_pool_file_plays(rw, rec)) { return '' }
+    let top = this.top_House ? this.top_House() : null
+    if (!top || !top.c || !top.c.humdinger) { return 'no preview' }        // a Book plays chunks
+    if (rec && rec.c && rec.c.file_dead) { return 'would not decode' }
+    if (!top.c.file_road) { return 'file road off' }
+    return 'cannot decode here'
+},
+Ra_pool_file_plays(rw, rec) {
+    if (!rec || !rec.sc || !rec.sc.path || rec.c.file_dead) { return 0 }
+    let top = this.top_House ? this.top_House() : null
+    if (!top || !top.c || !top.c.humdinger || !top.c.file_road) { return 0 }   // opt-in while the file road is proven (Radio_file_road)
+    if (typeof OfflineAudioContext === 'undefined') { return 0 }
+    let files = (rw && rw.c) ? rw.c.pool_files : null
+    if (files && !files.includes(String(rec.sc.path))) { return 0 }
+    return 1
+
+},
 // Ra_pool_census — CARDS vs READY, because the two counts say opposite things and the face was showing one
 //  while the dial obeyed the other (owner 2026-09-05: *"SoundPooling claims to have four but it says empty
 //   when I click next"*).  A Want that has been booked mints its CARD on the pool shelf at once; the BYTES
@@ -483,7 +552,7 @@ Ra_pool_census(w, pub) {
     if (!shelf) { return out }
     for (const rec of this.Ra_recs(shelf)) {
         out.cards = out.cards + 1
-        if (+(rec.sc.preview || 0) > 0) { out.ready = out.ready + 1 }
+        if (+(rec.sc.preview || 0) > 0 || this.Ra_pool_file_plays(w, rec)) { out.ready = out.ready + 1 }
     }
     return out
 
@@ -535,7 +604,11 @@ async Ra_pool_resurrect(w, ident, cap) {
         // ONE OF ANYTHING: a card whose file is gone (an evict whose drop never landed, a reload between the
         //  two) is a husk beside its own re-pull — "Went to Hermes" twice, 2026-09-13. A card that has a path
         //   and no file, and no keep pulling it, goes; a card still being landed has no path yet and stands.
-        if (rec.sc.path && !onDisk[String(rec.sc.path)] && rec.sc.preview) {
+        //  LIVE: path alone decides (2026-11-11, eed "394/300MB" with 11 of 22 cards fileless).  The old `&& preview` let a card
+        //   with no preview stand forever once the pocket encode went — and every such husk counted against the budget, so the
+        //    steward evicted real tracks to make room for ghosts.  A Book keeps the rule its fixtures recorded.
+        let husk = rec.sc.path && !onDisk[String(rec.sc.path)] && (rec.sc.preview || (this.top_House().c.humdinger && !(typeof this.Story_replaying === 'function' && this.Story_replaying())))
+        if (husk) {
             try { await this.Ra_rec_drop(homes.pool, String(rec.sc.id)); console.log('🏊 pool: dropped a card with no file — ' + String(rec.sc.title || rec.sc.id).slice(0, 32)) } catch (er) {}
         }
     }
@@ -603,8 +676,11 @@ Ra_pool_whys(rw) {
         if (rec.sc.path) { carded[String(rec.sc.path)] = 1 }
         let why = ''
         if (files && rec.sc.path && !files.includes(String(rec.sc.path))) { why = 'no file' }
-        if (!why && !(+(rec.sc.preview || 0) > 0)) { why = 'no preview' }
-        if (!why && !rec.o({ Preview: 1 }).length) { why = 'no chunks' }
+        let plays = this.Ra_pool_file_plays(rw, rec)
+        let live = this.top_House().c.humdinger
+        if (!why && !plays && live) { why = this.Ra_pool_file_why(rw, rec) }
+        if (!why && !plays && !(+(rec.sc.preview || 0) > 0)) { why = 'no preview' }
+        if (!why && !plays && !rec.o({ Preview: 1 }).length) { why = 'no chunks' }
         if (why) { out.whys[why] = (out.whys[why] || 0) + 1 } else { out.ready = out.ready + 1 }
     }
     for (const path of (files || [])) { if (!carded[String(path)]) { out.uncatalogued = out.uncatalogued + 1 } }
@@ -711,7 +787,12 @@ async Ra_pool_report(w, ident, quiet) {
             let P = +(rec.sc.preview || 0)
             let chunks = rec.o({ Preview: 1 }).length
             let why = ''
-            if (!(P > 0)) {
+            let ondisk = rec.sc.path && paths.includes(String(rec.sc.path))
+            if (this.Ra_pool_file_plays(homes.mw, rec) && ondisk) {
+                out.ready = out.ready + 1          // plays as its own file (the file road)
+            } else if (ondisk && this.top_House().c.humdinger) {
+                why = this.Ra_pool_file_why(homes.mw, rec)
+            } else if (!(P > 0)) {
                 why = 'no preview — the dial cannot pick it'
             } else {
                 if (!chunks) { why = 'preview claimed but no chunks stand behind it' } else { out.ready = out.ready + 1 }
@@ -872,11 +953,49 @@ Ra_pool_recent_set(w, on) {
         return 1
     }
     if (!this.Ra_pool_recent_on(w)) { return 0 }
-    this.Ra_pool_drop(w, 'recent')
-    // rolling takes the room back.  Not "rescale what is left": with one compartment standing, anything
-    //  short of 100 silently shrinks the budget the human typed.
-    if (this.Ra_pool_defs(w, 0).some((p) => p.name === 'rolling')) { this.Ra_pool_share_set(w, 'rolling', 100) }
+    this.Ra_pool_drop_to_rolling(w, 'recent')
     return 1
+},
+// Ra_pool_drop_to_rolling — retire a compartment and hand its share to rolling.  Not "rescale what is left"
+//  (anything short of 100 summed silently shrinks the budget the human typed), and not "rolling = 100" either,
+//   which was right with two compartments and squashes a third (liked) to nothing.
+Ra_pool_drop_to_rolling(w, name) {
+    let had = this.Ra_pool_defs(w, 0).find((p) => p.name === String(name))
+    let give = had ? (+had.share || 0) : 0
+    this.Ra_pool_drop(w, String(name))
+    let roll = this.Ra_pool_defs(w, 0).find((p) => p.name === 'rolling')
+    if (roll) { this.Ra_pool_share_set(w, 'rolling', Math.min(100, (+roll.share || 0) + give)) }
+    return 1
+},
+// Ra_pool_liked_on / _set / _toggle — THE LIKED HALF (owner 2026-11-11: *"a SP quota half-liked and half-random
+//  … keep tracks they liked in there for a month or something … have that switched on … be working with Yay|Nay
+//   data"*).  On: a 'liked' compartment at half the budget, `keep_days:30` (Pool_draw_tally's window) and
+//    `lends` (Pool_goal gives its unfilled room to the random wander until the Yays fill it).  Off: it goes and
+//     rolling takes its share back.  The DEFAULT lives in PoolFace (like recent), so Ra_pool_start stays the
+//      one-compartment door every pool fixture means.
+Ra_pool_liked_days() {
+    return 30
+},
+Ra_pool_liked_on(w) {
+    return this.Ra_pool_defs(w, 0).some((p) => p.name === 'liked' && p.take === 'liked') ? 1 : 0
+},
+Ra_pool_liked_set(w, on) {
+    if (on) {
+        if (this.Ra_pool_liked_on(w)) { return 0 }
+        this.Ra_pool_gang(w, 'liked', 'liked', null, 50)
+        let home = this.Ra_pool_home(w)
+        let p = home ? home.o({ Pool: 1, name: 'liked' })[0] : null
+        if (p) { p.sc.keep_days = String(this.Ra_pool_liked_days()); p.sc.lends = 1; p.bump() }
+        console.log('🏊 SoundPool keeps what you Yay for ' + this.Ra_pool_liked_days() + ' days (half the budget, lent to the wander till it fills)')
+        return 1
+    }
+    if (!this.Ra_pool_liked_on(w)) { return 0 }
+    this.Ra_pool_drop_to_rolling(w, 'liked')
+    return 1
+},
+Ra_pool_liked_toggle(w) {
+    if (!this.Ra_pool_consent(w)) { console.log('🏊 liked: SoundPooling is off'); return 0 }
+    return this.Ra_pool_liked_set(w, this.Ra_pool_liked_on(w) ? 0 : 1)
 },
 // Ra_pool_gang — declare (or top up) a compartment at `pct`, taking that share from the others in proportion.
 Ra_pool_gang(w, name, take, who, pct) {
@@ -976,7 +1095,12 @@ Ra_pool_drop(w, name) {
 Ra_pool_defs(w, cap) {
     // both owners, identity first (Ra_pool_home) — probe-first: a read never mints a home.
     let shelf = this.Ra_pool_home(w)
-    let defs = shelf ? shelf.o({ Pool: 1 }).map((p) => ({ name: String(p.sc.name || ''), take: String(p.sc.take || 'taste'), cap: Number(p.sc.cap || 0), salt: String(p.sc.salt || ''), who: String(p.sc.who || 'all'), share: Number(p.sc.share || 0) })).filter((p) => p.name) : []
+    let defs = shelf ? shelf.o({ Pool: 1 }).map((p) => {
+        let d = { name: String(p.sc.name || ''), take: String(p.sc.take || 'taste'), cap: Number(p.sc.cap || 0), salt: String(p.sc.salt || ''), who: String(p.sc.who || 'all'), share: Number(p.sc.share || 0) }
+        if (p.sc.keep_days) { d.keep_days = +p.sc.keep_days }
+        if (p.sc.lends) { d.lends = 1 }
+        return d
+    }).filter((p) => p.name) : []
     if (!defs.length) { return [{ name: '', take: 'taste', cap: cap }] }
     return defs
 },
@@ -1035,11 +1159,14 @@ Pool_shared_rows(w) {
 },
 // Ra_quarter_goal_pools / Ra_quarter_diff — the real pipeline's doors, kept for their callers (every pool fixture
 //  hands these a hand-built shelf).  Each builds the facts SHAPE from its arguments and calls the one policy above.
-Ra_quarter_goal_pools(shelf, pools, sources, pool, recent, barred) {
-    return this.Pool_goal({
+Ra_quarter_goal_pools(shelf, pools, sources, pool, recent, barred, live) {
+    let f = {
         compartments: pools, sources_raw: sources || [], pooled_raw: this.Pool_cards_raw(pool ? this.Ra_recs(pool) : []),
         recent_raw: recent || [], latest_raw: this.Heard_latest(shelf), tally_raw: this.Ra_quarter_tally(shelf), barred_raw: barred || {},
-    })
+    }
+    // `live` = {now_s, held_raw}: the liked window's clock and what can be pressed — live pages only (the fixture law)
+    if (live) { f.now_s = live.now_s; f.held_raw = live.held_raw || [] }
+    return this.Pool_goal(f)
 },
 Ra_quarter_diff(goal, pool, lib) {
     return this.Pool_diff(goal, {
@@ -1082,7 +1209,9 @@ Ra_quarter(w, shelf, pool, lib, cap, sources, facts) {
     let recent = this.Heard_landed_ids ? this.Heard_landed_ids(w, this.Radio_pub(w) || '', lib) : []
     let barred = this.Heard_barred_ids ? this.Heard_barred_ids(w, this.Radio_pub(w) || '') : {}
     let pdefs = this.Ra_pool_defs(w, cap)
-    let goal = this.Ra_quarter_goal_pools(shelf, pdefs, sources, pool, recent, barred)
+    let M = this.top_House ? this.top_House() : null
+    let live = (M && M.c.humdinger) ? { now_s: this.Heard_now ? this.Heard_now(w) : Math.floor(Date.now() / 1000), held_raw: (lib ? this.Ra_recs(lib) : []).map((r) => String(r.sc.id || '')).filter(Boolean) } : null
+    let goal = this.Ra_quarter_goal_pools(shelf, pdefs, sources, pool, recent, barred, live)
     let diff = this.Ra_quarter_roll(w, this.Ra_quarter_diff(goal, pool, lib), barred, (pool ? this.Ra_recs(pool) : []).length, this.Pool_cap_sum(pdefs))
     // step 2 (§0.2a): a pure comparison, never a decision — Pool_policy_compare only logs
     if (facts) { try { this.Pool_policy_compare(w, facts, diff) } catch (er) {} }
@@ -1708,11 +1837,9 @@ async Ra_pool_previews_heal(w, ident) {
     let homes = this.Ra_pool_fill_homes(w, ident)
     if (!homes.pool || !homes.mw) { return 0 }
     let healed = 0
-    let encoded = 0
-    // THE POCKET ENCODES (2026-10-17): where the pool IS the music (Radio_pocket_why — no folder, or no relay) the carry
-    //  below has nothing to borrow from after a reload (no friend mirror, no chunks crossed this sitting), so every
-    //   resurrected card would sit preview-less and undialable.  Only there, the 2026-10-04 encode rung comes back.
-    let pocket = (typeof this.Radio_pocket_why === 'function') ? this.Radio_pocket_why(w) : ''
+    // THE POCKET ENCODE IS RETIRED (2026-11-11): where the pool is the music (Radio_pocket_why) this used to encode a
+    //  preview from the card's own file, one a pass.  The radio's file road (Radio_file_road) now plays the file itself,
+    //   so a live page needs no preview for a pooled card at all; the carry below stays for Books, which play chunks.
     for (const card of this.Ra_recs(homes.pool)) {
         if (healed >= 4) { break }
         if (+(card.sc.preview || 0) > 0) { continue }
@@ -1726,27 +1853,6 @@ async Ra_pool_previews_heal(w, ident) {
         if (!(card.sc.grade || card.sc.lofi)) {
             let src = this.Ra_pool_source_rec(homes.mw, String(card.sc.id || ''))
             if (src) { healed = healed + this.Ra_rec_previews_carry(card, src); continue }
-        }
-        // …EXCEPT IN THE POCKET: encode this card's own preview from the file it holds (Ra_stock_one, base 'pool' — the
-        //  Stoker resurrect skips base:'pool' headers since 2026-10-04, so it can never be offered back out as mine).
-        //   ONE a pass, live only, and only when the file is actually on disk.
-        let top = this.top_House ? this.top_House() : null
-        if (pocket && top && top.c && top.c.humdinger && encoded === 0 && homes.nav && card.sc.path) {
-            let rel = String(card.sc.path)
-            let files = homes.mw.c.pool_files || []
-            if (files.includes(rel)) {
-                encoded = encoded + 1
-                let r = null
-                try { r = await this.Ra_stock_one(homes.mw, homes.pool, homes.nav, 'pool', rel) } catch (er) { console.log('🏊⚠ pool encode failed for ' + rel.slice(0, 40) + ' — ' + String(er).slice(0, 80)); r = null }
-                // Ra_record_from stamps path as 'pool/<rel>'; a pool card's path is pool-relative everywhere else.
-                let again = this.Ra_rec_find(homes.pool, { Record: 1, id: String(card.sc.id || '') }) || card
-                if (again && again.sc.path !== rel) { again.sc.path = rel; again.bump() }
-                if (r && +(again.sc.preview || 0) > 0) {
-                    healed = healed + 1
-                    console.log('🏊 pocket: ' + (r.stood ? 'resurrected the preview for ' : 'encoded a preview for ') + String(again.sc.title || rel).slice(0, 40) + ' — now dialable')
-                }
-            }
-            continue
         }
         // NO ENCODE RUNG ANY MORE outside the pocket (owner 2026-10-04: "SoundPooling ISN'T available as Radio for now … we want to hear from
         //  the Piers directly, to what they have in their collection proper").  It decoded the OPFS file, re-encoded a preview
