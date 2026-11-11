@@ -73,7 +73,7 @@
     // ?B= overrides; otherwise the canonical demo.  A change of Book is a RELOAD, because a room
     //  boots its Book once — honest and simple, rather than a half-working live swap.
     const book = boot_param('B') || 'VytoOrchestra'
-    const q = boot_qualand({ book, role: 'sound' })   // 'sound' ⇒ a humdinger: an end-user page, never a dispatch target
+    const q = boot_qualand({ book, role: 'sound', id: 'shape' })   // 'sound' ⇒ a humdinger, never a dispatch target; id 'shape' ⇒ its own identity, not the music page's
     let H      = $derived(q.H)
     let houses = $derived(q.houses)
     // DEBUG HOOK (2026-09-11) — the eye (scripts/runner_eye.mjs) can drive pixels but never see WHY;

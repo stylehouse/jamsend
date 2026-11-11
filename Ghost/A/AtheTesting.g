@@ -3743,3 +3743,237 @@ AtheStoryPick_witness(w, sw):
         this.story_swear(w, 'the strip’s move tells the inner Story — it opens step 2 — the click never wrote the Story itself')
     }
 //#endregion
+//#region the test routine — Book AthePondFog
+// the shrouded landscape (SoundPooling_todo §0.a.7 build order 1): a HOLDER with a paged Mag that starts empty, two READERS with
+//  cursors into it.  A beat: each reader's `ahead` island (AthePondFog_ahead, pure) says how likely each page ahead is — pace^d,
+//   d pages along — and its horizon is every page over the line; its WANTS are the horizon minus what is here.  The holder sums
+//    the readers' wants (max per page — AthePondFog_sum) and generates ahead of the furthest, two pages a beat (a transcode queue
+//     has a pace too).  What is born and wanted is mirrored to the reader.  The reader's map is the holder's outline read as
+//      %Page rows — born pages and the fog beyond them — under a Seem whose points wear a fog Regard: unborn | far | near | here.
+//  Step 2 stands it all and beats.  Step 3: R1 moves on a page and says it heard page 1.  Step 4: both move.  Step 5: the holder
+//   culls — its pages re-form, every row a new particle — and the readers re-read the outline.  The oaths: nothing wanted beyond a
+//    horizon; a page is here before the cursor arrives; overlapping horizons cost one generation; a re-seat keeps every Regard
+AthePondFog(A,w):
+    w oai %req:wrangle,eternal
+        await &AthePondFog_drive,w,req
+        req%ok = 1
+
+async AthePondFog_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 5
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.AthePondFog_stand(w)
+        if (n === 3) await this.AthePondFog_move(w, { R1: 2 }, 'R1 moves on to page 2 and says it heard page 1 — beat')
+        if (n === 4) await this.AthePondFog_move(w, { R1: 3, R2: 2 }, 'R1 moves on to page 3 and R2 to page 2 — beat')
+        if (n === 5) await this.AthePondFog_cull(w)
+    }
+    this.AthePondFog_witness(w)
+
+AthePondFog_line():
+    return 0.3
+
+AthePondFog_holder(w):
+    return w.o({ Holder: 'H' })[0]
+
+AthePondFog_readers(w):
+    return w.o({ Reader: 1 })
+
+AthePondFog_seem(reader):
+    return reader ? reader.o({ TheASeem: 'fog' })[0] : null
+
+async AthePondFog_stand(w):
+    w.i({ desc: 'a holder with an empty paged Mag and two readers at page 1 — R1 sure-footed, R2 a wanderer — beat' })
+    let holder = w.oai({ Holder: 'H' })
+    holder.oai({ Mag: 'Pooling' }, { born: 0 })
+    for (const [name, pace] of [['R1', 0.8], ['R2', 0.6]]) {
+        let reader = w.oai({ Reader: name }, { pace })
+        reader.oai({ Cursor: 1 }, { page: 1 })
+        let seem = this.TheA_seem(reader, 'fog', ['Page'])
+        this.TheA_sphere(seem, 'fog', 'Regard')
+        this.TheA_sphere(seem, 'ahead', 'Regard')
+        this.TheA_sphere(seem, 'heard', 'Regard')
+    }
+    await this.AthePondFog_beat(w)
+
+async AthePondFog_move(w, to, desc):
+    w.i({ desc })
+    for (const reader of this.AthePondFog_readers(w)) {
+        let was = reader.o({ Cursor: 1 })[0].sc.page
+        // what was here before the cursor arrives — the oath reads it after the beat
+        if (to[reader.sc.Reader]) {
+            let page = to[reader.sc.Reader]
+            w.oai({ Saw: 'arrive', of: reader.sc.Reader }, { page, was_here: reader.o({ Here: String(page) }).length ? 1 : 0 })
+            reader.oai({ Cursor: 1 }, { page })
+            if (reader.sc.Reader === 'R1' && page === 2) {
+                let seem = this.AthePondFog_seem(reader)
+                let one = this.TheA_seem_point(seem, '1')
+                if (one) this.TheA_regard(seem, one, 'heard', { at: was })
+            }
+        }
+    }
+    await this.AthePondFog_beat(w)
+
+// the holder culls: every page re-formed as a new particle (a card moves from page 2 to page 3), and every reader re-reads the
+//  outline into new %Page rows — the points must pair by name and keep what hangs on them
+async AthePondFog_cull(w):
+    w.i({ desc: 'the holder culls — its pages re-form as new particles — the readers re-read the outline — walk' })
+    let holder = this.AthePondFog_holder(w)
+    let mag = holder.o({ Mag: 'Pooling' })[0]
+    let pages = mag.o({ Cloud: 1 }).map(pg => ({ page: pg.sc.page, cards: pg.o({ Card: 1 }).map(c => c.sc.Card) }))
+    for (const pg of mag.o({ Cloud: 1 })) mag.drop(pg)
+    let moved = pages.find(p => p.page === '2')?.cards.pop()
+    if (moved) pages.find(p => p.page === '3')?.cards.push(moved)
+    for (const p of pages) {
+        let pg = mag.i({ Cloud: 1, page: p.page })
+        for (const c of p.cards) pg.i({ Card: c })
+    }
+    let before = {}
+    for (const reader of this.AthePondFog_readers(w)) {
+        let seem = this.AthePondFog_seem(reader)
+        before[reader.sc.Reader] = this.AthePondFog_regards_said(seem)
+        for (const row of reader.o({ Page: 1 })) reader.drop(row)
+        this.AthePondFog_map(w, reader, true)
+        await this.TheA_seem_walk(reader, 'fog')
+        w.oai({ Saw: 'cull', of: reader.sc.Reader }, { before: before[reader.sc.Reader] })
+    }
+
+// AthePondFog_ahead — PURE: the pages ahead of a cursor and how likely each is next, pace^d, until the likelihood falls under the
+//  line.  [{page, d, p}].  The live island will read pace off how the cursor has moved (sequential vs jumping, skips, pages a
+//   minute); the cartoon declares it
+AthePondFog_ahead(cursor, pace, line):
+    let out = []
+    for (let d = 0; d < 50; d++) {
+        let p = Math.round(Math.pow(pace, d) * 100) / 100
+        if (p < line) break
+        out.push({ page: cursor + d, d, p })
+    }
+    return out
+
+// AthePondFog_sum — PURE: the holder hears every reader's wants as pulses on one synapse, summed by max: how far it must generate
+AthePondFog_sum(wants):
+    let upto = 0
+    for (const page of wants) upto = Math.max(upto, page)
+    return upto
+
+// one beat: aheads → wants → the holder generates (two a beat) → mirror → each reader's map re-read and walked → fog regards
+async AthePondFog_beat(w):
+    let holder = this.AthePondFog_holder(w)
+    let mag = holder.o({ Mag: 'Pooling' })[0]
+    let line = this.AthePondFog_line()
+    let all = []
+    for (const reader of this.AthePondFog_readers(w)) {
+        let cursor = Number(reader.o({ Cursor: 1 })[0].sc.page)
+        let ahead = this.AthePondFog_ahead(cursor, Number(reader.sc.pace), line)
+        reader.c.ahead = ahead
+        for (const want of reader.o({ Want: 1 })) reader.drop(want)
+        for (const a of ahead) {
+            if (!reader.o({ Here: String(a.page) }).length) {
+                reader.i({ Want: String(a.page) })
+                all.push(a.page)
+            }
+        }
+    }
+    let upto = this.AthePondFog_sum(all)
+    let born = Number(mag.sc.born || 0)
+    let made = 0
+    while (born < upto && made < 2) {
+        born = born + 1
+        made = made + 1
+        let pg = mag.i({ Cloud: 1, page: String(born) })
+        for (const k of ['a', 'b', 'c']) pg.i({ Card: 't' + born + k })
+        let gen = holder.o({ Gen: String(born) })[0]
+        holder.oai({ Gen: String(born) }, { n: gen ? Number(gen.sc.n) + 1 : 1 })
+    }
+    holder.oai({ Mag: 'Pooling' }, { born })
+    for (const reader of this.AthePondFog_readers(w)) {
+        for (const want of reader.o({ Want: 1 }).slice()) {
+            let page = Number(want.sc.Want)
+            if (page > born) continue
+            let pg = mag.o({ Cloud: 1, page: String(page) })[0]
+            reader.i({ Here: String(page), cards: pg.o({ Card: 1 }).length })
+            reader.drop(want)
+        }
+        this.AthePondFog_map(w, reader, false)
+        await this.TheA_seem_walk(reader, 'fog')
+        this.AthePondFog_fog(reader, born)
+    }
+
+// a reader's map: the holder's outline read as %Page rows — every born page, and the fog past it as far as this reader can see
+AthePondFog_map(w, reader, fresh):
+    let mag = this.AthePondFog_holder(w).o({ Mag: 'Pooling' })[0]
+    let born = Number(mag.sc.born || 0)
+    let reach = (reader.c.ahead || []).reduce((m, a) => Math.max(m, a.page), 0)
+    let last = Math.max(born, reach) + 1
+    for (let page = 1; page <= last; page++) {
+        if (fresh || !reader.o({ Page: String(page) }).length) reader.i({ Page: String(page) })
+    }
+
+// the fog regard and the ahead regard on every point — the same organ writing both, each beat
+AthePondFog_fog(reader, born):
+    let seem = this.AthePondFog_seem(reader)
+    let ahead = {}
+    for (const a of (reader.c.ahead || [])) ahead[a.page] = a
+    for (const point of seem.o({ TheATrace: 1 })) {
+        let page = Number(point.sc.of)
+        let state = reader.o({ Here: String(page) }).length ? 'here' : reader.o({ Want: String(page) }).length ? 'near' : page <= born ? 'far' : 'unborn'
+        this.TheA_regard(seem, point, 'fog', { state })
+        let a = ahead[page]
+        if (a) {
+            this.TheA_regard(seem, point, 'ahead', { d: a.d, p: a.p })
+        } else {
+            let old = this.TheA_regard_of(seem, point, 'ahead')
+            if (old) point.drop(old)
+        }
+    }
+
+// every regard on a seem, said plainly — of:sphere=…, sorted
+AthePondFog_regards_said(seem):
+    if (!seem) return ''
+    let out = []
+    for (const point of seem.o({ TheATrace: 1 })) {
+        for (const r of point.o({ TheARegard: 1 })) out.push(point.sc.of + ':' + Object.entries(r.sc).map(([k, v]) => k + '=' + v).join(','))
+    }
+    return out.sort().join(' ; ')
+
+AthePondFog_witness(w):
+    let holder = this.AthePondFog_holder(w)
+    if (!holder) return
+    let n = this.c.run?.c.step_n ?? 0
+    let readers = this.AthePondFog_readers(w)
+    let line = this.AthePondFog_line()
+    let wanted_ok = readers.length === 2 && readers.every(reader => {
+        let seem = this.AthePondFog_seem(reader)
+        return reader.o({ Want: 1 }).every(want => {
+            let point = this.TheA_seem_point(seem, want.sc.Want)
+            let a = point && this.TheA_regard_of(seem, point, 'ahead')
+            return a && a.sc.p >= line
+        })
+    })
+    let fogs = (reader) => {
+        let seem = this.AthePondFog_seem(reader)
+        return seem ? seem.o({ TheATrace: 1 }).map(p => this.TheA_regard_of(seem, p, 'fog')?.sc.state) : []
+    }
+    if (n === 2 && wanted_ok && readers.every(r => r.o({ Want: 1 }).length) && readers.every(r => fogs(r).includes('unborn') && fogs(r).includes('here'))) {
+        this.story_swear(w, 'nothing is wanted beyond a horizon — the whole landscape stands as points at once — what is not born yet is fog')
+    }
+    let arrived = w.o({ Saw: 'arrive' })
+    if ((n === 3 || n === 4) && arrived.length && arrived.every(s => s.sc.was_here === 1)) {
+        this.story_swear(w, 'a page inside the horizon is here before the cursor arrives')
+    }
+    let gens = holder.o({ Gen: 1 })
+    let born = Number(holder.o({ Mag: 'Pooling' })[0]?.sc.born || 0)
+    if (n === 4 && gens.length === born && gens.every(g => g.sc.n === 1) && readers.every(r => r.o({ Here: '1' }).length && r.o({ Here: '2' }).length)) {
+        this.story_swear(w, 'two overlapping horizons cost one generation — every page the holder made, it made once')
+    }
+    let culls = w.o({ Saw: 'cull' })
+    if (n === 5 && culls.length === 2 && culls.every(s => {
+        let reader = w.o({ Reader: s.sc.of })[0]
+        let seem = this.AthePondFog_seem(reader)
+        let walk = seem?.o({ TheAWalk: 1 })[0]
+        return s.sc.before && this.AthePondFog_regards_said(seem) === s.sc.before && walk && !walk.o({ TheANeu: 'Page' }).length && !walk.o({ TheAGoner: 'Page' }).length
+    }) && this.TheA_regard_of(this.AthePondFog_seem(w.o({ Reader: 'R1' })[0]), this.TheA_seem_point(this.AthePondFog_seem(w.o({ Reader: 'R1' })[0]), '1'), 'heard')) {
+        this.story_swear(w, 'a re-seat after a cull keeps every Regard — the pages re-formed as new particles and every point paired by name — R1 still heard page 1')
+    }
+//#endregion

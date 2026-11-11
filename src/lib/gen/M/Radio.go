@@ -10,7 +10,7 @@ import { APP_DATA_DIR } from "$lib/app_data_dir"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '19912b689a6c5445~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '6413039a27747e0f~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -273,6 +273,7 @@ Radio_skip(radio) {
     radio.c.rec = null
     radio.c.file = null
     this.Radio_file_let_go(radio, left)
+    this.Radio_pool_heard(radio, left)
     radio.c.end = 0
     // HOW THIS TRACK ENDED, for the next open to read (Radio_hbase).  A turn of the dial is a TUNE-IN
     //  again — the next track drops the needle mid-song — while playing one out earns the next its
@@ -759,6 +760,7 @@ Radio_played_out(radio) {
     let left = radio.c.rec
     radio.c.rec = null
     this.Radio_file_let_go(radio, left)
+    this.Radio_pool_heard(radio, left)
     radio.c.drained = 0
     w.c.play = null
     radio.bump()
@@ -1198,6 +1200,8 @@ Radio_open(radio, rec) {
     //   the card drops); the fallbacks are the snappable origin breadcrumb then the crate-owner climb
     //    (Ra_pub_of).  Guarded non-undefined + delete-when-mine, so a JS boolean|undef never snaps.
     let me = this.Radio_pub(w) || 'me'
+    // a pool card is the ORIGINAL's, never mine — say so on .c for the face and the ♥ seam (Ra_rec_pooled)
+    if (!rec.sc.of && this.Radio_pool_card && this.Radio_pool_card(radio, rec) === rec) { rec.c.pooled = 1 }
     let src = rec.c.play_by || rec.sc.from || this.Ra_pub_of(rec)
     if (src && src !== me) {
         radio.sc.by = src
@@ -4819,7 +4823,7 @@ Radio_like(n) {
     if (!got) return false
     n.c.liked = n.c.liked || {}
     if (got > 0) { n.c.liked[String(rec.sc.id)] = 1 } else { delete n.c.liked[String(rec.sc.id)] }
-    let mine = !n.sc.by && !rec.sc.of
+    let mine = !n.sc.by && !rec.sc.of && !(this.Ra_rec_pooled && this.Ra_rec_pooled(rec))
     if (!mine && got > 0) { this.feebly_ponder() }
     n.bump()
     if (got < 0) {
@@ -4858,7 +4862,7 @@ async Radio_keep(n) {
     let friend = n.sc.by
     let seed = String(rec.sc.id)
     // a POOL COPY names its original and whoever holds it now (Love_todo §0) — the same seam as the heart
-    if (!friend && rec.sc.of && this.Heard_holder_of) { seed = String(rec.sc.of); friend = this.Heard_holder_of(w, me, seed) }
+    if (!friend && (rec.sc.of || (this.Ra_rec_pooled && this.Ra_rec_pooled(rec))) && this.Heard_holder_of) { seed = String(rec.sc.of || rec.sc.id); friend = this.Heard_holder_of(w, me, seed) }
     if (!friend) return false            // your own record — nothing to heist, you already hold it
     let shop = this.Ra_home_shop(w, me)
     n.c.kept = n.c.kept || {}
@@ -5266,6 +5270,18 @@ Radio_pool_card(radio, rec) {
     let id = String(rec.sc.id)
     return this.Ra_rec_find(shelf, { Record: 1, id: id }) || this.Ra_rec_find(shelf, { Record: 1, of: id }) || null
 
+},
+// Radio_pool_heard — a pool card the radio LET GO of (played out or skipped) has been heard: the pool's wander moves
+//  on from it (Pool_draw_random), and its replacement may pull at once (Pool_roll).  At the let-go, not the open, so
+//   the steward never evicts the card that is playing.  Live pages only, and no bump: the pool shelf rides the
+//    identity, and a play must never cost an account write.
+Radio_pool_heard(radio, rec) {
+    if (!rec || !rec.sc || rec.sc.heard) return 0
+    if (!this.top_House().c.humdinger) return 0
+    if (!(rec.sc.of || (rec.c && rec.c.pooled))) return 0
+    if (this.Radio_pool_card(radio, rec) !== rec) return 0
+    rec.sc.heard = '1'
+    return 1
 },
 // Radio_file_pcm — the decoded whole-track PCM when it stands (never a partial — Ra_source_pcm's head-only decode), else null
 Radio_file_pcm(rec) {

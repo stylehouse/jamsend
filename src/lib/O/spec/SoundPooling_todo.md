@@ -86,6 +86,45 @@
          unruled), part a random WANDER through the collection that moves on; minus what this listener Nay'd.  Which side the cone
           lives on (the holder's pages, or this tab's reading of them) is the open design question.
 
+    **The liked half — BUILT 2026-11-11, this tab's side** (owner: *"that's a good feature, have that switched on... be working
+     with Yay|Nay data"*).  Cell:Pooling's new tickbox "keeping [x] what you Yay (for a month)" declares a third compartment,
+      `%Pool,name:liked,take:liked,share:50,keep_days:30,lends` (`Ra_pool_liked_set`; poke `Ra_pool_liked_toggle`).  It is on at
+       the first yes like recent, then the human's.  Rules (`Pool_draw_tally`, `Pool_goal`):
+     - **Draw:** a CURRENT Yay (a later Nay or Meh ends it; barred ids skip as ever), hearted in the last 30 days, that can
+        arrive (held = press, or a mirror holds it).  Newest first.  The window needs `now_s`, which is only set on live pages, so
+         Books draw as before.
+     - **Picks first:** a lending compartment goes before the declared order, so a Yay'd track is kept as liked, not
+        drawn as "circulating" and then rolled away.
+     - **Lends:** whatever room it leaves goes to the random draws, and comes back as Yays arrive (the roll trims the wander).
+     - **Ages out:** past 30 days the track leaves the goal, and the roll lets it go like any other.
+     - **Recent off** now gives its share to rolling (`Ra_pool_drop_to_rolling`) instead of setting rolling to 100, which
+        squashed liked to nothing.
+    **And a real bug, found on the way:** a live page's heard Mag hangs on the Identity (`Heard_home_find`), but
+     `Heard_tally`/`Heard_latest` climbed from the Mine shelf.  So the pool read `tally:0 latest:0` on every live page:
+      no Yay, keep or played-through ever reached its taste.  The live steward and `Pool_facts` now hand in `Heard_mags(w, me)`.
+       On eed it went to `tally:179 latest:56`.  eed has 0 real Yays yet: its 9 hearted Cards are `for:pool` machine presses,
+        which the tally rightly ignores.  So the liked half reads empty and lends everything.  **Owed:** a real ♥ on a friend's
+         track, then watch it land as `pool:liked` (the Provisions `Want` says which compartment).
+    **Heard moves on — BUILT 2026-11-11** (owner: *"on a SP endpoint meeting, everything that's been heard can go, I suppose"*).
+     `Radio_pool_heard` stamps `heard:1` on a pool card when the radio lets go of it (played out or skipped).  It's done at the
+      let-go, so the steward never evicts the card that's playing.  Live only, no bump.  Then:
+     - **The wander drops it:** `Pool_draw_random` neither counts it as sediment nor redraws its original from the mirror.
+     - **The liked half still keeps a Yay'd one:** it draws first.
+     - **Swapped out when a friend is met:** `Pool_diff` marks the evict `heard` ("heard — making room").  `Pool_roll` lets one
+        replacement pull per heard card at once instead of one per 10 minutes, and the evict still waits for the arrival (the one law).
+     - `Pool_facts.pooled.heard` counts them.  Verified on eed (`heard:1` after the first let-go).
+    **Two more found on eed the same evening:**
+     - **No ♥/👎 on some pool tracks.** The face showed them only for `by` or `of:`.  A friend's file that was already a
+        close-enough Ogg is pooled whole under the original's id (no `of`), so it read as MY record (7 of eed's 24 cards).
+        `Ra_rec_pooled` (`of` | `lofi` | under %SoundPooling | `rec.c.pooled`, which Radio_open sets from `Radio_pool_card`)
+         now drives the face, `Heard_take_pub` (the original, no holder — same as an `of:` card), `Radio_like`'s mine-test and
+          `Radio_keep`.
+     - **A landing dropped as a husk.** The fileless-card drop (built earlier today) fired 8s after Guaracha landed.  The disk
+        listing predated the write, so the card was dropped and the track pulled again.  Live, a card now has to be missing from
+         two listings at least 60s apart (`rw.c.pool_husk_seen`).
+     - Holder side, not chased: Vingas often leaves 90 materialise-asks unanswered for a FLAC lofi ("the SOURCE cannot serve
+        it"), so a fill can take three or four bookings.
+
 **Built 2026-11-11 — items 3 and 4 (live pages only):**
 - **The file road** (Radio.g's `file` region): `Radio_file_road` says whether a record plays from a file here — `'lofi'` for a pooled
    card whose file is under `pool/` (`Ra_pool_file_plays`), `'own'` for my own original (through `Ra_source_pcm`). The file is

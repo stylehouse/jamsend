@@ -1230,6 +1230,22 @@ Ra_rec_find(shelf, q):
     return null
 // Ra_pub_of — WHOSE record: climb c.up to the first node wearing sc.pub (the shelf carried it
 //  when records sat flat; a paged record is two hops further from it).
+// Ra_rec_pooled — IS THIS A POOL CARD?  `of:` used to be the only tell, but a friend's file that was ALREADY a
+//  close-enough Ogg is pooled whole under the original's own id (no `of`, older ones no `lofi` either) — and the
+//   radio then read it as MY record: no ♥/👎 on the face, and a heart written under my pub instead of the
+//    original's (2026-11-11, 7 of eed's 24 pool cards).  So: `of` or `lofi`, else climb to a %SoundPooling home.
+Ra_rec_pooled(rec):
+    if (!rec || !rec.sc) return false
+    if (rec.sc.of || rec.sc.lofi) return true
+    if (rec.c && rec.c.pooled) return true          // Radio_open found it on the pool shelf (the climb needs every c.up)
+    let n = rec.c ? rec.c.up : null
+    let guard = 0
+    while (n && guard < 8) {
+        if (n.sc && n.sc.SoundPooling) return true
+        n = n.c ? n.c.up : null
+        guard = guard + 1
+    }
+    return false
 Ra_pub_of(rec):
     let n = rec
     let guard = 0

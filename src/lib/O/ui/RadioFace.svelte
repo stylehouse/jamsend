@@ -292,10 +292,11 @@
             {/if}
             <button class="rf-btn rf-heart" onclick={() => (H as any)?.Radio_skip?.(n)} title="next">⏭</button>
         </div>
-        {#if face.by || n?.c?.rec?.sc?.of}
+        {#if face.by || n?.c?.rec?.sc?.of || (H as any)?.Ra_rec_pooled?.(n?.c?.rec)}
             <!-- REACTIONS (owner 2026-09-15): ♥ always loves (no unlove, no long-press, no sheet — the Pooling
                  cell appears after the first ♥ and explains the roads there); 👎 is Nay — out of the pool and
-                 never drawn again, a heisted file untouched. A pooled track (sc.of) gets both. -->
+                 never drawn again, a heisted file untouched. A pooled track gets both — sc.of, or a whole-kept card
+                 with no of (Ra_rec_pooled, 2026-11-11: those had lost both buttons). -->
             <button class="rf-btn rf-like" class:liked={face.likedThis} onclick={like}
                 title={road_title()}>{face.likedThis ? '♥' : '♡'}</button>
             <button class="rf-btn rf-nay" onclick={() => (H as any)?.Radio_nay?.(n)} title="nay — not in my pool, never drawn again">👎</button>

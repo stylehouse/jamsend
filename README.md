@@ -60,7 +60,21 @@ A generalised sloped wall leading into the dialectic nestling of computation, so
 
 ## Vyto - the attractor
 
-An attractor is a mathematical object for engulfing space with stuff, gently... The computer searches for its new visual capacity, and how to keep it connected to ongoing reality, perhaps needing to pin this down as an important common artifact we need to impress people with civilisation and its glorious information: to create a convincing expression of information to look at... See */BigShapeland?B=VytoOrchestra*
+Is the art department. Visual code. Building this seems to be very hard for LLMs in 2026, haven't done enough art!
+
+An attractor is the place a system falls toward, whatever it starts from. Vyto treats information that way: every
+  particle becomes a cell, the cells crowd and settle into a picture, and a hand can pin one and watch the rest flow
+  round it. The aim is a picture of state convincing enough to look at, and stable enough to keep looking at while
+  it changes.
+
+**in other words**
+
+An attractor is where a moving system comes to rest. Vyto is the glass: any C** drawn as settled cells, sized by
+  weight, nested by containment, so the same picture serves a running test, a music library or the code itself. The
+  computer is looking for its visual capacity here, a common artefact we can point at and say "that's what it's
+  doing".
+
+See */BigShapeland?B=VytoOrchestra* 
 
 Using it to make a presentation of this project... To establish the nice new architecture that I want developers to look at.
 

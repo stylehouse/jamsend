@@ -1,0 +1,15 @@
+story:AthePondFog
+  Styles
+  Plan
+  Opt
+    For
+  Stands:CoreTesting
+  step,dige:ed40cde3aae0bcf8
+  {"step":2,"desc":"a holder with an empty paged Mag and two readers at page 1 — R1 sure-footed, R2 a wanderer — beat","dige":"836d8bb29b861421"}
+    Assertion:nothing-is-wanted-beyond,sentence:nothing is wanted beyond a horizon — the whole landscape stands as points at once — what is not born yet is fog
+  step=3,desc:R1 moves on to page 2 and says it heard page 1 — beat,dige:b42229791af2f466
+    Assertion:a-page-inside-the,sentence:a page inside the horizon is here before the cursor arrives
+  step=4,desc:R1 moves on to page 3 and R2 to page 2 — beat,dige:5d21d7683dc1dbda
+    {"Assertion":"two-overlapping-horizons-cost","sentence":"two overlapping horizons cost one generation — every page the holder made, it made once"}
+  step=5,desc:the holder culls — its pages re-form as new particles — the readers re-read the outline — walk,dige:ec4623ec4fb9c764
+    Assertion:a-re-seat-after,sentence:a re-seat after a cull keeps every Regard — the pages re-formed as new particles and every point paired by name — R1 still heard page 1

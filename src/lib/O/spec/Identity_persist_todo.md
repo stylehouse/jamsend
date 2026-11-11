@@ -123,6 +123,27 @@ The disk layer is CUT and proven on the live runner (`SwarmDisk` green×2, runne
     Dexie DB `'thangs'`) is the NEW stack's store. Swarm.g:251 and Swarm_spec §6.2 say "Dexie" for the
      old ledger — that's wrong (reference only now that the migrator is dropped).
 
+## 0.1 Which identity is this tab? — the page defaults (2026-11-11)
+
+One browser profile = one Dexie (`thangs`) = one shelf of identities, shared by every tab on the origin.  A tab with no `?I=`
+ RESUMES the identity filed under its page's **id role** (`Clustation_ensure_default`, Auto.svelte; `H.c.id_role` from
+  `boot_qualand`), minting it the first time.  So identity is per (browser profile × page), not per tab:
+
+| page | id role | so |
+|---|---|---|
+| `/BigSoundland` (the music page) | `sound` | every music tab in this profile is the SAME you |
+| `/BigShapeland` (a Book on the glass) | `shape` | its own — until 2026-11-11 it filed under `sound` and booted AS the music page (the VytoOrchestra tab woke as eed…, one name contested on the relay); `boot_qualand({…, id})` now separates filing from behaviour |
+| `/BigWordland` | `hacker` (default) · `word` (`?E=`) | the code room · the old editor room |
+| `/Desk?G=…`, `/Otro`, a `?B=` runner | — | `?I=` names it (a runner is `?I=e747…`); no page default |
+| `?I=<prepub>` on any page | — | that identity, wherever it was filed (§6.4 files role identities under their prepub too) |
+| the daemon | `daemon` | §7: resumes `I=<prepub>`, never mints |
+
+**Two tabs wearing ONE identity** (two music tabs, or a page plus `?I=` of the same prepub): each SOCKET wants its own throwaway
+ seat (`<prepub>_9NNN`, the seat dodge, LiesLies `Lies_channel_up`), so both stay connected — but both still BIND the bare prepub,
+  and a frame sent `to:<prepub>` reaches whichever hello'd last.  Telling such siblings apart (Dexie liveQuery → `<prepub>_2`) is
+   still open: Cluster_spec §3.2a "Open", and the cross-machine form is §7.4 (siblinghood, not theft).  A new page that boots
+    through `boot_qualand` must decide which row of this table it is — reusing `sound` makes it the music page.
+
 ## 1. What EXISTS (verified against code, 2026-07-27)
 
 - **Dexie side (BUILT)**: the identities Thang (`thang_put` under prepub + role tags — friendly,

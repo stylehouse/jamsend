@@ -620,6 +620,8 @@ Heard_take_id(rec):
     return String((rec && rec.sc && (rec.sc.of || rec.sc.id)) || '')
 Heard_take_pub(rec, by):
     if (rec && rec.sc && rec.sc.of) { return '' }
+    // a whole-kept pool card (no `of`, its id IS the original's) takes the same way: the original, no holder
+    if (this.Ra_rec_pooled && this.Ra_rec_pooled(rec)) { return '' }
     return String(by || (this.Ra_pub_of ? this.Ra_pub_of(rec) : '') || '')
 // Heard_magnet — WHERE MY HEARTS LAND, the 🧲 (RemoteHeist_todo §4.2, ruled 2026-10-03: "it must be the place to
 //  put it if it's on the Crew structure").  Big pile = trove = the body holding the magnet, where originals are
@@ -870,9 +872,12 @@ Heard_set(w, me):
 //  That last is the point. A %Spin was "it streamed at you", which a radio does all day whether anyone is
 //   in the room; `played_through` only moves when a person was there and let the track finish. Taste built
 //    out of what a machine played to an empty kitchen was never taste.
-Heard_tally(shelf):
+//  `mags` (2026-11-11): a live page's heard Mag hangs on the IDENTITY (Heard_home_find), not beside the Mine
+//   shelf, so the shelf climb found nothing and the pool read tally:0 latest:0 on every live page — no Yay ever
+//    reached it.  The live steward hands in Heard_mags(w, me); a Book's world-local Mag still climbs from the shelf.
+Heard_tally(shelf, mags):
     let out = {}
-    for (const c of this.Heard_cards_union_near(shelf)) {
+    for (const c of (mags ? this.Heard_cards_union_of(mags) : this.Heard_cards_union_near(shelf))) {
         if (this.Heard_is_machine(c)) { continue }   // a pool press is not taste — rung 4, no feedback loop
         let id = String(c.sc.id || '')
         if (!id) { continue }
@@ -894,9 +899,9 @@ Heard_tally(shelf):
 //   `Heard_page`'s own next-number scan — but a naive "last CHILD" read here would still pick it up the
 //    instant it exists, since it mints AFTER whatever sitting is currently open, making a pool press look
 //     like "the last thing this body heard".  Filter to numeric pages before taking the last one.
-Heard_latest(shelf):
+Heard_latest(shelf, mags):
     let out = []
-    for (const mag of this.Heard_mags_near(shelf)) {
+    for (const mag of (mags || this.Heard_mags_near(shelf))) {
         let pages = mag.o({ Cloud: 1 }).filter((p) => /^\d+$/.test(String(p.sc.page || '')))
         let last = pages[pages.length - 1]
         for (const c of (last ? last.o({ Card: 1 }) : [])) { if (c.sc.id && !this.Heard_is_machine(c) && !out.includes(String(c.sc.id))) { out.push(String(c.sc.id)) } }

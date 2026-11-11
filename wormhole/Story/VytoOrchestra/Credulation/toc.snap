@@ -1,14 +1,13 @@
 Credulation,of_Book:VytoOrchestra
-  run=0,at=1793700687.36,ok,ok_pct,mode:check
-    TheACode:Ground/Core,dige:45bcad169c771a95
-    TheACode:Ground/Story,dige:4e68d17d2644adca
+  run=0,at=1794382095.449,ok,ok_pct,mode:check
+    TheACode:Ground/Core,dige:2682d56be9e219ea
     TheACode:Ground/Glass,dige:e323f92d62cd7e52
     TheACode:Ground/GlassTesting,dige:cae3261c06349b6a
-    uses:Ghost_A_Theory,dige:804ebab235555f08~g1
-    uses:Ghost_A_Stuffica,dige:1f0ec09474696daa~g1
-    uses:Ghost_A_Ground,dige:315f819fcbdd91d3~g1
-    uses:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
     uses:Ghost_V_Voro,dige:e0323dccaf9924f8~g1
     uses:Ghost_V_Vyto,dige:ba54bff0606590e3~g1
-    uses:Ghost_Story_VoroTesting,dige:ba7f8d826ff81866~g1
     uses:Ghost_V_VytoTesting,dige:63d8fa84ff5d490e~g1
+    uses:Ghost_Story_VoroTesting,dige:ba7f8d826ff81866~g1
+    uses:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1
+    uses:Ghost_A_Theory,dige:bc1f5fad74703498~g1
+    uses:Ghost_A_Stuffica,dige:a6371235df378ec7~g1
+    uses:Ghost_A_Ground,dige:470a1c17b0c9fb46~g1

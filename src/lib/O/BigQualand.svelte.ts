@@ -38,6 +38,10 @@ export type QualandOpts = {
     //     That is what lets a room stand docks beside a working editor without evicting it from its
     //      Cluster row.  Full account: `Lies_role`'s header in `LiesLies.svelte`; `Lagoon_todo §2.7`.
     role: 'editor' | 'runner' | 'word' | 'sound' | 'hacker'
+    // the name the page's default IDENTITY is filed under, when it must differ from `role` (2026-11-11): /BigShapeland behaves
+    //  exactly as 'sound' but booted the music page's own identity (eed…) — two tabs, one name, a contested seat.  Only the
+    //   identity layer (H.c.id_role) reads it; the machine still sees role.
+    id?: string
 }
 
 export type Qualand = {
@@ -98,7 +102,7 @@ export function boot_qualand(opts: QualandOpts): Qualand {
         // the machine only knows editor|runner; word→editor, sound→runner.  The finer role rides id_role
         //  for the identity layer, and assume_identity tells Auto this page always mints/resumes one.
         h.c.boot_role = (opts.role === 'sound' || opts.role === 'runner') ? 'runner' : 'editor'
-        ;(h.c as any).id_role = opts.role
+        ;(h.c as any).id_role = opts.id ?? opts.role
         // the hacker's one extra stamp — see the type's note.  boot_role stays 'editor' so the world
         //  layout and disk gating are inherited unchanged; this is the whole difference.
         if (opts.role === 'hacker') h.c.role = 'hacker'
