@@ -6,7 +6,7 @@ modern music piracy in the browser
 
 Someone sends you a link. You open it and you're listening to their music collection — dropped into the middle of a random track, like tuning a radio. Nothing to install, no account, no strangers.
 
-**🔥safety🏠** No strangers exist, only your contacts. Could be better, but it's fantastic.
+**🔥safety🏠** Only your contacts exist here. Could be better, but it's fantastic.
 
 **🦊p2p🐉** Music comes from the connections you make. Manipulation is impossible.
 
@@ -22,13 +22,15 @@ The catch: A phone browser can't keep a music folder. A computer running Chrome 
 
 **🏊 SoundPooling** keeps a fresh, shuffled handful of tracks inside the phone's browser, so there's always something to play with no signal. Whenever both devices are on at once, the pool is topped up and turned over. It's off until you switch it on, in its 🏊 cell: choose how many MB it may use, and whether it pools from your friends, your own devices, or both.
 
+**Something always on.** "Whenever both are on at once" is the weak spot, so there's **jamserve**: the same app, running in docker, on a small always-on box at home. It holds your collection, serves Heists, and is still standing there when someone finally opens the invite you sent them weeks ago (see *jamserve* below).
+
 That's the idea under all of it: your own little infrastructure, stretched across whatever devices you have, so music stays near you.
 
 # development
 
 Get this to your programmers! I'm wanting to promote myself to management. Do you have 10hr/week? If you aren't allowed to make $3/hr you'll have to volunteer. Make noise as Issues on github, especially grandiose new feature requests that introduce your creative mind.
 
-We are an ongoing project to capture the core of the universe with language, and fix the computer once and for all!
+We are an ongoing project to capture the core of the universe with language, fix the computer and save the humans!
 
 Currently appearing in the guise of modern music piracy, built on a secure and open social medium, soon becoming a hive of diverse developments, attracting low-stakes creativity to the digital frontier. Oh, and all this .g code is quite ugly and I tend not to read it, we're going to fix that at some point.
 
@@ -58,7 +60,7 @@ It's quite a futuristic testing system. It captures big deterministic pictures, 
 
 What we're doing here... Nice and simple. The system has active (Heist) and passive (SoundPooling) transport whims.
 
-Downloads are weird because you can't get enough filesystem access (FSA) on a mobile device, so Link Device to your computer running Chrome is necessary in that case, Heists land there... So they become a team for music distribution, and SoundPooling (tracks stored in OPFS, in the browser) will keep freshly shuffled music on your phone, as long as both devices are on at the same time...
+*your devices* above is the listener's view. Underneath: a phone has no filesystem access (FSA), so Heists ride the Link Device crew to a computer, and SoundPooling lives in the browser's own storage (OPFS).
 
 So there's a "your personal infra" to work out how to stretch music availability across. Lots of this could be slightly different or better! It's the central metaphysical drama that should keep giving to the above four arms of academic development until they're rounded out.
 

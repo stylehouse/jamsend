@@ -1,5 +1,7 @@
 # SoundPooling_todo.md — the pool: press + reach into it, pool-first radio out, cells over it
 
+**Read first: `Radio_todo.md` §0.f** — the two roads music moves by (Road 1 chunks, Road 2 files), why a pooled track is dialable only when its preview was carried or in the pocket, and the oddities awaiting a ruling (2026-11-10).  This doc is due its front-door rewrite.
+
 ## 0. WHAT TO GET ON WITH NEXT (rewritten 2026-09-11 night; the older §0s are §0.6–§0.8 below, intact)
 
 ### 0.0 2026-10-17 — THE POCKET: where the pool IS the music (owner, refines the 10-04 ruling below)

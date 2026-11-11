@@ -167,6 +167,56 @@ Every `Ghost/M/*.g` is Jamsend's own: the app foundation (crew, wire, trust) liv
 
 ---
 
+### 0.f How music moves — the two roads, and the oddities between them (2026-11-10)
+
+*(Standing description; the owner asked for the "randomnesses" gathered in one place.  The oddities at the end are open, not ruled.)*
+
+**Road 1 — listening: a %Record replicated chunk by chunk (Repli).**  A body's radiostock shelf is a Mag of `%Record`s.  Each
+ Record carries its audio as child particles in ONE seq space: `%Preview,seq` (≈2s Opus slices of a 32s window cut from a point
+  30–70% into the track, loudness-baked to -14 LUFS, pre-encoded and CACHED in `.jamsend/radiostock/`), then `%Stream,seq` (the
+   continuation to the end, transcoded from the SOURCE file on demand when the first stream want parks, never cached — no source,
+    no stream), plus `%Prehead` (the head run, for opening at 0:00).  A friend mirrors the catalog (`repli_lines`), then wants
+     chunks by seq; the holder serves what it has and parks the rest until the encoder makes it.  A preview is ≈512 KB (32s at
+      128k): about 1/7 of a 4-minute 128k track, about 1/60 of a FLAC.  This is the fast offer — the whole radio is built on
+       handing these out cheaply and widely (`Ra_warm_ahead` caps how many are begun at once, AtheoryArrive_todo §0).
+- **Your own library plays this way too, never as the original file.**  Mine is stocked like anyone's shelf: the radio plays
+   your own tracks as transcoded Opus previews + stream, through `Ra_card` (the radiostock card names the source to transcode).
+
+**Road 2 — keeping: whole files, byte-faithful (Heist / Reach keep lane).**  A Heist (♥ → the album) or a pool fill moves the
+ FILE: verbatim bytes, `body_hash`-checked, landed into a folder (Heist) or into the browser's OPFS (`pool/`, SoundPooling).
+  A folderless body may receive a lofi rendition instead (`lofi`, grade `ogg128`: **Vorbis** 128k, made by the daemon's ffmpeg).
+   Road 2 never makes `%Preview`/`%Stream` chunks.
+
+**SoundPooling straddles the two, which is where it goes strange.**  The steward's goal is drawn from compartments (`Pool_goal`):
+ `random` (friends' mirrored catalogs — the SAME Road-1 Mags the radio dials from), `radio` (caught off the radio), `recent`,
+  `latest`, liked/kept.  Then it fetches each pick by Road 2 (`Pool_diff`: `press` from my own library, `pull` from a holder,
+   crew first).  The landed pool card has the file but no chunks, and the dial only takes a record with `preview > 0` — so a pooled
+    track is radio-playable only if (a) its preview was CARRIED from the Road-1 record of the same id (`Ra_rec_previews_carry`,
+     i.e. its chunks happened to cross because it was heard or prefetched here), or (b) we are in **the pocket** (`Radio_pocket_why`:
+      no folder — a phone — or the relay down >5s; SoundPooling_todo §0.0 2026-10-17), where the pool is the music and a preview is
+       encoded on the device from the pool file.  Otherwise it sits on disk, outside the radio: the "0/38 dialable".
+- **The encode rung outside the pocket was removed 2026-10-04** because it wrote those re-encodes to radiostock under MY pub, and
+   the share beat then offered friends' tracks back out as mine (Lump hearing Inko's tracks "@Grav"); and the steward and resurrect
+    fought (evict 6 → re-encode 6, every pass).
+- **The pool is not a radio source (ruled 2026-10-04)** except as the last rung when friends run dry, and in the pocket.
+
+**The oddities, for the owner to rule on:**
+1. **Two smuggling systems for one track.**  The pool picks from Road 1's catalog and fetches by Road 2.  The cheap move the
+    design wants is Road 1's: a pooled track could simply be its Record's `%Preview` chunks (≈1/7 the bytes), wanted by Repli
+     from the same holder, kept in OPFS.  Then every pooled track is dialable, the pool holds 7× more tracks per MB, and the whole
+      file is Road 2's job only when someone ♥s it.  Question: should SoundPooling keep **previews** (Road 1) rather than files?
+2. **Your own library never plays as the original.**  Every own track is transcoded to Opus first (and its stream re-transcoded per
+    play).  On a computer with the file right there, playing the original directly would skip ffmpeg/WebCodecs entirely.  Cost: a
+     second player road (decode a file, seek mid-track) beside the chunk player.
+3. **A small file could be kept whole.**  If a source is already a small Ogg (≤~150k), Road 2 needn't re-encode it to lofi — ship
+    it as is.  It does NOT help Road 1: radio chunks are raw Opus packets, and a Vorbis Ogg can't feed that decoder without a
+     transcode (an Opus Ogg could be re-sliced without one — a later nicety).
+4. **The preview's head only, for flitting.**  Owner, 2026-11-10: later, offer just the first tiny bit of a `%Preview` for scanning
+    a wide expanse fast.  Road 1 already supports it by construction — a want for seqs 0..k is a prefix; what's missing is a dial
+     mode that skims and a cap that says "k, not the window".
+5. **"Pocket"** is a bad name for "no folder, or no relay — the pool is the music".  Rename when SoundPooling_todo gets its front
+    door (it is 2,200 lines of dated evenings with several §0.0s — due the 2026-10-15 front-door treatment).
+
 ## 0.1 log
 
 *The 2026-08 evening-by-evening log (~1,900 lines) moved to `history/Radio_todo_2026-08.md` on 2026-10-16.*
