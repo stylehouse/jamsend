@@ -78,6 +78,7 @@ Pool_facts(w, ident):
             if (sk) { if (!f.held_songs_raw[sk]) { f.held_songs_raw[sk] = [] } f.held_songs_raw[sk].push(+(r.sc.seconds || 0)) }
         }
     }
+    if (f.humdinger) { f.passed_raw = this.Ra_pool_passed(w); f.passed = Object.keys(f.passed_raw).length }
     f.recent_raw = this.Heard_landed_ids ? this.Heard_landed_ids(w, pub, mine) : []
     f.recent = f.recent_raw.length
     f.barred_raw = this.Heard_barred_ids ? this.Heard_barred_ids(w, pub) : {}
@@ -104,6 +105,147 @@ Pool_facts(w, ident):
 Pool_facts_summary(f):
     let out = {}
     for (const k of Object.keys(f)) { if (k !== 'now' && k !== 'now_s' && !k.endsWith('_raw')) { out[k] = f[k] } }
+    return out
+// ── THE LOFI STREAM, BOTH ENDS (SoundPooling_todo §0.a.6/§0.a.7 — 2026-11-11 night).  The holder's `Mine/stock/Mag:Pooling`
+//  (Ra_pooling_publish, Ra.g) is mirrored by Repli to each friend's `Theirs/stock/Mag:Pooling`.  A READER whose cursor nears
+//   the end of what has arrived sends a PAGE WANT (a `repli_want` with `stream:'page'`, id 'Pooling', from_idx = the page it
+//    wants up to); the HOLDER keeps every reader's furthest want (max per reader — AthePondFog_sum's law) and generates pages
+//     ahead of the furthest: `Cloud,page:N` of %Card rows naming its own records (id, title, artist, seconds).  The pool's
+//      random draw then reads those Cards (Pool_shared_rows `paged`), and the fill heists them by id as before.  Two readers
+//       reading the same pages draw the same tracks, which is the elasticity: one page, many sinks.  Owed: stable lofi ids (one
+//        transcode for every sink), the pages surviving a holder reload, the light cone choosing the cards, the fog view.
+Ra_pooling_cards(shelf):
+    let mag = this.Ra_pooling_mag ? this.Ra_pooling_mag(shelf) : null
+    if (!mag) { return [] }
+    let out = []
+    for (const pg of this.Ra_pooling_pages(mag)) { for (const c of pg.o({ Card: 1 })) { out.push(c) } }
+    return out
+// Ra_pooling_pages — the CURRENT era's pages, in page order (a page is `Cloud,page:<era>-<n>,n:<n>`; Ra_pooling_publish)
+Ra_pooling_pages(mag):
+    let era = String(mag.sc.era || '')
+    return mag.o({ Cloud: 1 }).filter((pg) => String(pg.sc.page || '').startsWith(era + '-')).sort((a, b) => (+a.sc.n || 0) - (+b.sc.n || 0))
+// Ra_pooling_shed — a reader drops the pages of a holder life that has ended (the era moved: the holder reloaded)
+Ra_pooling_shed(mag):
+    let era = String(mag.sc.era || '')
+    let n = 0
+    for (const pg of mag.o({ Cloud: 1 })) { if (!String(pg.sc.page || '').startsWith(era + '-')) { mag.drop(pg); n = n + 1 } }
+    return n
+Ra_pooling_page_size():
+    return 4
+Ra_pooling_keep_pages():
+    return 25
+// Ra_pooling_wanted — THE HOLDER HEARS A PAGE WANT.  `lib` is the stock shelf this pier serves.  Each reader's furthest want is
+//  kept (runtime, on the Mag's .c — a cursor is nobody else's business, and the Mag crosses to every friend); one page is made
+//   per want heard, so a reader racing ahead is paced by its own asking.  Returns the pages made (0|1).
+Ra_pooling_wanted(w, lib, from, upto):
+    let mag = this.Ra_pooling_mag ? this.Ra_pooling_mag(lib) : null
+    if (!mag || !from) { return 0 }
+    mag.c.readers = mag.c.readers || {}
+    let page = Math.max(0, Math.floor(+upto || 0))
+    if (page > (mag.c.readers[from] || 0)) { mag.c.readers[from] = page }
+    let furthest = 0
+    for (const k of Object.keys(mag.c.readers)) { furthest = Math.max(furthest, mag.c.readers[k]) }
+    let born = +(mag.sc.born || 0)
+    if (born >= furthest) { return 0 }
+    let made = this.Ra_pooling_generate(lib, mag, born + 1)
+    if (made && born + 1 < furthest) { made = made + this.Ra_pooling_generate(lib, mag, born + 2) }
+    if (made) {
+        // re-offer soon: every caster's mark goes stale, so the next share beat carries the new page to everyone reading
+        for (const pier of (w.c.repli_casters || [])) { pier.c.offered_at = 0 }
+        console.log('🏊⇉ Pooling up to page ' + mag.sc.born + ' made for ' + String(from).slice(0, 8) + ' (' + made + ' tracks; furthest want ' + furthest + ')')
+    }
+    return made
+// Ra_pooling_generate — mint page N: up to page_size of my records no page names yet, hash-ranked by page (the same page from
+//  the same shelf every time — no Math.random, the fixture law).  Nothing fresh to name ⇒ no page (the radio shelf rolls, so
+//   fresh ones come).  Old pages beyond keep_pages scroll off the top.  Returns the cards made.
+Ra_pooling_generate(lib, mag, page):
+    let named = {}
+    for (const c of this.Ra_pooling_cards(lib)) { named[String(c.sc.Card)] = 1 }
+    let fresh = this.Ra_recs(lib).filter((r) => r.sc.id && !named[String(r.sc.id)] && !r.sc.husk && !r.sc.rummage && !r.sc.of)
+    if (!fresh.length) { return 0 }
+    let key = {}
+    for (const r of fresh) { key[String(r.sc.id)] = this.Ra_pool_hash('page:' + page + ':' + String(r.sc.id)) }
+    fresh.sort((a, b) => (key[String(a.sc.id)] < key[String(b.sc.id)] ? -1 : 1))
+    let pg = mag.i({ Cloud: 1, page: String(mag.sc.era || '') + '-' + page, n: page })
+    pg.c.up = mag
+    pg.c.repli_loc = ['Cloud', 'page']
+    let n = 0
+    for (const r of fresh.slice(0, this.Ra_pooling_page_size())) {
+        let c = pg.i({ Card: String(r.sc.id), title: String(r.sc.title || '') })
+        if (r.sc.artist) { c.sc.artist = String(r.sc.artist) }
+        if (r.sc.seconds) { c.sc.seconds = String(r.sc.seconds) }
+        n = n + 1
+    }
+    mag.sc.born = String(page)
+    let pages = this.Ra_pooling_pages(mag)
+    for (const old of pages.slice(0, Math.max(0, pages.length - this.Ra_pooling_keep_pages()))) { mag.drop(old) }
+    mag.bump()
+    return n
+// Ra_pooling_cursor — THE READER'S EYES on one holder's mirrored Pooling Mag: the first page still holding a card this tab hasn't
+//  taken (pooled, heard, or barred by a Nay/Meh).  0 when no page has arrived.
+Ra_pooling_cursor(mag, taken):
+    for (const pg of this.Ra_pooling_pages(mag)) {
+        if (pg.o({ Card: 1 }).some((c) => !taken[String(c.sc.Card)])) { return +(pg.sc.n || 0) }
+    }
+    return 0
+// Ra_pooling_want_beat — A READER ASKS FOR MORE.  Live pages with pooling switched on, per friend whose mirror carries a Pooling
+//  Mag: the horizon is two pages past the cursor (all read, or nothing yet ⇒ past what has arrived); wanting past what was born
+//   sends a page want, at most one per holder per 30s.  An old holder never published the Mag, so it is never asked.
+async Ra_pooling_want_beat(w, rw, shelf, pub):
+    let M = this.top_House ? this.top_House() : null
+    if (!M || !M.c.humdinger || !rw || !shelf || !pub) { return 0 }
+    if (!this.Ra_pool_consent || !this.Ra_pool_consent(rw)) { return 0 }
+    let mag = this.Ra_pooling_mag ? this.Ra_pooling_mag(shelf) : null
+    if (!mag) { return 0 }
+    // the holder reloaded (a new era): its old pages go, and the new life is asked at once
+    if (mag.c.seen_era !== mag.sc.era) {
+        if (mag.c.seen_era && w.c.pooling_want_ts) { delete w.c.pooling_want_ts[pub] }
+        mag.c.seen_era = mag.sc.era
+        let shed = this.Ra_pooling_shed(mag)
+        if (shed) { console.log('🏊⇉ ' + String(pub).slice(0, 8) + ' started a new Pooling stream — ' + shed + ' old page(s) dropped') }
+    }
+    let me = this.Radio_pub ? (this.Radio_pub(rw) || '') : ''
+    let taken = Object.assign({}, this.Heard_barred_ids ? this.Heard_barred_ids(rw, me) : {}, this.Ra_pool_passed(rw))
+    let pool = this.Ra_pool_stock ? this.Ra_pool_stock(rw, me) : null
+    for (const r of (pool ? this.Ra_recs(pool) : [])) {
+        if (r.sc.of) { taken[String(r.sc.of)] = 1 }
+        if (r.sc.id) { taken[String(r.sc.id)] = 1 }
+    }
+    // born as THIS reader sees it: the highest page of the current era (a merge never deletes the old life's `born`)
+    let born = this.Ra_pooling_pages(mag).reduce((m, pg) => Math.max(m, +(pg.sc.n || 0)), 0)
+    let cursor = this.Ra_pooling_cursor(mag, taken) || (born + 1)
+    // the horizon covers the pool's appetite: enough pages ahead to fill every compartment, at least two
+    let need = this.Pool_cap_sum ? this.Pool_cap_sum(this.Ra_pool_defs(rw, 0).filter((d) => d.name)) : 0
+    let want = cursor + Math.max(2, Math.ceil(need / this.Ra_pooling_page_size()))
+    if (want <= born) { return 0 }
+    w.c.pooling_want_ts = w.c.pooling_want_ts || {}
+    let now = Date.now()
+    if (w.c.pooling_want_ts[pub] && now - w.c.pooling_want_ts[pub] < 30000) { return 0 }
+    let rx = (this.Ra_recs(shelf).find((r) => r.c && r.c.rx) || {}).c
+    rx = rx ? rx.rx : null
+    if (!rx || !this.Repli_want_next) { return 0 }
+    w.c.pooling_want_ts[pub] = now
+    await this.Repli_want_next(w, rx, me, pub, 'Pooling', 'page', want)
+    return 1
+// Ra_pool_passed_mark / Ra_pool_passed — WHAT THE WANDER HAS PASSED: `%Passed:<original id>` on the SoundPooling home, one per
+//  heard pool track, so the random draw and the Pooling cursor move on even after the heard card is evicted (the card's own
+//   `heard` stamp goes with it).  The home rides the identity stash, so it survives a reload; it bumps at most every ten
+//    minutes (a play must not cost an account write each time).  The last 1000 are kept.
+Ra_pool_passed_mark(w, id):
+    let home = this.Ra_pool_home ? this.Ra_pool_home(w) : null
+    if (!home || !id) { return 0 }
+    if (home.o({ Passed: String(id) }).length) { return 0 }
+    home.i({ Passed: String(id) })
+    let all = home.o({ Passed: 1 })
+    for (const old of all.slice(0, Math.max(0, all.length - 1000))) { home.drop(old) }
+    // durable soon, cheaply: one account write per ten minutes at most (eed reloaded and lost every heard stamp — 2026-11-11)
+    let now = Date.now()
+    if (!w.c.passed_bump_at || now - w.c.passed_bump_at > 600000) { w.c.passed_bump_at = now; home.bump() }
+    return 1
+Ra_pool_passed(w):
+    let home = this.Ra_pool_home ? this.Ra_pool_home(w) : null
+    let out = {}
+    for (const p of (home ? home.o({ Passed: 1 }) : [])) { out[String(p.sc.Passed)] = 1 }
     return out
 // Pool_def_row — one declared compartment as the plain row the policy reads
 Pool_def_row(d):
@@ -145,12 +287,13 @@ Pool_draw_random(pd, f):
     // HEARD MOVES ON (owner 2026-11-11: *"on a SP endpoint meeting, everything that's been heard can go"*): a pooled
     //  copy the radio has played (`heard`, stamped in Radio_open) leaves the wander — it neither competes as
     //   sediment nor is drawn again from the mirror.  A Yay keeps it anyway: the liked half draws it first.
-    let heard = {}
+    let heard = Object.assign({}, f.passed_raw || {})
     for (const c of (f.pooled_raw || [])) { if (c.heard) { heard[String(c.of || c.id)] = 1 } }
     let ids = []
     for (const s of (f.sources_raw || [])) {
         if (!s || !s.id) { continue }
         if (held[s.id] || heard[s.id]) { continue }
+        if (s.pages && !s.paged) { continue }       // this holder streams its pool picks on Pooling pages — the radio rows aren't them
         if (f.held_songs_raw && this.Radio_song_held && this.Radio_song_held(f.held_songs_raw, { sc: s })) { continue }
         if (pd.who === 'none') { continue }
         if (pd.who === 'friends' && s.crew) { continue }
@@ -1098,6 +1241,13 @@ Pool_shared_rows(w):
         if (!from) { continue }
         let stock = them.o({ stock: 1 })[0]   // probe-first: a read never mints a shelf
         if (!stock) { continue }
+        // THE LOFI STREAM (SoundPooling_todo §0.a.7): a holder that publishes Pooling pages says WHICH of its tracks are for
+        //  pooling — its rows wear `pages`, and the ones on a page wear `paged` too.  Pool_draw_random draws only paged rows
+        //   from such a holder; every row still resolves holders (a liked track came by on the radio, not on a page).
+        let paged = this.Ra_pooling_cards ? this.Ra_pooling_cards(stock) : []
+        let onpage = {}
+        for (const c of paged) { onpage[String(c.sc.Card)] = c }
+        let seen = {}
         for (const r of this.Ra_recs(stock)) {
             let id = String(r.sc.id || '')
             if (!id) { continue }
@@ -1113,6 +1263,19 @@ Pool_shared_rows(w):
             if (r.sc.artist) { row.artist = String(r.sc.artist) }
             if (r.sc.seconds) { row.seconds = +r.sc.seconds }
             if (crewish(from)) { row.crew = 1 }
+            if (paged.length) { row.pages = 1 }
+            if (onpage[id]) { row.paged = 1 }
+            seen[id] = 1
+            out.push(row)
+        }
+        // a paged card whose record the radio shelf has already rolled past is still a track the holder offers to pool
+        for (const c of paged) {
+            let id = String(c.sc.Card || '')
+            if (!id || seen[id]) { continue }
+            let row = { id: id, from: from, title: String(c.sc.title || ''), pages: 1, paged: 1 }
+            if (c.sc.artist) { row.artist = String(c.sc.artist) }
+            if (c.sc.seconds) { row.seconds = +c.sc.seconds }
+            if (crewish(from)) { row.crew = 1 }
             out.push(row)
         }
     }
@@ -1125,7 +1288,7 @@ Ra_quarter_goal_pools(shelf, pools, sources, pool, recent, barred, live):
         recent_raw: recent || [], latest_raw: this.Heard_latest(shelf, live && live.mags), tally_raw: this.Ra_quarter_tally(shelf, live && live.mags), barred_raw: barred || {},
     }
     // `live` = {now_s, held_raw, mags}: the liked window's clock and what can be pressed — live pages only (the fixture law)
-    if (live) { f.now_s = live.now_s; f.held_raw = live.held_raw || [] }
+    if (live) { f.now_s = live.now_s; f.held_raw = live.held_raw || []; f.passed_raw = live.passed || {} }
     return this.Pool_goal(f)
 Ra_quarter_diff(goal, pool, lib):
     return this.Pool_diff(goal, {
@@ -1166,7 +1329,7 @@ Ra_quarter(w, shelf, pool, lib, cap, sources, facts):
     let barred = this.Heard_barred_ids ? this.Heard_barred_ids(w, this.Radio_pub(w) || '') : {}
     let pdefs = this.Ra_pool_defs(w, cap)
     let M = this.top_House ? this.top_House() : null
-    let live = (M && M.c.humdinger) ? { now_s: this.Heard_now ? this.Heard_now(w) : Math.floor(Date.now() / 1000), held_raw: (lib ? this.Ra_recs(lib) : []).map((r) => String(r.sc.id || '')).filter(Boolean), mags: this.Heard_mags ? this.Heard_mags(w, this.Radio_pub(w) || '') : null } : null
+    let live = (M && M.c.humdinger) ? { now_s: this.Heard_now ? this.Heard_now(w) : Math.floor(Date.now() / 1000), held_raw: (lib ? this.Ra_recs(lib) : []).map((r) => String(r.sc.id || '')).filter(Boolean), mags: this.Heard_mags ? this.Heard_mags(w, this.Radio_pub(w) || '') : null, passed: this.Ra_pool_passed(w) } : null
     let goal = this.Ra_quarter_goal_pools(shelf, pdefs, sources, pool, recent, barred, live)
     let diff = this.Ra_quarter_roll(w, this.Ra_quarter_diff(goal, pool, lib), barred, (pool ? this.Ra_recs(pool) : []).length, this.Pool_cap_sum(pdefs))
     // step 2 (§0.2a): a pure comparison, never a decision — Pool_policy_compare only logs

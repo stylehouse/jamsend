@@ -204,6 +204,54 @@
  `/Radio` stands on a Ground, so `TheA_seem_walk` and `Stuffica_view` (a face that commits only when its sheet changes) are loaded
   there today.
 
+**Progress (2026-11-11 night):**
+- **1 BUILT** — `AthePondFog` (Ghost/A/AtheTesting.g, 5 steps, 4 oaths, green).  A holder's Mag:Pooling starts empty; two readers
+   (pace 0.8 / 0.6, line 0.3).  The pure `AthePondFog_ahead` gives pace^d per page ahead; wants = horizon − here; the holder sums
+    them by max (`AthePondFog_sum`) and generates two pages a beat; each reader's map is %Page rows under a Seem whose points wear
+     `fog` (unborn|far|near|here), `ahead` (d, p) and `heard` Regards.  A cull re-mints every page and Page row and every Regard
+      rides the re-seat.  A first draft regenerated pages 1–2 every beat (`Gen n=3`); the one-generation oath caught it.
+- **2 BUILT** — the holder publishes the outline: `Mine/stock/Mag:Pooling`, empty (`Ra_pooling_publish`, minted by the live share
+   beat in Swarm.g, so no Book grows one).  It sits on the SAME stock shelf as `Mag:shuffle`, so the wire carries it unchanged:
+    `Ra_offer_stock` offers every Mag, and `Repli_mirror_lib` lands every fragment in `Theirs,pub/stock`.  This supersedes the
+     `Mine/Pooling` placement first proposed.  `Ra_recs` (the radio's census) and `Ra_mag_warm` skip it (`Ra_mag_is_pooling`); `Ra_rec_find`
+      still searches it, because a Pooling record will be served by its own id.  Verified live: eed's Mine/stock and eed's mirror of
+       Vingas both hold `Mag:Pooling`.  Mixed fleet: an old peer mirrors the empty Mag harmlessly, but once it holds records an
+        old peer's Ra_recs would count them as radio (a lofi card has no preview, so its dial skips it).
+- **The stream runs, both ends — BUILT 2026-11-11 night** (jumps ahead of 3–4, which have nothing to show on an empty Mag).
+   - **The reader asks** (`Ra_pooling_want_beat`, from the share beat's per-friend mirror loop; live pages with consent only).
+      Its cursor is the first page holding a card this tab hasn't taken: pooled, barred by a Nay/Meh, or **Passed**.  The
+       horizon is the cursor plus enough pages to fill every compartment (cap sum ÷ 4, at least 2).  Wanting past `born` sends a
+        **page want**: a plain `repli_want` with `stream:'page'`, id `Pooling`, `from_idx` = the page.  At most one per holder per 30s.
+   - **The holder generates** (`Repli_serve_want` branch → `Ra_pooling_wanted`).  It keeps each reader's furthest want on
+      `mag.c.readers` (runtime — a cursor is nobody else's business, and the Mag crosses to every friend), takes the max, and makes
+       up to 2 pages per want (`Ra_pooling_generate`).  A page is `Cloud,page:N` of 4 `%Card:<id>,title,artist,seconds`: its own
+        stock records no page names yet, hash-ranked by page.  It keeps 25 pages (older ones scroll off) and stales every
+         caster's offer mark, so the next beat carries the page.  An old holder answers "no record for id", which is harmless.
+   - **The pool draws from it**: `Pool_shared_rows` marks a paging holder's rows `pages` and the carded ones `paged` (plus rows for
+      cards the radio shelf already rolled past); `Pool_draw_random` takes only `paged` rows from such a holder.  Every row still
+       resolves holders, so a liked track that came by on the radio has a road.  The fill heists by id exactly as before.
+   - **Passed** (`Ra_pool_passed_mark`, from `Radio_pool_heard`): `%Passed:<original id>` on the SoundPooling home, the last 1000,
+      bumped at most every 10 min.  The card's own `heard` stamp dies with an eviction or a reload; Passed is what remembers.
+       The wander and the cursor both skip passed ids.
+   - **Verified live:** eed asked Vingas, Vingas made 11 pages (cursor 1 + ⌈37/4⌉), they crossed, and eed's Provisions turned to
+      `circulating from b8bc9a68` wants naming exactly the page-1/2 cards.
+   - **Owed, in order:**
+     (a) **Holding lofi bodies for paged cards.** Correction to §0.a.6: the fill's id is NOT per-client.  `Heist_keep_id(me, base,
+      path)` is deterministic, and `Heist_materialise_one` is idempotent per mode, so two sinks asking for one card share one
+       transcode while the body is held.  What's lost is the RELEASE-after-serve: a later sink re-transcodes.  So owed: hold the lofi
+        body of a card on a page some reader hasn't passed, within a memory budget (a browser holder can't hold 100 × 6 MB).
+     (b) **A holder reload — eras, BUILT 2026-11-11 night.**  `Mag:Pooling,era:<6 chars>`, minted per holder life
+      (`Ra_pooling_publish`; a Mag published before eras gets one and drops its pages).  Pages are `Cloud,page:<era>-<n>,n:<n>`, so
+       a reloaded holder's fresh page 1 never merges into the old page 1 at a mirror (Repli locates a page by its name).  The reader
+        reads only the current era (`Ra_pooling_pages`), drops the old (`Ra_pooling_shed`), counts `born` off its current pages
+         (a merge never deletes the old `born`), and re-asks at once.  What it pooled from the old life stays pooled.
+         **Not yet live:** the 21:38 hot update failed on the tabs (Vite "Failed to reload Ra.go/Pool.go", transient — both transform
+          200 now), and eed still runs the pre-era code.  Needs a reload of eed and Vingas, then: eed's mirror shows
+           `Mag:Pooling,era:…` with `<era>-1…` pages, and the log says "started a new Pooling stream — 13 old page(s) dropped".
+     (c) The light cone choosing the cards: the liked half from the holder's taste, the wander through its whole collection rather
+      than just its rolling radio shelf.
+     (d) The fog view (build order 3) over `Theirs/stock/Mag:Pooling`.
+     (e) Radiostock onto the same road.
 **Build order, smallest real thing first:**
 1. **A Pond cartoon Book**, say `AthePondFog`: one holder A with a paged Mag, two reader As with cursors. Its oaths:
    - nothing is wanted beyond a horizon;

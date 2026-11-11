@@ -510,9 +510,9 @@ Now both cases (no row, **and** a row whose stored `prepub` ≠ its tag) stamp `
    like `${prepub}_2` — a per-tab suffix on the shared identity, so both are reachable without forking a whole
     new key. `Swarm.g` already mints `${pub}_N` blocks for the swarm case; the same suffix scheme applies
      here. Unbuilt; the `_N` same-key-vs-ephemeral question is shared with the Radiobuddies discovery work.
-  *(2026-11-11: half of this landed as the SEAT DODGE — each socket wants a throwaway `<prepub>_9NNN` seat, so siblings no longer
-   knock each other off the relay; the bare-name bind, and so `to:<prepub>` delivery, still goes to the last hello.  Which page
-    wears which default identity: `Identity_persist_todo.md` §0.1.)*
+  *(2026-11-11: BUILT, differently — not liveQuery but the Swarm COHORT (a Web Lock + BroadcastChannel per identity): the
+   primary tab stands at the bare prepub, a sibling at a session `<prepub>_N`; every socket also takes a throwaway seat (the seat
+    dodge).  The pieces, the 2026-11-11 fix and what is still open: `Identity_persist_todo.md` §0.1.)*
 
 Load-bearing: `LiesLies.svelte` (`Lies_self`, `Lies_channel_up` hello, `Lies_advertise`/`_recv`,
  `Lies_runner_roster`), `LiesFunk.svelte` (`Lies_grant_wormhole`, `Lies_grant_offer_recv`,

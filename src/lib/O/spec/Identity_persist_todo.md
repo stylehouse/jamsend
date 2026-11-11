@@ -138,11 +138,20 @@ One browser profile = one Dexie (`thangs`) = one shelf of identities, shared by 
 | `?I=<prepub>` on any page | — | that identity, wherever it was filed (§6.4 files role identities under their prepub too) |
 | the daemon | `daemon` | §7: resumes `I=<prepub>`, never mints |
 
-**Two tabs wearing ONE identity** (two music tabs, or a page plus `?I=` of the same prepub): each SOCKET wants its own throwaway
- seat (`<prepub>_9NNN`, the seat dodge, LiesLies `Lies_channel_up`), so both stay connected — but both still BIND the bare prepub,
-  and a frame sent `to:<prepub>` reaches whichever hello'd last.  Telling such siblings apart (Dexie liveQuery → `<prepub>_2`) is
-   still open: Cluster_spec §3.2a "Open", and the cross-machine form is §7.4 (siblinghood, not theft).  A new page that boots
-    through `boot_qualand` must decide which row of this table it is — reusing `sound` makes it the music page.
+**Two tabs wearing ONE identity** (two music tabs in one profile).  Every socket wants its own throwaway seat (`<prepub>_9NNN`,
+ the seat dodge, LiesLies `Lies_channel_up`).  The STATION — the socket music and swarm frames arrive on — is decided by the
+  **cohort** (Swarm.g `Swarm_cohort_stand`, run by SwarmStandup before the first dial): a Web Lock per identity picks the primary,
+   a BroadcastChannel names what siblings hold.  The primary stands at the bare prepub; a sibling stands at `<prepub>_N` for its
+    session (`top.c.vessel_addr`, never the persisted %Peering address), so `to:<prepub>` reaches the primary alone and `to:<prepub>_N`
+     that tab alone; when the primary closes, the sibling's courtesy bind takes the bare name's frames.  The sibling's account
+      mirror holds its write ("the bare-name holder owns the write").
+- **Fixed 2026-11-11**: Phase D (land-of-prepub, 2026-09-02) had deleted the cohort's reader, trusting that a body's own key-derived
+   name never collides.  It does: a crew of one's body name IS its soul name, and tabs in one profile share the body key.  So the
+    second tab's door-yield re-dialled the bare door and BOTH owned it — every frame to the identity, music chunks too, delivered
+     twice.  Reproduced and verified with two `/BigSoundland` pages in one headless browser context.
+- **Still open**: a device whose body key is DISTINCT from its soul (a Cave on a cert) with two tabs open — both tabs bind that body
+   name with no want, so `to:<body>` frames reach both.  And across machines, a second live writer is caught by no liveness probe
+    (§7.4; the "two of you" nib).
 
 ## 1. What EXISTS (verified against code, 2026-07-27)
 

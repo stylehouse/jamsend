@@ -994,6 +994,12 @@ async Repli_serve_want(w, pier, frame):
     }
     if (!lib) { this.Repli_serve_miss(w, h, 'no serve source for this pier'); return }
     if (!this.Repli_allowed(w, h.from, h.to)) { this.Repli_serve_miss(w, h, 'consent refused — grant revoked or wrong peer'); return }
+    // A PAGE WANT (SoundPooling_todo §0.a.7): a reader's cursor nearing the end of my Pooling Mag — not a record's bytes.  The
+    //  holder generates ahead (Ra_pooling_wanted, Pool.g); the new page crosses on the next offer.  An old holder never reaches here.
+    if (h.stream === 'page') {
+        if (typeof this.Ra_pooling_wanted === 'function') { try { this.Ra_pooling_wanted(w, lib, String(h.from || ''), +(h.from_idx || 0)) } catch (er) {} }
+        return
+    }
     let rec = this.Repli_find_record(w, h.id, lib)
     // RELOAD-RECOVERY HEAL (2026-08-04): a miss here USED to be terminal — the want died with one
     //  throttled log line and the sink re-asked every 4s forever, which is exactly what a sink that

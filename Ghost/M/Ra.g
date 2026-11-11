@@ -1203,8 +1203,40 @@ Ra_is_holding_sc(sc):
 Ra_recs(shelf):
     if (!shelf) return []
     let out = shelf.o({ Record: 1 })
-    for (const mag of shelf.o({ Mag: 1 })) this.Ra_recs_deep(mag, out)
+    for (const mag of shelf.o({ Mag: 1 })) {
+        if (this.Ra_mag_is_pooling(mag)) continue
+        this.Ra_recs_deep(mag, out)
+    }
     return out
+// ── THE LOFI STREAM'S MAG (SoundPooling_todo §0.a.6/§0.a.7, build order 2 — 2026-11-11).  Two streams, each a Mag at both
+//  ends, mirrored by Repli: `Mag:shuffle` (the Preview stream — radiostock) and `Mag:Pooling` (the Lofi stream).  Pooling sits
+//   on the SAME stock shelf so the wire carries it unchanged (Ra_offer_stock offers every Mag; Repli_mirror_lib lands every
+//    fragment in `Theirs,pub/stock`), and the radio's census skips it: a Pooling page is not something to dial.  It starts EMPTY —
+//     an outline, a bare `Mag:Pooling` (`born` counts its pages once there are any) — and a reader's cursor into it is what starts generation (build order 3–5, owed).
+//  Ra_rec_find still searches it: a record is found by its own id, and a Pooling record's bytes will be served by id like any other.
+Ra_mag_is_pooling(mag):
+    return !!(mag && mag.sc && mag.sc.Mag === 'Pooling')
+// Ra_pooling_mag — the Lofi stream's Mag on a shelf, probed (a mirror's or my own); never mints
+Ra_pooling_mag(shelf):
+    return shelf ? (shelf.o({ Mag: 'Pooling' })[0] || null) : null
+// Ra_pooling_publish — THE HOLDER PUBLISHES ITS OUTLINE: my stock shelf wears an (empty) Pooling Mag, so every friend's mirror
+//  learns the stream exists.  Live share beats only (the caller's gate) — a Book world never mints one, so no fixture moves.
+Ra_pooling_publish(shelf):
+    if (!shelf) return null
+    let mag = this.Ra_pooling_mag(shelf)
+    if (mag && !mag.sc.era) {
+        // published before eras: start this life's stream afresh
+        for (const pg of mag.o({ Cloud: 1 })) mag.drop(pg)
+        mag.sc.era = Math.random().toString(36).slice(2, 8)
+        delete mag.sc.born
+        mag.bump()
+    }
+    if (mag) return mag
+    // an ERA per holder life: pages are named `<era>-<n>`, so a reloaded holder's fresh page 1 never merges into the old page 1
+    //  at a reader's mirror (Repli locates a page by its name) — the reader keeps the current era's pages (Ra_pooling_pages)
+    mag = shelf.i({ Mag: 'Pooling', era: Math.random().toString(36).slice(2, 8) })
+    mag.c.up = shelf
+    return mag
 // Ra_rec_find_deep — the pinned recursive twin of Ra_recs_deep: first hit in the same census order
 //  (a level's direct %Record match before any nested container's), pruning at a %Record.
 Ra_rec_find_deep(n, q):
@@ -1295,6 +1327,7 @@ async Ra_offer_stock(w, tx, from, to, shelf):
 async Ra_mag_warm(w, mirror):
     if (!mirror) return
     for (const mag of mirror.o({ Mag: 1 })) {
+        if (this.Ra_mag_is_pooling(mag)) continue     // the Lofi stream is not warmed as radio
         let rows = this.Ra_recs_deep(mag, [])
         if (!rows.length) continue
         if (!mag.sc.warm) {

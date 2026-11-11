@@ -5136,6 +5136,8 @@ Radio_pool_heard(radio, rec):
     if (!(rec.sc.of || (rec.c && rec.c.pooled))) return 0
     if (this.Radio_pool_card(radio, rec) !== rec) return 0
     rec.sc.heard = '1'
+    // …and the pool remembers it PASSED, by the original's id, after the card itself is evicted (Ra_pool_passed_mark)
+    if (this.Ra_pool_passed_mark) this.Ra_pool_passed_mark(radio.c.w, String(rec.sc.of || rec.sc.id))
     return 1
 // Radio_file_pcm — the decoded whole-track PCM when it stands (never a partial — Ra_source_pcm's head-only decode), else null
 Radio_file_pcm(rec):

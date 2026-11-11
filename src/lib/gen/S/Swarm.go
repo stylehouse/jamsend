@@ -17,7 +17,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '8605179f4342087c~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '167e2c5ddee7a091~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -2740,9 +2740,20 @@ async Swarm_station_up(w, ident) {
     if (station && w.c.station_up) return station
     if (typeof this.Socket_real !== 'function') return null
     if (typeof WebSocket === 'undefined') return null
-    // (Phase D, land-of-prepub: the COHORT CONSULT is gone — the pre-dial suffix census guarded the
-    //  doubled-stream disease, which the body-from flip killed at the root; the DOOR contest is the
-    //   arbiter adopt hook below, which now yields to MY OWN BODY NAME, never a _N suffix.)
+    // (Phase D, land-of-prepub, removed the COHORT CONSULT here on the premise that a body already owns a
+    //  collision-free name — its own key-derived prepub.  BACK, 2026-11-11: two tabs in one browser profile
+    //   share the stash and so the body key, and a crew of one's body name IS its soul name — so the second
+    //    tab's yield re-dialled the BARE door and both tabs owned it: every to:<prepub> frame, music chunks
+    //     too, delivered to both (reproduced: two /BigSoundland pages in one headless context).  A sibling
+    //      vessel stands at a SESSION suffix — top.c.vessel_addr[prepub], never the persisted %Peering address, so
+    //       nothing poisons the shared stash for the next boot (Swarm_vessel_pick: vessels of one soul differ
+    //        only by address).  Identity_persist_todo §0.1.)
+    let coh = this.top_House().c.cohort
+    let vaddr = (this.top_House().c.vessel_addr ??= {})
+    if (coh && !coh.primary && coh.prepub === ident.sc.prepub && !vaddr[ident.sc.prepub]) {
+        vaddr[ident.sc.prepub] = this.Swarm_next_suffix(ident.sc.prepub, coh.taken || [])
+        console.log('👥 station standing at ' + vaddr[ident.sc.prepub] + ' — the bare name is held by a sibling tab in this profile')
+    }
     station = w.oai({ Peering: 1, name: ident.sc.prepub })
     station.c.up = w
     let saddr = this.Swarm_address(ident)
@@ -2818,6 +2829,20 @@ async Swarm_station_up(w, ident) {
             let bk = this.Swarm_body_key(ident)
             let myname = bk && bk.prepub ? String(bk.prepub) : ''
             if (!myname) return
+            // A BODY NAME THAT CANNOT SEPARATE US (2026-11-11): a crew of one's body name IS the soul name, and a
+            //  sibling tab in this profile wears the same body key — yielding "to my own name" then re-dials the
+            //   very door we were refused, and both tabs own it.  Take the arbiter's suffix instead, for this
+            //    session only (top.c.vessel_addr, read by Swarm_address; see the cohort consult in Swarm_station_up).
+            let coh = this.top_House().c.cohort
+            let sibling_tab = !!(coh && !coh.primary && coh.prepub === ident.sc.prepub)
+            if (myname === String(ident.sc.prepub) || sibling_tab) {
+                if (String(granted) === String(this.Swarm_address(ident))) return
+                let vaddr1 = (this.top_House().c.vessel_addr ??= {})
+                vaddr1[ident.sc.prepub] = String(granted)
+                console.log('👥 the door (' + String(ident.sc.prepub).slice(0, 8) + ') is held by another tab of ours — standing at ' + granted + ' for this session')
+                this.Swarm_rehome(ident)
+                return
+            }
             let idp = this.Swarm_peering(ident)
             if (!idp || String(idp.sc.address || '') === myname) return
             idp.sc.address = myname
@@ -3018,6 +3043,10 @@ async Swarm_station_hello(w, ident, port, retry) {
     //       skip; the next (re)open re-runs this hook and the hydrate races it there.
     try {
         let bk = this.Swarm_body_key(ident)
+        // a body whose name IS the soul's (a crew of one) has nothing to bind the soul hello did not: sent anyway
+        //  it takes the BARE seat with no want, so a sibling tab standing at a suffix squatted the door its primary
+        //   needs on reconnect (2026-11-11, the two-tab reproduction).  The soul hello's ack answers for both.
+        if (bk && bk.pub && String(bk.prepub || prepubOf(String(bk.pub))) === String(ident.sc.prepub)) { bk = null }
         if (bk && bk.pub && bk.key && !w.c.body_hello_ok_at) {
             let bh = { control: 'hello', from: String(bk.prepub || prepubOf(String(bk.pub))), pub: bk.pub, ts: Date.now() }
             let bsign = await signHeader(bh, bk.key)
@@ -3038,7 +3067,7 @@ Swarm_hello_retry(w) {
     if (!ident || !port || !port.real || !port.ws || port.ws.readyState !== 1) { return }
     let need_soul = !!this.Swarm_keys(ident) && !w.c.soul_hello_ok_at
     let bk = this.Swarm_body_key(ident)
-    let need_body = !!(bk && bk.pub && bk.key) && !w.c.body_hello_ok_at
+    let need_body = !!(bk && bk.pub && bk.key) && String(bk.prepub) !== String(ident.sc.prepub) && !w.c.body_hello_ok_at
     if (!need_soul && !need_body) { return }
     if (Date.now() - (w.c.hello_sent_at || 0) < HELLO_GRACE) { return }
     if ((w.c.hello_tries || 0) >= HELLO_TRIES) { return }
@@ -6128,6 +6157,9 @@ async Swarm_share_beat(w, ident) {
     w.c.beat_split.flush = Date.now() - tmark
     tmark = Date.now()
     this.Swarm_boast_floor(w, ident)
+    // THE LOFI STREAM'S OUTLINE (SoundPooling_todo §0.a.7 build order 2): my stock shelf publishes an empty Mag:Pooling, which the
+    //  offer loop below carries to every friend beside Mag:shuffle.  Nothing reads it yet; a reader's cursor starts generation (owed).
+    if (typeof this.Ra_pooling_publish === 'function') { try { this.Ra_pooling_publish(stock) } catch (er) {} }
     // THE AUTO-LEND (GrantBorrowing): while I'm the Captain, every online Cave holds a live loan per friend.
     try { await this.Swarm_lend_beat(w, ident) } catch (er) { console.log('⨳ lend beat threw —', er) }
     for (const p of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
@@ -6210,6 +6242,8 @@ async Swarm_share_beat(w, ident) {
         //  then the restock deepens whole previews behind it.
         await this.Ra_mag_warm(w, shelf)
         if (!hungry) await this.Ra_restock_beat(w, shelf, 2)
+        // the pool reads this friend's Lofi stream: ask for the next pages when its cursor nears the end (Pool.g)
+        if (typeof this.Ra_pooling_want_beat === 'function') { try { await this.Ra_pooling_want_beat(w, rw, shelf, String(home.sc.pub)) } catch (er) {} }
     }
     w.c.beat_split.warm = Date.now() - pmark
     // ── the FULL-LENGTH leg: the radio is playing a FRIEND's record — keep the wire ahead of
@@ -6913,6 +6947,9 @@ async Swarm_boot_seed(nav, root, container, want) {
 // Swarm_address — the session address this place currently HOLDS. Defaults to the canonical name;
 //  becomes <prepub>_N after a Steal Back.
 Swarm_address(ident) {
+    // a sibling tab's SESSION suffix wins (Swarm_station_up's cohort consult, the door yield) — runtime .c only
+    let vs = ident?.sc?.prepub ? this.top_House()?.c?.vessel_addr?.[ident.sc.prepub] : null
+    if (vs) { return vs }
     let peering = this.Swarm_peering(ident)
     return peering?.sc?.address ?? peering?.sc?.name
 
@@ -10118,7 +10155,7 @@ async Swarm_cohort_stand(ident) {
         try { bc.postMessage({ t: 'hi', vessel: vessel }) } catch (e) {}
         await new Promise((r) => setTimeout(r, 250))
     }
-    top.c.cohort = { primary: claim.primary, vessel: vessel, taken: taken, lockless: claim.lockless, at: Date.now() }
+    top.c.cohort = { primary: claim.primary, prepub: prepub, vessel: vessel, taken: taken, lockless: claim.lockless, at: Date.now() }
     delete top.c.cohort_standing
     if (!claim.primary) { console.log('👥 cohort: another body of ' + prepub.slice(0, 8) + ' holds the bare name in this profile — this tab will stand at a suffix') }
     // Retire the token into the durable Vessel census (Division_todo §ATOMS): the BroadcastChannel
