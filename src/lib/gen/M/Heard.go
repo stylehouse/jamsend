@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heard(): string { return 'a3576d412519f650~g1' },
+    Ghostmeta_Ghost_M_Heard(): string { return 'e6181e4ee82449a2~g1' },
 
 // Heard.g — THE HEARD MAG: what I heard, of whom, and what I took (Radio_circuit_todo.md).
 //  One Mag under my own identity — `%Mag:heard,pub:<me>` — holding one `%Card,id,pub` per track the
@@ -576,6 +576,9 @@ Heard_nay(w, me, rec, by) {
     if (!w || !me || !rec || !rec.sc.id) { return 0 }
     let card = this.Heard_card(w, me, this.Heard_take_id(rec), this.Heard_take_pub(rec, by))
     if (!card) { return 0 }
+    // a Nay NAMES its track like a take does (2026-11-12, the Yay cell listing Nays as bare ids)
+    if (rec.sc.title && !card.sc.title) { card.sc.title = this.Radio_clean(rec.sc.title) }
+    if (rec.sc.artist && !card.sc.artist) { card.sc.artist = this.Radio_clean(rec.sc.artist) }
     card.sc.nayed_at = this.Heard_react_at(w, card, ['hearted_at', 'mehed_at'])
     card.bump()
     this.Heard_settle(w, me, 'heard_nay')
@@ -590,6 +593,8 @@ Heard_meh(w, me, rec, by) {
     //  read the same two flags — under stamps-not-flags they just never go away either, so the check is
     //   the same presence test it always was).
     if (!card || card.sc.hearted_at || card.sc.nayed_at) { return 0 }
+    if (rec.sc.title && !card.sc.title) { card.sc.title = this.Radio_clean(rec.sc.title) }
+    if (rec.sc.artist && !card.sc.artist) { card.sc.artist = this.Radio_clean(rec.sc.artist) }
     card.sc.mehed_at = this.Heard_react_at(w, card, ['hearted_at', 'nayed_at'])
     card.bump()
     this.Heard_settle(w, me, 'heard_meh')

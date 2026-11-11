@@ -134,6 +134,16 @@
     // more than one place to listen from ⇒ the press is a chooser; else it stays the old flip.
     let chooser = $derived(sources.length + (pool_ok ? 1 : 0) > 1)
     const chip_press = () => { if (chooser) { menu = !menu } else { try { (H as any)?.Radio_source_next?.(n) } catch {} } }
+    // THE DIG CHIP WAITS 2s (owner 2026-11-12: *"every time I hit next-track, the 'looking for a friend to play...' briefly
+    //  spuriously appears"*) — a Next passes through 'digging' for the moment it takes to dial; only a dig that LASTS is news.
+    //   A plain variable (not state): the 1s `tick` re-derives it.
+    let dig_since = 0
+    let dig_long = $derived.by(() => {
+        void tick
+        if (face.state !== 'digging') { dig_since = 0; return false }
+        if (!dig_since) dig_since = Date.now()
+        return Date.now() - dig_since >= 2000
+    })
     let face = $derived.by(() => {
         void H?.version
         void tick
@@ -408,7 +418,7 @@
                      diagnostics still read it); only the chip left.
             {#if face.drops > 0}<span class="rf-chip">{face.drops} drops</span>{/if}
             -->
-        {:else if face.state === 'digging' && !face.note}
+        {:else if face.state === 'digging' && !face.note && dig_long}
             <span class="rf-chip">{face.own ? 'digging your crates…' : 'looking for a friend to play…'}</span>
         {:else if face.first}
             <!-- OWN-RADIO FIRST (the owner 2026-08-28: "should just get on with your own Radio ASAP") —

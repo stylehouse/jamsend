@@ -379,6 +379,23 @@ So a deliberate refactor costs one acknowledgement, not a re-recorded fleet; and
   intended one. `surprise` (§4.3) becomes *surprise net of the conserved delta* —
    the sharp failure signal survives the refactor instead of being swamped by it.
 
+### 4.5 Seeing `self,round` — the wobble behind most caveats (parked 2026-11-12)
+
+`self,round` (an A's and a w's per-tick counter) is forgiven by a built-in spayer
+ (StoryFu.g ~1075: `spay: { re: '\bround(?:=\d+)?\b', tol: 'any' }`), and `tol:any`
+  always leaves a **caveat** — only `tol:same` is muted (EntropyArrest §11).  So a
+   live runner's ±1 tick per step shows as `caveat N` on SwarmGot (steps 5–9),
+    SwarmDoor, SwarmWire and others, and the sweep line can't say why.  Found when
+     SwarmGot's fixture moved 5→4 / 15→12 rounds since 2026-09 and wobbled 12↔13
+      between two green runs of one build.  Owner: don't mute it fleet-wide — that's
+       a sidetrack; *see* it fully later.  Candidates:
+- **Say what was forgiven.** `runner_sweep` prints `caveat 5 (round ×5)` — the
+   forgive already knows which spayer each step used.
+- **Read the wobble as signal.** Rounds-per-step is how many ticks a step took to
+   quiesce; a trend (TimeSpool §4.3) or a jump (a fixture that drifts by a third, as
+    SwarmGot's did) says the wire got cheaper or dearer.  Nobody has traced SwarmGot's
+     drift; the invite-state half of that re-record was `fdd64a9f6`'s settle.
+
 ---
 
 ## 5. Ghosts — `gone` rows from `Snap:cont`

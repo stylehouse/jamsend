@@ -779,12 +779,11 @@ Ra_pool_file_why(rw, rec):
     let top = this.top_House ? this.top_House() : null
     if (!top || !top.c || !top.c.humdinger) { return 'no preview' }        // a Book plays chunks
     if (rec && rec.c && rec.c.file_dead) { return 'would not decode' }
-    if (!top.c.file_road) { return 'file road off' }
     return 'cannot decode here'
 Ra_pool_file_plays(rw, rec):
     if (!rec || !rec.sc || !rec.sc.path || rec.c.file_dead) { return 0 }
     let top = this.top_House ? this.top_House() : null
-    if (!top || !top.c || !top.c.humdinger || !top.c.file_road) { return 0 }   // opt-in while the file road is proven (Radio_file_road)
+    if (!top || !top.c || !top.c.humdinger) { return 0 }   // live pages only; the pool's lofi road is never opt-in (Radio_file_road)
     if (typeof OfflineAudioContext === 'undefined') { return 0 }
     let files = (rw && rw.c) ? rw.c.pool_files : null
     if (files && !files.includes(String(rec.sc.path))) { return 0 }

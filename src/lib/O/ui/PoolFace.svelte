@@ -27,7 +27,11 @@
 
     let consent = $state(false)
     let budget = $state(0)
-    let who = $state('crew')
+    // FRIENDS AND CREW BY DEFAULT (owner 2026-11-12: *"almost nobody is going to get Link Devices on before wandering in to
+    //  Pooling"*) — crew alone pooled nothing for a newcomer, who has no other device yet.
+    let who = $state('all')
+    // a tick moved BEFORE the first yes is the human's — the defaults below stop re-asserting themselves over it
+    let pre_touched = false
     let recent = $state(true)
     // ── AND [x] WHAT YOU YAY, FOR A MONTH (owner 2026-11-11: *"half-liked and half-random … keep tracks they liked
     //  in there for a month or something … have that switched on"*) — Ra_pool_liked_set: half the budget, a 30-day
@@ -54,11 +58,17 @@
         try {
             consent = !!H.Ra_pool_consent?.(w)
             budget = +(H.Ra_pool_budget?.(w) || 0)
-            who = String(H.Ra_pool_who?.(w) || 'crew')
-            // before the first yes there is no compartment to read, so the checkbox shows the DEFAULT it
-            //  will act on; afterwards it shows what actually stands.
-            recent = consent ? !!H.Ra_pool_recent_on?.(w) : true
-            liked = consent ? !!H.Ra_pool_liked_on?.(w) : true
+            // before the first yes there is no compartment to read, so the checkboxes show the DEFAULTS they
+            //  will act on (or what the human ticked meanwhile); afterwards they show what actually stands.
+            if (consent) {
+                who = String(H.Ra_pool_who?.(w) || 'all')
+                recent = !!H.Ra_pool_recent_on?.(w)
+                liked = !!H.Ra_pool_liked_on?.(w)
+            } else if (!pre_touched) {
+                who = 'all'
+                recent = true
+                liked = true
+            }
             const pub = H.Radio_pub?.(w) || 'me'
             const shelf = H.Ra_pool_stock?.(w, pub) ?? null   // probed, never minted
             const recs = shelf && H.Ra_recs ? (H.Ra_recs(shelf) as any[]) : []
@@ -142,16 +152,19 @@
         const w = world(); if (!w) return
         const next = f && c ? 'all' : f ? 'friends' : c ? 'crew' : 'none'
         who = next
+        if (!consent) pre_touched = true
         try { if (consent) { H.Ra_pool_start?.(w, budget, Math.floor(Date.now() / 1000), next); bump() } } catch {}
     }
     function set_recent(on: boolean) {
         const w = world(); if (!w) return
         recent = on
+        if (!consent) pre_touched = true
         try { if (consent) { H.Ra_pool_recent_set?.(w, on ? 1 : 0); bump() } } catch {}
     }
     function set_liked(on: boolean) {
         const w = world(); if (!w) return
         liked = on
+        if (!consent) pre_touched = true
         try { if (consent) { H.Ra_pool_liked_set?.(w, on ? 1 : 0); bump() } } catch {}
     }
     const num = (e: Event) => +((e.currentTarget as HTMLInputElement).value)
@@ -161,20 +174,23 @@
     <div class="pf pf-bud" class:on={consent} title={consent ? budget + ' MB rolling · ' + pooled + ' pooled' : 'SoundPool — off'}>🏊</div>
 {:else}
     <div class="pf pf-big">
+        <!-- FOUR SET LINES, then the sources (owner 2026-11-12: it broke wherever the width fell, and the first line ran big) -->
         <p class="pf-sentence">
-            <b>SoundPooling</b>
+            <span class="pf-line"><b>SoundPooling</b>
             <input class="pf-on" type="checkbox" checked={consent} onchange={(e) => set_on((e.currentTarget as HTMLInputElement).checked)}
                 title={consent ? 'on — untick to stop and delete everything pooled (the space comes back)' : 'off — tick to start keeping music in this browser'} />
-            keeps rolling
-            <span class="pf-nb"><b class="pf-cur" title={cur_est ? 'roughly — some tracks have no size recorded' : 'pooled now'}>{consent ? (cur_est ? '~' : '') + cur_mb : 0}</b> /
+            keeps rolling</span>
+            <span class="pf-line"><span class="pf-nb"><b class="pf-cur" title={cur_est ? 'roughly — some tracks have no size recorded' : 'pooled now'}>{consent ? (cur_est ? '~' : '') + cur_mb : 0}</b> /
             <input class="pf-mb" type="number" min="1" step="100" value={draft} onchange={(e) => set_mb(num(e))} title="megabytes of music to keep at most" /></span>
-            <span class="pf-nb">MB of music</span> in browser storage{#if free_gb != null} <span class="pf-dim pf-nb">({free_gb} GB free{#if persisted === true} · persistent{:else if persisted === false} · <span title="the browser may clear this site's storage under pressure — everything at once, the pool and your identity with it">evictable</span>{/if})</span>{/if}, sourced from
+            <span class="pf-nb">MB of music</span></span>
+            <span class="pf-line">in browser storage{#if free_gb != null} <span class="pf-dim pf-nb">({free_gb} GB free{#if persisted === true} · persistent{:else if persisted === false} · <span title="the browser may clear this site's storage under pressure — everything at once, the pool and your identity with it">evictable</span>{/if})</span>{/if}</span>
+            <span class="pf-line">sourced from
             <label class="pf-ck"><input type="checkbox" checked={friends} onchange={(e) => set_who((e.currentTarget as HTMLInputElement).checked, crew)} /> friends <span class="pf-dim">(less predictable)</span></label>
             <label class="pf-ck"><input type="checkbox" checked={crew} onchange={(e) => set_who(friends, (e.currentTarget as HTMLInputElement).checked)} /> crew <span class="pf-dim">(your devices, see <button class="pf-link" onclick={() => page_nav(H, 'focus', 'Door')} title="opens the Door — your crew and friends">Door</button>)</span></label>
             and
             <label class="pf-ck"><input type="checkbox" checked={recent} onchange={(e) => set_recent((e.currentTarget as HTMLInputElement).checked)} /> recent acquisitions <span class="pf-dim">(what you just downloaded)</span></label>,
             keeping
-            <label class="pf-ck" title="half the budget holds tracks you Yay'd in the last month (a Nay lets one go); until there are enough, that room goes to the random wander"><input type="checkbox" checked={liked} onchange={(e) => set_liked((e.currentTarget as HTMLInputElement).checked)} /> what you Yay <span class="pf-dim">(for a month)</span></label>
+            <label class="pf-ck" title="half the budget holds tracks you Yay'd in the last month (a Nay lets one go); until there are enough, that room goes to the random wander"><input type="checkbox" checked={liked} onchange={(e) => set_liked((e.currentTarget as HTMLInputElement).checked)} /> what you Yay <span class="pf-dim">(for a month)</span></label></span>
         </p>
         <p class="pf-live pf-dim">
             {#if consent}<span class="pf-nb">{pooled} track(s)</span>{#if last_in} · last in: <span class="pf-track" title={last_in}>{last_in}</span>{/if}{:else}<span class="pf-nb">off — nothing kept in this browser</span>{/if}
@@ -201,7 +217,8 @@
     .pf-dim { opacity: .6; font-size: .85em; }
     .pf-mb { width: 4.5em; box-sizing: border-box; background: rgba(0, 0, 0, .35); color: inherit; border: 1px solid rgba(244, 230, 200, .35); border-radius: 6px; padding: .1rem .3rem; font: inherit; font-weight: 700; text-align: right; vertical-align: baseline; }
     .pf-ck { white-space: nowrap; cursor: pointer; }
-    .pf-on { width: 1.1em; height: 1.1em; vertical-align: -2px; margin: 0 .25em; cursor: pointer; }
+    .pf-line { display: block; }
+    .pf-on { width: .9em; height: .9em; vertical-align: -1px; margin: 0 .25em; cursor: pointer; }
     .pf-cur { font-weight: 700; }
     /* a track's own words stay in their box — a long or wild title must not run into the sentence around it */
     .pf-track { display: inline-block; max-width: 22em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom;

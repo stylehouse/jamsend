@@ -496,9 +496,56 @@ Page_yays(w):
         let later = react === 'take' ? this.Heard_later(c) : 0
         // its Heist, when one stands here — the row links through to it (YayFace → page_nav focus_keep)
         let keep = react === 'take' && shop ? shop.o({ Heist: 1, seed: String(c.sc.id) })[0] || null : null
-        out.push({ card: c, id: String(c.sc.id), title: String(c.sc.title || c.sc.id), artist: String(c.sc.artist || ''), react, fate: this.Page_yay_fate(c, react, shop, myname, later), later, at, keep })
+        // a card that never got a name (a Nay before 2026-11-12 stamped none) is looked up by id — a read, never written back
+        let nm = c.sc.title ? null : this.Page_yay_name(w, String(c.sc.id))
+        let title = String(c.sc.title || (nm && nm.title) || c.sc.id)
+        let artist = String(c.sc.artist || (nm && nm.artist) || '')
+        out.push({ card: c, id: String(c.sc.id), title, artist, react, fate: this.Page_yay_fate(c, react, shop, myname, later), later, at, keep })
     }
     out.sort((a, b) => b.at - a.at)
+    return out
+
+// Page_yay_name — a nameless card's title and artist, found by id in the friends' mirrors or the pool (by id or the pool copy's
+//  `of`).  Cached per id on the world (.c) — a found name never changes, and a miss is retried no more than once a minute.
+Page_yay_name(w, id):
+    let cache = (w.c.yay_names = w.c.yay_names || {})
+    let hit = cache[id]
+    if (hit && (hit.title || Date.now() - hit.at < 60000)) return hit.title ? hit : null
+    let found = null
+    for (const them of w.o({ Theirs: 1 })) {
+        let stock = them.o({ stock: 1 })[0]   // probe-first: a read never mints a shelf
+        let r = (stock && this.Ra_rec_find) ? this.Ra_rec_find(stock, { Record: 1, id: id }) : null
+        if (r && r.sc.title) { found = r; break }
+    }
+    if (!found && this.Ra_pool_stock && this.Radio_pub) {
+        let shelf = this.Ra_pool_stock(w, this.Radio_pub(w) || 'me')
+        if (shelf) {
+            found = this.Ra_recs(shelf).find((r) => (String(r.sc.id) === id || String(r.sc.of || '') === id) && r.sc.title) || null
+        }
+    }
+    cache[id] = found ? { title: String(found.sc.title), artist: String(found.sc.artist || ''), at: Date.now() } : { at: Date.now() }
+    return found ? cache[id] : null
+
+// Page_yay_heists — EVERY Heist standing in my shop, for the top of the Yay cell (owner 2026-11-12: *"if there's a Heist running or
+//  to-be, it should be indicated in Yay atop the scroll"*) — a ♥'s, a ⇊'s or a ⏎'s alike; the pool's own fills are left out (they are
+//   one-track transients the Pooling cell already counts).  Rows: { keep, title, from, line }.
+Page_yay_heists(w):
+    let me = this.Radio_pub ? this.Radio_pub(w) : null
+    if (!me) return []
+    let home = w.o({ Mine: 1, pub: String(me) })[0]
+    let shop = home ? home.o({ shop: 1, pub: String(me) })[0] : null
+    if (!shop) return []
+    let out = []
+    for (const k of shop.o({ Heist: 1 })) {
+        if (k.sc.into === 'pool') continue
+        let ks = String(k.sc.state || 'primed')
+        let tot = +(k.sc.total_n || 0)
+        let line = ks === 'pulling' && tot ? (+(k.sc.landed_n || 0)) + ' of ' + tot + ' tracks'
+            : ks === 'done' ? 'done'
+            : ks === 'primed' ? (k.sc.ask ? 'waiting for you to start it' : 'getting ready')
+            : ks
+        out.push({ keep: k, title: String(k.sc.Heist || k.sc.seed), from: String(k.sc.from_name || ''), line })
+    }
     return out
 
 // what became of one — the first true sentence, in the order a reader would ask

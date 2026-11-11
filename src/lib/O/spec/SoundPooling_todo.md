@@ -131,8 +131,10 @@
     decoded whole into `rec.c.pcm` (the PCM registry, so the belt frees it), gained to the previews' loudness, and laid on the
      timeline in 2s slices by `Radio_file_tick`. `Radio_open` takes it when the PCM stands (the prime decodes the next track
       ahead) or when there are no chunks to play. A pooled track opens at 0:00; an own track lands where the chunk road's needle
-       would. No wire supply for a file-road track. **Opt-in** (`top.c.file_road`, poke `Radio_file_road_toggle`; a reload turns
-        it off): its first live run leaked eed to 6GB — every skipped-to pool track kicked a decode, none landed (the loudness
+       would. No wire supply for a file-road track. **A pooled lofi ALWAYS plays this way (2026-11-12)** — it has no Preview chunks,
+        so the toggle had muted the pool after every reload (owner: *"what the hell is that? wasn't part of my beautiful 2-Mag
+         vision"*); only the 'own' road (my originals from file) stays **opt-in** (`top.c.file_road`, poke `Radio_file_road_toggle`).
+        Why it had been opt-in: its first live run leaked eed to 6GB — every skipped-to pool track kicked a decode, none landed (the loudness
          meter `Ra_lufs` waits on a worker; it now times out in 15s), each held its whole decode. Now one decode at a time, abandoned
           at 25s, a stage on every line (`📻 file road: … decoded in Nms`, `… stuck at <stage>`), let go when the listener leaves the
            track, no copy of the decode, an RMS gain instead of a second render. Re-run 17:07: a pool track decoded in 2.8s.
@@ -317,6 +319,14 @@
    lofi re-encodes to radiostock under MY pub and friends' tracks went back out as mine).
 - **2026-10-17** — the pocket: no relay or no FSA ⇒ the pool is the music.
 - **2026-11-10** — §0.a: found via %Preview, kept as %Lofi; the radio should play files.
+
+**SP leaked onto the collection disk — FIXED 2026-11-12** (owner: *"why did this end up there!? that's SP ending up on disk
+ right?"*).  `Heist_keep_persist` never saved `into:pool`, so a pool fill alive at eed's ~00:02 reload rehydrated as a plain lofi
+  heist (`defaulted`), default-picked its whole folder (101 tracks of Savall's *2013 Erasmus van Rotterdam*, 67 already counted
+   landed) and landed the other 38 into the collection at `hinoteku2/…` (= /app, eed's folder) before finishing and dropping itself
+    (the Haul row stands, 38 tracks).  Now a pool keep is never persisted (any old entry is removed) and the rehydrate skips
+     `into:pool` — the steward re-books what the pool still wants.  `take` (a ♥ keep) now rides the Berth too.  The 38 files are
+      the owner's to delete (the Haul row's delete, or by hand).
 
 ## 0.d Owed
 

@@ -10,7 +10,7 @@ import { APP_DATA_DIR } from "$lib/app_data_dir"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '4056fd6f9eaa783d~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return 'a5feeab8cafa515d~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -821,7 +821,11 @@ Radio_played_out(radio) {
 Radio_peek_next(radio) {
     let w = radio.c.w
     let heard = this.Radio_heard(radio)
-    let lu = w.o({ Mag: 'Lineup' })[0]
+    // ON THE POOL THE LINEUP IS NOT ASKED (2026-11-12, eed: every prime was for 8675bb05, an unheard Lineup card — the same
+    //  disease the 2026-09-12 pool branch below was written for, still caught by this rung above it).  Radio_dial's pool rung
+    //   never takes a Lineup card, so peeking one only primes a track that never plays, and every Next decoded cold.
+    let pool = radio.sc.source === 'pool'
+    let lu = pool ? null : w.o({ Mag: 'Lineup' })[0]
     if (lu) {
         for (const card of lu.o({ Card: 1 })) {
             let rec = card.c.rec
@@ -835,7 +839,7 @@ Radio_peek_next(radio) {
     if (st) {
         for (const oc of st.o({ Card: 1 })) {
             let orec = oc.c.rec
-            if (orec && (oc.sc.own ? 1 : 0) === own && !heard[String(orec.sc.id)] && (this.Radio_playable(orec) || this.Radio_file_road(radio, orec))) return orec
+            if (orec && (oc.sc.own ? 1 : 0) === own && !heard[String(orec.sc.id)] && (!pool || this.Radio_rec_pooled(radio, orec)) && (this.Radio_playable(orec) || this.Radio_file_road(radio, orec))) return orec
             st.drop(oc)
             st.bump()
         }
@@ -5229,10 +5233,15 @@ Radio_spill(radio) {
 Radio_file_road(radio, rec) {
     if (!rec || !rec.sc || !rec.sc.id || rec.c.file_dead) return ''
     let top = this.top_House()
-    // OPT-IN (2026-11-11): its first live run leaked eed to 6GB — `H.top_House().c.file_road = 1` to try it
-    if (!top.c.humdinger || !top.c.file_road) return ''
+    if (!top.c.humdinger) return ''
     if (typeof OfflineAudioContext === 'undefined') return ''
+    // THE POOL'S LOFI ALWAYS PLAYS THIS WAY (owner 2026-11-12, finding the pool silent after a reload: *"switch the file_road on?
+    //  what the hell is that? wasn't part of my beautiful 2-Mag vision"*).  A pooled lofi has no Preview chunks — that is the
+    //   Pooling Mag's whole shape — so its file is the only road it has, and an opt-in that a reload clears made the pool mute.
+    //    The 6GB leak that made it opt-in is fixed (one decode at a time, abandoned at 25s, let go on leaving the track).
     if (this.Radio_pool_file(radio, rec)) return 'lofi'
+    // …my OWN originals from file stay OPT-IN (`top.c.file_road`, poke Radio_file_road_toggle): the chunk road plays them already
+    if (!top.c.file_road) return ''
     let w = radio.c.w
     let me = this.Radio_pub(w) || ''
     if (!rec.c.from && me && this.Ra_pub_of(rec) === me && !this.Radio_rec_pooled(radio, rec)) return 'own'

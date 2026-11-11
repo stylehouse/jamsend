@@ -17,7 +17,7 @@
     let view = $derived.by(() => {
         void H?.version
         void tick
-        const empty = { rows: [] as any[], later: [] as any[], auto: true, ask: true, folder: false, devices: 0 }
+        const empty = { rows: [] as any[], later: [] as any[], heists: [] as any[], auto: true, ask: true, folder: false, devices: 0 }
         try {
             const w = W()
             if (!w) return empty
@@ -26,6 +26,7 @@
             return {
                 rows,
                 later: rows.filter(r => r.later),
+                heists: (A?.Page_yay_heists?.(w) ?? []) as any[],
                 auto: !!A?.Heard_autoheist?.(),
                 ask: !!A?.Heist_take_asks?.(),
                 folder: !!A?.Crate_nav?.(),
@@ -36,6 +37,11 @@
     let big = $derived(n?.c?.pose === 'big' || n?.c?.pose === 'main')
     let yays = $derived(view.rows.filter(r => r.react === 'take').length)
     let nays = $derived(view.rows.length - yays)
+    // THE NAYS FOLD (owner 2026-11-12: *"Cell:Yay is getting a huge list of Nay I made"*) — a Nay is a done thing; the hearts are
+    //  the list, the nays one line you can open
+    let show_nays = $state(false)
+    let yay_rows = $derived(view.rows.filter(r => r.react !== 'nay'))
+    let nay_rows = $derived(view.rows.filter(r => r.react === 'nay'))
 
     function set(patch: Record<string, string>) {
         try { A?.Heist_defaults_set?.(patch) } catch {}
@@ -82,6 +88,18 @@
             </div>
         {/if}
 
+        {#if view.heists.length}
+            <!-- EVERY HEIST RUNNING OR TO BE, ATOP (owner 2026-11-12) — a ♥'s, a ⇊'s or a ⏎'s; each opens its Heist -->
+            <div class="yf-sec">heisting</div>
+            {#each view.heists as h (h.keep?.sc?.seed ?? h.title)}
+                <div class="yf-row">
+                    <span class="yf-r">⇊</span>
+                    <span class="yf-t">{h.title}{#if h.from} <span class="yf-a">— from {h.from}</span>{/if}
+                        <button class="yf-fate yf-link" onclick={() => open(h.keep)} title="open its Heist">{h.line} →</button></span>
+                </div>
+            {/each}
+        {/if}
+
         {#if view.later.length}
             <div class="yf-sec">download later</div>
             {#each view.later as r (r.id)}
@@ -92,8 +110,8 @@
             {/each}
         {/if}
 
-        <div class="yf-sec">everything</div>
-        {#each view.rows as r (r.react + r.id)}
+        <div class="yf-sec">yays</div>
+        {#each yay_rows as r (r.react + r.id)}
             <div class="yf-row" class:nay={r.react === 'nay'}>
                 <span class="yf-r">{r.react === 'nay' ? '👎' : '♥'}</span>
                 <span class="yf-t">{r.title}{#if r.artist} <span class="yf-a">— {r.artist}</span>{/if}
@@ -106,6 +124,20 @@
         {:else}
             <div class="yf-none">nothing yet — press ♥ on something you like</div>
         {/each}
+
+        {#if nay_rows.length}
+            <button class="yf-sec yf-link" onclick={() => { show_nays = !show_nays }} title="the tracks you said no to — never drawn into the pool again">
+                {show_nays ? '▾' : '▸'} 👎 {nay_rows.length} nay{nay_rows.length === 1 ? '' : 's'}</button>
+            {#if show_nays}
+                {#each nay_rows as r (r.react + r.id)}
+                    <div class="yf-row nay">
+                        <span class="yf-r">👎</span>
+                        <span class="yf-t">{r.title}{#if r.artist} <span class="yf-a">— {r.artist}</span>{/if}
+                            <span class="yf-fate">{r.fate}{#if r.at} · {ago(at_ms(r.at))}{/if}</span></span>
+                    </div>
+                {/each}
+            {/if}
+        {/if}
     </div>
 {/if}
 

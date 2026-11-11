@@ -11,7 +11,7 @@ import { APP_DATA_DIR } from "$lib/app_data_dir"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '97c828906172ae95~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '801f25c2b9b78e5a~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -3489,8 +3489,21 @@ async Heist_keep_persist(keep) {
     let nav = this.Crate_nav ? this.Crate_nav() : null
     if (!ident || !nav) return
     let waft = await this.Berth_open(nav, '', String(ident.sc.prepub), 'Heists')
+    // A POOL FILL IS NEVER RESUMED (2026-11-12, `hinoteku2/` turning up in eed's collection): `into:pool` was not persisted, so a
+    //  fill alive at a reload came back as a plain lofi heist, default-picked its whole folder and landed 38 tracks of an album
+    //   into the collection.  The steward re-books whatever the pool still wants, so a fill needs no memory — drop any entry.
+    if (keep.sc.into === 'pool') {
+        if (waft.o({ HeistSeed: 1, seed: String(keep.sc.seed) })[0]) {
+            await waft.rm({ HeistSeed: 1, seed: String(keep.sc.seed) })
+            try { await this.Berth_save(nav, waft) } catch (er) {}
+        }
+        return
+    }
     let entry = waft.oai({ HeistSeed: 1, seed: String(keep.sc.seed) })
     entry.c.up = waft
+    // a ♥ keep says so (`take`), or its ✕ stops retiring the heart after a reload (Heist_keep_cancel)
+    if (keep.sc.take) entry.sc.take = 1
+    else if (entry.sc.take) delete entry.sc.take
     // %pub IS A PIER'S PREPUB (the human 2026-08-05, standardising the vocabulary) — the field was `at`.
     //  Written as `pub` from here on; Heist_keep_rehydrate still READS the legacy `at` so a heist already
     //   persisted on disk under the old key resumes rather than silently vanishing.
@@ -3636,6 +3649,7 @@ async Heist_keep_rehydrate(rw, me, nav, shop) {
     for (const entry of waft.o({ HeistSeed: 1 })) {
         let seedv = String(entry.sc.seed || '')
         if (!seedv || shop.o({ Heist: 1, seed: seedv })[0]) continue
+        if (entry.sc.into === 'pool') continue   // a pool fill is never resumed (Heist_keep_persist)
         // MIGRATION (2026-07-30, the JSON-blob-in-picks → real %Pick children fix): an entry saved by the
         //  old shape carries no %Pick children yet, only the legacy entry.sc.picks JSON string — read it
         //   ONCE as a fallback so an in-flight real heist doesn't just stop resuming the moment this code
@@ -3668,6 +3682,7 @@ async Heist_keep_rehydrate(rw, me, nav, shop) {
         if (entry.sc.dirs_none) keep.sc.dirs_none = entry.sc.dirs_none
         if (entry.sc.dirs_auto) keep.sc.dirs_auto = entry.sc.dirs_auto
         if (entry.sc.lofi) keep.sc.lofi = 1   // the resumed heist must ask for the SAME artifact it was asking for
+        if (entry.sc.take) keep.sc.take = 1
         keep.sc.defaulted = 1
         let landed_n = 0
         for (const pe of persisted) {

@@ -32,10 +32,11 @@ story:SwarmGot
       sample=0.007,at=1793669321
   step,dige:4cceff1eb9074df1
   step=2,dige:3eadd30391dbae7e
-  step=3,dige:6ebc5e495dd03dcc
-  step=4,dige:88e27b5511cbddff
-  step=5,dige:404aad8b3dde41ee
-  step=6,dige:173399ead6d9ecc0
-  step=7,dige:f9f8e8d627534f2e
-  step=8,dige:ce3679414492c774
-  step=9,dige:10d11d548cc79200
+    Assertion:each-side-holds-a,sentence:each side holds a shelf the other cannot count yet — five records across the two libraries
+  step=3,dige:0ffd50a27e2e8e87
+  step=4,dige:0885ca34bf6e5a8f
+  step=5,dige:1dc40c97f66c6dc2
+  step=6,dige:3dc0a47289d25703
+  step=7,dige:92bc449d904040ba
+  step=8,dige:d742df3206d9eb57
+  step=9,dige:c055390e9042b3d9
