@@ -107,6 +107,21 @@
         const id = setInterval(pull, 8000)
         return () => { gone = true; clearInterval(id) }
     })
+    // THE SPINNER (owner 2026-11-12: *"a spinner on Cell:Pooling when it intends to do, ie turn-over or fill-up"*; then *"ON the Cell only
+    //  … on the minicell … lags my computer"* — the big cell only; the bud keeps its count in the title) — the pool's own
+    //  one-track fills standing in my shop (%Heist,into:pool, not done): read sync off the tree, so the small cell shows it too
+    let busy_tick = $state(0)
+    $effect(() => { const iv = setInterval(() => { busy_tick++ }, 1500); return () => clearInterval(iv) })
+    const busy = $derived.by(() => {
+        void H?.version; void busy_tick
+        try {
+            const w = world(); const me = w && H?.Radio_pub?.(w)
+            const home = me ? w.o({ Mine: 1, pub: String(me) })[0] : null
+            const shop = home ? home.o({ shop: 1, pub: String(me) })[0] : null
+            if (!shop) return 0
+            return shop.o({ Heist: 1, into: 'pool' }).filter((k: any) => String(k.sc.state || 'primed') !== 'done').length
+        } catch { return 0 }
+    })
     const inflight = $derived.by(() => {
         const rs = report?.reaches as any[] | undefined
         if (!rs || !rs.length) return 0
@@ -171,29 +186,27 @@
 </script>
 
 {#if small}
-    <div class="pf pf-bud" class:on={consent} title={consent ? budget + ' MB rolling · ' + pooled + ' pooled' : 'SoundPool — off'}>🏊</div>
+    <div class="pf pf-bud" class:on={consent} title={consent ? budget + ' MB rolling · ' + pooled + ' pooled' + (busy ? ' · fetching ' + busy : '') : 'SoundPool — off'}>🏊</div>
 {:else}
     <div class="pf pf-big">
         <!-- FOUR SET LINES, then the sources (owner 2026-11-12: it broke wherever the width fell, and the first line ran big) -->
         <p class="pf-sentence">
-            <span class="pf-line"><b>SoundPooling</b>
+            <span class="pf-line pf-title"><b>SoundPooling</b>
             <input class="pf-on" type="checkbox" checked={consent} onchange={(e) => set_on((e.currentTarget as HTMLInputElement).checked)}
-                title={consent ? 'on — untick to stop and delete everything pooled (the space comes back)' : 'off — tick to start keeping music in this browser'} />
-            keeps rolling</span>
-            <span class="pf-line"><span class="pf-nb"><b class="pf-cur" title={cur_est ? 'roughly — some tracks have no size recorded' : 'pooled now'}>{consent ? (cur_est ? '~' : '') + cur_mb : 0}</b> /
+                title={consent ? 'on — untick to stop and delete everything pooled (the space comes back)' : 'off — tick to start keeping music in this browser'} /></span>
+            <span class="pf-line">keeps rolling <span class="pf-nb"><b class="pf-cur" title={cur_est ? 'roughly — some tracks have no size recorded' : 'pooled now'}>{consent ? (cur_est ? '~' : '') + cur_mb : 0}</b> /
             <input class="pf-mb" type="number" min="1" step="100" value={draft} onchange={(e) => set_mb(num(e))} title="megabytes of music to keep at most" /></span>
             <span class="pf-nb">MB of music</span></span>
-            <span class="pf-line">in browser storage{#if free_gb != null} <span class="pf-dim pf-nb">({free_gb} GB free{#if persisted === true} · persistent{:else if persisted === false} · <span title="the browser may clear this site's storage under pressure — everything at once, the pool and your identity with it">evictable</span>{/if})</span>{/if}</span>
+            <span class="pf-line">in browser storage{#if free_gb != null} <span class="pf-dim pf-nb">({free_gb} GB free{#if persisted === false} · <span title="the browser may clear this site's storage under pressure — everything at once, the pool and your identity with it">evictable</span>{/if})</span>{/if}</span>
             <span class="pf-line">sourced from
-            <label class="pf-ck"><input type="checkbox" checked={friends} onchange={(e) => set_who((e.currentTarget as HTMLInputElement).checked, crew)} /> friends <span class="pf-dim">(less predictable)</span></label>
-            <label class="pf-ck"><input type="checkbox" checked={crew} onchange={(e) => set_who(friends, (e.currentTarget as HTMLInputElement).checked)} /> crew <span class="pf-dim">(your devices, see <button class="pf-link" onclick={() => page_nav(H, 'focus', 'Door')} title="opens the Door — your crew and friends">Door</button>)</span></label>
-            and
-            <label class="pf-ck"><input type="checkbox" checked={recent} onchange={(e) => set_recent((e.currentTarget as HTMLInputElement).checked)} /> recent acquisitions <span class="pf-dim">(what you just downloaded)</span></label>,
-            keeping
+            <label class="pf-ck pf-src"><input type="checkbox" checked={friends} onchange={(e) => set_who((e.currentTarget as HTMLInputElement).checked, crew)} /> friends <span class="pf-dim">(less predictable)</span></label>
+            <label class="pf-ck pf-src"><input type="checkbox" checked={crew} onchange={(e) => set_who(friends, (e.currentTarget as HTMLInputElement).checked)} /> crew <span class="pf-dim">(your devices, see <button class="pf-link" onclick={() => page_nav(H, 'focus', 'Door')} title="opens the Door — your crew and friends">Door</button>)</span></label>
+            <span class="pf-src pf-nb">and <label class="pf-ck"><input type="checkbox" checked={recent} onchange={(e) => set_recent((e.currentTarget as HTMLInputElement).checked)} /> recent acquisitions <span class="pf-dim">(what you just downloaded)</span></label></span></span>
+            <span class="pf-line pf-nb">keeping
             <label class="pf-ck" title="half the budget holds tracks you Yay'd in the last month (a Nay lets one go); until there are enough, that room goes to the random wander"><input type="checkbox" checked={liked} onchange={(e) => set_liked((e.currentTarget as HTMLInputElement).checked)} /> what you Yay <span class="pf-dim">(for a month)</span></label></span>
         </p>
         <p class="pf-live pf-dim">
-            {#if consent}<span class="pf-nb">{pooled} track(s)</span>{#if last_in} · last in: <span class="pf-track" title={last_in}>{last_in}</span>{/if}{:else}<span class="pf-nb">off — nothing kept in this browser</span>{/if}
+            {#if consent}{#if busy}<span class="pf-spin pf-spin-in" aria-hidden="true"></span> <span class="pf-nb">fetching {busy}</span> · {/if}<span class="pf-nb">{pooled} track(s)</span>{#if last_in} · last in: <span class="pf-track" title={last_in}>{last_in}</span>{/if}{:else}<span class="pf-nb">off — nothing kept in this browser</span>{/if}
         </p>
         {#if report}
             <p class="pf-live pf-dim">
@@ -211,13 +224,22 @@
     .pf-big { width: auto; height: auto; max-width: min(100%, 38em); margin: 0 auto; }
     .pf-bud { align-items: center; justify-content: center; padding: 0; font-size: clamp(1.5rem, 5vw, 2.8rem); line-height: 1; }
     .pf-bud.on { filter: drop-shadow(0 0 6px rgba(120, 220, 255, 0.55)); }
+    .pf-bud { position: relative; }
+    .pf-spin { position: absolute; inset: 8%; border-radius: 50%; border: 3px solid rgba(120, 220, 255, .18); border-top-color: rgba(120, 220, 255, .9);
+        animation: pf-spin 1.1s linear infinite; pointer-events: none; }
+    .pf-spin-in { position: relative; display: inline-block; inset: auto; width: .8em; height: .8em; border-width: 2px; vertical-align: -1px; }
+    @keyframes pf-spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .pf-spin { animation-duration: 4s; } }
     .pf-sentence { margin: 0; line-height: 1.7; max-width: 100%; pointer-events: auto; }
     .pf-nb { white-space: nowrap; }
     .pf-live { margin: .3rem 0 0; font-size: .82em; }
     .pf-dim { opacity: .6; font-size: .85em; }
     .pf-mb { width: 4.5em; box-sizing: border-box; background: rgba(0, 0, 0, .35); color: inherit; border: 1px solid rgba(244, 230, 200, .35); border-radius: 6px; padding: .1rem .3rem; font: inherit; font-weight: 700; text-align: right; vertical-align: baseline; }
     .pf-ck { white-space: nowrap; cursor: pointer; }
+    /* friends and crew each on their own line (owner 2026-11-12) */
+    .pf-src { display: block; padding-left: 1em; }
     .pf-line { display: block; }
+    .pf-title { font-size: 1.15em; }
     .pf-on { width: .9em; height: .9em; vertical-align: -1px; margin: 0 .25em; cursor: pointer; }
     .pf-cur { font-weight: 700; }
     /* a track's own words stay in their box — a long or wild title must not run into the sentence around it */

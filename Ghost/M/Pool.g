@@ -1612,6 +1612,11 @@ Ra_pool_fill_book(w, ident, origId, to):
         return null
     }
     let reach = this.Swarm_reach_book(w, ident, { to: target, of: String(origId), for: 'serve' })
+    // A FILL GIVES UP (2026-11-12, a new listener: "reach cap reached (32) — booking refused" all down the console): a circulation
+    //  booking used to stand forever, so every want a slow or silent holder never served kept its slot.  3 min unserved ⇒ dead
+    //   ('nobody-answered', Swarm_reach_settle); the receipt then keeps that track from being re-asked until it ages out.
+    //    Only once it is under way does the holder's own serve take over (a 'serving' reach is past the deadline's reach).
+    if (reach && !reach.c.deadline && String(reach.sc.state || '') === 'booked') { reach.c.deadline = Date.now() + 180000 }
     if (reach) { this.Swarm_reach_dispatch(w, ident, reach) }
     return reach
 // Ra_pool_fill_wants — THE BRIDGE from the steward's wants to standing bookings: every 'pull' want that
@@ -1646,6 +1651,14 @@ Ra_pool_fill_wants(w, ident):
     let hmag = this.Heard_mag_find ? this.Heard_mag_find(w, String(ident.sc.prepub || '')) : null
     let hnow = this.Heard_now ? this.Heard_now(w) : 0
     let hbadTtl = (+((hmag && hmag.sc.heard_ttl) || 30)) * 86400
+    // …AND ONLY SO MANY STANDING (2026-11-12): the budget bounds NEW bookings per pass, but the goal draw rolls, so yesterday's wants
+    //  stood while each pass booked three more — the shelf climbed to the cap (32) and refused everything, crew and ceremony included.
+    let peer0 = this.Swarm_peering ? this.Swarm_peering(ident) : null
+    let live0r = peer0 ? peer0.o({ Reach: 1, for: 'serve' }).filter((r) => { let st = String(r.sc.state || ''); return st !== 'dead' && st !== 'refused' && st !== 'arrived' }) : []
+    // a booking rehydrated after a reload carries no deadline (.c is volatile) — arm it, or the old shelf stands forever
+    for (const r of live0r) { if (!r.c.deadline && String(r.sc.state || '') !== 'serving') { r.c.deadline = Date.now() + 180000 } }
+    let live0 = live0r.length
+    let standMax = (w && w.c && w.c.pool_fill_standing != null) ? +w.c.pool_fill_standing : 8
     for (const want of out.o({ Want: 1, do: 'pull' })) {
         if (fresh >= budget) { break }
         let from = String(want.sc.from || '')
@@ -1675,6 +1688,7 @@ Ra_pool_fill_wants(w, ident):
         //   re-calling Ra_pool_fill_book on the same permanently-refused track every steward pass forever.
         //    Skip it outright; the goal draw naming it again next sit-down is a separate, honest question.
         if (this.Swarm_reach_terminal && this.Swarm_reach_terminal(ident, from, of, 'serve')) { continue }
+        if (live0 + fresh >= standMax) { continue }
         if (this.Ra_pool_fill_book(w, ident, of, from)) { n = n + 1; fresh = fresh + 1 }
     }
     if (w && w.c) { w.c.pool_fill_fresh = fresh }

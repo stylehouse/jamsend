@@ -742,7 +742,7 @@
                 oninput={(e) => { catGaps[0] = (e.currentTarget as HTMLInputElement).value }}
                 onblur={commitCat}
                 onkeydown={(e) => { if (e.key === 'Enter') catInsertAt(0) }} />
-            {#each face.catSegs as seg, i}
+            {#each face.catSegs as seg, i (i + ':' + seg)}
                 <span class="kf-chip cat">{seg}<DeleteX ondelete={() => catRemoveAt(i)} title="remove this section level" /></span>
                 <input class="kf-gap" placeholder="+" value={catGaps[i + 1]}
                     oninput={(e) => { catGaps[i + 1] = (e.currentTarget as HTMLInputElement).value }}
@@ -773,7 +773,7 @@
                 oninput={(e) => { dirsGaps[0] = (e.currentTarget as HTMLInputElement).value }}
                 onblur={commitDirs}
                 onkeydown={(e) => { if (e.key === 'Enter') dirsInsertAt(0) }} />
-            {#each dirsSegsFrozen as seg, i}
+            {#each dirsSegsFrozen as seg, i (i + ':' + seg)}
                 <!-- the chunk itself is EDITABLE (the human 2026-08-05) — a directory level is usually
                      nearly right, so retyping it whole through remove+insert was the wrong gesture.  It
                      edits the frozen draft; ENTER or leaving the box commits the row. -->

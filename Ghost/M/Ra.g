@@ -1268,7 +1268,7 @@ Ra_rec_find(shelf, q):
 //    original's (2026-11-11, 7 of eed's 24 pool cards).  So: `of` or `lofi`, else climb to a %SoundPooling home.
 Ra_rec_pooled(rec):
     if (!rec || !rec.sc) return false
-    if (rec.sc.of || rec.sc.lofi) return true
+    if (rec.sc.of || rec.sc.lofi || rec.sc.came_from) return true
     if (rec.c && rec.c.pooled) return true          // Radio_open found it on the pool shelf (the climb needs every c.up)
     let n = rec.c ? rec.c.up : null
     let guard = 0
@@ -1276,6 +1276,14 @@ Ra_rec_pooled(rec):
         if (n.sc && n.sc.SoundPooling) return true
         n = n.c ? n.c.up : null
         guard = guard + 1
+    }
+    // …or simply standing on the live page's pool shelf (2026-11-12, eed: a whole-kept "Bury My Body" — no of, no lofi, its c.up
+    //  climb short — took a ♥ under MY pub, and the haul skipped it as my own music)
+    let M = this.top_House ? this.top_House() : null
+    let rw = M && M.c ? M.c.radio_w : null
+    if (rw && rec.sc.id && this.Ra_pool_stock && this.Radio_pub) {
+        let shelf = this.Ra_pool_stock(rw, this.Radio_pub(rw) || 'me')
+        if (shelf && this.Ra_rec_find(shelf, { Record: 1, id: String(rec.sc.id) }) === rec) return true
     }
     return false
 Ra_pub_of(rec):
@@ -2793,6 +2801,7 @@ Ra_pcm_drop(rec, why):
     rec.c.ra = null
     rec.c.pcm = null
     rec.c.pcm_partial = 0
+    rec.c.pcm_head = null
     this.Radio_trace(null, { ev: 'pcm-free', id: String(rec.sc.id || '').slice(0, 8), mb: mb, why: why })
     return mb
 

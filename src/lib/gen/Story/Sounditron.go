@@ -11,7 +11,7 @@ import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return '0de272b54e59b42d~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return '217bb0c1b820784d~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -679,6 +679,15 @@ Sounditron_commission(w) { const H = this;
             let pH = this.top_House ? this.top_House() : null
             if (pH && pH.c.humdinger && spiers.length >= 1) organs.push(pooling)
         }
+        // THE YAY CELL ON / TOO (owner 2026-11-12: *"there's a minicell:Hauls which I don't think we want anymore, we can get to that
+        //  cell via Yay which tracks all attraction"*) — every heart, nay and Heist (YayFace, Page_yays).  LIVE TABS ONLY (humdinger), the
+        //   Pooling cut's gate, so every Sounditron fixture stays byte-identical.  It replaces the Hauls bud below.
+        let yH = this.top_House ? this.top_House() : null
+        if (krw && krw.oai && yH && yH.c.humdinger) {
+            let yay = krw.oai({ Yay: 1, face: 'Yay', dontSnap: 1 })
+            if (yay.c.up !== krw) yay.c.up = krw
+            organs.push(yay)
+        }
     }
     // the DIAGNOSTICS toggle cell (always present) + the three it gates (Beat · Uptime · Door), grappled ONLY
     //  when the user has opened diagnostics (w.c.show_diag) — the human 2026-07-28 "three diagnostic-flavoured
@@ -913,9 +922,11 @@ Sounditron_commission(w) { const H = this;
         //  Deliberately a rule about the SURFACE, not about the heists: no bag at all (nothing has ever
         //   landed and the slow beat has not minted it) ⇒ every keep buds exactly as before, so there is no
         //    state in which a running heist has no way in.  That is the invariant, and it is the only `if`.
-        let hbag_bud = hbag && (hbag_fresh || anyKeep) && hbag !== fmain
+        // …the Yay cell speaks for every Heist where it stands (live tabs), so Hauls stops budding there
+        let yay_org = organs.find((o) => Object.keys(o.sc)[0] === 'Yay') || null
+        let hbag_bud = hbag && !yay_org && (hbag_fresh || anyKeep) && hbag !== fmain
         if (hbag_bud) buds.push(hbag)
-        if (anyKeep && !hbag) for (const keep of keeps) if (keep !== fmain) buds.push(keep)
+        if (anyKeep && !hbag && !yay_org) for (const keep of keeps) if (keep !== fmain) buds.push(keep)
         // the sanity cell keeps its quiet-when-healthy law: amiss ⇒ it buds onto the belly
         // the sanity cell buds only under `show_diag` now (see the cut at its mint) — its quiet-when-healthy
         //  law survives as "quiet always, unless you asked for the machinery".
@@ -940,6 +951,7 @@ Sounditron_commission(w) { const H = this;
         // Wikipedia buds too — same trap as Pooling: minted + in `organs`, but this cut is an allowlist,
         //  and a live page only ever shows what it carries.  Press ⇒ it takes the belly like any bud.
         for (const org of organs) if (Object.keys(org.sc)[0] === 'Wikipedia' && org !== fmain) buds.push(org)
+        if (yay_org && yay_org !== fmain) buds.push(yay_org)
         if (fmain && fmain.c.press) delete fmain.c.press
         for (const bud of buds) {
             // handed the SOURCE particle, so the handler reads its own identity — no closure over

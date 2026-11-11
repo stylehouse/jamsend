@@ -328,6 +328,15 @@
      `into:pool` — the steward re-books what the pool still wants.  `take` (a ♥ keep) now rides the Berth too.  The 38 files are
       the owner's to delete (the Haul row's delete, or by hand).
 
+**A POOL COPY REMEMBERS WHERE IT CAME FROM — 2026-11-12** (owner: *"we should remember where the SP came from… I've got Yays just sitting
+ there that are due a Heist"*).  eed's ♥s on pooled tracks logged `queued to haul from undefine` and sat forever: the pool copy carried no
+  holder on purpose, so Heard_takes could only ask *whoever lists it now*, and a wander track had already rolled off the holder's pages.
+   Now the landing stamps `came_from` (the job's friend) and, for a wander pick, `came_path`/`came_base` on the pool %Record; a ♥ copies
+    them onto its Card (they ride the mirror as listing); Heard_takes falls back live holder → came_from → the only friend; the haul beat
+     seeds a track no longer in the friend's stock from their paged card or came_path (the pool fill's self-certify road, `seed_path`).
+      Also: a pooled take mis-filed under MY pub hauls from a friend who holds it.  Tracks pooled BEFORE this have no came_path and stay
+       `not in what <friend> offers` — ✕ them on the Yay cell (`Heard_drop`, a `dropped_at` stamp that outdates the reaction).
+
 ## 0.d Owed
 
 1. **Owner's walk of the file road** (built 2026-11-11, §0.a): on eed, toggle the source to own and let two tracks pass (the

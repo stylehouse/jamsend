@@ -26,6 +26,34 @@
             if (r) window.dispatchEvent(new CustomEvent('jam-yay', { detail: { x: r.left + r.width / 2, y: r.top + r.height / 2 } }))
         } catch {}
     }
+    // THE NAY FUSE (owner 2026-11-12: "a Nay should 2s fade in a solid background colour on the Nay button, THEN actually become a
+    //  Nay, so it can be cancelled. then it flies off to be a Nay in minicell:Yay… then it goes the next track"): a press arms it, a
+    //   second press (or the track changing under it) disarms; on burn-down it nays, throws the same `jam-yay` flight with a 👎, and skips.
+    let nay_armed = $state(false)
+    let nay_timer: any = null
+    let nay_for = ''
+    const nay_cancel = () => { if (nay_timer) clearTimeout(nay_timer); nay_timer = null; nay_armed = false }
+    const nay = (e?: MouseEvent) => {
+        if (nay_armed) { nay_cancel(); return }
+        const el = e?.currentTarget as HTMLElement | null
+        nay_for = String(n?.c?.rec?.sc?.id ?? '')
+        nay_armed = true
+        nay_timer = setTimeout(() => {
+            nay_timer = null; nay_armed = false
+            if (String(n?.c?.rec?.sc?.id ?? '') !== nay_for) return
+            if (!(H as any)?.Radio_nay?.(n)) return
+            try {
+                const r = el?.getBoundingClientRect?.()
+                if (r) window.dispatchEvent(new CustomEvent('jam-yay', { detail: { x: r.left + r.width / 2, y: r.top + r.height / 2, glyph: '👎' } }))
+            } catch {}
+            ;(H as any)?.Radio_skip?.(n)
+        }, 2000)
+    }
+    $effect(() => {
+        const id = String(n?.c?.rec?.sc?.id ?? '')
+        if (nay_armed && id !== nay_for) nay_cancel()
+    })
+    $effect(() => () => { if (nay_timer) clearTimeout(nay_timer) })
     let roads = $derived.by(() => {
         void H?.version
         try {
@@ -309,7 +337,8 @@
                  with no of (Ra_rec_pooled, 2026-11-11: those had lost both buttons). -->
             <button class="rf-btn rf-like" class:liked={face.likedThis} onclick={like}
                 title={road_title()}>{face.likedThis ? '♥' : '♡'}</button>
-            <button class="rf-btn rf-nay" onclick={() => (H as any)?.Radio_nay?.(n)} title="nay — not in my pool, never drawn again">👎</button>
+            <button class="rf-btn rf-nay" class:armed={nay_armed} onclick={nay}
+                title={nay_armed ? 'press again to cancel' : 'nay — not in my pool, never drawn again (2s to change your mind), then next'}>👎</button>
 
         {/if}
     </div>
@@ -419,7 +448,8 @@
             {#if face.drops > 0}<span class="rf-chip">{face.drops} drops</span>{/if}
             -->
         {:else if face.state === 'digging' && !face.note && dig_long}
-            <span class="rf-chip">{face.own ? 'digging your crates…' : 'looking for a friend to play…'}</span>
+            <!-- 'digging' also spans the decode of a track already picked (a pool lofi after quick Nexts) — that is loading, not looking -->
+            <span class="rf-chip">{face.title ? 'loading…' : face.own ? 'digging your crates…' : 'looking for a friend to play…'}</span>
         {:else if face.first}
             <!-- OWN-RADIO FIRST (the owner 2026-08-28: "should just get on with your own Radio ASAP") —
                  a stocked shelf is an invitation to press play NOW, never a waiting room for a friend. -->
@@ -485,6 +515,8 @@
     .rf-like { width: 30px; height: 30px; font-size: 14px; }
     .rf-nay { opacity: .55; font-size: .9em; }
     .rf-nay:hover { opacity: 1; }
+    .rf-nay { transition: background-color .25s linear, opacity .25s; border-radius: 6px; }
+    .rf-nay.armed { opacity: 1; background-color: #b8484a; transition: background-color 2s linear, opacity .25s; }
     .rf-like.liked { background: #6b2e3a; border-color: #c75777; color: #ffeaf0; }
     .rf-keep.kept { background: #2e6b3a; border-color: #57c777; color: #eafff0; }
     .rf-keep.kept:hover { background: #57c777; color: #04202a; }

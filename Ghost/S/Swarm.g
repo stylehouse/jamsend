@@ -7407,6 +7407,9 @@ Swarm_reach_ack(w, ident, frame):
             reach.bump()
         }
     }
+    // A HOLDER THAT ANSWERED 'serving' IS WORKING (a lofi transcode can take minutes — Pool's PRESS_PATIENCE): a pool fill's
+    //  unanswered-deadline (Ra_pool_fill_book, 3 min) stretches to 10 once it is under way (2026-11-12)
+    if (String(r.for || '') === 'serve' && reach.c.deadline && String(reach.sc.state || '') === 'serving') { reach.c.deadline = Math.max(+reach.c.deadline, Date.now() + 600000) }
     // A CALL'S ANSWER LANDS ON ITS %Remote, and the call row goes (G0/G1): the booker's reach was only ever the
     //  envelope; what the frontend keeps is the view the backend answered with.  A non-terminal ack (a
     //   `serving` echo) lands nothing.

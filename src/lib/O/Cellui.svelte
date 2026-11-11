@@ -222,7 +222,9 @@
     //   when it earns a seat (see keep_cell): a Heist while a nab is in flight, a
     //    Supervisor only when something is amiss, etc.  Restraint is a requirement —
     //     the resting glass is main + Door + Player, nothing more.
-    const PERMANENT_CAST = new Set(['Door', 'Radio'])
+    // the listener's standing furniture (owner 2026-11-12: *"we basically always want Radio|Wikipedia|Pooling|Yay"* — a Heist's Hauls
+    //  cell had pushed Yay and Pooling out of the two-extras cap); each still only shows once its organ stands
+    const PERMANENT_CAST = new Set(['Door', 'Radio', 'Wikipedia', 'Pooling', 'Yay'])
 
     // ── is a %Supervisor healthy (and so NOT worth a seat)?  SupervisorFace is
     //  quiet-when-healthy, and taken all the way that means ABSENCE (its own header:
@@ -758,7 +760,9 @@
         const seated = (c: Cell) => !!cast || PERMANENT_CAST.has(c.mk) || c.mk === 'Pooling'
         const permanent = ordered.filter(seated)
         const extras = ordered.filter(c => !seated(c))
-        const extra_cap = heisting ? extras.length : Math.min(extras.length, 2)
+        // NO CAP (owner 2026-11-12: *"minicells should all be there until we can figure out how to present them as a 3d object you can
+        //  turn over in your hands"*) — the old two-extras rest cap hid Yay and Pooling behind a Hauls cell
+        const extra_cap = extras.length
         const list = [...permanent, ...extras.slice(0, extra_cap)]
         for (const c of list) if (c?.n?.c) c.n.c.pose = 'small'   // satellites are bud glyphs
         return list
@@ -1461,8 +1465,10 @@
 }
 .cello-stage.narrow .cello-main {
     flex: 0 1 auto;
-    width: min(78vw, 460px);
-    aspect-ratio: 1 / 1;
+    /* 30% WIDER, same height (owner 2026-11-12: "the main Cell can be 30% wider than it is now when the minicells are put underneath
+       it") — was min(78vw, 460px) at 1:1 */
+    width: min(96vw, 598px);
+    aspect-ratio: 1.3 / 1;
 }
 .cello-stage.narrow .cello-satellites {
     flex-direction: row;

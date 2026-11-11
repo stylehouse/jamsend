@@ -4,7 +4,7 @@
     //   corner lets it back into the page, where Otro's own ▦ unfolds the guts.  No Vyto world is commissioned here: the cast is the
     //    ghost's (Page_cast — radio, Door, keeps, Wikipedia, friends' organs, Yay…) and the focus is the page's (%Focus on w:Radio).
     //  THE FLYING ♥: RadioFace's ♥ press throws a `jam-yay` window event with where it was pressed; a ♥ flies from there into the Yay
-    //   minicell (`.cello-sat[data-mk=Yay]`).  The first heart mints that cell, so the flight waits for it to appear (≤4s — it is minted on the pulse's 2.5s beat).
+    //   minicell (`.cello-sat[data-mk=Yay]`); a burnt-down 👎 fuse rides the same flight with `glyph:'👎'`.  The first heart mints that cell, so the flight waits for it to appear (≤4s — it is minted on the pulse's 2.5s beat).
     import Cellui from "$lib/O/Cellui.svelte"
     let { H = null }: { H?: any } = $props()
     let M = $derived(H?.top_House ? H.top_House() : H)
@@ -15,7 +15,7 @@
     const onfocus = (mk: string) => M?.Page_focus?.(mk)
     const cast = (): any[] => { try { return M?.Page_cast?.() ?? [] } catch (e) { console.warn('⚠ Page_cast threw', e); return [] } }
 
-    function fly(from: { x: number, y: number }, tries = 0) {
+    function fly(from: { x: number, y: number, glyph?: string }, tries = 0) {
         const to = stage?.querySelector('.cello-sat[data-mk="Yay"]') as HTMLElement | null
         if (!to) {
             if (tries < 40) setTimeout(() => fly(from, tries + 1), 100)
@@ -24,7 +24,7 @@
         const r = to.getBoundingClientRect()
         const el = document.createElement('div')
         el.className = 'yay-fly'
-        el.textContent = '♥'
+        el.textContent = from.glyph || '♥'
         el.style.cssText = `position:fixed;left:${from.x}px;top:${from.y}px;z-index:1001;pointer-events:none;color:#f4b8c8;`
             + `font-size:28px;transform:translate(-50%,-50%);text-shadow:0 0 12px rgba(244,184,200,0.8)`
         document.body.appendChild(el)

@@ -108,6 +108,25 @@ A heist is how a track you hear becomes a file you own. Press ♥ on a friend's 
     is only reachable from the orphaned `HeistSetup.svelte` chooser (§11), which should make it dead
      in practice — verify nothing still mints a `committing` keep before relying on that being true.
 
+- **Deleting from a music collection has no undo — build a TRASH, then a journal (owner 2026-11-12: *"deletion is a big deal, I
+   wish there was a fully-journaling filesystem middleware we could rely on to let people wind back damage to their music
+    collection. it might happen huh"*).** What the one delete verb does today, checked 2026-11-12: `Heist_haul_delete` (Cell:Hauls'
+     ✕) removes ONLY files the arrival ledger says we landed, one `bin_rm`/`removeEntry` per file (never recursive), retires each
+      card, tombstones each ledger row; it never removes a directory, so a cover.jpg, a .cue or the listener's own files beside them
+       are untouched and the folder stays (even when left empty).  ⚠ Its grain is the file's IMMEDIATE folder (`card.sc.dir` =
+        dirname of the landed path, `Heist_newlyadded_note`), not "one Heist": a Haul row is every file we ever landed in that
+         folder, so two Heists that landed loose into one category folder share a row and one ✕ takes both — still only our own
+          landings, but more than one album's worth.  Owed, in order:
+   1. **Trash, not delete** — every removal through the nav (Heist_scrub_one, the pool's evictions, Berth) MOVES the file to
+       `.jamsend/trash/<date>/<original path>` (`FileSystemFileHandle.move()` where the browser has it, else copy-then-rm) and
+        appends a row to a trash ledger (the newlyadded-log shape: `of` path, `at`, `why`, which verb).  An "undo this delete" verb
+         moves it back; a sweep empties trash older than N days.  Costs disk until swept — say so in the Hauls cell.
+   2. **Then the empty folder** — after the files go, a plain non-recursive `removeEntry` on the folder (the browser refuses a
+       non-empty one, so it can only remove an empty one).  Not before the trash: today an empty folder is the only trace left.
+   3. **Then a journal one layer down** — the nav (MountNav → WormholeNav + OpfsOverlayNav, all three; nav verbs land in three
+       layers) records every write/rename/rm as replayable rows, so "wind back the last hour" is a read of the journal.  The trash
+        is its first slice: a rm that is really a move plus a row.
+
 ### §0 log (2026-08-13, kept for the arc)
 
 **The state as of that overnight, compressed.** A late run confirmed the whole landing path, filing,

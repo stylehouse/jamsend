@@ -10,7 +10,7 @@ import RadioPageFace from "$lib/O/ui/RadioPageFace.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_RadioPage(): string { return '42c0108197965f2d~g1' },
+    Ghostmeta_Ghost_M_RadioPage(): string { return '9f2635fc8ca66514~g1' },
 
 // RadioPage.g — the Radio as a page: /Radio, which is /Desk?I=<who>&G=Radio (spec/AtheoryArrive_todo.md §5).  Ground/Radio's Main is Radio, so Auto
 //  stands A:Radio/w:Radio on Mundo and its think is Radio(A,w) below — the music page with no Book under it.  On / the same organs
@@ -502,6 +502,8 @@ Page_cast() {
     try { linking = this.Swarm_link_active ? this.Swarm_link_active(w) : 0 } catch (er) {}
     if (f === 'Link' || linking) add(w.o({ Link: 1 })[0])
     if (f === 'PierView') add(w.o({ PierView: 1 })[0])
+    // what landed (HaulFace, the %Hauls bag) — no minicell of its own any more; the Yay cell links it, and naming it brings it in
+    if (f === 'Hauls') add(w.o({ Hauls: 1 })[0])
     return out
 
 },
@@ -540,7 +542,9 @@ Page_yays(w) {
         let nm = c.sc.title ? null : this.Page_yay_name(w, String(c.sc.id))
         let title = String(c.sc.title || (nm && nm.title) || c.sc.id)
         let artist = String(c.sc.artist || (nm && nm.artist) || '')
-        out.push({ card: c, id: String(c.sc.id), title, artist, react, fate: this.Page_yay_fate(c, react, shop, myname, later), later, at, keep })
+        // ↻ wherever asking again is the answer: called off, or a verdict that says "♥ again to retry"
+        let retry = react === 'take' && !keep && ((this.Heard_cancelled && this.Heard_cancelled(c)) || this.Heard_verdict(c) === 'landfail' || this.Heard_verdict(c) === 'unvouched') ? 1 : 0
+        out.push({ card: c, id: String(c.sc.id), title, artist, react, fate: this.Page_yay_fate(c, react, shop, myname, later), later, at, keep, retry })
     }
     out.sort((a, b) => b.at - a.at)
     return out
@@ -595,13 +599,17 @@ Page_yay_heists(w) {
 Page_yay_fate(c, react, shop, myname, later) {
     if (react === 'nay') return 'nay — never drawn again'
     let hearted = +(c.sc.hearted_at || 0)
+    if (this.Heard_cancelled && this.Heard_cancelled(c)) return 'cancelled — ↻ to try again'
+    // a heart on my own music is a taste fact — it was never fetched (2026-11-12: those read "heisted — here")
+    let mepub = this.Radio_pub ? String(this.Radio_pub(this.Page_yay_w()) || '') : ''
+    if (mepub && String(c.sc.pub || '') === mepub && !(this.Heard_pool_holds && this.Heard_pool_holds(this.Page_yay_w(), mepub, String(c.sc.id)))) return 'in your own collection'
     if (c.sc.landed_at && +c.sc.landed_at >= hearted) {
         let by = String(c.sc.carried_by || '')
         return 'heisted' + (by && by !== myname ? ' — on ' + by : ' — here')
     }
     let v = this.Heard_verdict(c)
     if (v === 'held') return 'you already had it'
-    if (v === 'landfail') return 'could not land — ♥ again to retry'
+    if (v === 'landfail') return (c.sc.why ? String(c.sc.why) : 'could not land') + ' — ♥ again to retry'
     if (v === 'unvouched') return 'the offer was unsigned — ♥ again to retry'
     if (later) return 'saved for later'
     let keep = shop ? shop.o({ Heist: 1, seed: String(c.sc.id) })[0] : null
@@ -613,18 +621,50 @@ Page_yay_fate(c, react, shop, myname, later) {
         return 'heisting here — ' + (keep.sc.ask ? 'waiting for you to start it' : 'asking ' + String(keep.sc.from_name || 'them') + ' for the album')
     }
     if (c.sc.carried_by && String(c.sc.carried_by) !== myname) return 'being heisted by ' + c.sc.carried_by
-    if (c.sc.to) {
+    // 'to' naming THIS device is no news ("sent to eed…" while sitting at eed — owner 2026-11-12)
+    let selfp = this.Swarm_live_self ? String((this.Swarm_live_self() || { sc: {} }).sc.prepub || '') : ''
+    if (c.sc.to && !(selfp && (String(c.sc.to).startsWith(selfp) || selfp.startsWith(String(c.sc.to))))) {
         let name = this.Heard_to_name ? this.Heard_to_name(c) : ''
         return 'sent to ' + (name || String(c.sc.to).slice(0, 8))
     }
     if (c.sc.waiting_for) return 'waiting for ' + c.sc.waiting_for
     if (!(this.Crate_nav && this.Crate_nav())) return 'kept — what we liked (no folder here; link a device to fetch it)'
+    if (c.sc.came_from) return 'waiting to be heisted from ' + this.Radio_friendly(this.Page_yay_w(), String(c.sc.came_from))
     return 'waiting to be heisted'
+
+},
+// the Yay cell's world: the /Radio page's, else (on /, the Sounditron glass) the live radio world
+Page_yay_w() {
+    return this.Page_w() || this.top_House().c.radio_w || null
+
+},
+// the Yay cell's ✕ on a row — the reaction stops counting (Heard_drop)
+Page_yay_drop(id, react) {
+    let w = this.Page_yay_w()
+    let me = w && this.Radio_pub ? this.Radio_pub(w) : null
+    if (!me || !this.Heard_drop) return 0
+    let row = this.Page_yays(w).find((r) => r.id === String(id) && r.react === String(react))
+    if (!row) return 0
+    let n = this.Heard_drop(w, me, row.card)
+    this.top_House().bump_version?.()
+    return n
+
+},
+// the Yay cell's ↻ on a cancelled or failed heart — ask again (Heard_retry)
+Page_yay_retry(id) {
+    let w = this.Page_yay_w()
+    let me = w && this.Radio_pub ? this.Radio_pub(w) : null
+    if (!me || !this.Heard_retry) return 0
+    let row = this.Page_yays(w).find((r) => r.id === String(id) && r.react === 'take')
+    if (!row) return 0
+    let n = this.Heard_retry(w, me, row.card)
+    this.top_House().bump_version?.()
+    return n
 
 },
 // the Yay cell's ⇊ on a saved-for-later heart
 Page_yay_go(id) {
-    let w = this.Page_w()
+    let w = this.Page_yay_w()
     let me = w && this.Radio_pub ? this.Radio_pub(w) : null
     if (!me) return 0
     let row = this.Page_yays(w).find((r) => r.id === String(id))

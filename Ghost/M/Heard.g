@@ -354,13 +354,14 @@ Heard_adopt(w, me, card):
     let mine = this.Heard_card(w, me, String(card.sc.id), String(card.sc.pub || ''))
     if (!mine) { return null }
     if (this.Heard_reaction(mine) === 'take') { return mine }
-    let at = this.Heard_react_at(w, mine, ['nayed_at', 'mehed_at', 'already_had_at', 'offer_unsigned_at', 'landing_failed_at'])
+    let at = this.Heard_react_at(w, mine, ['nayed_at', 'mehed_at', 'already_had_at', 'offer_unsigned_at', 'landing_failed_at', 'dropped_at'])
     mine.sc.hearted_at = at
     mine.sc.pressed_on = at
     if (card.sc.title && !mine.sc.title) { mine.sc.title = String(card.sc.title) }
     if (card.sc.artist && !mine.sc.artist) { mine.sc.artist = String(card.sc.artist) }
     if (card.sc.to) { mine.sc.to = String(card.sc.to) }
     if (card.sc.lofi) { mine.sc.lofi = 1 }
+    for (const k of ['came_from', 'came_path', 'came_base']) { if (card.sc[k] && !mine.sc[k]) { mine.sc[k] = String(card.sc[k]) } }
     mine.bump()
     this.Heard_settle(w, me, 'heard_adopt')
     return mine
@@ -368,9 +369,9 @@ Heard_adopt(w, me, card):
 //  every stamp MAX-MERGES (never overwrites backward); the listing rides along only when a stamp
 //   actually advanced, so a stale re-delivered frame writes nothing at all.
 Heard_mirror_stamp_keys():
-    return ['hearted_at', 'nayed_at', 'mehed_at', 'played_through', 'pressed_on', 'carried_at', 'landed_at', 'already_had_at', 'landing_failed_at', 'offer_unsigned_at', 'looked_at', 'later_at', 'go_at']
+    return ['hearted_at', 'nayed_at', 'mehed_at', 'played_through', 'pressed_on', 'carried_at', 'landed_at', 'already_had_at', 'landing_failed_at', 'offer_unsigned_at', 'looked_at', 'later_at', 'go_at', 'dropped_at', 'cancelled_at']
 Heard_mirror_listing_keys():
-    return ['title', 'artist', 'dir', 'path', 'bytes', 'body_hash', 'keep', 'why', 'waiting_for', 'carried_by', 'via_addr', 'to']
+    return ['title', 'artist', 'dir', 'path', 'bytes', 'body_hash', 'keep', 'why', 'waiting_for', 'carried_by', 'via_addr', 'to', 'came_from', 'came_path', 'came_base']
 // Heard_mirror_merge — land a decoded sibling snap's Cards onto MY mirror of them.  Swarm.g's
 //  `Swarm_heard_mirror` is the wire receiver; this is the pure merge it calls, kept here beside the key
 //   lists it depends on.  Two DIFFERENT bodies' clocks can disagree even though Heard_react_at (rung 2)
@@ -531,7 +532,7 @@ Heard_nay(w, me, rec, by):
     // a Nay NAMES its track like a take does (2026-11-12, the Yay cell listing Nays as bare ids)
     if (rec.sc.title && !card.sc.title) { card.sc.title = this.Radio_clean(rec.sc.title) }
     if (rec.sc.artist && !card.sc.artist) { card.sc.artist = this.Radio_clean(rec.sc.artist) }
-    card.sc.nayed_at = this.Heard_react_at(w, card, ['hearted_at', 'mehed_at'])
+    card.sc.nayed_at = this.Heard_react_at(w, card, ['hearted_at', 'mehed_at', 'dropped_at'])
     card.bump()
     this.Heard_settle(w, me, 'heard_nay')
     return 1
@@ -546,7 +547,7 @@ Heard_meh(w, me, rec, by):
     if (!card || card.sc.hearted_at || card.sc.nayed_at) { return 0 }
     if (rec.sc.title && !card.sc.title) { card.sc.title = this.Radio_clean(rec.sc.title) }
     if (rec.sc.artist && !card.sc.artist) { card.sc.artist = this.Radio_clean(rec.sc.artist) }
-    card.sc.mehed_at = this.Heard_react_at(w, card, ['hearted_at', 'nayed_at'])
+    card.sc.mehed_at = this.Heard_react_at(w, card, ['hearted_at', 'nayed_at', 'dropped_at'])
     card.bump()
     this.Heard_settle(w, me, 'heard_meh')
     return 1
@@ -561,7 +562,61 @@ Heard_reaction(card):
         let at = +(card.sc[r[1]] || 0)
         if (at > bestAt) { best = r[0]; bestAt = at }
     }
+    // a ✕ on the Yay cell (Heard_drop) outdates whichever reaction stood — a stamp, so it rides the mirror like the rest
+    if (best && +(card.sc.dropped_at || 0) >= bestAt) { return '' }
     return best
+// Heard_cancelled — was this heart's Heist called off since it was pressed?  (a re-press outdates it, Heard_retry)
+Heard_cancelled(card):
+    if (!card || !card.sc.cancelled_at) { return 0 }
+    return +card.sc.cancelled_at >= +(card.sc.hearted_at || 0) ? 1 : 0
+// Heard_cancel — A ♥'S HEIST CALLED OFF (owner 2026-11-12: *"I cancelled a Heist setup for Grace Jones and it says 'heisted' in the
+//  Yays, it should say cancelled, and have a way to try again"*).  Replaces the keep ✕'s Heard_untake: that looked the card up by the
+//   keep's holder pub, and a pooled ♥ (no pub) was never found, so the heart stood and re-hauled.  Now the heart STAYS, stamped
+//    cancelled_at — the haul skips it (Heard_takes) and the Yay row offers ↻ (Heard_retry).  Any of my cards for the seed, not a machine's.
+Heard_cancel(w, me, seed):
+    let mag = this.Heard_mag_find(w, me)
+    if (!mag || !seed) { return 0 }
+    let card = this.Heard_cards(mag).find((c) => String(c.sc.id) === String(seed) && !this.Heard_is_machine(c) && this.Heard_reaction(c) === 'take')
+    if (!card) {
+        let union = this.Heard_cards_union(w, me).find((c) => String(c.sc.id) === String(seed) && !this.Heard_is_machine(c) && this.Heard_reaction(c) === 'take')
+        card = union ? this.Heard_adopt(w, me, union) : null
+    }
+    if (!card) { return 0 }
+    card.sc.cancelled_at = this.Heard_react_at(w, card, ['hearted_at'])
+    card.bump()
+    this.Heard_settle(w, me, 'heard_cancel')
+    return 1
+// Heard_retry — the Yay row's ↻: ask again, as a fresh press would — a new hearted_at outdates a cancel and every failure verdict
+Heard_retry(w, me, card):
+    if (!w || !me || !card || this.Heard_reaction(card) !== 'take') { return 0 }
+    let mine = this.Heard_card(w, me, String(card.sc.id), String(card.sc.pub || ''))
+    if (!mine) { return 0 }
+    for (const k of this.Heard_mirror_stamp_keys()) { let v = +(card.sc[k] || 0); if (v > +(mine.sc[k] || 0)) { mine.sc[k] = String(v) } }
+    for (const k of ['title', 'artist', 'came_from', 'came_path', 'came_base', 'to']) { if (card.sc[k] && !mine.sc[k]) { mine.sc[k] = String(card.sc[k]) } }
+    mine.sc.hearted_at = this.Heard_react_at(w, mine, ['nayed_at', 'mehed_at', 'already_had_at', 'offer_unsigned_at', 'landing_failed_at', 'dropped_at', 'cancelled_at'])
+    if (mine.sc.why) { delete mine.sc.why }
+    mine.bump()
+    this.Heard_settle(w, me, 'heard_retry')
+    return 1
+// Heard_drop — THE YAY CELL'S ✕ (owner 2026-11-12, *"the Yay|Nay should be deletable"*): the current reaction stops counting —
+//  a ♥ stops being owed, a 👎 stops barring the pool.  Not a deletion (a key can't be un-set over the wire): a dropped_at newer
+//   than the reaction, which every sibling max-merges, and a later press outdates in turn.  A Heist already standing is left
+//    alone — calling off a download is its own ✕.  A wish seen only on a sibling's mirror is copied onto my own Mag first.
+Heard_drop(w, me, card):
+    if (!w || !me || !card || !card.sc.id) { return 0 }
+    let mine = this.Heard_card(w, me, String(card.sc.id), String(card.sc.pub || ''))
+    if (!mine) { return 0 }
+    for (const k of this.Heard_mirror_stamp_keys()) {
+        let v = +(card.sc[k] || 0)
+        if (v > +(mine.sc[k] || 0)) { mine.sc[k] = String(v) }
+    }
+    if (card.sc.title && !mine.sc.title) { mine.sc.title = String(card.sc.title) }
+    if (card.sc.artist && !mine.sc.artist) { mine.sc.artist = String(card.sc.artist) }
+    if (!this.Heard_reaction(mine)) { return 0 }
+    mine.sc.dropped_at = this.Heard_react_at(w, mine, ['hearted_at', 'nayed_at', 'mehed_at'])
+    mine.bump()
+    this.Heard_settle(w, me, 'heard_drop')
+    return 1
 // Heard_barred_ids — {id:1} for every track whose CURRENT reaction is Nay or Meh, mine or any sibling's
 //  (rung 3): the pool's exclusion set, read once per steward pass (Ra_quarter).  Ids are ORIGINALS, the
 //   Mag's own id-space.
@@ -698,12 +753,19 @@ Heard_take(w, me, rec, by, to0):
     //     Taking it back is not a thing a heart does; a keep is called off on the Haul row, and a Nay is
     //      its own reaction.  Floored past every OTHER stamp on the card (not just nay/meh — the three
     //       verdicts too), so "asking again" always outdates a same-tick verdict rather than tying it.
-    card.sc.hearted_at = this.Heard_react_at(w, card, ['nayed_at', 'mehed_at', 'already_had_at', 'offer_unsigned_at', 'landing_failed_at'])
+    card.sc.hearted_at = this.Heard_react_at(w, card, ['nayed_at', 'mehed_at', 'already_had_at', 'offer_unsigned_at', 'landing_failed_at', 'dropped_at'])
     // the listing STARTS here (§1: acting is when it becomes yours to hold) with whatever the mirror card
     //  in hand already knows; the rest is cloned off the describe answer when it lands (Heard_clone_beat).
     //   Guarded stamps — an absent value would brand the snap {"undef":[…]}, the mint-bug law.
     if (rec.sc.title && !card.sc.title) { card.sc.title = this.Radio_clean(rec.sc.title) }
     if (rec.sc.artist && !card.sc.artist) { card.sc.artist = this.Radio_clean(rec.sc.artist) }
+    // WHERE A POOL COPY CAME FROM (owner 2026-11-12, *"we should remember where the SP came from"*): the holder-less pool take
+    //  remembers the friend its bytes were pulled from, so the haul has someone to ask when no live mirror lists it (Heard_takes)
+    if (!card.sc.pub && rec.sc.came_from && card.sc.came_from !== String(rec.sc.came_from)) { card.sc.came_from = String(rec.sc.came_from) }
+    if (!card.sc.pub && rec.sc.came_path && !card.sc.came_path) {
+        card.sc.came_path = String(rec.sc.came_path)
+        if (rec.sc.came_base) { card.sc.came_base = String(rec.sc.came_base) }
+    }
     // the 🧲 decides at the press (the newest press decides): 'to' rides the mirror as listing, so the
     //  body it names hauls and every other folder-holder leaves it be (Heard_for_me, in the haul beat)
     let to = to0 != null ? String(to0) : this.Heard_magnet(w)
@@ -983,6 +1045,11 @@ Heard_holders(w, me):
     let rows = []
     try { rows = this.Pool_shared_rows(w) } catch (er) { rows = [] }
     return this.Pool_holders(rows.filter((s) => s && String(s.from || '') !== String(me)))
+// Heard_pool_holds — is this id one of my pool copies (by id, or a lofi copy's of)?
+Heard_pool_holds(w, me, id):
+    let shelf = this.Ra_pool_stock ? this.Ra_pool_stock(w, me) : null
+    if (!shelf || !id) { return 0 }
+    return (this.Ra_rec_find(shelf, { Record: 1, id: id }) || this.Ra_rec_find(shelf, { Record: 1, of: id })) ? 1 : 0
 Heard_holder_of(w, me, id):
     if (!id) { return '' }
     return this.Heard_holders(w, me)[String(id)] || ''
@@ -998,8 +1065,17 @@ Heard_takes(w, me, shelf):
     for (const c of this.Heard_cards_union(w, me)) {
         if (this.Heard_is_machine(c)) { continue }
         if (this.Heard_reaction(c) !== 'take' || !c.sc.id) { continue }
+        if (this.Heard_cancelled(c)) { continue }
         let pub = String(c.sc.pub || '')
-        if (pub === String(me)) { continue }
+        // MY OWN — unless a friend holds it (2026-11-12, eed: a pooled "Recercada" took under MY pub — the pool shelf is mine — and
+        //  its ♥ sat "waiting to be heisted" forever).  A track I truly hold is also on no friend's mirror ⇒ still skipped.
+        if (pub === String(me)) {
+            if (!holders) { holders = this.Heard_holders(w, me) }
+            pub = holders[String(c.sc.id)] || ''
+            //  …and one standing on my POOL shelf is a pool copy whatever pub it took under — the holder-less road below decides
+            if (!pub && this.Heard_pool_holds(w, me, String(c.sc.id))) { pub = '' }
+            else if (!pub) { continue }
+        }
         // LANDED IS A FACT ON THE CARD, not only a record on the shelf (2026-10-04, Inko's haul loop): Heard_landed asks the
         //  STOCK shelf — the Stoker's culled ~27-record window — so a landed file fell out of it and was hauled again.  A
         //   landed_at at least as new as the heart closes it (Heard_mark_landed / Heard_land_beat stamp it); a fresher ♥
@@ -1009,9 +1085,15 @@ Heard_takes(w, me, shelf):
         // no holder on the card ⇒ whoever has it now (a pooled take): the %Theirs mirrors are local
         //  catalogs of every shelf shared with me, so this is a local lookup, crew first (Heard_holders,
         //   built once per query). Nobody has it ⇒ the card stands, exactly like a take whose holder is away.
+        //  Nobody live ⇒ the friend it was pooled from (came_from, stamped at the press), whose row then waits like any away holder.
         if (!pub) {
             if (!holders) { holders = this.Heard_holders(w, me) }
-            pub = holders[String(c.sc.id)] || ''
+            pub = holders[String(c.sc.id)] || String(c.sc.came_from || '')
+            //  …and a take older than came_from, with ONE friend in the world, asks that friend (their answer says if they lack it)
+            if (!pub) {
+                let them = w.o({ Theirs: 1 }).filter((t) => t.sc.pub && String(t.sc.pub) !== String(me))
+                if (them.length === 1) { pub = String(them[0].sc.pub) }
+            }
             if (!pub) { continue }
         }
         holder[String(c.sc.id)] = pub
@@ -1021,7 +1103,7 @@ Heard_takes(w, me, shelf):
     let rows = {}
     let order = []
     for (const c of cards) {
-        let pub = String(c.sc.pub || holder[String(c.sc.id)] || '')
+        let pub = String(holder[String(c.sc.id)] || c.sc.pub || '')
         if (!rows[pub]) { rows[pub] = { pub: pub, cards: [] }; order.push(pub) }
         rows[pub].cards.push(c)
     }
@@ -1128,6 +1210,30 @@ Heard_landed_ids(w, me, shelf):
 //   no glass pop, no feebly_ponder — the beat that called this is already awake.  `take:1` is the tell
 //    that makes it start itself and take ONE track (Heist_keep_take_go).
 //  The keep is SCAFFOLDING: it exists only while a Card is being carried, and the Card is the ledger.
+// Heard_blind_expire — A HAUL ASKED BY ID THAT THE HOLDER NEVER ANSWERS ENDS (2026-11-12).  A keep minted from a stand-in (the
+//  track not in the holder's mirror, `blind`) asks every 4s forever (Heist_keep_step); a holder that can't resolve the id says
+//   nothing, so the keep would hold that holder's one slot and every other ♥ from them waits behind it.  15 unanswered asks (~1
+//    min) ⇒ the Card gets a landfail verdict (fate: "could not land — ♥ again to retry") and the keep goes; the heart stays.
+Heard_blind_expire(w, rw, me, shop):
+    for (const k of shop.o({ Heist: 1, blind: 1 })) {
+        if (+(k.sc.asks || 0) < 15 || String(k.sc.state || 'primed') !== 'primed') { continue }
+        let mir = rw.o({ Theirs: 1, pub: String(k.sc.pub || '') })[0]
+        if (mir && this.Heist_rummage_recs && this.Heist_rummage_recs(mir, String(k.sc.seed)).length) { continue }
+        let mag = this.Heard_mag_find(rw, me)
+        // the ♥'s own Card — under the holder, mine, or no pub — never a machine page's card for the same id
+        let card = mag ? (this.Heard_cards(mag).find((c) => String(c.sc.id) === String(k.sc.seed) && !this.Heard_is_machine(c) && this.Heard_reaction(c) === 'take') || null) : null
+        if (card) {
+            card.sc.landing_failed_at = '' + this.Heard_now(w)
+            card.sc.why = String(k.sc.from_name || 'they') + " didn't answer"
+            card.bump()
+        }
+        console.log('♥⇢ ' + String(k.sc.Heist).slice(0, 32) + ' — ' + String(k.sc.from_name || 'the holder') + ' never answered for it — let go (♥ again to retry)')
+        if (this.Heist_job_drop) { try { this.Heist_job_drop(shop, k) } catch (er) {} }
+        shop.drop(k)
+        if (this.Heist_keep_forget) { this.Heist_keep_forget(k).catch(() => {}) }
+        this.Heard_settle(w, me, 'heard_blind')
+    }
+
 Heard_keep(w, rw, shop, dj, rec):
     let seed = String(rec.sc.id || '')
     if (!seed || !shop) { return null }
@@ -1274,6 +1380,7 @@ async Heard_haul_beat(w, rw, me, nav, shop, ident):
     for (const k of shop.o({ Heist: 1 })) { if (String(k.sc.state || 'primed') !== 'done') { live = live + 1 } }
     if (live >= this.Heard_keeps_cap()) { return 0 }
     let mine = this.Heard_shelf(rw, me)
+    this.Heard_blind_expire(w, rw, me, shop)
     for (const row of this.Heard_takes(rw, me, mine)) {
         // ADOPT FIRST, ALWAYS — BEFORE the busy gate (rung 3): `row.cards` came off the UNION
         //  (Heard_takes), so a wish this trove body sees may still live only on a sibling's mirror.  A
@@ -1298,7 +1405,9 @@ async Heard_haul_beat(w, rw, me, nav, shop, ident):
         let cards = row.cards.filter((c) => this.Heard_for_me(c, myprepub) && !this.Heard_later(c)).map((c) => this.Heard_adopt(w, me, c)).filter((c) => c)
         if (!cards.length) { continue }
         let busy = 0
-        for (const k of shop.o({ Heist: 1, pub: row.pub })) { if (String(k.sc.state || 'primed') !== 'done') { busy = 1 } }
+        // the pool's own one-track fills (into:pool) never hold a ♥ back (2026-11-12, eed: three ♥s "waiting — a haul from this holder is
+        //  already running" behind a rolling queue of fills from the same friend) — a heart is the person asking
+        for (const k of shop.o({ Heist: 1, pub: row.pub })) { if (k.sc.into !== 'pool' && String(k.sc.state || 'primed') !== 'done') { busy = 1 } }
         if (busy) { for (const card of cards) { say(card, 'waiting — a haul from this holder is already running') } continue }
         let mir = rw.o({ Theirs: 1, pub: row.pub })[0]
         let mirstock = mir ? mir.o({ stock: 1, pub: row.pub })[0] : null
@@ -1321,8 +1430,31 @@ async Heard_haul_beat(w, rw, me, nav, shop, ident):
             if (!id || this.Heard_verdict(card)) { continue }
             if (shop.o({ Heist: 1, seed: id })[0]) { continue }
             let rec = this.Ra_rec_find(mirstock, { Record: 1, id: id })
+            // NOT STOCKED THERE ANY MORE (2026-11-12, eed's ♥s on pooled wander tracks): the holder's paged Pooling card, or the path the
+            //  pool copy remembered (came_path), seeds the keep the way a pool fill does — the holder self-certifies the id from the path
+            let seedp = null
+            if (!rec) {
+                let pcard = this.Ra_pooling_card_of ? this.Ra_pooling_card_of(rw, row.pub, id) : null
+                if (pcard && pcard.sc.path) { seedp = { path: String(pcard.sc.path), base: String(pcard.sc.base || '') } }
+                else if (card.sc.came_path) { seedp = { path: String(card.sc.came_path), base: String(card.sc.came_base || '') } }
+                else {
+                    // the pool copy remembers it even when the ♥ was pressed before it did (a re-pool stamps came_path afresh)
+                    let pshelf = this.Ra_pool_stock ? this.Ra_pool_stock(rw, me) : null
+                    let prec = pshelf ? (this.Ra_rec_find(pshelf, { Record: 1, of: id }) || this.Ra_rec_find(pshelf, { Record: 1, id: id })) : null
+                    if (prec && prec.sc.came_path) { seedp = { path: String(prec.sc.came_path), base: String(prec.sc.came_base || '') } }
+                }
+                // …and with no path either, ask by id all the same: the holder resolves a seed against EVERY card it ever stocked (its
+                //  radiostock listing, Heist_rummage_folder), far more than the window its mirror shows me — its answer says if it can't
+                rec = { sc: { id: id, title: String(card.sc.title || (pcard && pcard.sc.title) || id.slice(0, 8)), artist: String(card.sc.artist || (pcard && pcard.sc.artist) || '') } }
+            }
             if (!rec) { say(card, 'not in what ' + (this.Radio_friendly ? this.Radio_friendly(rw, row.pub) : String(row.pub).slice(0, 8)) + ' offers this device — cannot seed a haul'); continue }
             let kept = this.Heard_keep(w, rw, shop, row.pub, rec)
+            // asked by id with nothing to show for it: Heard_blind_expire ends it if the holder never answers
+            if (kept && !rec.c) { kept.sc.blind = 1 }
+            if (kept && seedp) {
+                kept.sc.seed_path = seedp.path
+                if (seedp.base) { kept.sc.seed_base = seedp.base }
+            }
             if (kept) {
                 // a 🧲-routed heart carries the presser's LOFI choice; it wins over this body's own default (quiet: the
                 //  default stays this body's).  No 'to' ⇒ Heard_keep's own default, as before.

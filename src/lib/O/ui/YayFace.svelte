@@ -17,7 +17,7 @@
     let view = $derived.by(() => {
         void H?.version
         void tick
-        const empty = { rows: [] as any[], later: [] as any[], heists: [] as any[], auto: true, ask: true, folder: false, devices: 0 }
+        const empty = { rows: [] as any[], later: [] as any[], heists: [] as any[], landed: 0, auto: true, ask: true, folder: false, devices: 0 }
         try {
             const w = W()
             if (!w) return empty
@@ -27,6 +27,7 @@
                 rows,
                 later: rows.filter(r => r.later),
                 heists: (A?.Page_yay_heists?.(w) ?? []) as any[],
+                landed: (w.o?.({ Hauls: 1 })?.[0]?.o?.({ Haul: 1 }) ?? []).length as number,
                 auto: !!A?.Heard_autoheist?.(),
                 ask: !!A?.Heist_take_asks?.(),
                 folder: !!A?.Crate_nav?.(),
@@ -47,6 +48,9 @@
         try { A?.Heist_defaults_set?.(patch) } catch {}
         try { A?.top_House?.()?.bump_version?.() } catch {}
     }
+    // the ✕ on a row (owner 2026-11-12, *"the Yay|Nay should be deletable"*) — Heard_drop: the reaction stops counting, on every device
+    const drop = (r: any) => { try { A?.Page_yay_drop?.(r.id, r.react) } catch (e) { console.warn('♥⚠ yay drop threw', e) } }
+    const retry = (id: string) => { try { A?.Page_yay_retry?.(id) } catch (e) { console.warn('♥⚠ yay retry threw', e) } }
     const go = (id: string) => { try { A?.Page_yay_go?.(id) } catch (e) { console.warn('♥⚠ yay go threw', e) } }
     const link = () => page_nav(A, 'link_open', W())
     // a heart's Heist, made the main cell
@@ -88,6 +92,9 @@
             </div>
         {/if}
 
+        <!-- THE LIST SCROLLS (owner 2026-11-12: *"a vertical scrollbar in Yay, to stop it scaling way down when listing bigly… the copper
+             anodes one"*) — capped, so Cellui fits the face by its head and the rows scroll under the fat copper bar (.scrollbig, app.css) -->
+        <div class="yf-list scrollbig">
         {#if view.heists.length}
             <!-- EVERY HEIST RUNNING OR TO BE, ATOP (owner 2026-11-12) — a ♥'s, a ⇊'s or a ⏎'s; each opens its Heist -->
             <div class="yf-sec">heisting</div>
@@ -100,19 +107,14 @@
             {/each}
         {/if}
 
-        {#if view.later.length}
-            <div class="yf-sec">download later</div>
-            {#each view.later as r (r.id)}
-                <div class="yf-row">
-                    <span class="yf-t">{r.title}{#if r.artist} <span class="yf-a">— {r.artist}</span>{/if}</span>
-                    <button class="yf-btn" onclick={() => go(r.id)} title="heist it now">⇊</button>
-                </div>
-            {/each}
+        <!-- (DOWNLOAD LATER is a STYLE now, not a list — owner 2026-11-12: a saved-for-later ♥ is a yay row wearing ⇊) -->
+        {#if view.landed}
+            <!-- WHAT LANDED — the Hauls cell, reached from here now it has no minicell (owner 2026-11-12) -->
+            <button class="yf-sec yf-link" onclick={() => page_nav(A, 'focus', 'Hauls')} title="the albums that landed, newest first">⇊ {view.landed} landed album{view.landed === 1 ? '' : 's'} →</button>
         {/if}
-
         <div class="yf-sec">yays</div>
         {#each yay_rows as r (r.react + r.id)}
-            <div class="yf-row" class:nay={r.react === 'nay'}>
+            <div class="yf-row" class:nay={r.react === 'nay'} class:later={r.later}>
                 <span class="yf-r">{r.react === 'nay' ? '👎' : '♥'}</span>
                 <span class="yf-t">{r.title}{#if r.artist} <span class="yf-a">— {r.artist}</span>{/if}
                     {#if r.keep}
@@ -120,6 +122,9 @@
                     {:else}
                         <span class="yf-fate">{r.fate}{#if r.at} · {ago(at_ms(r.at))}{/if}</span>
                     {/if}</span>
+                {#if r.later}<button class="yf-btn" onclick={() => go(r.id)} title="saved for later — heist it now">⇊</button>{/if}
+                {#if r.retry}<button class="yf-btn" onclick={() => retry(r.id)} title="ask again">↻</button>{/if}
+                <button class="yf-x" onclick={() => drop(r)} title="forget this yay — it stops being heisted (a Heist already going keeps going)">✕</button>
             </div>
         {:else}
             <div class="yf-none">nothing yet — press ♥ on something you like</div>
@@ -134,14 +139,20 @@
                         <span class="yf-r">👎</span>
                         <span class="yf-t">{r.title}{#if r.artist} <span class="yf-a">— {r.artist}</span>{/if}
                             <span class="yf-fate">{r.fate}{#if r.at} · {ago(at_ms(r.at))}{/if}</span></span>
+                        <button class="yf-x" onclick={() => drop(r)} title="forget this nay — it may be pooled again">✕</button>
                     </div>
                 {/each}
             {/if}
         {/if}
+        </div>
     </div>
 {/if}
 
 <style>
+    .yf-list { display: flex; flex-direction: column; gap: 0.3rem; max-height: 16rem; overflow-y: auto; overflow-x: hidden; padding-right: 0.3rem; }
+    .yf-row.later .yf-t { font-style: italic; opacity: .8; }
+    .yf-x { flex: none; margin-left: auto; background: none; border: 0; color: inherit; opacity: .35; cursor: pointer; font-size: .8em; padding: 0 .3em; }
+    .yf-x:hover { opacity: 1; color: #e88; }
     .yf-bud { display: flex; align-items: center; justify-content: center; gap: 0.2rem; width: 100%; height: 100%;
         font-family: system-ui, sans-serif; color: #f4b8c8; font-weight: 700; }
     .yf-heart { font-size: 1.6rem; line-height: 1; }

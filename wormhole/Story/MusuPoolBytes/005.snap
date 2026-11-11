@@ -34,7 +34,7 @@ Snap:H
           stock,pub:me
             Mag:shuffle
               Cloud,page:1
-                Record,id:60cef3926c854c29,path:MusuPoolBytes/Pool Source - Rolling One.wav,title:Rolling One,artist:Pool Source,bytes=8118,ext:wav,body_hash:60cef3926c854c29522b52f26e931a3a2c72baf51383fdcf35845940d364bb13,album:MusuPoolBytes,sr=48000,br=128000,seg_secs=2,nch,preview,total
+                Record,id:60cef3926c854c29,path:MusuPoolBytes/Pool Source - Rolling One.wav,came_from:friendo,title:Rolling One,artist:Pool Source,bytes=8118,ext:wav,body_hash:60cef3926c854c29522b52f26e931a3a2c72baf51383fdcf35845940d364bb13,album:MusuPoolBytes,sr=48000,br=128000,seg_secs=2,nch,preview,total
                   Preview,seq:0,head,preskip=312,cid:cid0	{"ref":{"buf":"Uint8Array()"}}
           Consent,at:1788400130
           Pool,name:rolling,take:random,who:crew,cap:75,share:100

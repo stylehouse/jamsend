@@ -305,7 +305,10 @@
             ;(top.c as any).identity_pending_why = why
             console.warn(`🪪⚠ identity ARRESTED — ${why} Boot is held; resolve via the 🪪 hatch.`)
             const bag = (H as any).Lies_lens_bag?.()
-            if (bag && !bag.oa({ Lens: 'Panel', of_Funkcion: 'IdHatch' })) (H as any).Lies_lens_toggle?.('Panel', 'IdHatch', { altitude: 88 })
+            if (bag && !bag.oa({ Lens: 'Panel', of_Funkcion: 'IdHatch' })) {
+                (H as any).Lies_lens_toggle?.('Panel', 'IdHatch', { altitude: 88 })
+                ;(top.c as any).identity_hatch_auto = 1     // the arrest opened it — the resume closes it (Clustation_concrete)
+            }
         }
         return false
     },
@@ -372,6 +375,16 @@
         //       rather than wrong — left in place, they cost nothing and read as intent.
         const topC = (((this as any).top_House?.() ?? this) as House).c as any
         if (topC.identity_pending) { delete topC.identity_pending; delete topC.identity_pending_why }
+        // …AND THE HATCH THE ARREST POPPED GOES WITH IT (owner 2026-11-12: a boot without the folder arrested, the grant resumed the key,
+        //  and the splash lifted onto the cluster-identity hatch — "NOT in the trust flock…" — a page no listener should see).  Only the
+        //   arrest's own pop: a hatch the human opened from 🪪 stays.
+        if (topC.identity_hatch_auto) {
+            delete topC.identity_hatch_auto
+            try {
+                const bag = (this as any).Lies_lens_bag?.()
+                if (bag?.oa({ Lens: 'Panel', of_Funkcion: 'IdHatch' })) (this as any).Lies_lens_dismiss?.('Panel', 'IdHatch')
+            } catch {}
+        }
         return ident
     },
 

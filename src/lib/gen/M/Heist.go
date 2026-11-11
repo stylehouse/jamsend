@@ -11,7 +11,7 @@ import { APP_DATA_DIR } from "$lib/app_data_dir"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '801f25c2b9b78e5a~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '63aa5fded5b2bd06~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -1128,6 +1128,15 @@ async Heist_catalog_land(nav, mardir, job, own_lib, mir, rec, rel, size, held) {
         let prw = ptop && ptop.c && ptop.c.radio_w ? ptop.c.radio_w : null
         let pshelf = (prw && this.Ra_home_pool) ? this.Ra_home_pool(prw, this.Radio_pub(prw) || 'me') : own_lib
         card = this.Ra_rec_pool(pshelf, origId, lofiId, rel, grade)
+        // WHERE IT CAME FROM (owner 2026-11-12): the job's `at` is the friend these bytes were pulled from — a ♥ on the copy
+        //  carries it to the Card (Heard_take), so the haul knows whom to ask even when no live mirror lists the track
+        if (job && job.sc && job.sc.at && String(job.sc.at) !== 'me') card.sc.came_from = String(job.sc.at)
+        //  …and by what path on their side, when the keep had to say (a wander card, never stocked there): their page rolls on, this stays
+        let pk = (job && job.c && job.c.up && job.sc.seed) ? job.c.up.o({ Heist: 1, seed: String(job.sc.seed) })[0] : null
+        if (pk && pk.sc.seed_path) {
+            card.sc.came_path = String(pk.sc.seed_path)
+            if (pk.sc.seed_base) card.sc.came_base = String(pk.sc.seed_base)
+        }
     } else {
         card = this.Ra_rec_home(own_lib, rec.sc.id)
         card.sc.path = rel
@@ -4307,9 +4316,11 @@ async Heist_keep_cancel(w, keep) {
     //  button reads as broken by doing exactly what it was told.  This is the ONE road by which a take
     //   ever ends (Heard_untake, §C: "you can't lose a heart — only you retire one"): the machine never
     //    calls it, the clock never calls it, a human pressing ✕ calls it.
-    if (keep.sc.take && keep.sc.pub && keep.sc.seed) {
+    //  (2026-11-12: no longer retired — CANCELLED, so the Yay cell can say so and offer ↻; Heard_takes skips a cancelled heart, which
+    //   is what stops the re-mint.  Heard_cancel finds the card by seed, so a pooled ♥ with no holder pub is found too.)
+    if (keep.sc.take && keep.sc.seed) {
         let rw0 = (this.top_House ? this.top_House().c.radio_w : null) || w
-        try { this.Heard_untake(rw0, this.Radio_pub(rw0) || '', keep.sc.pub, keep.sc.seed) } catch (er) {}
+        try { this.Heard_cancel(rw0, this.Radio_pub(rw0) || '', keep.sc.seed) } catch (er) {}
     }
     // THE GLASS REACTS ON THE GESTURE, NOT ON THE POLL (the owner 2026-08-09: "make the cell layout
     //  react to that being clicked more immediately").  The rm above changes the keep set, but the
