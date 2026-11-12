@@ -27,4 +27,4 @@ Snap:H
           stock,pub:me
             Mag:shuffle
               Cloud,page:1
-                Record,id:60cef3926c854c29,path:MusuPoolBytes/Pool Source - Rolling One.wav,came_from:friendo,title:Rolling One,artist:Pool Source,bytes=8118,ext:wav,body_hash:60cef3926c854c29522b52f26e931a3a2c72baf51383fdcf35845940d364bb13,album:MusuPoolBytes
+                Record,id:60cef3926c854c29,path:MusuPoolBytes/Pool Source - Rolling One.wav,came_from:friendo,came_path:MusuPoolBytes/Pool Source - Rolling One.wav,title:Rolling One,artist:Pool Source,bytes=8118,ext:wav,body_hash:60cef3926c854c29522b52f26e931a3a2c72baf51383fdcf35845940d364bb13,album:MusuPoolBytes

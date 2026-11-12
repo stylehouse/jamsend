@@ -966,7 +966,7 @@ for (let attempt = 1; ; attempt++) {
 		}
 		console.error(`⇢ could not stand it: ${st.result?.error ?? st.error ?? 'no reply'}`)
 	}
-	console.error(`… runner ${TARGET.slice(0, 8)} ${reply.ok === false ? `refused (${reply.result?.error ?? 'busy'})` : 'silent'} — insisting ${attempt}/${INSIST}`)
+	console.error(`… runner ${TARGET.slice(0, 8)} ${reply.control !== 'runner_ack' ? 'silent' + (reply.error ? ' — ' + reply.error : '') : `refused (${reply.result?.error ?? reply.reason ?? reply.result?.reason ?? 'busy'})`} — insisting ${attempt}/${INSIST}`)
 	await new Promise(r => setTimeout(r, Number(process.env.RUNNER_INSIST_MS || 3000)))
 }
 // ── RE-COURT A WEDGED RUNNER (2026-09-09) ────────────────────────────────────────────────────────

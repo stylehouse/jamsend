@@ -495,6 +495,9 @@ Page_yays(w):
         let react = this.Heard_reaction(c)
         if (react !== 'take' && react !== 'nay') continue
         let at = +(react === 'take' ? c.sc.hearted_at : c.sc.nayed_at) || 0
+        // a call-off is news on the row: it sorts by the cancel, not the old ♥, so the ↻ is at the top where you just pressed ✕
+        //  (owner 2026-11-12: *"the cancelled Heist's Yay should still be in the Yay after that so I could resume it"*)
+        if (react === 'take' && this.Heard_cancelled && this.Heard_cancelled(c)) { at = Math.max(at, +(c.sc.cancelled_at || 0), +((c.c && c.c.u_cancelled_at) || 0)) }
         let later = react === 'take' ? this.Heard_later(c) : 0
         // its Heist, when one stands here — the row links through to it (YayFace → page_nav focus_keep)
         let keep = react === 'take' && shop ? shop.o({ Heist: 1, seed: String(c.sc.id) })[0] || null : null
@@ -556,7 +559,7 @@ Page_yay_heists(w):
 Page_yay_fate(c, react, shop, myname, later):
     if (react === 'nay') return 'nay — never drawn again'
     let hearted = +(c.sc.hearted_at || 0)
-    if (this.Heard_cancelled && this.Heard_cancelled(c)) return 'cancelled — ↻ to try again'
+    if (this.Heard_cancelled && this.Heard_cancelled(c)) return 'cancelled'
     // a heart on my own music is a taste fact — it was never fetched (2026-11-12: those read "heisted — here")
     let mepub = this.Radio_pub ? String(this.Radio_pub(this.Page_yay_w()) || '') : ''
     if (mepub && String(c.sc.pub || '') === mepub && !(this.Heard_pool_holds && this.Heard_pool_holds(this.Page_yay_w(), mepub, String(c.sc.id)))) return 'in your own collection'
@@ -566,8 +569,8 @@ Page_yay_fate(c, react, shop, myname, later):
     }
     let v = this.Heard_verdict(c)
     if (v === 'held') return 'you already had it'
-    if (v === 'landfail') return (c.sc.why ? String(c.sc.why) : 'could not land') + ' — ♥ again to retry'
-    if (v === 'unvouched') return 'the offer was unsigned — ♥ again to retry'
+    if (v === 'landfail') return c.sc.why ? String(c.sc.why) : 'could not land'
+    if (v === 'unvouched') return 'the offer was unsigned'
     if (later) return 'saved for later'
     let keep = shop ? shop.o({ Heist: 1, seed: String(c.sc.id) })[0] : null
     if (keep) {

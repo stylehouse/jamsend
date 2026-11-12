@@ -72,12 +72,12 @@
 </script>
 
 {#if !big}
-    <div class="yf-bud" title="your yays and nays — what became of each">
+    <div class="yf-bud" data-yay-fly title="your yays and nays — what became of each">
         <span class="yf-heart">♥</span>{#if yays}<span class="yf-n">{yays}</span>{/if}
         {#if view.later.length}<span class="yf-later" title="saved for later">⇊{view.later.length}</span>{/if}
     </div>
 {:else}
-    <div class="yf">
+    <div class="yf" data-yay-fly>
         <div class="yf-head">♥ {yays} yay{yays === 1 ? '' : 's'}{#if nays} · 👎 {nays}{/if}</div>
         <label class="yf-opt"><input type="checkbox" checked={view.auto} onchange={() => set({ auto: view.auto ? '0' : '1' })} />
             autoheist when yayed</label>
@@ -123,7 +123,7 @@
                         <span class="yf-fate">{r.fate}{#if r.at} · {ago(at_ms(r.at))}{/if}</span>
                     {/if}</span>
                 {#if r.later}<button class="yf-btn" onclick={() => go(r.id)} title="saved for later — heist it now">⇊</button>{/if}
-                {#if r.retry}<button class="yf-btn" onclick={() => retry(r.id)} title="ask again">↻</button>{/if}
+                {#if r.retry}<button class="yf-btn" onclick={() => retry(r.id)} title="heist it again">⇊</button>{/if}
                 <button class="yf-x" onclick={() => drop(r)} title="forget this yay — it stops being heisted (a Heist already going keeps going)">✕</button>
             </div>
         {:else}

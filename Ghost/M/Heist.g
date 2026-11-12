@@ -1091,6 +1091,11 @@ async Heist_catalog_land(nav, mardir, job, own_lib, mir, rec, rel, size, held):
         if (pk && pk.sc.seed_path) {
             card.sc.came_path = String(pk.sc.seed_path)
             if (pk.sc.seed_base) card.sc.came_base = String(pk.sc.seed_base)
+        } else if (card.sc.came_from && rec.sc.path && String(rec.sc.path).indexOf('pool/') !== 0) {
+            //  …else the served record's own path on their side (a stock id, not a wander: c58b's ♥ on "010" went blind — Vingas had
+            //   reloaded, its radiostock window had rolled past the id, and the ask carried nothing it could find again)
+            card.sc.came_path = String(rec.sc.path)
+            if (rec.sc.base) card.sc.came_base = String(rec.sc.base)
         }
     } else {
         card = this.Ra_rec_home(own_lib, rec.sc.id)
@@ -1221,6 +1226,18 @@ async Heist_census_heads(w, lib, nav, walkdir, base, me, prefix, seedName, seed)
     //     seconds — the seed (stamped below in Heist_rummage_folder, off its stock card).  Still
     //      metadata-only: a stat is not a read, no hash, no bytes cross until chosen.
     let entries = await this.Crate_nav_ls(nav, walkdir)
+    // THE ALBUM IS THE SEED'S OWN FOLDER, NOT EVERYTHING UNDER IT (2026-11-12, c58b: a ♥'s setup said *"366 tracks, ~794:59"*) —
+    //  Crate_nav_ls recurses, so a track lying loose in a category or artist folder offered that whole tree.  Subfolders are other
+    //   albums: keep the seed's siblings only.  And when that folder ALSO held subfolders (a category, not an album) and its loose pile
+    //    is big (> 60), offer just the track.  A plain album folder is never capped — a two-disc Weihnachts-Oratorium is ~64 tracks
+    //     (c58b, 2026-11-12: *"claims to have one file but there are many, like 40, on disk"* — the first cut capped every folder).
+    if (seedName) {
+        let flat = entries.filter((e) => String(e.path).indexOf('/') < 0)
+        if (flat.length < entries.length) {
+            entries = flat
+            if (entries.length > 60) { entries = entries.filter((e) => e.path === seedName) }
+        }
+    }
     let built = 0
     for (const ent of entries) {
         let rel = ent.path
@@ -1256,6 +1273,8 @@ async Heist_census_heads(w, lib, nav, walkdir, base, me, prefix, seedName, seed)
         let dot = path.lastIndexOf('.')
         if (dot >= 0) rec.sc.ext = path.slice(dot + 1)
         rec.sc.husk = 1
+        // the base rides the husk (2026-11-12): a pool copy landed from it remembers base + path (came_path), so a later ♥ can ask by path
+        if (base) rec.sc.base = String(base)
         if (seed && seedName && rel === seedName) rec.sc.re = String(seed)
         rec.bump()
         built = built + 1
@@ -1796,7 +1815,12 @@ async Heist_rummage_folder(w, nav, me, seed, hintPath, hintBase):
         //  re-derives from (me, base, path), which certifies the path is mine to describe — the same equation the want side uses.
         card = { path: String(hintPath), base: String(hintBase || '') }
     }
-    if (!card || !card.path) return null
+    if (!card || !card.path) { card = this.Heist_seed_card_live(w, me, seed) }
+    // A PATH THE ASKER REMEMBERED for an id that is not path-derived (a stock content id — the pool copy's came_path, landed from MY
+    //  served record): no equation certifies it, so the census below must find the file itself, or nothing is answered
+    let loose = 0
+    if ((!card || !card.path) && hintPath && this.Heist_want_path_ok(hintPath)) { card = { path: String(hintPath), base: String(hintBase || '') }; loose = 1 }
+    if (!card || !card.path) { console.log('◈? describe ' + String(seed).slice(0, 12) + ' — not a track I can find (no radiostock file, no live card, no path given) — unanswered'); return null }
     let base = card.base || ''
     let cparts = String(card.path).split('/').filter(Boolean)
     let seedName = cparts[cparts.length - 1]                     // "01.flac" — relative to the album folder
@@ -1809,6 +1833,13 @@ async Heist_rummage_folder(w, nav, me, seed, hintPath, hintBase):
     //  old Heist_census inflicted on the share beat).  A chosen sibling's bytes read once, at pull, on demand.
     //   The seed's own husk carries re:<content-id> so the asker can spot + default-keep it among the nodes.
     await this.Heist_census_heads(w, lib, nav, walkdir, base, me, prefix, seedName, seed)
+    // a loose hint may be a lofi-renamed copy's path (.ogg for our .flac): the seed is the one file of that name stem in the folder
+    if (loose && !this.Ra_recs(lib).some((r) => r.sc.re === String(seed))) {
+        let stem = (p) => { let b = String(p || '').split('/').pop(); let i = b.lastIndexOf('.'); return i > 0 ? b.slice(0, i) : b }
+        let hits = this.Ra_recs(lib).filter((r) => stem(r.sc.path) === stem(hintPath))
+        if (hits.length === 1) { hits[0].sc.re = String(seed); hits[0].bump() }
+    }
+    if (loose && !this.Ra_recs(lib).some((r) => r.sc.re === String(seed))) { console.log('◈? describe ' + String(seed).slice(0, 12) + ' — the remembered path ' + String(hintPath).slice(-60) + ' is not here — unanswered'); w.drop(lib); return null }
     // TAG each folder husk with the seed(s) it answers (a husk-crossing scalar): the answer lands in the
     //  asker's EXISTING friend mirror (mixed with the radio share — the live routing is sender-keyed, not
     //   per-request), so the chooser filters this folder out by the tag and the pull drives only the chosen
@@ -1832,6 +1863,25 @@ async Heist_rummage_folder(w, nav, me, seed, hintPath, hintBase):
     this.Heist_register_serve_lib(w, lib)
     return lib
 
+// Heist_seed_card_live — THE HOLDER'S LIVE MEMORY OF AN ID (2026-11-12, c58b's ♥ on "010" from Vingas: *"Vingas is slow to answer
+//  again"* — it never answered).  The radiostock files are a rotating window, so an id I stocked, paged or pool-served an hour ago is
+//   often gone from them; but my stock shelf and the Pooling pages I publish still name it WITH its path.  Probe-only, never mints.
+//    Either answer is mine to describe: the shelf is my own library, and a page card's id is Heist_keep_id(me, base, path), re-checked.
+Heist_seed_card_live(w, me, seed):
+    let M = this.top_House ? this.top_House() : null
+    let rw = (M && M.c.radio_w) || w
+    let home = rw ? rw.o({ Mine: 1, pub: String(me) })[0] : null
+    let stock = home ? home.o({ stock: 1, pub: String(me) })[0] : null
+    if (!stock) return null
+    let rec = this.Ra_rec_find(stock, { Record: 1, id: String(seed) })
+    if (rec && rec.sc.path && !rec.sc.husk) return { path: String(rec.sc.path), base: String(rec.sc.base || '') }
+    for (const c of (this.Ra_pooling_cards ? this.Ra_pooling_cards(stock) : [])) {
+        if (String(c.sc.Card) !== String(seed) || !c.sc.path) continue
+        if (this.Heist_keep_id(me, String(c.sc.base || ''), String(c.sc.path)) !== String(seed)) continue
+        return { path: String(c.sc.path), base: String(c.sc.base || '') }
+    }
+    return null
+
 // Heist_rummage_recs — the folder husks tagged for THIS seed, read the PAGED-aware way (Ra_recs walks the
 //  Mag model, not a flat o() which misses records that merged onto the friend's paged radio mirror — the
 //   review's finding).  The tag is multi-valued, so match by membership.
@@ -1845,7 +1895,7 @@ Heist_rummage_recs(mir, seed):
     if (out.length) return out
     let M = this.top_House ? this.top_House() : null
     let blag = M ? M.o({ BlagLib: String(seed) })[0] : null
-    return blag ? this.Ra_recs(blag) : out
+    return blag ? this.Heist_album_trim(this.Ra_recs(blag), seed) : out
 
 // Heist_rummage_wire — the WIRE census alone, with no blag fallback: the tracks the source itself named
 //  when it walked its own disk.  Split out of [[Heist_rummage_recs]] 2026-08-13 because "do we have a
@@ -1862,7 +1912,34 @@ Heist_rummage_wire(mir, seed):
             if (tag && String(tag).split(',').includes(String(seed))) out.push(rec)
         }
     }
+    return this.Heist_album_trim(out, seed)
+
+// Heist_album_trim — THE ASKER'S HALF of Heist_census_heads' album rule (2026-11-12, c58b's ♥ setup: *"366 tracks, ~794:59"*, and
+//  the tab too pegged to take its own ✕): a holder on an older build still answers with its whole recursive tree.  The album is the
+//   seed's own folder — siblings sharing its directory — and a loose pile bigger than an album (> 60) is just the track.  No seed
+//    husk in the answer (no `re`) ⇒ nothing to measure by, left as it came.
+Heist_album_trim(recs, seed):
+    if (!recs || recs.length < 2) return recs
+    let srec = recs.find((r) => r.sc.re && String(r.sc.re).split(',').includes(String(seed)))
+    if (!srec || !srec.sc.path) return recs
+    let dir = (p) => { let s = String(p || ''); let i = s.lastIndexOf('/'); return i < 0 ? '' : s.slice(0, i) }
+    let sd = dir(srec.sc.path)
+    let out = recs.filter((r) => dir(r.sc.path) === sd)
+    if (out.length < recs.length && out.length > 60) out = [srec]
     return out
+
+// Heist_wire_forget — untag a seed's wire answer off a friend's mirror (Heist_keep_cancel): a husk answering only this seed goes,
+//  one shared with another keep's seed just loses this tag.  The next describe for the seed is asked, not read off yesterday's answer.
+Heist_wire_forget(mir, seed):
+    if (!mir || !seed) return 0
+    let n = 0
+    for (const rec of this.Ra_recs(mir).slice()) {
+        if (!rec.sc.rummage || !String(rec.sc.rummage).split(',').includes(String(seed))) continue
+        let left = String(rec.sc.rummage || '').split(',').filter((t) => t && t !== String(seed))
+        if (left.length) { rec.sc.rummage = left.join(','); rec.bump() } else if (rec.sc.husk && rec.c.up) { rec.c.up.drop(rec) } else { delete rec.sc.rummage; rec.bump() }
+        n = n + 1
+    }
+    return n
 
 // Heist_unity_of — WHAT THE SOURCE SAYS THE FOLDER IS: {n, size} off the seed's own mirrored card, stamped
 //  there by [[Ra_unity_stamp]] on their side and carried to us with the card.  This is the number that
@@ -1980,6 +2057,10 @@ Heist_wire_supersede(keep, srcmir, seed):
         moved = moved + 1
     }
     this.Heist_blag_drop(seed)
+    // A POOL KEEP THAT LOST ITS ONE PICK GOES BACK TO BE SOLOED (2026-11-12, eed: "Groove G" — soloed on the blag, the blag pick had
+    //  no wire twin and was dropped, the defaulters then adopted the whole wire folder and it PULLED all 8 into the pool).  Primed again,
+    //   Heist_keep_pool_go cuts the adopted folder back to the seed's own track before a byte moves.
+    if (lost && !moved && this.Pool_is_machinery(keep) && String(keep.sc.state || '') === 'pulling') { keep.sc.state = 'primed'; delete keep.sc.pick_edited }
     // SPEND the blag rather than clearing it: `blagged = 0` (the first cut) re-opened the mint gate
     //  above, so the very next beat re-derived the guess we had just superseded and re-minted the
     //   %BlagLib we had just dropped, every beat until the 3-try ceiling caught it.  A blag that has
@@ -3278,6 +3359,14 @@ Heist_keep_seed_ref(keep, srcmir, seed):
         let alias = this.Ra_rec_find(srcmir, { Record: 1, re: sid })
         let aref = alias ? String(alias.sc.id || '') : ''
         if (aref && keep.o({ Pick: 1, ref: aref })[0]) { sid = aref }
+        // …else BY FILENAME (2026-11-12, eed's pool fill "Groove G" pulled all 8 of its folder): no re:<seed> alias reached the
+        //  mirror, but the seed's own card names its file, and exactly one pick wearing that name is the seed
+        else {
+            let srec = this.Ra_rec_find(srcmir, { Record: 1, id: sid })
+            let nm = srec && srec.sc.path ? String(srec.sc.path).split('/').pop() : ''
+            let hits = nm ? keep.o({ Pick: 1 }).filter((p) => p.sc.path && String(p.sc.path).split('/').pop() === nm) : []
+            if (hits.length === 1 && hits[0].sc.ref) { sid = String(hits[0].sc.ref) }
+        }
     }
     return sid
 
@@ -4199,6 +4288,9 @@ async Heist_keep_cancel(w, keep):
     //    on that seed in the Berth, not on the %Heist standing — dropping first cannot orphan it.
     await shop.rm({ Heist: 1, seed: keep.sc.seed })
     await this.Heist_blag_drop(keep.sc.seed)
+    // FORGET THEIR ANSWER TOO (2026-11-12, c58b: a two-disc Bach *"claims to have one file but there are many, like 40, on disk"* — a
+    //  holder on a bad build answered 1 husk, and with a wire answer standing the describe is never re-sent): a ✕ then ↻ asks afresh
+    if (keep.sc.pub && keep.sc.seed) { try { this.Heist_wire_forget(this.Ra_home_them((this.top_House ? this.top_House().c.radio_w : null) || w, String(keep.sc.pub)), String(keep.sc.seed)) } catch (er) {} }
     // A ♥ KEEP'S ✕ RETIRES THE HEART TOO, or the haul beat mints it straight back next pass and the
     //  button reads as broken by doing exactly what it was told.  This is the ONE road by which a take
     //   ever ends (Heard_untake, §C: "you can't lose a heart — only you retire one"): the machine never

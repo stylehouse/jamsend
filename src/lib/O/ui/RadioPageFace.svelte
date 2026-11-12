@@ -3,8 +3,7 @@
     //  (O/Cellui.svelte — what / draws: port-hole cells, one main, minicells along its edge), FULLSCREEN over the page; ▦ in its
     //   corner lets it back into the page, where Otro's own ▦ unfolds the guts.  No Vyto world is commissioned here: the cast is the
     //    ghost's (Page_cast — radio, Door, keeps, Wikipedia, friends' organs, Yay…) and the focus is the page's (%Focus on w:Radio).
-    //  THE FLYING ♥: RadioFace's ♥ press throws a `jam-yay` window event with where it was pressed; a ♥ flies from there into the Yay
-    //   minicell (`.cello-sat[data-mk=Yay]`); a burnt-down 👎 fuse rides the same flight with `glyph:'👎'`.  The first heart mints that cell, so the flight waits for it to appear (≤4s — it is minted on the pulse's 2.5s beat).
+    //  THE FLYING ♥ moved to ui/yay_fly.ts (RadioFace imports it), so / flies too.
     import Cellui from "$lib/O/Cellui.svelte"
     let { H = null }: { H?: any } = $props()
     let M = $derived(H?.top_House ? H.top_House() : H)
@@ -15,36 +14,6 @@
     const onfocus = (mk: string) => M?.Page_focus?.(mk)
     const cast = (): any[] => { try { return M?.Page_cast?.() ?? [] } catch (e) { console.warn('⚠ Page_cast threw', e); return [] } }
 
-    function fly(from: { x: number, y: number, glyph?: string }, tries = 0) {
-        const to = stage?.querySelector('.cello-sat[data-mk="Yay"]') as HTMLElement | null
-        if (!to) {
-            if (tries < 40) setTimeout(() => fly(from, tries + 1), 100)
-            return
-        }
-        const r = to.getBoundingClientRect()
-        const el = document.createElement('div')
-        el.className = 'yay-fly'
-        el.textContent = from.glyph || '♥'
-        el.style.cssText = `position:fixed;left:${from.x}px;top:${from.y}px;z-index:1001;pointer-events:none;color:#f4b8c8;`
-            + `font-size:28px;transform:translate(-50%,-50%);text-shadow:0 0 12px rgba(244,184,200,0.8)`
-        document.body.appendChild(el)
-        const dx = r.left + r.width / 2 - from.x, dy = r.top + r.height / 2 - from.y
-        const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-        const anim = el.animate([
-            { transform: 'translate(-50%,-50%) scale(1)', opacity: 1 },
-            { transform: `translate(calc(-50% + ${dx * 0.5}px), calc(-50% + ${dy * 0.5 - 60}px)) scale(1.5)`, opacity: 1, offset: 0.45 },
-            { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.6)`, opacity: 0.2 },
-        ], { duration: reduce ? 1 : 750, easing: 'cubic-bezier(.3,.7,.4,1)' })
-        anim.onfinish = () => {
-            el.remove()
-            to.animate?.([{ transform: 'scale(1)' }, { transform: 'scale(1.25)' }, { transform: 'scale(1)' }], { duration: reduce ? 1 : 300 })
-        }
-    }
-    $effect(() => {
-        const on = (e: Event) => { const d = (e as CustomEvent).detail; if (d) fly(d) }
-        window.addEventListener('jam-yay', on)
-        return () => window.removeEventListener('jam-yay', on)
-    })
 </script>
 
 <section class="glass" class:full bind:this={stage}>

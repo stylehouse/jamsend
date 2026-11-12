@@ -1,5 +1,6 @@
 <script lang="ts">
     import { page_nav } from "$lib/O/ui/page_nav"
+    import "$lib/O/ui/yay_fly"
     // RadioFace — the radio's face in the glass: mounted by Cytui on a %Radio particle wearing
     //  sc.face:'Radio' (glass_kinds.ts).  Reads the particle's sc each H.version bump; the
     //   buttons call the Radio ghost's verbs straight on H (ghost methods mix onto the House).
@@ -18,7 +19,7 @@
     //     re-asked), and long-press is the way back forever.  The road switch (Heard_hand_set) and the tip are
     //      scalars on the Mag; the sheet holds no state of its own beyond open/closed.
     // the press also SAYS where it happened (a window event), so /Radio's glass can fly a ♥ from here into the Yay cell
-    //  (RadioPageFace).  Nobody listening on / — the event just falls on the floor.
+    //  (ui/yay_fly.ts, imported above — / and /Radio alike).
     const like = (e?: MouseEvent) => {
         ;(H as any)?.Radio_like?.(n)
         try {

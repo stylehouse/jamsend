@@ -328,6 +328,22 @@
      `into:pool` — the steward re-books what the pool still wants.  `take` (a ♥ keep) now rides the Berth too.  The 38 files are
       the owner's to delete (the Haul row's delete, or by hand).
 
+**ASKING A FRIEND FOR A FOLDER, LIVE — 2026-11-12 (c58b ↔ Vingas/b8bc ↔ eed, read with minisnap + console)** — four faults, each fixed:
+ - *A ♥ that wouldn't cancel*: the haul reads the union's most-advanced copy (often a sibling's), which never saw MY `cancelled_at`.
+   `Heard_cards_union_of` now folds the newest press/cancel/✕ stamps of every copy onto the chosen card (`.c.u_*`); `Heard_cancel`
+   stamps every (id, pub) copy, not the first found (a ↻ can leave two).
+ - *"366 tracks, ~794:59"*: `Crate_nav_ls` recurses, so a track loose in a category folder offered the whole tree.  Holder
+   (`Heist_census_heads`) and asker (`Heist_album_trim`) both keep the seed's own directory, and > 60 loose = just the track.
+ - *Vingas never answered*: the holder resolved a seed only from its radiostock files (a rolling window, emptied by its reload).
+   Now also its live stock shelf + its own Pooling page cards (`Heist_seed_card_live`), and a remembered path (`came_path`, now
+   also taken from the served record when a pool copy lands; husks carry `base`) is accepted when the census finds the file.  An
+   unanswerable describe now logs `◈? describe … — unanswered` instead of silence.
+ - *A pool fill pulled a whole album* (eed, "Groove G" 8/8 into pool/): the wire answer dropped the blagged seed pick (path
+   mismatch), the defaulter adopted the folder, the solo never found the seed.  Supersede sends such a pool keep back to primed;
+   `Heist_keep_seed_ref` falls back to the seed card's filename.  ⚠ WHY the blag/wire paths differ is not yet known.
+ Owed: the 884fc599 tab (a stale c58b body?) answers census but never an op — find what it is; `runner_ask` used to print a
+  timeout as "refused (busy)" (fixed: it says silent).
+
 **A POOL COPY REMEMBERS WHERE IT CAME FROM — 2026-11-12** (owner: *"we should remember where the SP came from… I've got Yays just sitting
  there that are due a Heist"*).  eed's ♥s on pooled tracks logged `queued to haul from undefine` and sat forever: the pool copy carried no
   holder on purpose, so Heard_takes could only ask *whoever lists it now*, and a wander track had already rolled off the holder's pages.

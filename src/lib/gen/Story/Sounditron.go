@@ -11,7 +11,7 @@ import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return '217bb0c1b820784d~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return '2c402e635eeddb0d~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -666,6 +666,13 @@ Sounditron_commission(w) { const H = this;
             let shH = this.top_House ? this.top_House() : null
             if (!(shH && shH.c.humdinger)) organs.push(shuf)
         }
+    }
+    // POOLING + YAY STAND WHILE A HEIST DOES (owner 2026-11-12: *"there's a minicell called Hauls now that I've started it, and Yays and
+    //  SoundPooling have gone away"*) — they were minted inside the deck's `if (!anyKeep)` close, so the first keep took both off the
+    //   glass and the Hauls bud came back in Yay's place.  Out here they are furniture; still humdinger-gated, so fixtures don't move.
+    {
+        let sident = this.top_House().Swarm_live_self ? this.top_House().Swarm_live_self() : null
+        let spiers = (sident && this.top_House().Swarm_peering) ? (this.top_House().Swarm_peering(sident)?.o({ Pier: 1 }) ?? []) : []
         // THE POOL CELL (owner 2026-09-03: "how do we select what music we want to keep available … perhaps
         //  just another cell when there's any Crew").  %Pooling (not %Pool — that mainkey is the compartment
         //   itself; two shapes under one mainkey is the tell) — a persistent dontSnap anchor on the radio world,
@@ -1630,7 +1637,8 @@ Sounditron_visualcrux(f) {
     if (f.pose_want && main === 'Heist') { pose = f.pose_want }
     // ── buds: the standing set, minus the main, in the one order ──
     let standing = []
-    if (f.hauls_fresh || f.keeps) { if (has('Hauls')) { standing.push('Hauls') } else if (f.keeps) { standing.push('Heist') } }   // "we only avail them through Haul"; no bag ⇒ the keep itself buds (the invariant)
+    if (has('Yay')) { standing.push('Yay') }                                                               // the Yay cell speaks for every Heist (11-12)
+    else if (f.hauls_fresh || f.keeps) { if (has('Hauls')) { standing.push('Hauls') } else if (f.keeps) { standing.push('Heist') } }   // "we only avail them through Haul"; no bag ⇒ the keep itself buds (the invariant)
     if (f.amiss || f.show_diag) { standing.push('Supervisor') }                                            // quiet-when-healthy
     standing.push('Door')                                                                                  // "Always Door|Player"
     standing.push('Radio')
@@ -1638,7 +1646,7 @@ Sounditron_visualcrux(f) {
     standing.push('Wikipedia')                                                                             // always on (WikipediaCell_todo)
     let buds = []
     for (const mk of standing) { if (mk !== main && (has(mk) || mk === 'Heist') && buds.indexOf(mk) < 0) { buds.push(mk) } }
-    if (main === 'Link' || main === 'Heist') { buds = buds.filter((mk) => mk === 'Door' || mk === 'Radio' || mk === 'Hauls' || mk === 'Heist') }   // a belly ceremony|keep keeps only the way back + the Haul
+    if (main === 'Link' || main === 'Heist') { buds = buds.filter((mk) => mk === 'Door' || mk === 'Radio' || mk === 'Hauls' || mk === 'Heist' || mk === 'Yay') }   // a belly ceremony|keep keeps only the way back + the Haul
     return { main: main, buds: buds, pose: pose }
 
 },
