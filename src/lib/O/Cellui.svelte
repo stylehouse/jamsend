@@ -1410,6 +1410,9 @@
     transition: flex-basis 0.4s cubic-bezier(0.4, 0, 0.2, 1), max-height 0.4s ease;
     filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.55));
 }
+/* PORTRAIT ELONGATES (owner 2026-11-12: "when in portrait mode, the cell should elongate a bit. currently the minicells are
+   overlapping the Pooling content a little bit"; then "when the layout wrt minicells row orientation is in portrait mode") — it is
+    the LAYOUT's portrait that counts, not the device's: the minicells-in-a-row stack is `.cello-stage.narrow` below. */
 /* ── OFF-EDGE BELLY (screenshot RIGHT) — the really-big cell anchored to the left, its
    oversized wall spilling off the left/top/bottom.  The .cello-main box grows past the
     viewport and shifts left; the oversized ring (main_edge_wall, scale 1.9, dx -60) is
@@ -1483,7 +1486,7 @@
     /* 30% WIDER, same height (owner 2026-11-12: "the main Cell can be 30% wider than it is now when the minicells are put underneath
        it") — was min(78vw, 460px) at 1:1 */
     width: min(96vw, 598px);
-    aspect-ratio: 1.3 / 1;
+    aspect-ratio: 1 / 1;           /* elongated from 1.3:1 — the minicell row sat over the bottom of a tall face (Pooling) */
 }
 .cello-stage.narrow .cello-satellites {
     flex-direction: row;

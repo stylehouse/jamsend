@@ -31,11 +31,18 @@
         return () => clearInterval(iv)
     })
 
+    // THE SELF IS LATCHED (2026-11-12, owner: "the Invite cell vanishes after 1s! … the one with the QRcode").  Swarm_live_self()
+    //  can throw or return null for a moment mid-Atime (every `🪪 account mirrored` save, ~1.5s apart on b8bc) — and a null self here
+    //   means no prepub, so `{#if face.prepub}` unmounted InvitePanel and its freshly-minted QR with it, then remounted it empty.  The
+    //    identity never un-exists, so the last real one stands in for a blip (InvitePanel's own latch, same reason).  Plain let, not
+    //     $state: a derive may write it, and nothing should re-run off it.
+    let self_latch: any = null
     let face = $derived.by(() => {
         void H?.version
         void tick
         let self: any = null
         try { self = typeof H?.Swarm_live_self === 'function' ? H.Swarm_live_self() : null } catch { self = null }
+        if (self) { self_latch = self } else { self = self_latch }
         const today = new Date().toISOString().slice(0, 10)
         const door = (H?.c?.door ?? {}) as any
         let friends: any[] = []

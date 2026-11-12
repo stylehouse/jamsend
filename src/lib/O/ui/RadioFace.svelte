@@ -514,7 +514,8 @@
     .rf-src-sub { display: block; margin-top: -2px; font-size: .78em; opacity: .75; letter-spacing: .3px; }
     .rf-keep { width: 30px; height: 30px; font-size: 12px; }
     .rf-like { width: 30px; height: 30px; font-size: 14px; }
-    .rf-nay { opacity: .55; font-size: .9em; }
+    /* smaller than ♡ beside it (owner 2026-11-12: "make the Nay button smaller") — a refusal, not the main gesture */
+    .rf-nay { opacity: .55; font-size: .7em; width: 24px; height: 24px; align-self: center; }
     .rf-nay:hover { opacity: 1; }
     .rf-nay { transition: background-color .25s linear, opacity .25s; border-radius: 6px; }
     .rf-nay.armed { opacity: 1; background-color: #b8484a; transition: background-color 2s linear, opacity .25s; }

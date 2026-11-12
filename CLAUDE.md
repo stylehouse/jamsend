@@ -250,8 +250,9 @@ svelte-check reports ~3000 pre-existing errors|warnings — mostly implicit-`any
 
 What still holds: **don't `npm install` on a whim** — the lockfile pins the tree, and `"prepare":
  "svelte-kit sync"` fires on EVERY install (even `--no-save`), regenerating `.svelte-kit/` under a
-  running server. Run `npx svelte-check --tsconfig ./tsconfig.json` directly rather than `npm run check`
-   while a tab is live. If the tree ever drifts from the lockfile, a bare `npm i <pkg>` reconciles it —
+  running server. ⚠ **Neither `npm run check` nor `npx svelte-check` is safe while a tab is live** (found 2026-11-12):
+   svelte-check rewrites `.svelte-kit/generated`, Vite full-reloads EVERY tab, and each music tab must be re-granted its folder
+    by hand (the tab's `⏮ last life … FULL RELOAD — triggeredBy=` line names it).  Type-check only with no tabs up. If the tree ever drifts from the lockfile, a bare `npm i <pkg>` reconciles it —
     do NOT delete `package-lock.json` + `node_modules` and `npm i` (that throws away the pins).
 
 **Diagnosing without guessing.** The dev server lives OUTSIDE the claude container (no docker socket,
@@ -317,7 +318,8 @@ Verify a Book by asking a LIVE runner to run it — not a headless boot.
    use the DEFAULT `RUNNER_URL` and address one with `--player=<pub>` (`minisnap`, `console`, `crew`, `dump`,
     `reload`). The djamsend URL is unreachable from this container; don't try it. A music tab only answers once
      DIAGNOSTIC-ARMED — the owner runs `localStorage.setItem('socklog','1')` in its DevTools and reloads (or
-      opens it once with `&socklog`). `runners` lists only armed players; a missing one isn't armed.
+      opens it once with `&socklog`). `runners` lists only armed players; a missing one isn't armed.  It is the ONLY
+       switch (verbs ride the same channel) — the how-to is **`spec/Tab_reach_todo.md`** (Everything: "reaching a live tab").
  A tab's ping ack carries a real `role` — `'runner'` or `'player'` (a music page answers `player`;
   `LiesLies` stamps it at the one place a role is ever stamped, and `runner_ask` filters on the ack's own
    value, so a player is never dispatched a Book; the transition is one-way). `supervisor`'s `humdinger`

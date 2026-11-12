@@ -138,6 +138,27 @@
         }
         return Object.entries(t)
     })
+    // AT REST, SAYING THE LAST THING IT DID (owner 2026-11-12: *"Cell:Pooling keeps changing what it's doing… it should come to more
+    //  of a rest… it should steady state, logging the last thing it did"*).  The live lines used to be a running tally that moved every
+    //   poll; now one steady line says how full it is and whether it wants more, and one says the last arrival and when.  `last_at` is
+    //    stamped HERE, the moment last_in changes — component-local, so a remount forgets it (it then reads "last: <track>" with no age).
+    let last_at = $state(0)
+    let last_seen = ''
+    $effect(() => { if (last_in && last_in !== last_seen) { if (last_seen) last_at = Date.now(); last_seen = last_in } })
+    let ago_tick = $state(0)
+    $effect(() => { const iv = setInterval(() => { ago_tick++ }, 30000); return () => clearInterval(iv) })
+    const ago = $derived.by(() => {
+        void ago_tick
+        if (!last_at) return ''
+        const m = Math.floor((Date.now() - last_at) / 60000)
+        return m < 1 ? 'just now' : m < 60 ? m + 'm ago' : Math.floor(m / 60) + 'h ago'
+    })
+    // how many tracks the budget holds, at the pool's own per-track guess
+    const target = $derived.by(() => {
+        void H?.version
+        try { const w = world(); const t = +(H.Ra_pool_track_mb?.(w) || 0); return t > 0 && budget > 0 ? Math.floor(budget / t) : 0 } catch { return 0 }
+    })
+    let diag_open = $state(false)
     const friends = $derived(who === 'all' || who === 'friends')
     const crew = $derived(who === 'all' || who === 'crew')
     // the budget: only moves the number — the tickbox is the switch
@@ -206,11 +227,14 @@
             <label class="pf-ck" title="half the budget holds tracks you Yay'd in the last month (a Nay lets one go); until there are enough, that room goes to the random wander"><input type="checkbox" checked={liked} onchange={(e) => set_liked((e.currentTarget as HTMLInputElement).checked)} /> what you Yay <span class="pf-dim">(for a month)</span></label></span>
         </p>
         <p class="pf-live pf-dim">
-            {#if consent}{#if busy}<span class="pf-spin pf-spin-in" aria-hidden="true"></span> <span class="pf-nb">fetching {busy}</span> · {/if}<span class="pf-nb">{pooled} track(s)</span>{#if last_in} · last in: <span class="pf-track" title={last_in}>{last_in}</span>{/if}{:else}<span class="pf-nb">off — nothing kept in this browser</span>{/if}
+            {#if consent}<span class="pf-nb">{pooled}{#if target} of ~{target}{/if} track{pooled === 1 ? '' : 's'}</span> · {#if busy}<span class="pf-spin pf-spin-in" aria-hidden="true"></span> <span class="pf-nb">fetching {busy}</span>{:else if target && pooled < target}<span class="pf-nb" title="room for more — the next track arrives when a friend's offer is taken">wanting more</span>{:else}<span class="pf-nb">full, resting</span>{/if}{#if report} <button class="pf-q" onclick={() => (diag_open = !diag_open)} title="the pool's working numbers">ⓘ</button>{/if}{:else}<span class="pf-nb">off — nothing kept in this browser</span>{/if}
         </p>
-        {#if report}
+        {#if consent && last_in}
+            <p class="pf-live pf-dim">last: pooled <span class="pf-track" title={last_in}>{last_in}</span>{#if ago} · <span class="pf-nb">{ago}</span>{/if}</p>
+        {/if}
+        {#if report && diag_open}
             <p class="pf-live pf-dim">
-                <span class="pf-nb" title="a pooled track plays as its own file on this device (the radio’s file road); a Book, or a card whose file is gone, still needs a preview carried from when you heard it">{report.ready}/{report.cards} dialable</span>{#if unplayable.length} <span class="pf-nb" title="why the rest cannot be dialled — from the pool report">({unplayable.map(([k, n]) => n + ' ' + k).join(' · ')})</span>{/if}{#if report.files !== report.cards} · <span class="pf-nb" title="files under pool/ — differs from the cards when a file lost its card or a card its file">{report.files} file(s) on disk</span>{/if}{#if report.uncatalogued} · <span class="pf-nb">{report.uncatalogued} uncatalogued</span>{/if}{#if report.lingering} · <span class="pf-nb">{report.lingering} evicted, lingering</span>{/if}{#if inflight} · <span class="pf-nb">{inflight} in flight</span>{/if}
+                <span class="pf-nb" title="a pooled track plays as its own file on this device (the radio’s file road); a Book, or a card whose file is gone, still needs a preview carried from when you heard it">{report.ready}/{report.cards} dialable</span>{#if unplayable.length} <span class="pf-nb" title="why the rest cannot be dialled — from the pool report">({unplayable.map(([k, n]) => n + ' ' + k).join(' · ')})</span>{/if}{#if report.files !== report.cards} · <span class="pf-nb" title="files under pool/ — differs from the cards when a file lost its card or a card its file">{report.files} file(s) on disk</span>{/if}{#if report.uncatalogued} · <span class="pf-nb" title="files in the pool folder with no card — left over from before a reload; they get catalogued again or cleared">{report.uncatalogued} uncatalogued</span>{/if}{#if report.lingering} · <span class="pf-nb" title="let go to make room, but the file is still on disk until it is swept">{report.lingering} evicted, lingering</span>{/if}{#if inflight} · <span class="pf-nb">{inflight} in flight</span>{/if}
             </p>
         {/if}
     </div>
@@ -234,6 +258,7 @@
     .pf-nb { white-space: nowrap; }
     .pf-live { margin: .3rem 0 0; font-size: .82em; }
     .pf-dim { opacity: .6; font-size: .85em; }
+    .pf-q { pointer-events: auto; cursor: pointer; background: none; border: none; color: inherit; font: inherit; opacity: .7; padding: 0 .2em; }
     .pf-mb { width: 4.5em; box-sizing: border-box; background: rgba(0, 0, 0, .35); color: inherit; border: 1px solid rgba(244, 230, 200, .35); border-radius: 6px; padding: .1rem .3rem; font: inherit; font-weight: 700; text-align: right; vertical-align: baseline; }
     .pf-ck { white-space: nowrap; cursor: pointer; }
     /* friends and crew each on their own line (owner 2026-11-12) */

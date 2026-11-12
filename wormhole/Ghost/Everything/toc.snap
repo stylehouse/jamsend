@@ -36,6 +36,11 @@ Waft:Ghost/Everything,desc:READ THIS FIRST — one Waft per area of the program 
     Doc:src/lib/O/Funk/CreduFunk.svelte
     Doc:scripts/runner_ask.mjs
     Doc:scripts/story_accept.mjs
+  What:reaching a live tab,desc:arm a music page with socklog (its only switch) then read it from here — ping world minisnap console verbs poke — addressing and the svelte-check reload trap
+    Doc:src/lib/O/spec/Tab_reach_todo.md
+    Doc:scripts/runner_ask.mjs
+    Doc:src/lib/O/sockcap.ts
+    Doc:src/lib/O/spec/Verbs_todo.md
   What:the shelves,desc:GhostList lists the repo — Keep remembers what you had open — Aside/YMD is where errands land — Look and Ting are session-only
     Doc:src/lib/O/Funk/DocGhostList.svelte
     Doc:src/lib/O/LiesKeep.svelte

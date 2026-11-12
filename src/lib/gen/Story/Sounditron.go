@@ -11,7 +11,7 @@ import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return '2c402e635eeddb0d~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return '0f25235d828a55c4~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -2842,6 +2842,9 @@ Sounditron_music_why(w) {
     let friend = M.Radio_dial_pool ? M.Radio_dial_pool(w, radio) : null
     let own = 0
     if (M.Ra_recs && M.Ra_home_self && M.Radio_pub) own = M.Ra_recs(M.Ra_home_self(w, M.Radio_pub(w) || 'me')).length
+    // THE POOL IS OWN MUSIC TOO (2026-11-12, InkRogogo: an empty share folder but 39 playable pool tracks gave up
+    //  saying "my own shelf is empty").  The radio dials source:pool, so the pool's records count here.
+    if (!own && M.Ra_recs && M.Ra_pool_shelf_live) { let ps = M.Ra_pool_shelf_live(w); if (ps) own = M.Ra_recs(ps).length }
     if (!friend && !own) return 'nothing to play — no friend preview stood and my own shelf is empty'
     let probe = w.c.audio_probe
     // THE GESTURE TEST COMES FIRST AND IGNORES `s` (2026-08-10).  It used to live INSIDE the

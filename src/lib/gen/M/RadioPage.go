@@ -10,7 +10,7 @@ import RadioPageFace from "$lib/O/ui/RadioPageFace.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_RadioPage(): string { return '8f10ecc8038ed68c~g1' },
+    Ghostmeta_Ghost_M_RadioPage(): string { return '5680e5c024effe45~g1' },
 
 // RadioPage.g — the Radio as a page: /Radio, which is /Desk?I=<who>&G=Radio (spec/AtheoryArrive_todo.md §5).  Ground/Radio's Main is Radio, so Auto
 //  stands A:Radio/w:Radio on Mundo and its think is Radio(A,w) below — the music page with no Book under it.  On / the same organs
@@ -181,13 +181,19 @@ RadioPage_ask(w) {
         if (!pub || pub === String(ident.sc.prepub) || !this.RadioPage_online(p)) continue
         let home = w.o({ Theirs: 1, pub: pub })[0]
         let shelf = home ? home.o({ stock: 1, pub: pub })[0] : null
-        if (shelf && this.Ra_recs(shelf).length) continue
+        if (shelf && this.Ra_recs(shelf).length) { if (p.c.music_asks) p.c.music_asks = 0; continue }
         // (not gated on Peeroleum_peer_ready: a station route carries no %req:handshake, so it read false forever and nothing was
         //  ever asked — measured 2026-11-10.  The greet re-registers the rx too, which is what lets the lines land.)
         let route = this.Swarm_station_pier(sw, ident, pub)
         if (!route) continue
-        if (p.c.music_asked_at && now - p.c.music_asked_at < 5000) continue
+        // A FRIEND WITH NOTHING TO SHARE IS ASKED LESS AND LESS (2026-11-12, Vingas: 306 asks in 27 min at 5s to InkRogogo, a body with
+        //  no folder of its own).  5s for the first three — the come-back case this exists for — then doubling to a 5-minute floor;
+        //   their shelf filling resets it.  Runtime only (`.c`): a reload starts eager again, which is right after a reload.
+        let n = +(p.c.music_asks || 0)
+        let gap = n < 3 ? 5000 : Math.min(300000, 5000 * Math.pow(2, n - 2))
+        if (p.c.music_asked_at && now - p.c.music_asked_at < gap) continue
         p.c.music_asked_at = now
+        p.c.music_asks = n + 1
         this.Radio_trace(null, { ev: 'ask-music', of: pub.slice(0, 8) })
         try { if (this.Swarm_share_greet(sw, ident, p)) asked = asked + 1 } catch (er) {}
     }

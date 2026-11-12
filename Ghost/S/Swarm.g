@@ -3155,6 +3155,10 @@ Swarm_era(w):
 //     (see the gate in the hear funnel), and the pulse lane resolves it within ~5s regardless.
 Swarm_note_era(w, route, sf, may_reset):
     if (!route || !sf || !sf.era) return false
+    // AN ERA ONLY MOVES FORWARD (2026-11-12, Vingas×2 → InkRogogo).  An era is the boot's Date.now, so a real restart is
+    //  always NEWER.  An OLDER one is a twin tab of the same soul in one profile (or a stale frame): adopting it flipped the
+    //   route between two eras every ~2s, each flip a full rebirth that dropped every want — nothing crossed.  Ignore it.
+    if (route.c.peer_era && +sf.era < +route.c.peer_era) return false
     let reborn = !!(route.c.peer_era && route.c.peer_era !== sf.era)
     if (reborn && may_reset) {
         // ELECTRODE (2026-08-06) — REBIRTH, the largest state event in the system and until now

@@ -5,28 +5,28 @@ story:VytoSketch
     For
   Stands:GlassTesting
   TimeSpool
-    TimeTotal:beliefs,avg=0.097
-      sample=0.019,at=1793190037
-      sample=0.025,at=1793190538
-      sample=0.028,at=1793190796
-      sample=0.254,at=1793219601
+    TimeTotal:beliefs,avg=0.12
       sample=0.058,at=1793220028
       sample=0.032,at=1793221633
       sample=0.057,at=1793236422
       sample=0.234,at=1793241891
       sample=0.097,at=1793260301
       sample=0.164,at=1794388396
-    TimeTotal:step,avg=0.032
-      sample=0.006,at=1793190037
-      sample=0.008,at=1793190538
-      sample=0.009,at=1793190796
-      sample=0.085,at=1793219601
+      sample=0.273,at=1794470732
+      sample=0.033,at=1794471296
+      sample=0.139,at=1794471884
+      sample=0.113,at=1794474494
+    TimeTotal:step,avg=0.04
       sample=0.019,at=1793220028
       sample=0.011,at=1793221633
       sample=0.019,at=1793236422
       sample=0.078,at=1793241891
       sample=0.032,at=1793260301
       sample=0.055,at=1794388396
+      sample=0.091,at=1794470732
+      sample=0.011,at=1794471296
+      sample=0.046,at=1794471884
+      sample=0.038,at=1794474494
   step,dige:8154f14fd36db19d
   step=2,desc:fetch the sketch — plain objects in the guise notation,dige:59dec67e6cf9875c
   step=3,desc:stand the sketch on the glass,dige:6016f7eb88190ec4

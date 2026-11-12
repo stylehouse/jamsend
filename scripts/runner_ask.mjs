@@ -171,7 +171,7 @@ const flags = new Set(argv.filter(a => a.startsWith('--') && !a.startsWith('--ru
 const uidTok = argv.find(a => a.startsWith('@'))             // @uid → target a HELD run's frozen pins
 const uid    = uidTok ? uidTok.slice(1) : undefined
 const runnerSel = (argv.find(a => a.startsWith('--runner=')) ?? '').split('=')[1]   // --runner=<prepub|prefix>
-const playerSel = (argv.find(a => a.startsWith('--player=')) ?? '').split('=')[1]   // --player=<prepub|prefix> — a Sounditron
+let playerSel = (argv.find(a => a.startsWith('--player=')) ?? '').split('=')[1]   // --player=<prepub|prefix> — a Sounditron
 const pos   = argv.filter(a => !a.startsWith('-') && !a.startsWith('@'))
 const op    = pos[0]
 const arg   = pos[1]
@@ -528,6 +528,14 @@ if (runnerSel !== undefined) {
 //   split exists to prevent) while accept/release/declare are run-lifecycle verbs that presuppose one.
 //    `reload` IS allowed — it is the one mutating verb with a real diagnostic purpose (reproduce a
 //     one-sided reload) and it costs the human a moment of music, not a hijacked tab.
+// --player=<addr> --direct: ask the tab AT that relay address, skipping the slot + pub match (2026-11-12: 884fc599 and 4e5de1dd answer
+//  a ping sent to their address but never a slot ask naming them — their pub filter disagrees with the name the census prints).
+//   Read-only ops only, exactly like --player (PLAYER_OPS below); the tab still refuses anything that writes.
+if (playerSel && flags.has('--direct')) {
+	if (!PLAYER_OPS.includes(op) && !VERB) { console.error(`✗ '${op}' is not allowed on a --player`); process.exit(2) }
+	TARGET = playerSel
+	playerSel = undefined
+}
 if (playerSel !== undefined) {
 	if (runnerSel !== undefined) { console.error('✗ pass --runner= or --player=, not both'); process.exit(2) }
 	if (!PLAYER_OPS.includes(op) && !VERB) {   // a VERB goes through: the tab (Verb_run) refuses a writing verb on a music page or hacker room
@@ -1002,7 +1010,9 @@ if (reply.control !== 'runner_ack' && !runnerSel && !playerSel) {
 	//   humdinger veto already falls back to — so use it, and only here, on the failure path, where its
 	//    couple of seconds cost nothing against an invocation that was about to report a lie.
 	let others = courtCands.filter(p => p !== TARGET)
-	if (!others.length) {
+	// --direct names ONE tab: never fall over to some other runner (it answered as da06 instead of saying 855f was silent)
+	if (flags.has('--direct')) others = []
+	else if (!others.length) {
 		const rs = ((await census({ classify: true })) ?? []).filter(f => f.role === 'runner' && f.pub !== TARGET)
 		others = rs.map(f => f.pub)
 	}

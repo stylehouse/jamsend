@@ -59,6 +59,13 @@ async function network_first(request, key) {
     } catch (er) {
         const hit = await caches.match(key)
         if (hit) return hit
+        // A NAVIGATION GETS ONE MORE GO (2026-11-12, 855f: "FetchEvent for /?I=… resulted in a network error … Failed to fetch").  A
+        //  reject with nothing cached — the dev server mid-restart, the box blipping — used to hand the browser an error page; half a
+        //   second later the network is usually back.  Only for a navigation: a module fetch has its own retry in the page.
+        if (request.mode === 'navigate') {
+            await new Promise((r) => setTimeout(r, 500))
+            return fetch(network_request(request, new URL(request.url)))
+        }
         throw er
     }
 }

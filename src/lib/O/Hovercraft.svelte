@@ -77,8 +77,12 @@
         //     sending repli-ready / share-ask, each one pushing the think back again.  Activity must not postpone thinking: arm only
         //      when no beat is pending (or the pending one is overdue — a timer the tab's throttling swallowed).  Books never saw any
         //       of this: a Story Run sets `no_interval` and never reaches here.
+        //  MUSIC PAGES ONLY (humdinger).  A runner keeps the old postpone: there the poller's own runner_ask drains are what kept
+        //   Mundo's ambient think out of a running Book, and letting it fire every 3.6s mid-Book wedged 2 of 5 starts at begun and
+        //    killed the runner (da06, 2026-11-12).
         const due = +(this.c.main_due || 0)
-        if (this.c.main_timer && due && due + 1000 * interval > Date.now()) {
+        const keep_beat = !!((this as any).top_House?.()?.c?.humdinger)
+        if (keep_beat && this.c.main_timer && due && due + 1000 * interval > Date.now()) {
             if (cur?.sc.interval !== interval) this.oai({ mo: 'main', interval: 1 }, { interval })
             return
         }

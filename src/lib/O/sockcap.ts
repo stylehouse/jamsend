@@ -211,8 +211,22 @@ export function concap_count(): number { return conRing.length }
 //   to sockcap_install() this boot; the 🪪 Id toggle flips it.  A flip takes effect on the NEXT reload — the
 //    tap has to be in place before the socket opens.
 const ARM_KEY = 'socklog'
+// THE URL ARMS IT TOO (2026-11-12, owner on an Incognito 855f: `&socklog` on the URL, yet `localStorage.getItem('socklog')` null and
+//  the tab never reachable).  `?socklog` only installed the socket tap; the ARM lived in localStorage alone, which a fresh profile has
+//   empty — so a URL-armed tab was "seen" only once the tap had captured traffic from the very channel it was waiting to open.  Now the
+//    URL writes the arm (remembered for the profile/session): `&socklog` arms, `&socklog=0|-1|off|false` disarms.
 export function socklog_armed(): boolean {
-    try { return typeof localStorage !== 'undefined' && localStorage.getItem(ARM_KEY) === '1' } catch { return false }
+    try {
+        if (typeof localStorage === 'undefined') return false
+        if (typeof location !== 'undefined') {
+            const v = new URLSearchParams(location.search).get(ARM_KEY)
+            if (v != null) {
+                if (['0', '-1', 'off', 'false'].includes(v)) localStorage.removeItem(ARM_KEY)
+                else localStorage.setItem(ARM_KEY, '1')
+            }
+        }
+        return localStorage.getItem(ARM_KEY) === '1'
+    } catch { return false }
 }
 export function socklog_arm(on: boolean): void {
     try { if (on) localStorage.setItem(ARM_KEY, '1'); else localStorage.removeItem(ARM_KEY) } catch {}
