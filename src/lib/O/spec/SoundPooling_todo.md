@@ -343,6 +343,26 @@
    `Heist_keep_seed_ref` falls back to the seed card's filename.  ⚠ WHY the blag/wire paths differ is not yet known.
  Owed: the 884fc599 tab (a stale c58b body?) answers census but never an op — find what it is; `runner_ask` used to print a
   timeout as "refused (busy)" (fixed: it says silent).
+ - *A lone blind pool fill was immortal* (eed, 503 describe asks over 30 min, Vingas logging `◈?` every 4s): Pool_fill's stuck
+   give-up only runs while K keeps queue and only for a standing reach.  `Heist_keep_step` now lets a pool keep go after 15
+   undescribed asks and refuses its reach; a fill minted from a stocked record carries that record's path as a loose `seed_path`.
+   A ♥'s ask now also carries its pool copy's own (renamed .ogg) path, matched on the holder by name stem.
+ - *A friend's pool copy of a friend's track* (c58b ♥ "Groove G": Vingas had only POOLED it from Grav, then lent it on — c58b's copy
+   says came_from:Vingas, and Vingas looked only in its music): the holder now also resolves a seed off its own pool shelf
+   (`Heist_seed_card_live`, id or `of:`) or, uncatalogued after a reload, `pool/<remembered path>` on disk — a one-track folder
+   (`base:'pool'`, census cut to the track).  ⚠ Not yet seen working live: by the time it loaded, Vingas's reload had emptied the shelf.
+ - *A PATH THAT FORGOT ITS ROOT* (owner: *"that's a weird fact… relative in one place but not others"* → *"the URI could come over"*).
+   A library record already crosses with its full path (Ra_record_from joins `base` onto `path`, since 2026-07-30).  The gap is a
+   LENT POOL copy: Vingas pooled Groove G from eed, its pool record's path is pool-relative (`DJ Oscillo - Groove G.ogg` =
+   pool/DJ Oscillo…), and that crossed to c58b's pool without the `pool/` — then Vingas evicted it, and a separate copy stood at
+   testsounds/.  So the ♥'s remembered path matched nothing at Vingas's root and the disclaim said "gone" — wrongly.  Healed
+   holder-side: the pool on disk (`pool/<path>`) and then each top folder (`Heist_base_of`).  OWED, the real fix: a pooled record
+   crosses with its own root — `base:'pool'` beside `path` — and the asker's pool copy keeps it as `came_base`.
+ - *Look where it lands* (owner: *"one-line-warn people that there's something there and allow a peek"*): `Heist_dest_look` lists one
+   level of each landing folder for a primed human keep (runtime `keep.c.there`, ≤ every 15s, sync-gated so the beat pays no await);
+   HeistFace + HeistBarFace show `⚠ N files already there · K with the same name  peek`.  A same-name landing OVERWRITES today (Heist_held
+   dedups by artist+title off the catalog only; Heist_held's own header rules the owed fix — a same-path clash at the destination
+   skips, with a `clash` verdict — unbuilt), so the line says "K would be overwritten".
 
 **A POOL COPY REMEMBERS WHERE IT CAME FROM — 2026-11-12** (owner: *"we should remember where the SP came from… I've got Yays just sitting
  there that are due a Heist"*).  eed's ♥s on pooled tracks logged `queued to haul from undefine` and sat forever: the pool copy carried no

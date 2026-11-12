@@ -906,7 +906,9 @@
     //     scroll column no longer depends on --fit, so a fit change can't reflow the face and feed back.
     const FIT_DEADBAND = 0.06
     const TAKEOVER_ZOOM_MAX = 3
-    const TAKEOVER_DESIGN_W = 440
+    // = HeistFace's .kf max-width: the takeover lays the face out at this width and zooms it to the column.  Was 440 with the
+    //  one-line footer; at 340 (2026-11-12, two short footer rows) a 440 layout left the face in the top-left of its cell.
+    const TAKEOVER_DESIGN_W = 340
 
     const nat_seen = new Map<string, string>()   // main's last natural-box signature, for the 🎴 nat log
     function measure_molds(force = false) {
@@ -927,20 +929,33 @@
                 //    knows its width exactly — the scroll column — so it is sized OUTSIDE-IN: the face is TOLD its width
                 //     and wraps to it.  The face is scaled up (CSS `zoom`, which takes part in layout, so the column's
                 //      scroll height stays true) by column ÷ TAKEOVER_DESIGN_W (the width the rim faces are authored at,
-                //       HeistFace's 440px card), clamped 1..3, and laid out at column ÷ zoom so it renders exactly the
+                //       HeistFace's 340px card), clamped 1..3, and laid out at column ÷ zoom so it renders exactly the
                 //        column wide.  Nothing is read back off the face, so there is no measure→resize feedback; a
                 //         window change moves the column, the stage/face observers re-run this, and it re-flows.
                 //  HEIST ONLY: Wikipedia's reading room is already a full-width block with its own type, and zooming an
                 //   article ×2-3 would be a billboard, not a page.
                 if (key === main_key && main_offedge && (main_cell?.mk === 'Heist' || main_cell?.mk === 'HeistBar')) {
-                    const colw = scroll.clientWidth
-                    if (colw > 0) {
-                        const z = Math.round(Math.max(1, Math.min(TAKEOVER_ZOOM_MAX, colw / TAKEOVER_DESIGN_W)) * 100) / 100
-                        const wpx = Math.floor(colw / z) + 'px'
-                        if (child.style.zoom !== String(z)) child.style.zoom = String(z)
-                        if (child.style.width !== wpx) child.style.width = wpx
-                        if (child.style.maxWidth !== 'none') child.style.maxWidth = 'none'
+                    // FILL BY THE CONTENT, NOT THE COLUMN (2026-11-12, owner: "the Heist is still rendering too small, upper left 1/3rd
+                    //  of cell space it could be in").  Telling the face the column's width made its BOX fill (711×853) while its short
+                    //   rows sat top-left inside it.  Now the face keeps its NATURAL box (max-content, its own max-width, not stretched),
+                    //    measured in its own px (rendered ÷ zoom — independent of the zoom, so no measure→resize loop), and is zoomed until
+                    //     that box meets the column on whichever axis binds first, clamped 1..TAKEOVER_ZOOM_MAX, with the fit's dead-band.
+                    const colw = scroll.clientWidth, colh = scroll.clientHeight
+                    if (colw > 0 && colh > 0) {
+                        if (child.style.width) child.style.width = ''
+                        if (child.style.maxWidth) child.style.maxWidth = ''
+                        if (child.style.alignSelf !== 'flex-start') child.style.alignSelf = 'flex-start'
                         if (child.style.boxSizing !== 'border-box') child.style.boxSizing = 'border-box'
+                        const zc = +(child.style.zoom || 1) || 1
+                        const r = child.getBoundingClientRect(), mr = mold.getBoundingClientRect()
+                        const nw = r.width / zc, nh = r.height / zc
+                        if (nw > 0 && nh > 0) {
+                            const want = Math.round(Math.max(1, Math.min(TAKEOVER_ZOOM_MAX, colw / nw, colh / nh) * 0.97) * 100) / 100
+                            if (Math.abs(want - zc) / zc > FIT_DEADBAND || !child.style.zoom) child.style.zoom = String(want)
+                        }
+                        // EVIDENCE — column vs mold vs the face's natural box and zoom, once per change.
+                        const sig = 'take ' + colw + 'x' + colh + ' mold ' + Math.round(mr.width) + 'x' + Math.round(mr.height) + ' nat ' + Math.round(nw) + 'x' + Math.round(nh) + ' z' + child.style.zoom
+                        if (nat_seen.get(key) !== sig) { nat_seen.set(key, sig); console.log('🎴 takeover[main ' + (main_cell?.mk ?? '?') + '] ' + sig) }
                     }
                     continue
                 }

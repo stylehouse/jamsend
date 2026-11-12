@@ -2018,6 +2018,12 @@ async Ra_pool_fill_land(w, ident):
                 k.sc.seed_path = String(pcard.sc.path)
                 if (pcard.sc.base) { k.sc.seed_base = String(pcard.sc.base) }
             }
+            // …and a stocked record's own path, as a LOOSE hint (the holder matches it by name — Heist_rummage_folder): an id the
+            //  holder's stock has rolled past is otherwise asked for blind, and never answered
+            else if (srec && srec.sc.path && String(srec.sc.path).indexOf('pool/') !== 0) {
+                k.sc.seed_path = String(srec.sc.path)
+                if (srec.sc.base) { k.sc.seed_base = String(srec.sc.base) }
+            }
             k.c.last_touch = Date.now()
             // THE MACHINE'S OWN PRESS (rung 4, SoundPooling_todo §0.0): the SAME Card a human ♥ mints,
             //  on the machine page (Heard_is_machine) — so Heard_clone_beat's verdict/listing machinery

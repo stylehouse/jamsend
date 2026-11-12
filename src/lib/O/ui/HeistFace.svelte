@@ -295,6 +295,8 @@
 
         const genre = catRaw
         return {
+            // WHAT IS ALREADY WHERE THESE LAND (Heist_dest_look, runtime on the keep's .c — re-read each tick)
+            there: n?.c?.there ?? null,
             nowTrack, nowDone: !!(moving && moving.landed),
             state,
             title: String(sc.Heist || 'this track'),
@@ -550,6 +552,7 @@
     //   cannot answer by being looked at: `section` and `directories` are two breadcrumb rows that look
     //    identical and mean opposite things — one is yours, one is theirs — and nothing on screen says so.
     let catWhy = $state(false)
+    let peek = $state(false)
     function scrub() {
         scrubArmed = false
         press_probe('scrub', () => { A?.Heist_keep_scrub?.(A?.top_House?.()?.c?.radio_w, n) })
@@ -793,6 +796,23 @@
                     onkeydown={(e) => { if (e.key === 'Enter') dirsInsertAt(i + 1) }} />
             {/each}
         </div>
+        <!-- WHAT IS ALREADY THERE (the owner 2026-11-12: "one-line-warn people that there's something there and allow a peek
+             at what, to check sanity of operations") — one level of each landing folder, off our own disk. -->
+        {#if face.there?.n}
+            <div class="kf-there" title="files already on your disk in the folders these land in">
+                ⚠ {face.there.n} file{face.there.n === 1 ? '' : 's'} already there{#if face.there.clash_n} · {face.there.clash_n} would be overwritten{/if}
+                <button class="kf-peek" onclick={() => (peek = !peek)}>{peek ? 'hide' : 'peek'}</button>
+            </div>
+            {#if peek}
+                <div class="kf-peeklist">
+                    {#each face.there.dirs as d}
+                        <div class="kf-pdir">{d.dir || '(collection root)'}/</div>
+                        {#each d.files as nm}<div class="kf-pf" class:clash={d.clash.includes(nm)}>{d.clash.includes(nm) ? '= ' : ''}{nm}</div>{/each}
+                        {#if d.more}<div class="kf-pf">…and {d.more} more</div>{/if}
+                    {/each}
+                </div>
+            {/if}
+        {/if}
         <datalist id="kf-dirs-known">
             {#each face.dirsKnown as d}<option value={d}></option>{/each}
         </datalist>
@@ -855,8 +875,9 @@
                 Change it any time in <strong>Door</strong>, under <em>you</em>: <em>ask</em> brings this screen back · <em>lofi</em> for small copies.
             </div>
         {/if}
-        <div class="kf-foot">
-            <button class="kf-start" onclick={start} title="start downloading these tracks into your collection">▶ start</button>
+        <!-- TWO SHORT ROWS, not one wide one (the owner 2026-11-12: *"the Cell:Heist should not be so wide… '[ ] for every heart
+             [ ] lofi' then another line of 'start   cancel'"*): the options, then the go|no-go. -->
+        <div class="kf-foot kf-opts">
             {#if n?.sc?.ask}
                 <button class="kf-lofi kf-every" class:on={everyHeart} onclick={() => (everyHeart = !everyHeart)} role="checkbox" aria-checked={everyHeart}
                     title="use these settings for every ♥ and stop asking"><span class="kf-lofi-box">{everyHeart ? '☑' : '☐'}</span><span class="kf-lofi-lbl">for every ♥</span></button>
@@ -881,6 +902,9 @@
                 {/if}
                 <button class="kf-q" onclick={() => (lofiWhy = !lofiWhy)} title="what does lofi do?">?</button>
             </span>
+        </div>
+        <div class="kf-foot kf-go">
+            <button class="kf-start" onclick={start} title="start downloading these tracks into your collection">▶ start</button>
             <span class="kf-exits">
                 {#if face.landed_n}
                     {#if scrubArmed}
@@ -929,8 +953,10 @@
         /* 300px was "not a full-width box" discipline, but the measure pass stamps the NATURAL box,
            so this cap IS the ceiling on how wide the Heist cell can ever price itself — and 300 was
            the "glass is still too narrow" the owner kept seeing (2026-08-09).  The chips wrap at
-           whatever this allows; wider means fewer awkward wraps, and the need floor follows. */
-        max-width: 440px;
+           whatever this allows; wider means fewer awkward wraps, and the need floor follows.
+           …and 440 was then "not so wide" (2026-11-12) — the one-line footer was what priced it that wide; with the footer
+           in two short rows (options, then start|cancel) 340 holds every row. */
+        max-width: 340px;
         padding: 7px 11px;
         font-family: ui-rounded, 'Trebuchet MS', sans-serif;
         color: #e0cfd8;
@@ -1060,6 +1086,8 @@
     /* flex-WRAP (2026-09-29): in a takeover the cell TELLS this face its width (Cellui, outside-in) — a footer that
        cannot wrap pushed "lofi ?" and the exits off the right of the screen.  At the rim's 440px it still fits on one line. */
     .kf-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
+    .kf-foot.kf-opts { justify-content: flex-start; gap: 12px; margin-top: 6px; }
+    .kf-foot.kf-go { justify-content: flex-start; gap: 10px; margin-top: 5px; }
     /* the QUEUE controls (⏸ / ▶ / ↑ first) — plain and unboxed, a step quieter than the exits they sit
        beside, because none of them destroys anything.  The exits stay the loud ones. */
     .kf-q {
@@ -1199,6 +1227,16 @@
     /* the negative left margin eats most of the label's own trailing gap: the "?" belongs to the word,
        not to the row (the 2026-08-07 ruling that put lofi's "?" inside its group). */
     .kf-q.lbl { vertical-align: middle; margin-left: -3px; margin-right: 5px; }
+    .kf-there { font-size: 10px; margin-top: 3px; color: #f0c674; display: flex; align-items: center; gap: 5px; }
+    .kf-peek {
+        pointer-events: auto; cursor: pointer;
+        background: #2e2614; color: #f0c674; border: 1px solid #8a7330; border-radius: 6px;
+        font-size: 9px; padding: 0 5px; line-height: 1.4;
+    }
+    .kf-peeklist { pointer-events: auto; max-height: 160px; overflow-y: auto; margin-top: 3px; font-family: monospace; font-size: 9px; }
+    .kf-pdir { color: #7fe8bf; margin-top: 2px; }
+    .kf-pf { opacity: 0.7; padding-left: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .kf-pf.clash { opacity: 1; color: #f0c674; }
     .kf-why {
         position: relative; margin-top: 7px; padding: 7px 20px 7px 8px;
         background: rgba(127, 232, 191, 0.07); border: 1px solid rgba(127, 232, 191, 0.22);

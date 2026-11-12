@@ -70,14 +70,27 @@
         //     and keeping it out of `.sc` also stops a fresh id churning the snap each tick.
         const cur      = this.o({ mo: 'main', interval: 1 })[0]
         const interval = cur?.sc.interval || 3.6
+        // A PENDING BEAT IS KEPT, NOT POSTPONED (2026-11-12, c58b's /Radio frozen at boot, twice running).  Every drained todo item
+        //  calls this — a `handle_inbound` fn as much as a think — and it used to clearTimeout and restart the 3.6s wait.  So a tab
+        //   receiving frames faster than 3.6s never got its ambient think at all: Mundo drained happily (todo 0, last drain 9ms ago)
+        //    while every A's round froze and A:Radio never had its first pass.  And it fed itself — the friend, unanswered, kept
+        //     sending repli-ready / share-ask, each one pushing the think back again.  Activity must not postpone thinking: arm only
+        //      when no beat is pending (or the pending one is overdue — a timer the tab's throttling swallowed).  Books never saw any
+        //       of this: a Story Run sets `no_interval` and never reaches here.
+        const due = +(this.c.main_due || 0)
+        if (this.c.main_timer && due && due + 1000 * interval > Date.now()) {
+            if (cur?.sc.interval !== interval) this.oai({ mo: 'main', interval: 1 }, { interval })
+            return
+        }
         clearTimeout(this.c.main_timer)
         const id = setTimeout(() => {
             if (this.c.main_timer !== id) return   // superseded by a later reset_interval
+            this.c.main_timer = null
             if (this.stopped) return
-            if (this.S && !this.S.started) return
             this.main()
         }, 1000 * interval)
         this.c.main_timer = id
+        this.c.main_due = Date.now() + 1000 * interval
         this.oai({ mo: 'main', interval: 1 }, { interval })
     },
 

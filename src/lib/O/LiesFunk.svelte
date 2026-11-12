@@ -3047,7 +3047,20 @@ await M.eatfunc({
                     //  never snapped; pinpoints exactly which link in resetStory→story_drive→do_step fired.
                     const diag_trace = ((H.top_House().c as any).diag_trace as string[]) ?? []
                     const drain_stuck = { n: (H.top_House().c as any).drain_stuck_n ?? 0, last: ((H.top_House().c as any).drain_stuck as string[]) ?? [] }
-                    result = { self: String((H as any).Lies_self?.(w)?.prepub ?? ident?.sc?.prepub ?? '').slice(0, 16), sealed_piers: piers.filter((p: any) => p.mutual).length, piers, supply_trace, xfer, err_ring, creduler, diag_trace, drain_stuck, world_snap, resident_snap, crate_census }
+                    // THE DRAIN AS IT STANDS (2026-11-12, c58b's /Radio froze at boot — every round frozen, A:Radio never ticked — and
+                    //  nothing remote could say whether Mundo's todo was waiting on a gate, a mutex, or nobody).  Pure reads of the
+                    //   fields the drain already stamps (Housing _really_answer_calls / _push_todo).  Ages in ms; null = never.
+                    const drain_now = (() => {
+                        const M: any = H.top_House(); const now = Date.now(); const age = (t: any) => t ? now - +t : null
+                        const held = M.mutex_held ? M.mutex_held('beliefs') : null
+                        return {
+                            H: M.name, todo: M.todo?.length ?? null, started: !!M.started, stopped: !!M.stopped, waiting: !!M.answer_calls_waiting,
+                            why: M.c.drain_why ?? null, drained_ago: age(M.c.drain_at), tried_ago: age(M.c.drain_tried_at), took: M.c.drain_tag ?? null,
+                            calls: M._ac_calls, gated: M._ac_gated, tries: M._ac_tries, mutex: held ? (held.who + ' ' + Math.round(held.ms) + 'ms') : null,
+                            head: (M.todo ?? []).slice(0, 6).map((e: any) => String(e?.c?.push_tag ?? '?') + ' ' + (e?.c?.push_t ? (now - e.c.push_t) + 'ms' : '')),
+                        }
+                    })()
+                    result = { drain_now, self: String((H as any).Lies_self?.(w)?.prepub ?? ident?.sc?.prepub ?? '').slice(0, 16), sealed_piers: piers.filter((p: any) => p.mutual).length, piers, supply_trace, xfer, err_ring, creduler, diag_trace, drain_stuck, world_snap, resident_snap, crate_census }
                 } else if (op === 'run') {
                     // engage the runner for THIS client first (the don't-steal gate): refuse if another
                     //  client holds a live lease; else stamp our lease (GC'ing any prior client's runs) and

@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heard(): string { return '1641ff310a6bd9ce~g1' },
+    Ghostmeta_Ghost_M_Heard(): string { return 'ea008bf0750c3836~g1' },
 
 // Heard.g — THE HEARD MAG: what I heard, of whom, and what I took (Radio_circuit_todo.md).
 //  One Mag under my own identity — `%Mag:heard,pub:<me>` — holding one `%Card,id,pub` per track the
@@ -1362,7 +1362,9 @@ Heard_blind_revive(w, rw, me) {
 },
 Heard_blind_expire(w, rw, me, shop) {
     for (const k of shop.o({ Heist: 1, blind: 1 })) {
-        if (+(k.sc.asks || 0) < 15 || String(k.sc.state || 'primed') !== 'primed') { continue }
+        // …or sooner, when the holder SAID it has no such track (Heist_told_gone) — then the Card says so, not "didn't answer"
+        let gone = this.Heist_told_gone ? this.Heist_told_gone(w, rw, String(k.sc.seed)) : 0
+        if ((+(k.sc.asks || 0) < 15 && !gone) || String(k.sc.state || 'primed') !== 'primed') { continue }
         let mir = rw.o({ Theirs: 1, pub: String(k.sc.pub || '') })[0]
         if (mir && this.Heist_rummage_recs && this.Heist_rummage_recs(mir, String(k.sc.seed)).length) { continue }
         let mag = this.Heard_mag_find(rw, me)
@@ -1370,13 +1372,13 @@ Heard_blind_expire(w, rw, me, shop) {
         let card = mag ? (this.Heard_cards(mag).find((c) => String(c.sc.id) === String(k.sc.seed) && !this.Heard_is_machine(c) && this.Heard_reaction(c) === 'take') || null) : null
         if (card) {
             card.sc.landing_failed_at = '' + this.Heard_now(w)
-            card.sc.why = String(k.sc.from_name || 'they') + " didn't answer"
+            card.sc.why = String(k.sc.from_name || 'they') + (gone ? " doesn't have it any more" : " didn't answer")
             // the holder's life when it went quiet: a new one (it reloaded — fresh code, fresh stock) re-asks on its own (Heard_blind_revive)
             let era = this.Heard_holder_era(rw, String(k.sc.pub || ''))
             if (era) { card.sc.quiet_era = era }
             card.bump()
         }
-        console.log('♥⇢ ' + String(k.sc.Heist).slice(0, 32) + ' — ' + String(k.sc.from_name || 'the holder') + ' never answered for it — let go (re-asked when they come back new, or ⇊ on its Yay row)')
+        if (gone) { console.log('♥⇢ ' + String(k.sc.Heist).slice(0, 32) + ' — ' + String(k.sc.from_name || 'the holder') + " says it doesn't have it any more — let go") } else console.log('♥⇢ ' + String(k.sc.Heist).slice(0, 32) + ' — ' + String(k.sc.from_name || 'the holder') + ' never answered for it — let go (re-asked when they come back new, or ⇊ on its Yay row)')
         if (this.Heist_job_drop) { try { this.Heist_job_drop(shop, k) } catch (er) {} }
         shop.drop(k)
         if (this.Heist_keep_forget) { this.Heist_keep_forget(k).catch(() => {}) }

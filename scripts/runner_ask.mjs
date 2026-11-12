@@ -1169,6 +1169,7 @@ else if (op === 'snap' && reply.result?.got_snap) {
 		else console.log(`\n✓ Creduler ready — all ${cd.total} ghosts live`)
 	}
 	// the drain watchdog (Housing ponder_now, 2026-11-03): each time a queued ponder think sat 2s and had to be driven
+	if (r.drain_now) { const d = r.drain_now; console.log(`\n🚰 drain H:${d.H} todo=${d.todo} started=${d.started} stopped=${d.stopped} gate-waiting=${d.waiting} mutex=${d.mutex ?? '-'} · last drain ${d.drained_ago ?? '-'}ms ago (took ${d.took ?? '-'}) · last look ${d.tried_ago ?? '-'}ms ago · why=${d.why ?? '-'} · calls=${d.calls} gated=${d.gated} tries=${d.tries}`); if (d.head?.length) console.log(`   queued: ${d.head.join(' | ')}`) }
 	if (r.drain_stuck?.n) { console.log(`\n🐕 drain watchdog rescued ${r.drain_stuck.n}× this tab-life (last ${r.drain_stuck.last.length}):`); for (const d of r.drain_stuck.last) console.log(`  ${d}`) }
 	// TEMPORARY checkpoint trace (H.diag) — the begun-wedge hunt, 2026-07-30.
 	const dt = Array.isArray(r.diag_trace) ? r.diag_trace : []

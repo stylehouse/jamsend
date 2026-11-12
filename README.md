@@ -10,7 +10,7 @@ Someone sends you a link. You open it and you're listening to their music collec
 
 **🦊p2p🐉** Music comes from the connections you make. Manipulation is impossible.
 
-**🌊experience🎶** of listening, jumping tracks, and plotting Heists...
+**🌊experience🎶** of listening, jumping tracks, plotting Heists.
 
 **🚛Heists📦** Preserve directory structure, move whole albums, and may end up on another computer via Link Device.
 
@@ -22,7 +22,7 @@ The catch: A phone browser can't keep a music folder. A computer running Chrome 
 
 **🏊 SoundPooling** keeps a fresh, shuffled handful of tracks inside the phone's browser, so there's always something to play with no signal. Whenever both devices are on at once, the pool is topped up and turned over. It's off until you switch it on, in its 🏊 cell: choose how many MB it may use, and whether it pools from your friends, your own devices, or both.
 
-**Something always on.** "Whenever both are on at once" is the weak spot, so there's **jamserve**: the same app, running in docker, on a small always-on box at home. It holds your collection, serves Heists, and is still standing there when someone finally opens the invite you sent them weeks ago (see *jamserve* below).
+**Something always on.** "Whenever both are on at once" is the weak spot, so there's **jamserve**: the same app, running in docker, on a small always-on box at home. It holds your collection, serves music, and is still standing there when someone finally opens the invite you sent them weeks ago (see *jamserve* below).
 
 That's the idea under all of it: your own little infrastructure, stretched across whatever devices you have, so music stays near you.
 
@@ -186,4 +186,4 @@ see [jamserve/README.md](jamserve/README.md)
 
 # Licensing
 
-Is AGPL 3.0 or later, no holding back releasing your derived work and notes and all. We want working systems here on Earth, remain open. Copyright (c) 2025 github.com/stylehouse
+Is AGPL 3.0 or later, no holding back releasing your derived work and notes and all. We want working systems here on Earth. Copyright (c) 2012-2026 github.com/stylehouse

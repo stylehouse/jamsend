@@ -160,6 +160,34 @@ Open questions:
 - Cost ceiling: a hard cap + a `log()` when it drops, so the observation track can never itself become the
    sluggishness it's meant to diagnose.
 
+### 2.1 — The state plane: where it stands, and the next rungs (2026-11-12)
+
+*The owner, mid Heist-debugging: "is this business about this operation (finding the dir, for that Heist) easily assailable from the
+ usual state observer … could it be about time to make the central C\*\* state plane that one would snap, available remotely to some
+  data exploration thing, like a remote Story checker … upload Story data to another thread, where it is gone through async, so tests
+   could be faster."*
+
+**What exists, all request/reply over `/relay`:** `runner_ask minisnap '<root>>step'` (a scoped C\*\* text dump, `--diff` against a
+ ring kept ON the tab), `console --tail/--grep` (the raw console ring), `electrode` (the call tap), `runner_shot` (pixels), and per-step
+  `snap`/`steps` of a Book.  It is a flashlight: you point it, one tab, one moment.
+
+**What the Heist case taught.**  minisnap showed the asker's keep (`asks`, `seed_path`) and the asks mirrored on the holder — but every
+ fact that DECIDED it sat where minisnap cannot see: `.c` (`desc_n`, `ra_dead`, `w.c.pool_files`), `dontSnap` (the RummageLib), and
+  console lines (`◈? describe …`).  The diagnosis was console archaeology across three tabs.  Rule: **a decision worth debugging is a
+   particle** — the holder now keeps `radio>Answers/Answer,to,said,path,n,at` (live pages only, since it carries wall clock).  The plane
+    below only helps for what is matter; this rule is the cheap half and comes first.
+
+**The plane (proposal).**  Turn the flashlight into a feed:
+1. **Subscribe** — a relay op `plane_sub <root>[,depth]`: the tab pushes the subtree's text when its dige changes (rate-capped, default
+    off, dropped when the subscriber goes).  The minisnap encoder and its diff ring already exist; this is the push side of them.
+2. **Keep** — `scripts/plane.mjs`, a node process here: one ring per (tab, root), queryable after the fact ("when did this keep go
+    primed → pulling", "every %Answer Vingas gave c58b"), and JOINED across tabs — the asker's keep beside the holder's answer is the
+     picture a two-tab bug needs and no single tab holds.
+3. **Story through it** — the runner ships each step's snap text (it already makes it) to the plane; the plane diffs against the fixture
+    and EntropyArrest in node, async, and prints the runner_sweep line.  The runner is freed to start the next Book while the diff runs.
+4. **Only then move the verdict.**  ⚠ Check first what in-tab reads the verdict: Story's caveat/forgiveness, `accept` reading the live
+    `got_snap`, the sworn-assertion harvest.  Until those read from the plane, rung 3 checks in parallel with the runner, never instead.
+
 ---
 
 ## 3 — Collapsing the elvisto hop chain (observe → collapse)

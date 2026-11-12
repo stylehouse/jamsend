@@ -10,7 +10,7 @@ import { sha256_hex } from "$lib/Common"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Pool(): string { return '6d3739bd3aa6b8ce~g1' },
+    Ghostmeta_Ghost_M_Pool(): string { return '0600aeb0642f8b7e~g1' },
 
 // Pool.g — SOUNDPOOLING's home (split out of Ra.g 2026-09-17, SoundPooling_todo.md §0.2a — the owner:
 //  "yes to Pool.g, definitely looks big enough"). Three regions, in the order a reader should meet them:
@@ -2125,6 +2125,12 @@ async Ra_pool_fill_land(w, ident) {
             if (pcard && pcard.sc.path) {
                 k.sc.seed_path = String(pcard.sc.path)
                 if (pcard.sc.base) { k.sc.seed_base = String(pcard.sc.base) }
+            }
+            // …and a stocked record's own path, as a LOOSE hint (the holder matches it by name — Heist_rummage_folder): an id the
+            //  holder's stock has rolled past is otherwise asked for blind, and never answered
+            else if (srec && srec.sc.path && String(srec.sc.path).indexOf('pool/') !== 0) {
+                k.sc.seed_path = String(srec.sc.path)
+                if (srec.sc.base) { k.sc.seed_base = String(srec.sc.base) }
             }
             k.c.last_touch = Date.now()
             // THE MACHINE'S OWN PRESS (rung 4, SoundPooling_todo §0.0): the SAME Card a human ♥ mints,

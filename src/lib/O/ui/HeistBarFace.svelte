@@ -63,6 +63,8 @@
             flow: Math.max(0, Math.min(100, +(keep?.c?.flow ?? 0))),
             trackPct: (+(sc.total_n || 0) > 0) ? Math.min(100, Math.round(+(sc.landed_n || 0) / +(sc.total_n || 1) * 100)) : 0,
             folded: state === 'pulling' || state === 'committing' || state === 'done',
+            // WHAT IS ALREADY WHERE THESE LAND (Heist_dest_look, runtime on keep.c — re-read each tick)
+            there: keep?.c?.there ?? null,
         }
     })
 
@@ -74,6 +76,7 @@
     $effect(() => { if (!catActive) catDraft = face.genre })
     function commitCategory() { A?.post_do?.(() => { A?.Heist_keep_set_genre?.(keep(), catDraft) }, { see: 'keep category' }) }
     function cancel() { A?.post_do?.(() => { A?.Heist_keep_cancel?.(A?.top_House?.()?.c?.radio_w, keep()) }, { see: 'keep cancel' }) }
+    let peek = $state(false)
     function start() { A?.post_do?.(() => { A?.Heist_keep_start?.(keep()) }, { see: 'keep start' }) }
 </script>
 
@@ -114,6 +117,21 @@
             <datalist id="kb-cats">{#each CATEGORIES as g}<option value={g}></option>{/each}</datalist>
         </div>
         <div class="kb-dest" title="where these land — a heist is a copy, so their own folder names and filenames survive unchanged">⤓ {face.dest ? face.dest + '/' : ''}<span class="kb-dim">{face.dest ? ' …their folders' : 'your collection root · their folders kept'}</span></div>
+        {#if face.there?.n}
+            <div class="kb-there" title="files already on your disk in the folders these land in">
+                ⚠ {face.there.n} file{face.there.n === 1 ? '' : 's'} already there{#if face.there.clash_n} · {face.there.clash_n} would be overwritten{/if}
+                <button class="kb-peek" onclick={() => peek = !peek}>{peek ? 'hide' : 'peek'}</button>
+            </div>
+            {#if peek}
+                <div class="kb-peeklist">
+                    {#each face.there.dirs as d}
+                        <div class="kb-pdir">{d.dir || '(collection root)'}/</div>
+                        {#each d.files as nm}<div class="kb-pf" class:clash={d.clash.includes(nm)}>{d.clash.includes(nm) ? '= ' : ''}{nm}</div>{/each}
+                        {#if d.more}<div class="kb-pf kb-dim">…and {d.more} more</div>{/if}
+                    {/each}
+                </div>
+            {/if}
+        {/if}
         {#if face.described}
             <div class="kb-sel">
                 <span class="kb-dim">{face.picked} of {face.nTracks} — the whole folder, click a track to skip one</span>
@@ -195,6 +213,16 @@
         width: 110px;
     }
     .kb-dest { font-size: 9px; margin-top: 3px; color: #7fe8bf; font-family: monospace; }
+    .kb-there { font-size: 9px; margin-top: 3px; color: #f0c674; display: flex; align-items: center; gap: 5px; }
+    .kb-peek {
+        pointer-events: auto; cursor: pointer;
+        background: #2e2614; color: #f0c674; border: 1px solid #8a7330; border-radius: 6px;
+        font-size: 9px; padding: 0 5px; line-height: 1.4;
+    }
+    .kb-peeklist { pointer-events: auto; max-height: 140px; overflow-y: auto; margin-top: 3px; font-family: monospace; font-size: 9px; }
+    .kb-pdir { color: #7fe8bf; margin-top: 2px; }
+    .kb-pf { opacity: 0.7; padding-left: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .kb-pf.clash { opacity: 1; color: #f0c674; }
     .kb-sel { display: flex; align-items: center; gap: 6px; margin-top: 5px; }
     .kb-note { font-size: 9px; opacity: 0.6; font-style: italic; margin-top: 3px; }
     /* the loading skeleton — shimmer bars standing in for the track list until the folder describes.

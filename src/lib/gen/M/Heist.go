@@ -11,7 +11,7 @@ import { APP_DATA_DIR } from "$lib/app_data_dir"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return 'ff18b4c09698581e~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return 'f46effc110867cfc~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -1287,6 +1287,8 @@ async Heist_census_heads(w, lib, nav, walkdir, base, me, prefix, seedName, seed)
             entries = flat
             if (entries.length > 60) { entries = entries.filter((e) => e.path === seedName) }
         }
+        // my POOL is no album: its neighbours are whatever else happened to pool (Heist_seed_card_live's pool road) — just the track
+        if (base === 'pool') { entries = entries.filter((e) => e.path === seedName) }
     }
     let built = 0
     for (const ent of entries) {
@@ -1871,19 +1873,34 @@ async Heist_rummage_folder(w, nav, me, seed, hintPath, hintBase) {
     if (!nav || !seed) return null
     let hit = (await this.Ra_stock_ls(nav, me)).find((p) => p.enid === seed)
     let card = null
+    let how = ''
     if (hit) {
         card = await this.Ra_stock_peek(nav, hit.name)
+        how = 'radiostock'
     } else if (hintPath && this.Heist_want_path_ok(hintPath) && this.Heist_keep_id(me, hintBase || '', hintPath) === String(seed)) {
         // A POOLING WANDER CARD (Ra_pooling_cursor_picks): I named it by its keep id off a wander, never stocked it.  The id
         //  re-derives from (me, base, path), which certifies the path is mine to describe — the same equation the want side uses.
         card = { path: String(hintPath), base: String(hintBase || '') }
+        how = 'wander path'
     }
-    if (!card || !card.path) { card = this.Heist_seed_card_live(w, me, seed) }
+    if (!card || !card.path) { card = this.Heist_seed_card_live(w, me, seed); if (card) { how = card.base === 'pool' ? 'pool shelf' : 'live shelf' } }
     // A PATH THE ASKER REMEMBERED for an id that is not path-derived (a stock content id — the pool copy's came_path, landed from MY
     //  served record): no equation certifies it, so the census below must find the file itself, or nothing is answered
+    // …or the remembered path sits in my POOL on disk, uncatalogued (a reload empties the pool shelf until Ra_pool_resurrect catches up)
+    if ((!card || !card.path) && hintPath && this.Heist_want_path_ok(hintPath) && nav.dir_at) {
+        let hp = String(hintPath).split('/').filter(Boolean)
+        let nm = hp.pop()
+        try { let dl = await nav.dir_at(['pool'].concat(hp).join('/')); if (dl) { await dl.expand(); if ((dl.files || []).some((f) => String(f.name) === nm)) { card = { path: String(hintPath), base: 'pool' }; how = 'pool on disk'; console.log('◈↻ describe ' + String(seed).slice(0, 12) + ' — not in my music, but it is in my pool: ' + String(hintPath).slice(-60)) } } } catch (er) {}
+    }
     let loose = 0
-    if ((!card || !card.path) && hintPath && this.Heist_want_path_ok(hintPath)) { card = { path: String(hintPath), base: String(hintBase || '') }; loose = 1 }
-    if (!card || !card.path) { console.log('◈? describe ' + String(seed).slice(0, 12) + ' — not a track I can find (no radiostock file, no live card, no path given) — unanswered'); return null }
+    // …and a remembered path is BASE-RELATIVE, the base lost on the way (2026-11-12, c58b's ♥ "Groove G": Vingas held
+    //  testsounds/DJ Oscillo - Groove G.ogg, the asker remembered "DJ Oscillo - Groove G.ogg", and Vingas looked only at its root
+    //   and told it "gone").  Where the given base has no such file, try it under each of my top folders (Heist_base_of).
+    if ((!card || !card.path) && hintPath && this.Heist_want_path_ok(hintPath)) {
+        let b = await this.Heist_base_of(nav, String(hintPath), String(hintBase || ''))
+        card = { path: String(hintPath), base: b != null ? b : String(hintBase || '') }; loose = 1; how = 'remembered path' + (b ? ' under ' + b : '')
+    }
+    if (!card || !card.path) { w.c.describe_miss = 'not in radiostock, live shelf or pool' + (hintPath ? '' : ', no path given'); console.log('◈? describe ' + String(seed).slice(0, 12) + ' — not a track I can find (no radiostock file, no live card, no path given) — unanswered'); return null }
     let base = card.base || ''
     let cparts = String(card.path).split('/').filter(Boolean)
     let seedName = cparts[cparts.length - 1]                     // "01.flac" — relative to the album folder
@@ -1902,7 +1919,7 @@ async Heist_rummage_folder(w, nav, me, seed, hintPath, hintBase) {
         let hits = this.Ra_recs(lib).filter((r) => stem(r.sc.path) === stem(hintPath))
         if (hits.length === 1) { hits[0].sc.re = String(seed); hits[0].bump() }
     }
-    if (loose && !this.Ra_recs(lib).some((r) => r.sc.re === String(seed))) { console.log('◈? describe ' + String(seed).slice(0, 12) + ' — the remembered path ' + String(hintPath).slice(-60) + ' is not here — unanswered'); w.drop(lib); return null }
+    if (loose && !this.Ra_recs(lib).some((r) => r.sc.re === String(seed))) { console.log('◈? describe ' + String(seed).slice(0, 12) + ' — the remembered path ' + String(hintPath).slice(-60) + ' is not here — unanswered'); w.c.describe_miss = 'the remembered path ' + String(hintPath).slice(-60) + ' is not here'; w.drop(lib); return null }
     // TAG each folder husk with the seed(s) it answers (a husk-crossing scalar): the answer lands in the
     //  asker's EXISTING friend mirror (mixed with the radio share — the live routing is sender-keyed, not
     //   per-request), so the chooser filters this folder out by the tag and the pull drives only the chosen
@@ -1924,6 +1941,7 @@ async Heist_rummage_folder(w, nav, me, seed, hintPath, hintBase) {
     //  (Repli_find_record searches these first — the route's caster only serves the opus radio stock).  Bounded
     //   + time-stamped; Heist_keep_beat sweeps + DETACHES stale ones so an original never shadows the opus long.
     this.Heist_register_serve_lib(w, lib)
+    lib.c.how = how
     return lib
 
 },
@@ -1943,6 +1961,18 @@ Heist_seed_card_live(w, me, seed) {
         if (String(c.sc.Card) !== String(seed) || !c.sc.path) continue
         if (this.Heist_keep_id(me, String(c.sc.base || ''), String(c.sc.path)) !== String(seed)) continue
         return { path: String(c.sc.path), base: String(c.sc.base || '') }
+    }
+    // …AND MY POOL (2026-11-12, c58b's ♥ on "Groove G": Vingas only ever POOLED it, from Grav, then lent it to c58b's pool — so c58b's
+    //  copy says came_from:Vingas, and Vingas looked only in its music folder and answered nothing, every 4s).  A pooled copy wears the
+    //   original's id (or names it in `of:`) and its bytes sit at pool/<path> on this device: describe that, a one-track folder.
+    let pshelf = this.Ra_pool_shelf_live ? this.Ra_pool_shelf_live(rw) : null
+    if (pshelf) {
+        let prec = this.Ra_rec_find(pshelf, { Record: 1, id: String(seed) }) || this.Ra_recs(pshelf).find((r) => String(r.sc.of || '') === String(seed))
+        let files = rw && rw.c ? rw.c.pool_files : null
+        if (prec && prec.sc.path && this.Heist_want_path_ok(prec.sc.path) && (!files || files.includes(String(prec.sc.path)))) {
+            console.log('◈↻ describe ' + String(seed).slice(0, 12) + ' — not in my music, but my pool holds it: ' + String(prec.sc.path).slice(-60))
+            return { path: String(prec.sc.path), base: 'pool' }
+        }
     }
     return null
 
@@ -2304,7 +2334,14 @@ async Heist_rummage_answer(w, tx, me, asker, rummageMirror, nav) {
     }
     // DESCRIBE: the folder's metadata heads (Heist_census_heads — no reads).
     let lib = await this.Heist_rummage_folder(w, nav, me, String(rummageMirror.sc.seed), rummageMirror.sc.path, rummageMirror.sc.base)
-    if (!lib) return 0
+    // …AND A DESCRIBE I CANNOT ANSWER SAYS SO (2026-11-12, c58b's ♥ "Groove G": Vingas no longer held it anywhere and stayed silent,
+    //  so the asker waited out 15 asks and called it "didn't answer").  The `dead` disclaim: a re-ask will not help.  Advisory and
+    //   lossy like the want's — silence still ends the old way.  Bounded by the serve loop's ≤3 answers per ask episode.
+    this.Heist_answer_note(asker, String(rummageMirror.sc.seed), lib ? ('offered ' + this.Ra_recs(lib).length + ' via ' + (lib.c.how || '?')) : ('told gone — ' + (w.c.describe_miss || '?')), rummageMirror.sc.path)
+    if (!lib) {
+        if (typeof this.Repli_tell_miss === 'function') { try { await this.Repli_tell_miss(w, tx, { to: me, from: asker, id: String(rummageMirror.sc.seed) }, 1) } catch (er) {} }
+        return 0
+    }
     return await this.Heist_offer_all(w, tx, me, asker, lib, null)
 
 },
@@ -2754,10 +2791,25 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
         //      run: the form is populated on the ⇊ beat, the ask goes out behind it, and the answer
         //       supersedes ([[Heist_wire_supersede]]).  4s throttle, never giving up, exactly as before.
         let wire = this.Heist_rummage_wire(srcmir, seed)
+        // A BLIND FILL THE HOLDER CANNOT NAME (2026-11-12, eed live: one pool keep, 479 describe asks over half an hour, the
+        //  holder logging "◈? describe … not a track I can find" every 4s).  Pool_fill's stuck give-up only runs while K keeps
+        //   queue, and only for a reach still standing, so a lone keep whose reach had died was immortal.  15 asks (≈60s)
+        //    describe asks (keep.c.desc_n — not sc.asks, which also counts a pull's materialise asks) with nothing described: the holder has no file by that name, and the pool is expendable — let it go, and refuse
+        //     the reach so it is not re-booked this session.
+        if (!wire.length && this.Pool_is_machinery && this.Pool_is_machinery(keep) && (+(keep.c.desc_n || 0) >= 15 || this.Heist_told_gone(w, rw, seed)) && !this.Heist_rummage_recs(srcmir, seed).length) {
+            console.log('🏊✗ pool-fill: ' + String(keep.sc.from_name || at).slice(0, 8) + ' never described ' + String(keep.sc.Heist || seed).slice(0, 32) + ' after ' + keep.c.desc_n + ' asks — letting it go')
+            let peering = (ident && this.Swarm_peering) ? this.Swarm_peering(ident) : null
+            if (peering) { for (const r of peering.o({ Reach: 1, of: String(seed), for: 'serve' })) { if (String(r.sc.state || '') !== 'refused') { this.Swarm_reach_refuse(w, ident, r, 'the holder could not find it — never described') } } }
+            await this.Heist_keep_cancel(rw || w, keep)
+            return
+        }
         if (!wire.length) {
             let last = keep.c.desc_ts || 0
             if (Date.now() - last > 4000) {
                 keep.c.desc_ts = Date.now()
+                // DESCRIBE asks alone (the give-up above): sc.asks also counts a pull's materialise asks, so a keep sent back from
+                //  pulling to primed arrived already "at 11" and was let go after four describes (c58b, "Tafelmusik", 2026-11-12)
+                keep.c.desc_n = +(keep.c.desc_n || 0) + 1
                 keep.sc.asks = +(keep.sc.asks || 0) + 1
                 keep.bump()
                 await this.Heist_rummage_ask(w, route, me, at, seed, null, false, null, keep.sc.seed_path ? { path: keep.sc.seed_path, base: keep.sc.seed_base } : null)
@@ -2772,6 +2824,9 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
             this.Heist_keep_default_pick(keep, srcmir, seed)
             this.Heist_keep_default_section(keep, srcmir, seed)
         }
+        // WHAT IS ALREADY THERE (Heist_dest_look) — the setup form's one-line warning, for a human's keep only
+        //  (the throttle is checked SYNC here, so the common beat never pays an await)
+        if (!this.Pool_is_machinery(keep) && this.Heist_dest_due(keep)) { try { await this.Heist_dest_look(w, nav, keep) } catch (er) { if (keep.c.there) { keep.c.there.busy = 0; keep.c.there.at = Date.now() } } }
         // WAIT FOR THE HUMAN'S ▶ START (the human 2026-07-29: "the setup form is skipped ... it went straight
         //  to 0/13 tracks" + "if you skip the track it ... turns immediately into downloading").  primed→pulling
         //   is USER-CONFIRMED ONLY now — Heist_keep_start (the ▶ button) does that flip; here the keep just SITS
@@ -4329,6 +4384,98 @@ Heist_job_drop(shop, keep) {
 },
 // Heist_keep_filings — the per-artist filing decisions the picks name (dedup by artist, first genre wins):
 //  the [{artist,genre}] Heist_job pins and Heist_filing_for → Heist_rel_for read at land time.
+// Heist_dest_look — LOOK WHERE IT WILL LAND, BEFORE IT LANDS (the owner 2026-11-12: *"being aware of what we already have … at this
+//  location, with the Heist setup UI … one-line-warn people that there's something there and allow a peek at what, to check sanity of
+//   operations"*).  For a primed keep: each picked track's landing path (Heist_rel_for, through a keep-shaped stand-in for the job it
+//    will become — same genre, same dirs edit), then ONE level of each landing folder off the disk.  Runtime only (`keep.c.there`,
+//     never snapped — a listing of the owner's disk is not the keep's state): { dirs: [{ dir, files, clash }], n, clash_n }, where
+//      `clash` are the files a pick would land ON (same name).  Re-looked when the form changes, else every 15s.  The face reads it.
+// Heist_base_of — the base under which `path` names a real file on my disk: the given one first, then each top-level folder (not a
+//  dot-dir, not pool/ — Heist_rummage_folder's pool road is separate).  null when none holds it.  Two listings plus one per top folder.
+async Heist_base_of(nav, path, base) {
+    if (!nav || !nav.dir_at) return null
+    let parts = String(path).split('/').filter(Boolean)
+    let nm = parts.pop()
+    let has = async (b) => { try { let dl = await nav.dir_at((b ? [b] : []).concat(parts).join('/')); if (!dl) return false; await dl.expand(); return (dl.files || []).some((f) => String(f.name) === nm) } catch (er) { return false } }
+    if (await has(base)) return base
+    let root = null
+    try { root = await nav.dir_at(''); if (root) await root.expand() } catch (er) { root = null }
+    for (const d of (root && root.directories ? root.directories : []).slice(0, 40)) {
+        let b = String(d.name)
+        if (!b || b[0] === '.' || b === 'pool' || b === base) continue
+        if (await has(b)) return b
+    }
+    return null
+
+},
+// Heist_answer_note — WHAT I SAID TO A DESCRIBE, AS MATTER (the owner 2026-11-12: *"is this business about … finding the dir, for that
+//  Heist, easily assailable from the usual state observer"* — it was not: the holder's reasoning lived only in console lines).  One
+//   %Answer row per (seed, asker) under the radio world's %Answers — where I looked (`said`), the path the asker gave, how often —
+//    so `minisnap 'radio>Answers'` reads the holder's side of every Heist ask.  LIVE PAGES ONLY (a Book world never grows it: no
+//     fixture moves); the newest 12 stand.  `at` is wall clock, which is why it can never ride a Book.
+Heist_answer_note(asker, seed, said, path) {
+    let M = this.top_House ? this.top_House() : null
+    let rw = M && M.c ? M.c.radio_w : null
+    if (!rw || !M.c.humdinger) return
+    let shelf = rw.oai({ Answers: 1 })
+    let row = shelf.oai({ Answer: String(seed).slice(0, 16), to: String(asker || '').slice(0, 8) })
+    if (row.sc.said !== said) { row.sc.said = String(said) }
+    if (path) { row.sc.path = String(path) }
+    row.sc.n = '' + (+(row.sc.n || 0) + 1)
+    row.sc.at = '' + Math.floor(Date.now() / 1000)
+    row.bump()
+    let rows = shelf.o({ Answer: 1 }).sort((a, b) => (+(b.sc.at || 0)) - (+(a.sc.at || 0)))
+    for (const old of rows.slice(12)) shelf.drop(old)
+
+},
+// Heist_told_gone — did the holder SAY it has no such track (Repli_recv_missed's `dead` disclaim — a describe it could not answer,
+//  Heist_rummage_answer)?  Either world may have heard the frame; the stamp is only trusted for 2 minutes.
+Heist_told_gone(w, rw, id) {
+    for (const x of [w, rw]) {
+        let at = x && x.c && x.c.ra_dead ? +(x.c.ra_dead[String(id)] || 0) : 0
+        if (at && Date.now() - at < 120000) return 1
+    }
+    return 0
+},
+Heist_dest_key(keep) {
+    return [keep.sc.genre || '', keep.sc.dirs || '', keep.sc.dirs_none ? 1 : 0, keep.o({ Pick: 1 }).length].join('|')
+},
+Heist_dest_due(keep) {
+    let was = keep.c.there
+    return !was || (!was.busy && (was.key !== this.Heist_dest_key(keep) || Date.now() - was.at >= 15000))
+},
+async Heist_dest_look(w, nav, keep) {
+    if (!nav || !nav.dir_at) return null
+    let picks = keep.o({ Pick: 1 }).filter((p) => p.sc.path)
+    let key = this.Heist_dest_key(keep)
+    if (keep.c.there) { keep.c.there.busy = 1 } else { keep.c.there = { key: '', at: 0, dirs: [], n: 0, clash_n: 0, busy: 1 } }
+    let fls = this.Heist_keep_filings(keep)
+    let job = { sc: { at: keep.sc.pub, dirs: keep.sc.dirs, dirs_none: keep.sc.dirs_none, dirs_auto: keep.sc.dirs_auto }, o: (q) => (q && q.filing) ? fls.filter((fl) => !q.artist || fl.artist === q.artist).map((fl) => ({ sc: { filing: 1, artist: fl.artist, genre: fl.genre } })) : [] }
+    let mardir = this.Heist_keep_mardir(w, keep)
+    let want = {}
+    for (const p of picks) {
+        let rel = this.Heist_rel_for(job, { sc: { path: p.sc.path, artist: p.sc.artist || 'misc', lofi: keep.sc.lofi } })
+        let parts = String(rel).split('/').filter(Boolean)
+        let name = parts.pop()
+        let dir = parts.join('/')
+        if (!want[dir]) want[dir] = []
+        want[dir].push(name)
+    }
+    let out = { key: key, at: Date.now(), dirs: [], n: 0, clash_n: 0 }
+    for (const dir of Object.keys(want).slice(0, 8)) {
+        let full = (mardir ? mardir + '/' : '') + dir
+        let files = []
+        try { let dl = await nav.dir_at(full); if (dl) { await dl.expand(); files = (dl.files || []).map((f) => String(f.name)) } } catch (er) { files = [] }
+        if (!files.length) continue
+        let clash = want[dir].filter((nm) => files.includes(nm))
+        out.dirs.push({ dir: dir, files: files.slice(0, 80), more: Math.max(0, files.length - 80), clash: clash })
+        out.n = out.n + files.length
+        out.clash_n = out.clash_n + clash.length
+    }
+    keep.c.there = out
+    return out
+
+},
 Heist_keep_filings(keep) {
     let seen = {}
     let out = []
