@@ -11,7 +11,7 @@ import { sha256_hex } from "$lib/Common"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return '4f60621d6ba754b0~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return '3e98627a71a28aca~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/MusuTesting.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -985,7 +985,19 @@ Repli_meter(w, dir, frames, bytes) {
         let kb = (n) => Math.round(n / 1024)
         let rx_kbps = Math.round(m.rxb * 1000 / dt / 1024)
         let tx_kbps = Math.round(m.txb * 1000 / dt / 1024)
-        console.log(`◈ Repli  rx ${m.rxf}p/${kb(m.rxb)}KB  tx ${m.txf}p/${kb(m.txb)}KB  ${rx_kbps + tx_kbps}KB/s`)
+        // THE CONSOLE LINE ROLLS UP SLOWER ON A MUSIC PAGE (2026-11-13: 54 lines in 5 min on 855f): 10s there, 1.5s
+        //  where Books run.  Its own accumulator, so the HUD below keeps its 1.5s rates.
+        let say = m.say
+        if (!say) { say = m.say = { rxf: 0, rxb: 0, txf: 0, txb: 0, since: m.since } }
+        say.rxf = say.rxf + m.rxf; say.rxb = say.rxb + m.rxb; say.txf = say.txf + m.txf; say.txb = say.txb + m.txb
+        let top = this.top_House ? this.top_House() : null
+        let say_ms = (top && top.c && top.c.humdinger) ? 10000 : 1500
+        let sdt = nowms - say.since
+        if (sdt >= say_ms) {
+            let skbps = Math.round((say.rxb + say.txb) * 1000 / sdt / 1024)
+            console.log(`◈ Repli  rx ${say.rxf}p/${kb(say.rxb)}KB  tx ${say.txf}p/${kb(say.txb)}KB  ${skbps}KB/s`)
+            m.say = { rxf: 0, rxb: 0, txf: 0, txb: 0, since: nowms }
+        }
         // LIVE TRANSFER TELEMETRY (the human 2026-07-30 "more transfer visual feedback but I don't see any"):
         //  feed the shared xfer object the %Transfer glass HUD + `runner_ask world` both read — the rates and a
         //   rolling spark of rx.  All .c/runtime, no snap byte.

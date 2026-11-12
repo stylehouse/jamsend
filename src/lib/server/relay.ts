@@ -419,7 +419,27 @@ export function attachRelay(
 		const holdsSeat = (ws: WebSocket) => !!((ws as any).seats as Set<string> | undefined)?.has(to)
 		let own = false, seated = false
 		for (const ws of set) if (ws.readyState === WebSocket.OPEN) { if (ownsDoor(ws)) own = true; if (holdsSeat(ws)) seated = true }
-		const gets = (ws: WebSocket) => own ? ownsDoor(ws) : seated ? holdsSeat(ws) : true
+		// THE HEIR, BEFORE THE ROOM (2026-11-12, Vingas: every frame to its name arrived TWICE in one tab).  No door-owner and no
+		//  seat-holder means the primary tab is gone; every socket of the sibling tab left behind is still courtesy-bound to the bare
+		//   name — its station (seat <name>_1) AND its Lies channel (seat <name>_9NNN, the seat dodge) — so "the room" was two sockets
+		//    of one tab.  Hand the bare name to ONE heir: the socket holding the LOWEST in-family seat (`<name>_N`, granted only to a
+		//     hello signed by that key, so no stranger can be heir).  The station's _1 beats the channel's _9NNN.  Until the sibling
+		//      promotes itself to the bare name (Swarm_cohort_stand's waiting lock), this is where the name's frames land.  No in-family
+		//       seat at all (a role bucket, a plain courtesy bind) still fans out to the room, as before.
+		let heir: WebSocket | null = null
+		if (!own && !seated) {
+			let best = Infinity
+			const fam = to + '_'
+			for (const ws of set) {
+				if (ws.readyState !== WebSocket.OPEN) continue
+				for (const sname of (((ws as any).seats as Set<string> | undefined) ?? [])) {
+					if (!sname.startsWith(fam)) continue
+					const n = Number(sname.slice(fam.length))
+					if (Number.isInteger(n) && n < best) { best = n; heir = ws }
+				}
+			}
+		}
+		const gets = (ws: WebSocket) => own ? ownsDoor(ws) : seated ? holdsSeat(ws) : heir ? ws === heir : true
 		let delivered = false
 		for (const ws of set)
 			if (ws.readyState === WebSocket.OPEN && gets(ws)) {

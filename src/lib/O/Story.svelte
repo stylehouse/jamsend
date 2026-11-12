@@ -126,7 +126,10 @@
     import { ground_include, ground_flavoured } from "$lib/A/ground"
 
     let { M } = $props()
-    let V = { Story: 1 }   // set Story: 1 here to enable drive/analysis debug logs
+    // V.Story — the drive/analysis debug logs (📊 story_analysis, ▷ do_step, ⏱ poll_step, ⏭ schedule …).  ON where Books
+    //  run (a wedged runner is read off them), OFF on a music page (humdinger): there they were ~40 lines of every boot's
+    //   Sounditron drive the owner never reads (2026-11-13).  A getter, since humdinger is stamped after this module loads.
+    let V = { get Story() { return (M as any)?.top_House?.()?.c?.humdinger ? 0 : 1 } }
 
     // ── colour palette ───────────────────────────────────────────────────────
     // Assigned in first-seen order via ensure_swatch().

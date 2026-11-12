@@ -56,6 +56,10 @@ story:MusuReplica
       style:background-color,v:#2f8bb1
     matstyle:Theirs
       style:background-color,v:#d62970
+    matstyle:stock
+      style:background-color,v:#66c559
+    matstyle:Fill
+      style:background-color,v:#3c2999
   Plan
   Opt
     useCyto

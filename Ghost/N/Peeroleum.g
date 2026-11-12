@@ -319,7 +319,9 @@ Peeroleum_route(w, h, mine):
     if (!peering) return {}
     let other = (mine === 'from') ? h.to : h.from
     let piers = peering.o({Pier:1})
-    let pier = (piers.length === 1) ? piers[0] : piers.find(p => p.sc.pub === other)
+    // the lone-Pier shortcut never answers for a SESSION SEAT (<prepub>_N — a sibling tab of that peer): it has, or gets, its own
+    //  route (w.c.lane_route), and booking it into the lone friend's stream is the shared-seq collision that route exists to end
+    let pier = piers.find(p => p.sc.pub === other) || ((piers.length === 1 && !/_\d+$/.test(String(other || ''))) ? piers[0] : undefined)
     return {peering, pier}
 
 // Peeroleum_carrier — the live connection for a frame's endpoint. The swarm hangs one carrier per
@@ -597,6 +599,8 @@ async Peeroleum_deliver_do(w, frame):
     //         0, 1, or N Piers, editor or runner alike.
     if (h.type === 'runner_ask' || h.type === 'ghost_compile') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, null, frame); return }
     let {peering, pier} = this.Peeroleum_route(w, h, 'to')
+    // a friend's SIBLING TAB (from:<prepub>_N): its first frame mints its own route — the owner of this w says whether it may
+    if (!pier && peering && typeof w.c.lane_route === 'function') { pier = w.c.lane_route(h) || pier }
     // 🔦 CEREMONY TRACE (2026-09-02, temporary floodlight): the live device-link died SILENTLY between
     //  "knock dispatched fresh" and Swarm_hello — every ceremony frame's routing verdict now prints, so
     //   a console paste shows exactly which branch ate it.  pier_*/ferry* only — pulses stay quiet.

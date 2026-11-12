@@ -1814,7 +1814,9 @@ export class House extends StorableHousing {
         const tgt   = e.c.target as TheC
         const elvis = e.sc.elvis as string
         if (tgt.c.drop) {
-            console.warn(`targeted e:${elvis} landed nowhere — target reminted|dropped`)
+            // name the target, so the next one of these says WHOSE req went away
+            const tk = Object.keys(tgt.sc || {})[0]
+            console.warn(`targeted e:${elvis} landed nowhere — target ${tk}:${tgt.sc?.[tk]} reminted|dropped`)
             return
         }
         const handler = (this as any)['e_' + elvis]

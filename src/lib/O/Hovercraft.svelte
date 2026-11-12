@@ -645,7 +645,8 @@
         //  down, or a stray double-call — must never drive a finished or detached req: guard on %finished
         //   and a live c.up before reqyoncile.  (Finish on error too, so a throw never wedges the snap open.)
         const settle = () => {
-            if (req.sc.finished || !req.c.up) return
+            // …and a DROPPED one (2026-11-13): a re-minted|culled req keeps its c.up, so only c.drop says it's gone
+            if (req.sc.finished || !req.c.up || req.c.drop) return
             H.reqyoncile(req, { finished: 1 })
         }
         Promise.resolve()

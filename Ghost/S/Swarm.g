@@ -1103,6 +1103,17 @@ Swarm_pier_seats(pier, now_s):
     let loan = pier.o({ Loan: 1 })[0]
     let now = (now_s != null) ? +now_s : Math.floor(Date.now() / 1000)
     if (loan && loan.sc.to && +loan.sc.exp > now && String(loan.sc.to) !== own) { out.push(String(loan.sc.to)) }
+    // …plus every SIBLING TAB of theirs heard in the last 90s (<pub>_N — the hear funnel stamps pier.c.lanes after the voucher
+    //  gate; Identity_persist_todo §0.1): the same friend, another of their tabs, so it is served and offered to like the soul.
+    //   Runtime only — no Book ever stamps a lane — and a closed tab ages out on its own.
+    let lanes = pier.c && pier.c.lanes
+    if (lanes) {
+        let t = Date.now()
+        for (const a of Object.keys(lanes)) {
+            if (t - lanes[a] > 90000) { delete lanes[a]; continue }
+            if (!out.includes(a)) out.push(a)
+        }
+    }
     return out
 // Swarm_slot_granted — may `peer` (a requester's ADDRESS) draw my music?  Only if it holds one of the seats on a
 //  Music-live friendship (Swarm_pier_seats: the Captain, and the one Cave on loan).  First pier that seats it.
@@ -1819,7 +1830,7 @@ Swarm_deliver(w, ident, prepub, frame):
         //  (byte-identical to before), the BODY prepub for a keyless Cave (it routes + is recognised as
         //   its own name, and its crew voucher below proves it belongs to the soul).  Swarm_signas is the
         //    one place that answer lives.
-        let from_addr = this.Swarm_signas(ident)?.prepub || ident.sc.prepub
+        let from_addr = this.Swarm_session_from(ident, this.Swarm_signas(ident)?.prepub || ident.sc.prepub)
         this.Peeroleum_send(w, { header: { type: frame.kind, from: from_addr, to: prepub, seq: seq }, swarm: frame })
         return true
     }
@@ -1837,6 +1848,8 @@ Swarm_deliver(w, ident, prepub, frame):
 //   recipient by header.to and lands in the SAME handshake verbs the mail wire feeds. Once per w.
 Swarm_arm(w):
     if (!w.c.on) w.c.on = {}
+    // a friend's SIBLING TAB speaks from <their prepub>_N — Peeroleum finds no route for that name and asks here (Swarm_lane_route)
+    w.c.lane_route = (h) => this.Swarm_lane_route(w, h)
     let hear = async (w2, pier, frame) => {
         let ident = this.Swarm_account_of(w2, frame.header.to)
         if (!ident) return false
@@ -1971,6 +1984,9 @@ Swarm_arm(w):
             //  is worth anything.  A mid-conversation frame is no edge and costs nothing here.
             let owed_edge = !sealed.c.heard_at || (Date.now() - sealed.c.heard_at) > 30000
             sealed.c.heard_at = Date.now()
+            // A SIBLING TAB OF THEIRS is one more seat of this friendship while it speaks (Swarm_pier_seats reads these) — .c only
+            let lane = this.Swarm_lane_of(frame, from)
+            if (lane !== String(from)) { (sealed.c.lanes ??= {})[lane] = Date.now() }
             // …and tells presence: hearing them is newer than the relay's last census (Presence_heard)
             if (typeof this.Presence_heard === 'function') this.Presence_heard(sealed.sc.pub)
             if (owed_edge) { try { this.Swarm_owed_settle(w2, ident, sealed) } catch (er) {} }
@@ -1988,7 +2004,9 @@ Swarm_arm(w):
         //       only RECORD the era; the pulse lane acts on it within ~5s.  Sealed friends only:
         //        gossip never opens a door, and an era is a door onto our stream state.
         if (sealed && frame.swarm && frame.swarm.era) {
-            let eroute = this.Swarm_station_pier(w2, ident, String(from))
+            // the era is the SENDING TAB's — a sibling tab keeps its own on its own lane's route (Swarm_lane_of), so two tabs
+            //  of one friend never flip each other's stream as a rebirth
+            let eroute = this.Swarm_station_pier(w2, ident, String(this.Swarm_lane_of(frame, from)))
             let ephemeral_lane = frame.header.type === 'pulse' || frame.header.type === 'swarm_hi' || frame.header.type === 'ferry_want' || frame.header.type === 'ferry_cancel'
             if (eroute) this.Swarm_note_era(w2, eroute, frame.swarm, ephemeral_lane ? 1 : 0)
         }
@@ -2008,7 +2026,7 @@ Swarm_arm(w):
         if (frame.header.type === 'seat_lost') this.Swarm_seat_lost(w2, ident, frame.swarm, frame.header.from)
         if (frame.header.type === 'borrow_give') this.Swarm_borrow_given(w2, ident, frame.swarm).catch((er) => console.log('⨳ borrow_give threw —', er))
         if (frame.header.type === 'suggest_got') this.Swarm_suggest_got(w2, ident, frame.swarm)
-        if (frame.header.type === 'repli_ready') this.Swarm_repli_ready(w2, ident, frame.swarm)
+        if (frame.header.type === 'repli_ready') this.Swarm_repli_ready(w2, ident, frame.swarm, this.Swarm_lane_of(frame, from))
         if (frame.header.type === 'charter') await this.Swarm_charter_heard(w2, ident, frame.swarm)
         if (frame.header.type === 'roster') await this.Swarm_roster_heard(w2, ident, frame.swarm)
         if (frame.header.type === 'crew') await this.Swarm_crew_heard(w2, ident, frame.swarm)
@@ -3226,7 +3244,7 @@ Swarm_hi_one(w, ident, prepub, reply):
     let seq = this.Pier_next_seq(route)
     // CERT-CREW: swarm_hi bypasses Swarm_deliver, so mirror its from-addr rule here — a Cave greets AS
     //  its own body name (Swarm_signas), never the soul name, so the far side recognises the body.
-    let hi_from = this.Swarm_signas(ident)?.prepub || ident.sc.prepub
+    let hi_from = this.Swarm_session_from(ident, this.Swarm_signas(ident)?.prepub || ident.sc.prepub)
     this.Peeroleum_send(w, { header: { type: 'swarm_hi', from: hi_from, to: prepub, seq: seq }, swarm: hi })
     return true
 
@@ -3255,7 +3273,9 @@ Swarm_heard_hi(w, ident, frame):
     if (!from) return
     let sealed = this.Swarm_peering(ident)?.o({ Pier: 1, pub: String(from) })[0]
     if (!sealed) return
-    let route = this.Swarm_station_pier(w, ident, String(from))
+    // which of their TABS greeted (Swarm_lane_of): its era lives on its own route, and the answer goes back to it
+    let lane = this.Swarm_lane_of(frame, from)
+    let route = this.Swarm_station_pier(w, ident, String(lane))
     if (!route) return
     // the ONE epoch implementation.  Swarm_arm's hear funnel normally runs Swarm_note_era on every
     //  vouched swarm frame BEFORE dispatching here (swarm_hi is ephemeral-lane ⇒ may_reset:1), which
@@ -3266,7 +3286,7 @@ Swarm_heard_hi(w, ident, frame):
     //       drop the restart signal for every non-funnel caller.
     this.Swarm_note_era(w, route, hi, 1)
     if (!hi.reply) {
-        this.Swarm_hi_one(w, ident, String(from), 1)
+        this.Swarm_hi_one(w, ident, String(lane), 1)
         this.Swarm_boast_on_hi(w, ident)
     }
     // they are HERE — anything queued for them goes now (the store-and-forward drain)
@@ -5344,12 +5364,14 @@ Swarm_share_present_of(me, from, w):
 //        through the same gates and mark discipline the beat uses (Swarm_offer_now).  The reset
 //         stays: if the immediate offer throws, the mark is still null and the beat + floor
 //          backstop exactly as before.
-Swarm_repli_ready(w, ident, frame):
+Swarm_repli_ready(w, ident, frame, lane):
     let from = String(frame?.page?.prepub || '')
     if (!from) return 0
     let sealed = this.Swarm_peering(ident)?.o({ Pier: 1, pub: from })[0]
     if (!sealed) return 0
-    let route = this.Swarm_station_pier(w, ident, from)
+    // the asking TAB (a sibling tab of theirs asks from <from>_N — Swarm_lane_of): offer there, on that tab's own route
+    let to = (lane && String(lane).startsWith(from + '_')) ? String(lane) : from
+    let route = this.Swarm_station_pier(w, ident, to)
     if (!route) return 0
     route.c.rx_ready = Date.now()
     route.c.offered_mark = null
@@ -5357,7 +5379,7 @@ Swarm_repli_ready(w, ident, frame):
     if (typeof this.Radio_trace === 'function') {
         try { this.Radio_trace(null, { ev: 'repli-ready', of: from.slice(0, 8) }) } catch (er) {}
     }
-    if (w.c.station_up) this.Swarm_offer_now(w, ident, from).catch((er) => console.error('⨳ offer-now threw —', (er && er.message) || er))
+    if (w.c.station_up) this.Swarm_offer_now(w, ident, to).catch((er) => console.error('⨳ offer-now threw —', (er && er.message) || er))
     return 1
 
 // Swarm_offer_now — one friend's Mag, offered NOW: the reply half of repli_ready's ask.  The same
@@ -5369,6 +5391,7 @@ Swarm_repli_ready(w, ident, frame):
 //       no fixture can grow %frame husks from it.  Returns 1 iff the offer was sent.
 async Swarm_offer_now(w, ident, pub):
     if (!w || !w.c.share_up) return 0
+    if (this.Swarm_sibling_tab(ident)) return 0   // the primary tab casts this shelf; a sibling's offer would mirror it twice
     let rw = this.top_House().c.radio_w
     if (!rw) return 0
     let me = String(ident.sc.prepub)
@@ -5967,7 +5990,11 @@ async Swarm_share_beat(w, ident):
     //  several directory hops, and this beat has a 600ms busy budget (Ra_pooling_wander_beat guards its own re-entry)
     if (typeof this.Ra_pooling_wander_beat === 'function') { this.Ra_pooling_wander_beat(w, stock).catch(() => {}) }
     // THE AUTO-LEND (GrantBorrowing): while I'm the Captain, every online Cave holds a live loan per friend.
-    try { await this.Swarm_lend_beat(w, ident) } catch (er) { console.log('⨳ lend beat threw —', er) }
+    // A SIBLING TAB RECEIVES, IT DOES NOT CAST (2026-11-12): its shelf IS the primary tab's shelf, and an offer from <prepub>_N
+    //  would stand a second mirror of me at every friend (Theirs,pub:<prepub>_N).  So it greets and wants — its own lane — and
+    //   leaves casting and lending to the primary (Swarm_sibling_tab; Identity_persist_todo §0.1).
+    let sibling_tab = this.Swarm_sibling_tab(ident)
+    if (!sibling_tab) { try { await this.Swarm_lend_beat(w, ident) } catch (er) { console.log('⨳ lend beat threw —', er) } }
     for (const p of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
         if (!p.sc.pub) continue
         if (!this.Swarm_pier_live(p, 'Music')) continue
@@ -5978,8 +6005,9 @@ async Swarm_share_beat(w, ident):
             if (pub === me) continue
             let route = this.Swarm_station_pier(w, ident, pub)
             if (!route) continue
-            if (!route.c.repli_src) this.Repli_register_caster(w, route, stock)
+            if (!sibling_tab && !route.c.repli_src) this.Repli_register_caster(w, route, stock)
             if (!route.c.repli_rx) this.Repli_register_rx(w, route)
+            if (sibling_tab) continue
             // OFFER on change: stock grew, or the peer was reborn (offered_mark carries both).
             //  Presence-gated — husking at silence is litter.  Repli_merge dedups the far side,
             //   so a re-offer after rebirth is safe, just not free.  The unit is the MAG (the wire
@@ -6606,7 +6634,26 @@ Swarm_roster_dir(root):
 async Swarm_account_save(nav, root, ident):
     if (!nav || !this.Swarm_keys(ident)) return null
     let env = JSON.parse(await this.Swarm_export(ident))
-    await nav.write_file(this.Swarm_account_dir(root, ident.sc.prepub), 'toc.snap', env.snap)
+    // BYTE-IDENTICAL ⇒ NO WRITE (2026-11-12, 855f mirroring every 5-15s): Auto's mark moves on any
+    //  %Pier version bump, and most bumps change nothing the account carries.  The roster already
+    //   skips this way.  The compare is against the bytes this tab last wrote (.c, dies with the tab),
+    //    or on a life's first save against the file on disk.  When it DID change, name the changed rows' mainkeys only —
+    //     the snap holds the keypair, so never its content.
+    let dir = this.Swarm_account_dir(root, ident.sc.prepub)
+    let was = ident.c.account_snap_was
+    // a life's FIRST save compares against what is on disk, so a boot that changed nothing writes nothing
+    if (was == null) { try { was = await nav.read_file(dir, 'toc.snap') } catch (er) { was = '' } }
+    if (was && was === env.snap) { ident.c.account_snap_was = was; return env.snap }
+    if (was) {
+        let old = new Set(was.split('\n'))
+        let keys = {}
+        for (let line of env.snap.split('\n')) { if (!old.has(line)) keys[line.trim().split(/[:,]/)[0]] = 1 }
+        let said = Object.keys(keys).join(' ')
+        if (said !== ident.c.account_diff_said) { ident.c.account_diff_said = said; console.log('🪪 account changed rows: ' + said) }
+    }
+    await nav.write_file(dir, 'toc.snap', env.snap)
+    ident.c.account_snap_was = env.snap
+    ident.c.account_wrote_at = Date.now()
     return env.snap
 
 // Swarm_account_load — read account/<prepub>/toc.snap and Swarm_import it into `container` (thaws the
@@ -6745,6 +6792,47 @@ Swarm_body_want(ident, bname):
     let fam = String(ident.sc.prepub) + '_'
     if (!vs || !String(vs).startsWith(fam)) { return null }
     return String(bname) + '_' + String(vs).slice(fam.length)
+
+// Swarm_lane_route — the route for a friend's SIBLING TAB, minted at its first frame (Peeroleum_deliver_do asks before its
+//  no-Pier drop).  `<friend prepub>_N` on a live station, where that prepub is a friendship of the identity addressed: the
+//   lane gets its own station %Pier — its own seq, inbox, era and offers, exactly as a lent Cave's seat does — while the
+//    friendship stays one Pier on the identity.  Every frame on it still crosses the voucher gate as the friend.  My OWN
+//     soul's suffixes are siblings of mine, not friends (Peeroleum_same_soul's road), so they get nothing here.
+Swarm_lane_route(w, h):
+    if (!w || !w.c || !w.c.station_up || !h) { return null }
+    let m = /^([0-9a-f]{16})_(\d{1,4})$/.exec(String(h.from || ''))
+    if (!m) { return null }
+    let ident = this.Swarm_account_of(w, h.to)
+    if (!ident || m[1] === String(ident.sc.prepub)) { return null }
+    if (!this.Swarm_peering(ident)?.o({ Pier: 1, pub: m[1] })[0]) { return null }
+    return this.Swarm_station_pier(w, ident, String(h.from))
+
+// Swarm_session_from — the wire name a frame leaves under: `name` (my soul or body prepub, Swarm_signas) for the primary
+//  tab, `name_N` for a sibling tab of this profile, N its session suffix (top.c.vessel_addr — the cohort made N unique among
+//   this profile's tabs).  A sibling that spoke as the bare name shared ONE stream at every friend with the primary: the same
+//    per-Pier seq counted from 1 in both tabs, so the friend's replay guard swallowed one tab's frames as repeats and every
+//     answer landed on the primary (Identity_persist_todo §0.1).  Its own address is its own stream — the friend files it
+//      under the same friendship (the signed page names the soul) and answers it there (Swarm_lane_of, Swarm_pier_seats).
+// Swarm_sibling_tab — is this tab standing at a session suffix (a second tab of this identity in this profile)?
+Swarm_sibling_tab(ident):
+    return this.Swarm_session_from(ident, 'x') !== 'x'
+
+Swarm_session_from(ident, name):
+    let vs = ident?.sc?.prepub ? this.top_House()?.c?.vessel_addr?.[ident.sc.prepub] : null
+    let fam = String(ident?.sc?.prepub || '') + '_'
+    if (!name || !vs || !String(vs).startsWith(fam)) { return name }
+    return String(name) + '_' + String(vs).slice(fam.length)
+
+// Swarm_lane_of — the address a frame came FROM, when it is a session seat of the signed sender: `<from>_N` (a sibling tab
+//  of that friend) — else `from` itself.  Identity stays the signed page's prepub (the voucher gate checks it); this only says
+//   which of their tabs to answer, and which route keeps that tab's stream (seq, era, offers).  Header-only, so a forged
+//    suffix buys nothing: the frame passed the voucher gate as `from`, and the relay grants <from>_N only to a hello that
+//     key signed.
+Swarm_lane_of(frame, from):
+    let f = String(from || '')
+    let wire = String(frame?.header?.from || '')
+    if (!f || !wire.startsWith(f + '_')) { return f }
+    return /^\d{1,4}$/.test(wire.slice(f.length + 1)) ? wire : f
 
 // Swarm_next_suffix — the next free <prepub>_N not among `taken` (the addresses we can see held). The
 //  bare <prepub> is the primary; suffixes start at _1. The relay's "taken — jump to _1" done locally.
@@ -9787,6 +9875,32 @@ Swarm_cohort_primacy(prepub):
         } catch (e) { resolve({ primary: 1, lockless: 1 }) }
     })
 
+// Swarm_cohort_heir — a sibling tab QUEUES for the bare-name lock (2026-11-12, Vingas: the primary tab closed and the sibling
+//  stayed at <prepub>_1 for good — friends' frames to the bare name reached it only through the relay's heir rule, and nothing
+//   ever stood it back at its own name).  Web Locks grant a queued request the moment the holder's tab dies, so leadership
+//    passes with no cadence and no stale row.  Granted ⇒ this tab IS the primary now: drop the session suffix and re-dial the
+//     bare door (Swarm_rehome rolls the era, so friends treat it as the rebirth it is).  The account mirror stays HELD
+//      (`account_mirror_stale`, the §7.4f reinstate hold): this tab's live tree predates whatever the old primary wrote, and
+//       disk wins — it writes again after its next reload, which reads the account fresh.  Runtime-only; no Book has locks.
+Swarm_cohort_heir(ident):
+    let locks = (typeof navigator !== 'undefined' && navigator.locks) || null
+    let prepub = ident?.sc?.prepub
+    if (!locks || !locks.request || !prepub) return
+    try {
+        locks.request('jamsend:' + prepub + ':bare', (lock) => {
+            if (!lock) return
+            let top = this.top_House()
+            if (top.c.cohort) { top.c.cohort.primary = 1; top.c.cohort.taken = [] }
+            let vaddr = (top.c.vessel_addr ??= {})
+            let was = vaddr[prepub]
+            delete vaddr[prepub]
+            top.c.account_mirror_stale = Date.now()
+            console.log('👥 the primary tab of ' + String(prepub).slice(0, 8) + ' left — this tab takes the bare name (was ' + String(was || prepub) + '); the account mirror holds until a reload reads it fresh')
+            this.Swarm_rehome(ident)
+            return new Promise(() => {})
+        }).catch(() => {})
+    } catch (e) {}
+
 // Swarm_cohort_stand — the boot-time claim + census, idempotent per tab.  Populates
 //  top.c.cohort within its 250ms budget and keeps answering the channel for the tab's life,
 //   registering every heard sibling so the hear funnel knows family from thief.
@@ -9825,6 +9939,7 @@ async Swarm_cohort_stand(ident):
     top.c.cohort = { primary: claim.primary, prepub: prepub, vessel: vessel, taken: taken, lockless: claim.lockless, at: Date.now() }
     delete top.c.cohort_standing
     if (!claim.primary) { console.log('👥 cohort: another body of ' + prepub.slice(0, 8) + ' holds the bare name in this profile — this tab will stand at a suffix') }
+    if (!claim.primary && !claim.lockless) { this.Swarm_cohort_heir(ident) }
     // Retire the token into the durable Vessel census (Division_todo §ATOMS): the BroadcastChannel
     //  `taken` array is this instant's advisory view; the Vessel table is the store's persistent census
     //   a returning tab reads back.  Best-effort — no IDB, no census, exactly the pre-table behaviour.

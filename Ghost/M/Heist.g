@@ -392,6 +392,16 @@ async Heist_unlink(nav, dir, filename):
         await dl.deleteEntry(filename)
     } catch (er) {}
 
+// Heist_unlink_if_there — Heist_unlink for a BLIND sweep (the berth's crswap corpses): look before deleting,
+//  so a name that was never there costs no `double-deleted` line (2026-11-12, berth/Census logging two per
+//   compaction).  FSA-only by nature (a .crswap is Chrome's swap file); a nav without a handle has none.
+async Heist_unlink_if_there(nav, dir, filename):
+    let dl = null
+    try { dl = await nav.dir_at(dir) } catch (er) { dl = null }
+    if (!dl || !dl.handle || typeof dl.handle.getFileHandle !== 'function') return
+    try { await dl.handle.getFileHandle(filename) } catch (er) { return }
+    await this.Heist_unlink(nav, dir, filename)
+
 // Heist_writer_drop — release a held bin_writer on ANY landing exit that isn't a clean commit.  Best-effort
 //  and null-safe, because every caller is already on a failure path and must not fail differently: a nav
 //   with no bin_writer passes null, an already-closed writer no-ops, and a writer that refuses to abort
@@ -5361,11 +5371,11 @@ async Berth_save(nav, waft):
         //    12 days).  Compaction is the one moment we KNOW no write is in flight (single-flight,
         //     and the toc just landed), so it is the safe sweep seam.  Blind best-effort unlinks:
         //      a NotFound throw per absent name, at compaction rate, is the whole cost.
-        try { await this.Heist_unlink(nav, dir, this.Berth_part_name(i) + '.crswap') } catch (er) {}
-        try { await this.Heist_unlink(nav, dir, this.Berth_part_name(i) + '.1.crswap') } catch (er) {}
+        try { await this.Heist_unlink_if_there(nav, dir, this.Berth_part_name(i) + '.crswap') } catch (er) {}
+        try { await this.Heist_unlink_if_there(nav, dir, this.Berth_part_name(i) + '.1.crswap') } catch (er) {}
         i = i + 1
     }
-    try { await this.Heist_unlink(nav, dir, 'toc.snap.crswap') } catch (er) {}
+    try { await this.Heist_unlink_if_there(nav, dir, 'toc.snap.crswap') } catch (er) {}
     waft.c.berth_parts = 0
     waft.c.berth_part_rows = 0
 
@@ -5381,11 +5391,11 @@ async Berth_reset(nav, root, prepub, name):
         let i = 1
         while (i <= this.Berth_parts_max()) {
             try { await this.Heist_unlink(nav, dir, this.Berth_part_name(i)) } catch (er) {}
-            try { await this.Heist_unlink(nav, dir, this.Berth_part_name(i) + '.crswap') } catch (er) {}
-            try { await this.Heist_unlink(nav, dir, this.Berth_part_name(i) + '.1.crswap') } catch (er) {}
+            try { await this.Heist_unlink_if_there(nav, dir, this.Berth_part_name(i) + '.crswap') } catch (er) {}
+            try { await this.Heist_unlink_if_there(nav, dir, this.Berth_part_name(i) + '.1.crswap') } catch (er) {}
             i = i + 1
         }
-        try { await this.Heist_unlink(nav, dir, 'toc.snap.crswap') } catch (er) {}
+        try { await this.Heist_unlink_if_there(nav, dir, 'toc.snap.crswap') } catch (er) {}
         return
     }
     await this.Heist_sweep(nav, root + '/' + APP_DATA_DIR + '/berth/' + prepub)

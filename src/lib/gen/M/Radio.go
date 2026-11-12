@@ -10,7 +10,7 @@ import { APP_DATA_DIR } from "$lib/app_data_dir"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return 'f2f7730b402b732e~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '59fca4e5facb2cea~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -141,8 +141,9 @@ Radio_trace(radio, entry) {
         let SPEAK = { 'dial': 1, 'open': 1, 'primed': 1, 'primed-open': 1, 'primed-fin': 1,
             'primed-fin-use': 1, 'prime-drop': 1, 'starve': 1, 'unstarve': 1, 'tape-out': 1,
             // …and the friend handshake, both ends (2026-11-10: a friend's music took ~60s to reach a reloaded /Radio and neither
-            //  console said where the time went): the ask, the offer, the catalog landing, the first want, the first page, the cut-in
-            'repli-ready': 1, 'offer-now': 1, 'mirror-merge': 1, 'want-first': 1, 'page-first': 1, 'share-armed-by': 1, 'crossover': 1, 'autopress': 1, 'ask-music': 1, 'rx-drop': 1 }
+            //  console said where the time went): the ask, the offer, the first want, the first page, the cut-in.  NOT the catalog
+            //   landing (`mirror-merge`, dropped 2026-11-13): it fires per record born, ~11/min while a friend's music flows — still in the ring.
+            'repli-ready': 1, 'offer-now': 1, 'want-first': 1, 'page-first': 1, 'share-armed-by': 1, 'crossover': 1, 'autopress': 1, 'ask-music': 1, 'rx-drop': 1 }
         if (SPEAK[entry.ev]) console.log('📻⟫ ' + entry.ev, JSON.stringify(entry))
     }
 },

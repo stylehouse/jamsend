@@ -17,6 +17,10 @@
      every device is its own address, grouping lives in the Pier/Peering table, and the relay handles
       distinct addresses perfectly with no v3 hello. The single clean statement is `Crew_todo.md`.
 
+**2026-11-12 — `_N` seats came back, narrowly:** not the soul-family apparatus, but a SESSION address for a second TAB of one
+ identity in one browser profile (they share the body key).  The tab speaks as `<prepub>_N`, the friend keeps a route per address,
+  the relay hands a primary-less name to one heir.  The living statement is `Identity_persist_todo.md` §0.1.
+
 **Still live and unrelated to the pivot:** the `header.from`-not-verified spine surgery (§6), the
  double-delivery cost (§4.5), the `who` presence probe (now `Presence_todo.md`), and `?addr=<role>`
   (§2, settled). Those are transport hygiene the cert-crew model neither creates nor fixes.

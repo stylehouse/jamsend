@@ -143,7 +143,8 @@ One browser profile = one Dexie (`thangs`) = one shelf of identities, shared by 
   **cohort** (Swarm.g `Swarm_cohort_stand`, run by SwarmStandup before the first dial): a Web Lock per identity picks the primary,
    a BroadcastChannel names what siblings hold.  The primary stands at the bare prepub; a sibling stands at `<prepub>_N` for its
     session (`top.c.vessel_addr`, never the persisted %Peering address), so `to:<prepub>` reaches the primary alone and `to:<prepub>_N`
-     that tab alone; when the primary closes, the sibling's courtesy bind takes the bare name's frames.  The sibling's account
+     that tab alone; when the primary closes, the relay hands the bare name to the sibling's station (the heir rule) until the
+      sibling takes the bare name itself (`Swarm_cohort_heir`).  The sibling's account
       mirror holds its write ("the bare-name holder owns the write").
 - **Fixed 2026-11-11**: Phase D (land-of-prepub, 2026-09-02) had deleted the cohort's reader, trusting that a body's own key-derived
    name never collides.  It does: a crew of one's body name IS its soul name, and tabs in one profile share the body key.  So the
@@ -155,11 +156,34 @@ One browser profile = one Dexie (`thangs`) = one shelf of identities, shared by 
      `deliverLocal` delivers a SEATED name to its seat holder before any courtesy bind: door-owner (`qaddr`/role) → seat holder →
       everyone bound.  Pinned by `scripts/relay-test.ts` "twin tabs of a Cave" (red on the old relay, green on the new).  Not seen
        live: `twin_eye` stands up a fresh identity (body name = soul name); it has no cert-device mode yet.
-- **Still open — what a second tab is FOR**: a sibling tab still sends to friends `from: <soul>` (the station's name), so their
-   replies land on the primary, not on it.  Harmless while one tab per profile does the music; a design question if a second tab
-    should ever hold its own conversations (Cluster_spec §3.2a's duty split).  Across machines, a second live writer is caught by no
-     liveness probe (§7.4; the "two of you" nib) — the owner, 2026-11-11: one Radio at a time, and the hacker takes the editor seat, so
-      it is parked.
+- **Built 2026-11-12 — a second tab is another ADDRESS, not a copy** (owner: *"it would get another address, not be a multicast
+   situation"*).  Found live: two Vingas tabs and InkRogogo received nothing.  A sibling spoke to friends `from:<soul>`, so it
+    shared the friend's ONE per-Pier stream with the primary: both tabs count seq from 1, the friend's replay guard
+     (Peeroleum_deliver_do's slow path) swallowed one tab's frames as repeats, and every answer went to the bare name.  Now:
+   - **The tab says its own address.** `Swarm_session_from` stamps `<name>_N` (N = the cohort's session suffix) on
+      `Swarm_deliver` and `Swarm_hi_one` frames.
+   - **The friend files by person, keeps a stream per address.** Identity is still the SIGNED page's prepub, so the voucher gate
+      and the friendship lookup are unchanged.  The first frame from `<friend>_N` asks `w.c.lane_route` (`Swarm_lane_route`:
+       live station, a real friendship, never my own soul) for its OWN station route %Pier — its own seq, inbox, era, offers,
+        exactly as a lent Cave's seat already has.  `Peeroleum_route`'s lone-Pier shortcut refuses a `_N` name, so it can't be
+         booked into the friend's stream.  The era is noted per lane (`Swarm_lane_of`), so two tabs never flip each other's.
+   - **The friend answers whoever asked.** A heard lane is a seat of the friendship for 90s (`pier.c.lanes` →
+      `Swarm_pier_seats`), so serve consent (`Swarm_slot_granted`) and the share beat's offer loop reach it.  `repli_ready` and
+       `swarm_hi` answer the tab that sent them.
+   - **A sibling receives, it never casts** (`Swarm_sibling_tab`): its shelf IS the primary's, and an offer from `<prepub>_N`
+      would stand a second mirror of you at every friend.  No offers, no auto-lend.
+   - **The relay's heir rule** (`deliverLocal`): no door-owner and no seat-holder → ONE socket, the lowest in-family seat
+      `<name>_N`.  Before this, a primary-less sibling got every bare-name frame on BOTH its sockets (station `_1` + Lies channel
+       `_9NNN`).  Pinned by relay-test "twin tabs of a Cave" (red on the old relay).
+   - **The sibling inherits** (`Swarm_cohort_heir`): it queues on the bare-name Web Lock and, when the primary's tab dies, drops the
+      suffix and re-dials the bare door.  The account mirror stays held (`account_mirror_stale`, §7.4f) until a reload.
+   - **Mixed fleet:** a friend on old code drops `<prepub>_N` frames, so a sibling hears nothing from it until it reloads.
+   - Verified: 29 Swarm/Musu Books green (no Book reaches a lane — they are live-station only).  **Owed: the live walk** — two tabs of
+      one identity, a friend on new code; the second tab's mirror of the friend fills, its pulls land, and the friend logs no
+       `inseq`/replay drops.  ⚠ Spine surgery: `pinned_stable/Peeroleum.go` was re-promoted; the editor tab had to reload before any
+        Book would start (`Ghost_version_ledger_timeout`).
+- **Still parked:** across machines a second live writer is caught by no liveness probe (§7.4; the "two of you" nib) — the owner,
+   2026-11-11: one Radio at a time, and the hacker takes the editor seat.
 
 ## 1. What EXISTS (verified against code, 2026-07-27)
 

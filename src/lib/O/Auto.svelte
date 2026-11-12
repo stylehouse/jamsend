@@ -595,6 +595,24 @@
             return false
         }
         delete (top.c as any).account_mirror_owed
+        // AT MOST ONE MIRROR PER 30s (2026-11-13, owner: "FSA can be slower than Dexie and we shouldn't be
+        //  too brittle").  The account carries live wire state (%Reach/%Want/%IveGot) and the pool library,
+        //   so while music flows it really does change every few seconds — and each pass is an enWaft of the
+        //    whole account plus a full FSA rewrite.  Dexie is the working store and keeps every change; this
+        //     folder copy is the durable backup, so it can trail by 30s.  The first pass of a life is never
+        //      held (account_mirror_at is .c, so unset after a reload).  Held = the mark stays unstamped, so
+        //       the change stays owed, and one timer nudges the pass when the window opens.
+        const MIRROR_GAP_MS = 30000
+        const since = Date.now() - (+(top.c as any).account_mirror_at || 0)
+        if ((top.c as any).account_mirror_at && since < MIRROR_GAP_MS) {
+            if (!(top.c as any).account_mirror_later) {
+                ;(top.c as any).account_mirror_later = setTimeout(() => {
+                    delete (top.c as any).account_mirror_later
+                    ;(H as any).Clustation_mirror_nudge?.(H)
+                }, MIRROR_GAP_MS - since + 50)
+            }
+            return false
+        }
         // STAMP BEFORE THE AWAIT, not after: the boot tick is async and re-enters, so a mark written
         //  on the far side of the write would let a second pass start the same enWaft concurrently.
         ;(top.c as any).account_mirror_mark = mark
@@ -610,6 +628,7 @@
             //         write may still be in flight, and clearing would let the next tick start a second
             //          concurrent enWaft on the same file; the mark blocks re-entry until the account
             //           versions again, at which point a truly dead handle costs 15s, not forever.
+            const wrote_was = (ident.c as any).account_wrote_at
             const overran = Symbol('mirror-overran')
             const raced = await Promise.race([
                 (H as any).Swarm_persist(nav, '', ident).then(() => true),
@@ -624,7 +643,9 @@
             //   consuming it.  DoorFace derives "settling… / settled ✓" from exactly these.
             ;(top.c as any).account_mirror_at = Date.now()
             delete (top.c as any).account_settle_owed
-            console.log(`🪪 account mirrored → ${APP_DATA_DIR}/account/${ident.sc.prepub}/toc.snap`)
+            // only a REAL write is said — Swarm_account_save skips a byte-identical one (and stamps
+            //  account_wrote_at when it does write), so a quiet pass stays quiet.
+            if ((ident.c as any).account_wrote_at !== wrote_was) console.log(`🪪 account mirrored → ${APP_DATA_DIR}/account/${ident.sc.prepub}/toc.snap`)
             return true
         } catch (er) {
             // Clear the mark so a transient failure (a gesture-less FSA handle, a full disk) retries

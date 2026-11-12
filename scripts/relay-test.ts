@@ -626,7 +626,9 @@ async function main() {
 				b.send({ ...h, sign: await signHeader(h, k.privHex), ...(want ? { want } : {}) })
 			}
 			const a = browser(port, SOUL), b = browser(port, `${SOUL}_1`), far = browser(port, 'FAR')
-			await Promise.all([a.open, b.open, far.open])
+			// the sibling tab's OTHER socket — its Lies channel, at a throwaway in-family seat (the seat dodge)
+			const b2 = browser(port, `${SOUL}_9123`)
+			await Promise.all([a.open, b.open, b2.open, far.open])
 			await hello(a, body)                       // the primary: its body name, no want
 			await until(() => a.ctrl.some((m: any) => m.control === 'hello_ok' && m.addr === BODY))
 			await hello(b, body, `${BODY}_1`)          // the sibling tab: the same key, at a session suffix
@@ -638,11 +640,15 @@ async function main() {
 			check('…and NOT the sibling (only courtesy-bound to <body>)', !b.got.some((m: any) => m.header?.seq === 70))
 			far.frame(`${BODY}_1`, 'chunk', 71)
 			check('to:<body>_1 reaches the sibling', await until(() => b.got.some((m: any) => m.header?.seq === 71)))
-			// the primary goes: nobody holds the bare seat any more, so to:<body> falls back to the courtesy binds
+			await hello(b2, body, `${BODY}_9123`)
+			await until(() => b2.ctrl.some((m: any) => m.control === 'hello_ok' && m.addr === `${BODY}_9123`))
+			// the primary goes: nobody holds the bare seat any more, so to:<body> goes to ONE heir — the lowest in-family seat
 			a.ws.close(); await wait(150)
 			far.frame(BODY, 'chunk', 72)
-			check('primary gone → to:<body> still reaches the sibling (the room fallback)', await until(() => b.got.some((m: any) => m.header?.seq === 72)))
-			b.ws.close(); far.ws.close()
+			check('primary gone → to:<body> reaches the sibling\'s station (the lowest in-family seat)', await until(() => b.got.some((m: any) => m.header?.seq === 72)))
+			await wait(150)
+			check('…ONCE — not also the same tab\'s other socket (Vingas 2026-11-12: every frame twice)', !b2.got.some((m: any) => m.header?.seq === 72))
+			b.ws.close(); b2.ws.close(); far.ws.close()
 		} finally {
 			relay.close(); await wait(50); srv.close()
 		}
