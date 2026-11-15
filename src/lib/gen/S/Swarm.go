@@ -17,7 +17,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'a40988441ac76f19~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'e8d22da6fd4cab28~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -2796,6 +2796,8 @@ async Swarm_station_up(w, ident) {
     //     the list (Tribunal.g Socket_real); the flag keeps it idempotent across a re-standup.
     if (self_w.c && !self_w.c.swarm_hello_hooked) {
         self_w.c.swarm_hello_hooked = 1
+        if (!Array.isArray(self_w.c.on_control_list)) { self_w.c.on_control_list = [] }
+        self_w.c.on_control_list.push((frame) => { if (frame && frame.control === 'family_gone') { this.Swarm_family_gone(frame) } })
         if (!Array.isArray(self_w.c.on_hello_list)) { self_w.c.on_hello_list = [] }
         self_w.c.on_hello_list.push((frame) => {
             // THE DOOR YIELD (Phase D, land-of-prepub): the relay's arbiter answering anything but
@@ -7807,7 +7809,9 @@ Swarm_reach_road(w, ident, frame, from) {
     //   when either prefixes the other, so a one-character `from` would otherwise wave anything through,
     //    the very footgun the friend arm below already had to be hardened against.
     if (from) {
-        let f = String(from)
+        // a LANE (<prepub>_N, a sibling tab of that peer — Identity_persist §0.1) is the same name at another seat: the `_N`
+        //  must not break the prefix compare against a full-pub `by` (2026-11-15, eed8 ignored every reach from Vingas's `_1`)
+        let f = String(from).replace(/_\d{1,4}$/, '')
         if (!/^[0-9a-f]{16}/.test(by) || !/^[0-9a-f]{16}/.test(f) || !same(by, f)) {
             console.log('⨳🫱⚠ a reach CLAIMED to be from ' + by.slice(0, 8) + ' but arrived from ' + f.slice(0, 8) + ' — ignored')
             return null
@@ -10263,11 +10267,47 @@ Swarm_cohort_heir(ident) {
             let was = vaddr[prepub]
             delete vaddr[prepub]
             top.c.account_mirror_stale = Date.now()
-            console.log('👥 the primary tab of ' + String(prepub).slice(0, 8) + ' left — this tab takes the bare name (was ' + String(was || prepub) + '); the account mirror holds until a reload reads it fresh')
+            console.log('👥 the primary tab of ' + String(prepub).slice(0, 8) + ' left — this tab takes the bare name (was ' + String(was || prepub) + '); the account mirror holds until it re-reads what that tab saved')
             this.Swarm_rehome(ident)
+            // …and RE-READS instead of waiting for a reload (2026-11-15): the House stash is ONE Dexie row per place, live-queried,
+            //  so this tab's `stashed` already follows what the old primary wrote — give its last write 3s to land, graft the
+            //   account text over the live tree (Swarm_account_rehydrate: shelves the tree lacks come in, nothing doubles), then
+            //    lift the hold so this tab mirrors the account again.
+            setTimeout(() => { this.Swarm_heir_reread(ident) }, 3000)
             return new Promise(() => {})
         }).catch(() => {})
     } catch (e) {}
+
+},
+// Swarm_heir_reread — the takeover tab's account re-read (above): graft the stashed account over the live tree, lift the hold.
+Swarm_heir_reread(ident) {
+    let top = this.top_House()
+    let A = top.o({ A: 'Clustation' })[0]
+    let w = A ? A.o({ w: 'Swarm' })[0] : null
+    let n = 0
+    try { n = this.Swarm_account_rehydrate(w, ident) } catch (er) { console.log('👥⚠ the takeover re-read threw — the account mirror stays held until a reload: ' + String(er).slice(0, 120)); return 0 }
+    delete top.c.account_mirror_stale
+    delete top.c.account_mirror_stale_said
+    console.log('👥 took over cleanly — re-read ' + n + ' shelf/shelves of what the old primary saved; this tab mirrors the account again')
+    return n
+
+},
+// Swarm_family_gone — the relay's word that a seat of MY family closed (relay.ts drop(), 2026-11-15: "the relay finds out first
+//  when a peer vanishes").  The Door's live-tabs map forgets that tab at once instead of waiting out the 25s beat; the Web Lock
+//   still decides who takes the bare name (it is the same-browser truth — this is only news).
+Swarm_family_gone(frame) {
+    let top = this.top_House()
+    let seen = top?.c?.cohort_seen
+    let gone = String(frame?.addr || '')
+    if (!gone) return 0
+    let n = 0
+    if (seen) {
+        for (const k of Object.keys(seen)) {
+            if (seen[k] && seen[k].addr === gone) { delete seen[k]; n = n + 1 }
+        }
+    }
+    console.log('👥 relay: ' + gone + ' left — ' + (frame.family && frame.family.length ? 'still held: ' + frame.family.join(',') : 'no other seat of this family is held') + (n ? ' (the Door forgets that tab)' : ''))
+    return n
 
 },
 // Swarm_cohort_stand — the boot-time claim + census, idempotent per tab.  Populates
@@ -10291,11 +10331,23 @@ async Swarm_cohort_stand(ident) {
     }
     let bc = null
     try { bc = new BroadcastChannel('jamsend:' + prepub) } catch (e) { bc = null }
+    // THE LIVE TABS (2026-11-15, the owner: "manifest some info about Door / YOU being multiple"): a %Sibling row says a
+    //  tab was once heard and is never retired, so it can't say "open in 2 tabs NOW".  Every message refreshes
+    //   top.c.cohort_seen[vessel] = {addr, primary, at} — runtime only, never stashed — each tab beats `here` every 10s and
+    //    says `bye` on pagehide.  The Door reads it (DoorFace `twins`); a beat older than 25s is a tab that died unheard.
+    let seen = (top.c.cohort_seen ??= {})
+    let say_here = (t) => {
+        if (!bc) return
+        let addr = ''
+        try { addr = this.Swarm_address(ident) || '' } catch (e) {}
+        try { bc.postMessage({ t: t, vessel: vessel, addr: addr, primary: top.c.cohort ? top.c.cohort.primary : 0 }) } catch (e) {}
+    }
     if (bc) {
         bc.onmessage = (ev) => {
             let m = ev.data
             if (!m || m.vessel === vessel) return
             note_sibling(m)
+            if (m.t === 'bye') { delete seen[m.vessel] } else { seen[m.vessel] = { addr: String(m.addr || ''), primary: m.primary ? 1 : 0, at: Date.now() } }
             if (m.t === 'hi') {
                 let addr = ''
                 try { addr = this.Swarm_address(ident) || '' } catch (e) {}
@@ -10303,6 +10355,8 @@ async Swarm_cohort_stand(ident) {
             }
         }
         try { bc.postMessage({ t: 'hi', vessel: vessel }) } catch (e) {}
+        setInterval(() => say_here('here'), 10000)
+        try { window.addEventListener('pagehide', () => say_here('bye')) } catch (e) {}
         await new Promise((r) => setTimeout(r, 250))
     }
     top.c.cohort = { primary: claim.primary, prepub: prepub, vessel: vessel, taken: taken, lockless: claim.lockless, at: Date.now() }

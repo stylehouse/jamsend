@@ -11,7 +11,7 @@ import { sha256_hex } from "$lib/Common"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return '3e98627a71a28aca~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return 'b8d0921e45c2dadc~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/MusuTesting.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -1645,6 +1645,12 @@ async Repli_want_next(w, rx, from, to, id, stream, fromIdx) {
     }
     let body = new TextEncoder().encode('want')
     let bh = await this.Peeroleum_body_digest(body)
+    // A SIBLING TAB ASKS FROM ITS OWN SEAT (Identity_persist_todo §0.1): callers pass the bare prepub (w.c.repli_mirror_pier),
+    //  and a want from the bare name was answered to:<bare> — the relay hands that to the PRIMARY tab, so this tab never got its
+    //   bytes, and its seqs shared the primary's stream at the friend.  The session suffix (top.c.vessel_addr) is the address the
+    //    friend's lane route answers.  No suffix (every Book, a primary tab) ⇒ unchanged.
+    let vs = this.top_House()?.c?.vessel_addr?.[String(from)]
+    if (vs && String(vs).startsWith(String(from) + '_')) { from = String(vs) }
     let seq = this.Pier_next_seq(rx)
     this.Peeroleum_send(w, { header: { type: 'repli_want', from: from, to: to, id: id, stream: stream, from_idx: fromIdx, seq: seq, body_hash: bh, body_len: body.length }, buffer: body })
 

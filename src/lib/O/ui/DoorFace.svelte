@@ -362,6 +362,25 @@
             }
         } catch { return null }
     })
+    // ── THE OTHER TABS OF YOU (2026-11-15, the owner: "manifest some info about Door / YOU being multiple").  Same identity,
+    //  same browser: one tab holds your name (the bare seat — it shares your music and saves your account), the others stand
+    //   at `…_N`, listen along, and save nothing; when the holder closes, one of them takes over (Swarm_cohort_heir).  Live off
+    //    top.c.cohort_seen — the cohort channel's 10s beats (Swarm_cohort_stand); a beat older than 25s is a tab gone unheard.
+    //     Null for the common case, a lone tab.
+    let twins = $derived.by(() => {
+        void tick
+        try {
+            const top = (H as any)?.top_House?.()
+            const seen = (top?.c?.cohort_seen ?? {}) as Record<string, { addr: string, primary: number, at: number }>
+            const now = Date.now()
+            const live = Object.values(seen).filter(s => now - (+s.at || 0) < 25000)
+            if (!live.length) return null
+            const ident = typeof H?.Swarm_live_self === 'function' ? H.Swarm_live_self() : null
+            const bare = String(ident?.sc?.prepub ?? '')
+            const addr = String(H?.Swarm_address?.(ident) ?? bare)
+            return { n: live.length + 1, holder: !!bare && addr === bare, addr: short_addr(addr, bare) }
+        } catch { return null }
+    })
     // an address, shortened for a tag: bare reads as the prepub8, a suffixed body as …_N —
     //  the suffix is the news, the prepub is already on the title line.
     function short_addr(a: string, bare: string) {
@@ -764,6 +783,15 @@
                  UI this body etc") — the instance badge (· CAPTAIN Grav / · CAVE Gabo) plus the
                  family rows carry everything it said, in family language instead of plumbing
                  language.  The `bodies` derivation stays for its title facts and diagnostics. -->
+            {#if twins}
+                <div class="df-bodies">
+                    {#if twins.holder}
+                        <span class="df-tag dim" title="you are open in {twins.n} tabs of this browser. This tab holds your name: it shares your music and saves your account. The other tab{twins.n > 2 ? 's' : ''} listen along and save nothing — close {twins.n > 2 ? 'them' : 'it'} any time.">👥 open in {twins.n} tabs — this one holds your name</span>
+                    {:else}
+                        <span class="df-tag dim" title="you are open in {twins.n} tabs of this browser. Another tab holds your name: it shares your music and saves your account. This tab ({twins.addr}) listens along and saves nothing; if that tab closes, this one takes over.">👥 open in {twins.n} tabs — a spare; the other tab holds your name</span>
+                    {/if}
+                </div>
+            {/if}
             {#if bodies && bodies.lockless}
                 <div class="df-bodies">
                     <span class="df-tag dim" title="no Web Locks in this browser — primacy assumed, never arbitrated">🧬 lockless</span>

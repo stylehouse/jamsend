@@ -17,6 +17,61 @@ Companions still their own docs: `Reach_todo.md` (the cross-body procedure primi
 
 ## 0. WHAT TO GET ON WITH NEXT
 
+### 0.00 PLAINLY, WHAT A CREW IS (2026-11-13, owner: "we're sucking at naming the fundamentals") — read this first
+
+⚠ **BAD DESIGN, said out loud: every crew member holds EVERY private key** — the first Captain's and every other member's
+ (`Crewkeys.ts`: "the Crew is the distributable, it contains the entire Crew's private keys and roles and grants").  Lose one
+  device and every key is lost; a member can't be revoked, because it holds the key that would sign the revocation; the
+   Captain-signed cert (`Grant:Crew`) proves nothing a member couldn't forge for itself.  We get away with it only because this is
+    still a kids' toy.  Someone needs to invent this properly before it holds anything that matters.
+
+**The words below avoid "soul" and "body"** (the owner wants them purged — leftovers of the dead "opener becomes the soul" model;
+ the identifier rename is a later one-sweep job, like Musu).  Here: **the Captain's key** = the first Captain's key, the one name
+  friends dial and grant to; **a crewmate's own key** = each device's; **enrolment** = its `Grant:Crew` (by the Captain, for that
+   key).  Naming is NOT ruled — HouseKey/CrewPass/HallPass and the tour set (GuestList/Laminate/Wristband) were floated, unloved.
+
+**Crew does three jobs under one name** (that is why it feels complicated):
+1. **Ledger** — who is in: `/Crew`, a `mate:` row per device with its key and enrolment.
+2. **Lending** — a friend's grant is made out to the Captain's key; the Captain signs a crewmate an hour's use of it (a loan:
+    `Swarm_mint_borrow` wraps the friend's grant + names one crewmate + `exp` = 1 hour, signed by the Captain's key).  The
+     Captain's device re-signs each loan while it has under 10 minutes left (`Swarm_lend_beat`, crewmates heard in the last
+      45s).  ⚠ So loans lapse within the hour when no Captain device is online — an ARTIFICIAL rule (one gate,
+       `Swarm_captain_here`): every crewmate holds the Captain's key and could sign one.
+3. **Mutex** — the friend serves its music to two addresses: the Captain's, always, and ONE other crewmate, the latest to
+    present a loan (`Swarm_borrow_heard`: drop the old `%Loan`, stand the new, tell the old holder `seat_lost`).  The owner's
+     rule (2026-09-24): "one slot … if another logs in with it the other should be logged out" — screens on a streaming account.
+
+**The checks a friend makes on a loan** (`Swarm_verify_borrow` → `Swarm_borrow_heard`): the wrapped grant is really signed by its
+ grantor AND the grantor is me; the wrapper is signed by the key the grant is FOR (`verifyHeader(c, [claim.for])` — only the
+  grantee may lend); not expired; my friendship with that key is Music-live; the presenter is the named borrower (or the Captain
+   taking its seat back).  `seen.winner` in that code = `claim.for` = the Captain's key — a bad name; it should read `holder`.
+
+**Three locks, one shape, written three times — no generic mutex yet:**
+
+| lock | authority | the seat | taken by | frees when |
+|---|---|---|---|---|
+| editor seat (Cluster) | the relay, `handleSeat` | `editor`/`compiler`, one socket | `take` → old holder hears `seat_lost` | socket closes → waiters hear `seat_free` |
+| sibling tabs (one browser) | the browser's Web Lock + the relay's `_N` seats | the bare name | never taken, only inherited | the tab dies → next in queue (`Swarm_cohort_heir`) |
+| crew at a friend | the friend, `Swarm_borrow_heard` | one `%Loan` beside the Captain | newest presentation → `seat_lost` | the loan's hour runs out |
+
+The Crew mutex IS a polymorph of the editor seat: a named seat at an authority, wrested with `seat_lost`, freed to waiters.  Only
+ the authority (relay | browser | friend) and the liveness (socket | tab | expiry) differ.  **Candidate primitive: a seat at an
+  authority**, built once.  And a **Cluster ≈ a Crew**: a Cluster is flock keys (`CLUSTER_TRUSTED_PUBS`) + the editor seat; a Crew
+   is an enrolment ledger + the friend's seat — both "a founder-signed member list, and named seats an authority hands out one at a
+    time".
+
+**The owner's proposal (2026-11-13, unruled): enrol once, say what may be shared.**  The Captain signs each crewmate in ONCE, and
+ the enrolment names the Grant kinds it may share — `Grant:Crew,by:<Captain>,for:<crewmate key>,shares:Music`.  A crewmate then
+  shows a friend two signed things: the friend's OWN grant (made out to the Captain — mine, still live) and its enrolment (by
+   that Captain, for this crewmate's key, sharing Music).  No hourly loans, no Captain online, no 10-minute re-sign; the friend's
+    seat stays the only mutex.  It is what the owner first described: "presenting a third party with the signed Crew ledger and a
+     crewmate's Grant".  **The catch:** an enrolment can't be revoked while everyone holds the Captain's key — anyone re-signs
+      themselves in.  Today's loan dodges that only by expiring; this would need a revocation list (or the proper redesign above).
+- Friends are already shared in practice: friendships are made under the Captain's key, `/Crew` carries keys+roles+grants, and a
+   Cave holds copies of the Captain's piers.  What is missing is only that the Captain alone hands out the hour.
+- Open: who is the authority for "what may be shared" (only the first Captain, or any Captain-role row?); does the friend need
+   the whole ledger or just the one enrolment; can the seat count be the friend's choice (1, 2, all)?
+
 ### 0.0 THE FIRST LIVE WALK OF THE CERT-CREW (2026-09-03 night) — four faults, all fixed
 
 The owner linked a real second device and pasted ten minutes of its console. Everything structural held

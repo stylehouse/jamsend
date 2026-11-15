@@ -1296,7 +1296,9 @@ async Ra_pool_unfile(w, nav, rec):
     if (!fname) { return 0 }
     try {
         let ok = await nav.bin_rm('pool' + (parts.length ? '/' + parts.join('/') : ''), fname)
-        if (!ok) { say('bin_rm answered false') }
+        // false is NotFound (every nav's bin_rm): the file is already gone — the card was stale, and a stale card's evict is
+        //  the cleanup, not a miss (2026-11-15: 11 of these at a boot, beside "dropped a card with no file").  It cannot feed the
+        //   evict→resurrect loop `say` guards: there is no file for Ra_pool_resurrect to find.  A throw still says.
         return ok ? 1 : 0
     } catch (e) { say('bin_rm threw ' + String(e).slice(0, 60)); return 0 }
 // Ra_pool_off — BACK TO ZERO: the yes taken back, the budget gone, every compartment dropped and every pooled

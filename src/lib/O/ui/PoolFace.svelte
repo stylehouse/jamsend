@@ -215,7 +215,7 @@
             <span class="pf-line pf-title"><b>SoundPooling</b>
             <input class="pf-on" type="checkbox" checked={consent} onchange={(e) => set_on((e.currentTarget as HTMLInputElement).checked)}
                 title={consent ? 'on — untick to stop and delete everything pooled (the space comes back)' : 'off — tick to start keeping music in this browser'} /></span>
-            <span class="pf-line">keeps rolling <span class="pf-nb"><b class="pf-cur" title={cur_est ? 'roughly — some tracks have no size recorded' : 'pooled now'}>{consent ? (cur_est ? '~' : '') + cur_mb : 0}</b> /
+            <span class="pf-line">keeps rolling <span class="pf-nb"><b class="pf-cur" title={cur_est ? 'roughly — some tracks have no size recorded' : 'pooled now'}>{consent ? (cur_est ? '~' : '') + cur_mb : 0} MB</b> /
             <input class="pf-mb" type="number" min="1" step="100" value={draft} onchange={(e) => set_mb(num(e))} title="megabytes of music to keep at most" /></span>
             <span class="pf-nb">MB of music</span></span>
             <span class="pf-line">in browser storage{#if free_gb != null} <span class="pf-dim pf-nb">({free_gb} GB free{#if persisted === false} · <span title="the browser may clear this site's storage under pressure — everything at once, the pool and your identity with it">evictable</span>{/if})</span>{/if}</span>

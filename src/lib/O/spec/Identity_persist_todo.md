@@ -182,6 +182,38 @@ One browser profile = one Dexie (`thangs`) = one shelf of identities, shared by 
       one identity, a friend on new code; the second tab's mirror of the friend fills, its pulls land, and the friend logs no
        `inseq`/replay drops.  ⚠ Spine surgery: `pinned_stable/Peeroleum.go` was re-promoted; the editor tab had to reload before any
         Book would start (`Ghost_version_ledger_timeout`).
+- **2026-11-15, the live walk began — and found a storage hole, not a lane hole.**  Two Vingas tabs on /Radio: tab B reloaded, tab A
+   (the sibling) took the bare name via `Swarm_cohort_heir` exactly as designed — but BOTH tabs' current lives had logged `⛁ no browser
+    storage (IndexedDB never answered) — running memory-only` (tab A's boot took 76s; the browser was swamped).  `dexie_safe.ts`'s one
+     probe had a 4s budget and decided memory-only for the WHOLE life, a late answer ignored: no stash ⇒ no friendships ⇒ no Piers ⇒
+      every 855f frame `no Pier … DROPPED`.  The identity survived only because it is also on disk (`.jamsend/account`).  Fixed: 15s
+       budget + a loud `⛁ IndexedDB answered after all … RELOAD` line.  ⚠ The same hole hits an INVITEE on `/` (BigSoundland mints them
+        an identity): a slow phone would lose its fresh friendship on reload.  Lanes themselves are still unwalked.
+- **The live walk, 2026-11-15 17:40 — mostly green.**  Two Vingas tabs + friend eed8: the spare (`_1`) pulled music over its lane
+   (`Repli rx 107p/2033KB 192KB/s`); closing the holder → the spare took the bare name in 0.7s (`Swarm_cohort_heir`), account mirror
+    held as designed.  Door tags showed.  FOUND + fixed: `Swarm_reach_road` compared a full-pub `by` against the lane `from`
+     (`<prepub>_N`) — neither prefixes the other, so eed8 ignored every reach from the spare (`a reach CLAIMED to be from b8bc9a68 but
+      arrived from b8bc9a68` — the 8-char print hid the `_1`); the `_N` is now stripped first.  (`b8bc…_2` at eed8 was the
+       owner's brief third tab — explained.)  **18:41, after the fix reached eed8: the lane walk is GREEN** — the spare (`_1`) pulled
+        `Repli rx 135p/2318KB … 207KB/s` with `tx 0` (a spare never casts), the holder both sent and received, and eed8 logged no
+         `reach … ignored`.  Still unwalked live: closing the holder under the NEW code (`family_gone` + `Swarm_heir_reread`).
+- **The Door says when YOU are multiple (2026-11-15).**  `Swarm_cohort_stand`'s BroadcastChannel now beats `here` every 10s
+   and `bye` on pagehide into `top.c.cohort_seen[vessel]` (runtime only; `%Sibling` rows are never retired, so they can't say
+    "now").  DoorFace's `twins` shows one dim tag when another live tab of you is in this browser: `👥 open in N tabs — this one
+     holds your name` or `— a spare; the other tab holds your name` (the hover text says the holder shares + saves, a spare listens
+      and saves nothing, and takes over if the holder closes).  Cross-MACHINE multiplicity (Caves, crew) stays the family rows.
+   Candidate (owner: "the relay finds out first when a peer vanishes"): the relay already reports `family holds …` on hello; it
+    could PUSH that family list to the surviving sockets on every close, replacing the 25s beat timeout with an instant fact.
+- **OWED — larger Cluster testing (someone should do it).**  `scripts/twin_eye.mjs --plan="open:A wait:30 open:B wait:30 crash:A …"`
+   (2026-11-15) drives tabs of ONE headless profile through open/reload/close/crash/`slow:X` (delays the IndexedDB probe) and gives a
+    verdict (one bare holder, siblings `_N`, nobody memory-only).  Green so far: close-primary, crash-primary, reload-primary (A comes
+     back at `_1`), three tabs (close A → B bare, C stays `_1`).  `slow:A` reproduces the memory-only state.  Run plans ONE AT A TIME —
+      six browsers at once crashed Chrome.  What it can't do yet: a FRIEND in another profile (so lanes, Piers and the mirror fill are
+       untested headless), N > 3 tabs, the Cave body name, a relay restart mid-plan, and the mixed fleet.  That is the larger test.
+   ⚠ Add an HMR step: saving `dexie_safe.ts` hot-remounted both Vingas tabs IN PLACE (no page reload), and the OLD life's Web Lock
+    and relay socket survived it.  Both new lives saw "another body holds the bare name" and stood at `_2`/`_3`, while a dead
+     life's socket kept the bare seat (the relay's `family holds b8bc…,b8bc…_9700,…`).  A full reload clears it.  The fix would be for
+      an in-place remount to release the lock and close the station socket on destroy.
 - **Still parked:** across machines a second live writer is caught by no liveness probe (§7.4; the "two of you" nib) — the owner,
    2026-11-11: one Radio at a time, and the hacker takes the editor seat.
 

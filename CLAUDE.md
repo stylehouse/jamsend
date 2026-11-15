@@ -336,6 +336,9 @@ A runner that won't connect ("relay down", no ws attempt in the Network tab): re
   badges + the diagnostic ladder) — cross-wired `gen/N/Tribunal.go` first, the editor staying
    green while every runner is down IS that tell.
 
+**Tests that are not Books** (vitest specs, node proofs like `relay-test.ts`, headless eyes like `twin_eye.mjs`) are listed in
+ `src/lib/O/spec/Test_scripts_todo.md` — **a new test script gets its row there in the same change**.  `npm run checks` is the commit gate.
+
 Do NOT verify with `scripts/Story_cli_run.mjs` (the headless node+jsdom boot). It
  has real disk access, so it loads the GhostList off the wormhole and quiesces at a
   DIFFERENT depth than a live runner — its fixtures match *itself* but go all-red on

@@ -644,6 +644,10 @@ async function main() {
 			await until(() => b2.ctrl.some((m: any) => m.control === 'hello_ok' && m.addr === `${BODY}_9123`))
 			// the primary goes: nobody holds the bare seat any more, so to:<body> goes to ONE heir — the lowest in-family seat
 			a.ws.close(); await wait(150)
+			// the relay saw the close first — it tells the family at once (2026-11-15), naming the seat that left
+			check('primary gone → the family hears it at once (family_gone addr=<body>, the bare seat no longer held)',
+				await until(() => b.ctrl.some((m: any) => m.control === 'family_gone' && m.addr === BODY && !m.family.includes(BODY))))
+			check('…and a stranger hears nothing', !far.ctrl.some((m: any) => m.control === 'family_gone'))
 			far.frame(BODY, 'chunk', 72)
 			check('primary gone → to:<body> reaches the sibling\'s station (the lowest in-family seat)', await until(() => b.got.some((m: any) => m.header?.seq === 72)))
 			await wait(150)

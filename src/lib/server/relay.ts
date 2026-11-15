@@ -1347,6 +1347,28 @@ export function attachRelay(
 			watchDesk.drop(ws)                                                 // its file fixations; the dir watches linger for GC
 			for (const n of ((ws as any).seatsHeld as Set<string> | undefined) ?? []) if (seats.get(n)?.ws === ws) seatFree(n, 'holder closed')
 			for (const set of seatWaiters.values()) set.delete(ws)
+			// THE FAMILY HEARS FIRST (2026-11-15, the owner: "the relay finds out first when a peer vanishes").  A tab of one
+			//  identity going away is news to its other tabs — which one holds the name now, which spare is gone — and they otherwise
+			//   learn it from silence (the 25s Door beat) or a Web Lock.  The relay sees the close the instant it happens, so it tells
+			//    every OTHER live socket of the same family (`<prepub>` / `<prepub>_N` seats): {control:'family_gone', addr, family}
+			//     — the seat that left and the seats still held.  Once per socket (drop runs on close AND error).  Swarm hears it on
+			//      w.c.on_control_list (Swarm_family_gone).
+			if (!(ws as any).familyTold) {
+				;(ws as any).familyTold = 1
+				for (const seat of [...(((ws as any).seats as Set<string> | undefined) ?? [])]) {
+					const prepub = seat.replace(/_\d+$/, '')
+					if (!/^[0-9a-f]{16}$/.test(prepub)) continue
+					const holds = (s: WebSocket, a: string) => s !== ws && s.readyState === WebSocket.OPEN && !!((s as any).seats as Set<string> | undefined)?.has(a)
+					const family = [...locals.keys()].filter((a) => familyAddr(prepub, a) && [...(locals.get(a) ?? [])].some((s) => holds(s, a)))
+					const told = new Set<WebSocket>()
+					for (const a of family) for (const s of locals.get(a) ?? []) {
+						if (!holds(s, a) || told.has(s)) continue
+						told.add(s)
+						try { s.send(JSON.stringify({ control: 'family_gone', addr: seat, family })) } catch {}
+					}
+					if (told.size) relayLog(`👥 ${seat} left — told ${told.size} socket(s) of its family (${family.join(',')})`)
+				}
+			}
 		}
 		ws.on('close', (code: number) => {
 			drop()

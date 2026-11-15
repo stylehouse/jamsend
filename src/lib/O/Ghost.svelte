@@ -65,6 +65,10 @@
     const M = {
         eatfunc(hash: Record<string, Function>) {
             H.eatfunc(hash)
+        },
+        // a ghost's module-level gate may ask what page it is on (Story's V.Story reads top_House().c.humdinger)
+        top_House() {
+            return H?.top_House?.()
         }
     }
     // so H can be used for lib/gen/ ghosts.

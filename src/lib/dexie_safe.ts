@@ -35,8 +35,17 @@ const decided: Promise<Mode> = !browser ? Promise.resolve(mode = 'real') : new P
     try {
         if (typeof indexedDB === 'undefined' || !indexedDB) return say('mem', 'IndexedDB is missing')
         const req = indexedDB.open('jamsend_probe')
-        const timer = setTimeout(() => say('mem', 'IndexedDB never answered'), 4000)
-        req.onsuccess = () => { clearTimeout(timer); try { req.result.close() } catch {}; say('real') }
+        // 15s, not 4s (2026-11-15, Vingas: two tabs of one profile on a swamped browser — one booted in 76s — both
+        //  lost the 4s race and came up memory-only, friendless, for their whole life; an invitee's phone would lose its new
+        //   friendship the same way).  A private window that truly never answers pays 15s once; a slow disk no longer costs friends.
+        const t_probe = Date.now()
+        const timer = setTimeout(() => say('mem', 'IndexedDB never answered'), 15000)
+        req.onsuccess = () => {
+            clearTimeout(timer); try { req.result.close() } catch {}
+            // a LATE answer cannot flip this life (the memory tables already hold state) — say so, so it is never silent
+            if (done && mode === 'mem') console.warn(`⛁ IndexedDB answered after all (${Date.now() - t_probe}ms) — this tab is still memory-only; RELOAD it to get your stored identity and friends back`)
+            say('real')
+        }
         req.onerror = () => { clearTimeout(timer); say('mem', 'IndexedDB refused: ' + String(req.error?.name || req.error || 'error')) }
         req.onblocked = () => { clearTimeout(timer); say('real') }
     } catch (e: any) { say('mem', 'IndexedDB threw: ' + String(e?.name || e)) }
