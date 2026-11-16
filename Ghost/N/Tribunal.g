@@ -117,9 +117,23 @@ Socket_real(w):
         for (const ch of s) { if ('0123456789abcdefABCDEF'.indexOf(ch) < 0) { return false } }
         return true
     }
+    // a DOOR is an identity or a session seat of one (<prepub>_N, a sibling tab's station) — which tenant answers for us.  The DIAL
+    //  rule below stays is_addr alone: a station at <prepub>_N dialled bare before the merge and still does (its hello wants the seat).
+    let is_door = (s) => {
+        let i = String(s || '').indexOf('_')
+        return is_addr(i > 0 ? String(s).slice(0, i) : String(s || ''))
+    }
+    // ONE SOCKET, MANY TENANTS (Carrier_join, below): the dial asks for the first tenant's address that is an IDENTITY — the
+    //  station's door — so the relay's own-door rule (qaddr) still applies when the Lies channel dialled first.  With one tenant
+    //   (every tab today, the flag off) this reads exactly the w's own Peering, as it always did.
     let home = () => {
-        let peering = w.o({ Peering: 1 })[0]
-        let addr = (peering && (peering.sc.address || peering.sc.name)) || ''
+        let addr = ''
+        for (const tw of ((port && port.tenants) || [w])) {
+            let peering = tw.o({ Peering: 1 })[0]
+            let a = (peering && (peering.sc.address || peering.sc.name)) || ''
+            if (!addr) { addr = a }
+            if (is_door(a)) { addr = a; break }
+        }
         let base = scheme + '://' + location.host + '/relay'
         if (ROLE_IS_NOT_AN_ADDRESS && !is_addr(addr)) { return base }
         return base + '?addr=' + encodeURIComponent(addr)
@@ -210,10 +224,19 @@ Socket_real(w):
     //    ping/pong/ack are already filtered by the callers, so the ring stays the meaningful events.
     let note = (line, warn) => {
         (warn ? console.warn : console.log)(line)
-        try { let lg = (w.c.relay_log = w.c.relay_log || []); lg.push({ line: String(line), at: Date.now() }); if (lg.length > 60) lg.shift() } catch (e) {}
+        for (const tw of ((port && port.tenants) || [w])) {
+            try { let lg = (tw.c.relay_log = tw.c.relay_log || []); lg.push({ line: String(line), at: Date.now() }); if (lg.length > 60) lg.shift() } catch (e) {}
+        }
     }
-    let port = {
+    let port = null
+    port = {
         type: 'websocket', real: 1, ws: null,
+        // the worlds this ONE socket carries (Carrier_join).  [w] alone unless the tab is armed for one socket.
+        tenants: [w],
+        // the dial this socket last made, and the hello_ok it last heard — a tenant joining an open socket reads them
+        url: '',
+        hello_ok_at: 0,
+        last_hello_ok: null,
         // down_since — when the relay was last NOT reachable (ms), 0 while OPEN.  Born down: a socket that
         //  never opened is the "relay not reachable" a pocket-player falls to its SoundPool on (Radio_relay_down).
         down_since: Date.now(),
@@ -260,7 +283,37 @@ Socket_real(w):
             else if (!h && verbose) note(`🛰 ws SEND (control)`)
             wire(frame)
         },
-        recv(frame) { return H.Peeroleum_deliver(w, frame) },
+        recv(frame) { return H.Peeroleum_deliver(port.pick(frame), frame) },
+        // pick — which tenant world an envelope frame is for.  One tenant: that one (every tab today).  Several (one socket):
+        //  (1) a runner_ask/ghost_compile, or any kind exactly one tenant has a handler for (w.c.on — the kinds are disjoint:
+        //   Lies hears rungo/become_book/runner_ask/ping/pong/advertise/run_*/wormhole_*/grant_offer, Swarm hears pier_*/
+        //    pulse/swarm_hi/ferry*/reach*/repli_*/…); (2) an ack (no handler) goes where a Pier is EXACTLY its sender — the Lies
+        //     world's lone-Pier shortcut would otherwise claim every ack; (3) else the door tenant for an identity-shaped to,
+        //      the first tenant for a role.  @channel frames are fanned by deliver_soon, not picked.
+        pick(frame) {
+            let ts = port.tenants
+            if (ts.length === 1) { return ts[0] }
+            let h = (frame && frame.header) || {}
+            let by_kind = ts.filter((tw) => tw.c && tw.c.on && tw.c.on[h.type])
+            if (by_kind.length === 1) { return by_kind[0] }
+            let from = String(h.from || '')
+            for (const tw of ts) {
+                for (const pg of tw.o({ Peering: 1 })) { if (pg.o({ Pier: 1, pub: from })[0]) { return tw } }
+            }
+            if (is_door(h.to)) { let d = port.door(); if (d) { return d } }
+            return ts[0]
+        },
+        // door — the tenant whose Peering is an identity (the station); null when only role channels ride this socket
+        door() {
+            for (const tw of port.tenants) {
+                let pg = tw.o({ Peering: 1 })[0]
+                let a = (pg && (pg.sc.address || pg.sc.name)) || ''
+                if (is_door(a)) { return tw }
+            }
+            return null
+        },
+        // door_moved — the address home() would dial now differs from the dial this socket made (a door tenant joined late)
+        door_moved() { return !!port.url && home() !== port.url },
         // Multicast control (spec §18): a claim reserves an @channel to publish on; a subscribe binds
         //  us into the relay's per-channel fan-out set so a single upload reaches us. These are relay control
         //   frames (no header — routed aside by handleControl, not delivered), sent through this.send so they
@@ -292,7 +345,13 @@ Socket_real(w):
     //   packet.  Every inbound frame USED to ride its own H.post_do → H.todo, drained one-per-50ms under the
     //    beliefs mutex — the pile that death-spiralled the editor.  Fallback to the old per-frame post_do if
     //     the app half hasn't deposited Lies_deliver_soon yet (the boot window before LiesLies mounts).
-    let deliver_soon = (frame) => H.Lies_deliver_soon ? H.Lies_deliver_soon(w, frame) : H.post_do(async () => { await port.recv(frame) }, { see: 'tribunal_deliver_frame' })
+    let deliver_one = (tw, frame) => H.Lies_deliver_soon ? H.Lies_deliver_soon(tw, frame) : H.post_do(async () => { await H.Peeroleum_deliver(tw, frame) }, { see: 'tribunal_deliver_frame' })
+    // a topic frame (to:@channel) goes to EVERY tenant — each scans its own Peerings' subs; anything else to the one pick() names
+    let deliver_soon = (frame) => {
+        let to = frame && frame.header && frame.header.to
+        if (port.tenants.length > 1 && to != null && String(to)[0] === '@') { for (const tw of port.tenants) { deliver_one(tw, frame) } ; return }
+        deliver_one(port.pick(frame), frame)
+    }
     let on_message = (ev) => {
         last_rx = Date.now()
         alive_probe_at = 0
@@ -354,10 +413,17 @@ Socket_real(w):
                 //        quietly stops being adopted.  Fan out instead, exactly as `w.c.on[type]` is a
                 //         registry: every listener hears every hello_ok, and one throwing does not rob
                 //          the others.  `w.c.on_hello` stays supported for any caller still assigning it.
-                if (w.c) {
+                port.hello_ok_at = Date.now()
+                port.last_hello_ok = frame
+                // …and across every TENANT of this socket (one socket per tab): each world's hooks hear every ack — except an ack for a
+                //  seat one tenant asked for itself (the Lies channel's dodge seat, w.c.hello_want), which is that tenant's alone: the
+                //   station's arbiter hook would read <prepub>_9xxx as its own door being refused and rehome there.
+                let asker = port.tenants.find((tw) => tw.c && tw.c.hello_want && String(tw.c.hello_want) === String(frame.addr || ''))
+                for (const tw of (asker ? [asker] : port.tenants)) {
+                    if (!tw.c) { continue }
                     let heard = []
-                    if (Array.isArray(w.c.on_hello_list)) { heard = w.c.on_hello_list }
-                    if (typeof w.c.on_hello === 'function') { heard = heard.concat([w.c.on_hello]) }
+                    if (Array.isArray(tw.c.on_hello_list)) { heard = tw.c.on_hello_list }
+                    if (typeof tw.c.on_hello === 'function') { heard = heard.concat([tw.c.on_hello]) }
                     for (const fn of heard) { try { fn(frame) } catch (e) { console.log('🪪☠ on_hello hook threw', e) } }
                 }
                 return
@@ -370,15 +436,16 @@ Socket_real(w):
                     last_who = sig
                     note(`👥 ws RECV ${frame.control}${frame.online ? ' ' + frame.online.length + '/' + frame.asked + ' online' : ''}${frame.reason ? ' — ' + frame.reason : ''}`)
                 }
-                if (w.c && w.c.on_who) { try { w.c.on_who(frame) } catch (e) { console.log('👥☠ on_who threw', e) } }
+                for (const tw of port.tenants) { if (tw.c && tw.c.on_who) { try { tw.c.on_who(frame) } catch (e) { console.log('👥☠ on_who threw', e) } } }
                 return
             }
             // ANY OTHER CONTROL → the registry (2026-09-17), the same fan-out shape as on_hello_list: a
             //  ghost that wants a server-originated control (the dev server's `docindex` push is the first)
             //   pushes a fn onto w.c.on_control_list and reads frame.control itself.  One throwing does not
             //    rob the others; a frame nobody wants still gets its note below and nothing else.
-            if (w.c && Array.isArray(w.c.on_control_list)) {
-                for (const fn of w.c.on_control_list) { try { fn(frame) } catch (e) { console.log('🛰☠ on_control hook threw', e) } }
+            for (const tw of port.tenants) {
+                if (!(tw.c && Array.isArray(tw.c.on_control_list))) { continue }
+                for (const fn of tw.c.on_control_list) { try { fn(frame) } catch (e) { console.log('🛰☠ on_control hook threw', e) } }
             }
             if (frame.control !== 'docindex') note(`🛰 ws RECV control:${frame.control}${frame.role ? ' role=' + frame.role : ''}`)
             if (frame.control === 'error') console.log('🛰☠ relay refused:', frame.error)
@@ -391,6 +458,7 @@ Socket_real(w):
     }
     let connect = () => {
         let url = home()
+        port.url = url
         dial_at = Date.now()
         closed_at = 0
         ws = new WebSocket(url)
@@ -406,6 +474,8 @@ Socket_real(w):
             clearTimeout(stable_timer)
             stable_timer = setTimeout(() => { tries = 0 }, STABLE_MS)
             port.down_since = 0
+            port.hello_ok_at = 0
+            port.last_hello_ok = null
             last_rx = Date.now()
             alive_probe_at = 0
             note(`🛰 ws OPEN ${url} — flushing ${pending.length} buffered`)
@@ -487,6 +557,56 @@ Socket_real(w):
     }, 5000)
     if (silence && silence.unref) silence.unref()
     w.o({ transport: 1, type: 'websocket' })[0].c.port = port
+
+// ── ONE SOCKET PER TAB (Social_demarcation_todo §0.5; AtheoryNexus_todo §0.0 E "Identity drawn together") ──────────────
+//  A tab holds two relay sockets today, both hello-binding the same key: the Lies channel (w:Lies — become <role>, the flock
+//   proof, the dev controls) and the Swarm station (w:Swarm — the friends' door, ?addr=<prepub>).  Carrier_join is the one
+//    carrier instead: the FIRST world to join stands the socket (Socket_real) and the rest become TENANTS of it — same port, their
+//     own %transport row pointing at it, their own w.c.on handler tables.  Inbound, the port picks the world per frame (port.pick:
+//      by handler kind, then by Pier, then door|role); control frames fan to every tenant's hooks; outbound needs nothing.  The
+//       relay is unchanged — one ws wearing a role and several identity binds is already legal to it.
+//  DARK UNTIL ARMED: off, Carrier_join is exactly Socket_real(w) and nothing above it moves.  Arm ONE tab with
+//   localStorage.setItem('one_socket','1') or a URL carrying one_socket; never the editor (it rides pinned_stable/, which has no
+//    Carrier_join, so LiesLies falls back to Socket_real there).  The rollout's order is §0.5's, not optional.
+// Carrier_one — is this tab armed for one socket?  Read once per House (top.c.one_socket), so a tab never changes its mind mid-life.
+Carrier_one():
+    let top = this.top_House ? this.top_House() : null
+    if (top && top.c.one_socket != null) { return !!top.c.one_socket }
+    let on = false
+    try {
+        if (typeof localStorage !== 'undefined' && localStorage.getItem('one_socket') === '1') { on = true }
+        if (typeof location !== 'undefined' && String(location.search || '').indexOf('one_socket') >= 0) { on = true }
+    } catch (e) {}
+    if (top) { top.c.one_socket = on ? 1 : 0 }
+    return on
+
+// Carrier_join — the socket for world w: its own Socket_real when unarmed (today), else the tab's ONE port (top.c.carrier),
+//  standing it on the first join.  Returns the port.  A door tenant (an identity Peering) joining a socket that dialled bare
+//   re-dials it at the door, so the relay's own-door rule (qaddr) holds for to:<prepub> — the twin-tab doubling cure depends on it.
+Carrier_join(w):
+    let top = this.top_House ? this.top_House() : null
+    let car = top && top.c.carrier
+    if (!this.Carrier_one() || !car || !car.port) {
+        this.Socket_real(w)
+        let port0 = w.o({ transport: 1, type: 'websocket' })[0]?.c.port
+        if (port0 && top && this.Carrier_one()) {
+            top.c.carrier = { port: port0, at: Date.now() }
+            console.log('🛰 one socket — ' + String(w.sc.w || '?') + ' stands the carrier')
+        }
+        return port0
+    }
+    let port = car.port
+    if (!port.tenants.includes(w)) {
+        port.tenants.push(w)
+        let tr = w.o({ transport: 1, type: 'websocket' })[0] || w.i({ transport: 1, type: 'websocket' })
+        tr.c.port = port
+        console.log('🛰 one socket — ' + String(w.sc.w || '?') + ' joins as a tenant (' + port.tenants.length + ' on it)')
+        if (port.door_moved()) {
+            console.log('🛰 one socket — the door joined late: re-dialling at the identity address')
+            port.rehome()
+        }
+    }
+    return port
 
 // Tribunal_activate_websocket — point the live %active_transport at the websocket carrier WITHOUT
 //  the no-ack trial (cf Tribunal_fall_to_websocket, which also stamps webrtc %faulty). For the

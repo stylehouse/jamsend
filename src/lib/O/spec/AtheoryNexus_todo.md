@@ -194,7 +194,7 @@
      to exactly one.  Needs a relay change, so its own slice after E; E only must not assume one tab per Identity (put the seat in `%Page`).
    *(2026-11-15: built narrowly as `<prepub>_N` session seats — `Identity_persist_todo.md` §0.1.)*
 
- *Identity drawn together — rulings 2026-11-16, nothing built.*  Identity is spread over Auto (`Clustation_*`, `identity_settle`),
+ *Identity drawn together — rulings 2026-11-16; the first two moves landed the same day (status at the end of this list).*  Identity is spread over Auto (`Clustation_*`, `identity_settle`),
   LiesLies (the flock key, its own socket and hello lock) and Swarm.g (10k lines, 278 methods, app-indifferent and Jamsend families
    interleaved).  Draw it up into two levels:
   - **The app-indifferent level** — `A:Identity`, which every Ground already stands: who (keys, `%Who`), the account kept (stash,
@@ -215,6 +215,19 @@
   - **Order (proposed)**: peel the Jamsend families off Swarm first (code moves, no network behaviour change, gated by Swarm + Musu
      Books; Electrode's cross-Ground call count is the measure of the tangle); the one-socket move second (§0.5's flag + relay-test +
       headless walks + `twin_eye.mjs`).
+  - **Landed 2026-11-16.**  (1) **The first peel**: `Ghost/S/Jamsend.g` — the share session, suggestions, the ive_got boast and the
+     music pillars of the stash, 1,490 lines moved verbatim out of Swarm.g (now 8.7k), method names kept (`Swarm_*` is history there,
+      rename once named).  Its own Ground (`Ground/Jamsend`, stands on Swarm + Music + Cave; Swarm's tests stand on it — the tests drive
+       the share); on the spine list and the /Radio page's Spine.  Still in Swarm: the frame dispatch (`Swarm_arm`), the restash calls, and
+        GrantBorrowing (the seat/loan machinery is grant-generic; only `Swarm_slot_granted` names Music).  **Not yet gated by Books** — no
+         runner was up; the owed gate is the Swarm* + Musu* sweep on e747.  Next peel: hand Jamsend its own frame kinds.
+         ⚠ **A page that loaded before the split runs without it** (seen live: an armed /Radio tab at 18 ghosts — `Swarm_ive_got is not a
+          function` on every frame from its friend, emits stranding).  A folderless page reads its Ground from the copy bundled into
+           `src/lib/A/ground.ts`, which only refreshes when that file is re-transformed or the server restarts: after a Ground change,
+            touch `ground.ts` and reload the music tabs.
+     (2) **One socket, stages 1–2, dark**: `Carrier_join` in Tribunal.g, armed per tab by `one_socket` — `Social_demarcation_todo.md`
+      §0.5 "Built 2026-11-16" has what it does, what the build taught, the headless evidence, and the owner's steps to arm it.  It is a
+       carrier on the top House, not yet rows on `A:Identity` — the rows come when the latch triple moves (the next step there).
 
 A→B→C is the "decide from rows" migration (disk replies, Story steps, clicks, then the ambient tick — that last step is where
  Housing's wake paths get deleted).  D and E ride on it; F is the same move in Hovercraft; G is the app the fabric is for: explore a pile, then merge a giant download folder into the collection with guided, mechanical moves.

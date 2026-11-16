@@ -49,6 +49,16 @@ export const GROUNDS = {
    "Ghost/V/VytoTesting.g"
   ]
  },
+ "Jamsend": {
+  "stands": [
+   "Swarm",
+   "Music",
+   "Cave"
+  ],
+  "load": [
+   "Ghost/S/Jamsend.g"
+  ]
+ },
  "Land": {
   "stands": [
    "Glass"
@@ -111,6 +121,7 @@ export const GROUNDS = {
  },
  "SwarmTesting": {
   "stands": [
+   "Jamsend",
    "Swarm"
   ],
   "load": [
@@ -175,6 +186,17 @@ export const GROUNDS = {
   ],
   "flavour": "electrode"
  },
+ "Hacky/Jamsend": {
+  "stands": [
+   "Hacky/Swarm",
+   "Hacky/Music",
+   "Hacky/Cave"
+  ],
+  "load": [
+   "Ghost/S/Jamsend.g"
+  ],
+  "flavour": "electrode"
+ },
  "Hacky/Land": {
   "stands": [
    "Glass"
@@ -235,6 +257,7 @@ export const GROUNDS = {
  },
  "Hacky/SwarmTesting": {
   "stands": [
+   "Hacky/Jamsend",
    "Hacky/Swarm"
   ],
   "load": [

@@ -12,6 +12,14 @@ A capture doc, not yet a plan — the owner has reached for this three times in 
 
 ## 0.0 START HERE — where it stands and what's next (2026-10-21)
 
+**In plain words (2026-11-16, from the owner's README line: "Atheory is the wire design pattern, it loads code and projects reality
+ from place to place, computing.")**  Three jobs, and every piece of this doc is one of them:
+- **The wire** — how things reach a place.  Today: one socket per tab (`Carrier_join`, dark), the arrival door (`Atheory_design.md`
+   §3), the Identity that speaks for you on it (`AtheoryNexus_todo.md` §0.0 E).
+- **Loading code** — which code a place runs.  Today: Grounds (`Ground/<Name>`), the Desk, `%TheACode`; Lies compiles and acquires.
+- **Projecting reality** — the same state shown in another place: a snap, a replica (Repli), a Book's picture, a friend's catalog.
+The map below is the order we build in.  If a sentence here stops saying something checkable, cut it.
+
 **THE MAP (2026-10-30, owner: "plan a whole bunch more Atheory work... we keep drifting off into details").**  What we want over and
  above House, but within it schematically.  The rest of this doc is the record; this is the order.
 *Main works, already said:*

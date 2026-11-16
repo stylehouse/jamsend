@@ -45,7 +45,7 @@ A **working `_todo`** (not self-promoted — the owner reads + preens). Precipit
     next preens it.
 3. The `📊` route rollup behind `socklog`; a player's Lies keepalive should ping nobody.
 
-## 0.5 ONE SOCKET PER TAB — THE DESIGN (2026-09-12 morning, written with the whole thread loaded; nothing built)
+## 0.5 ONE SOCKET PER TAB — THE DESIGN (2026-09-12 morning, written with the whole thread loaded; stages 1–2 built dark 2026-11-16 — see "Built" below)
 
 **The ruling** (owner 2026-09-09): *"remove entirely the second websocket for addr=runner and have some
  other way to find runners."* Today a tab holds TWO relay sockets to the same relay, both hello-binding
@@ -110,6 +110,39 @@ Ordering. Tonight's seal/share-up race is the same disease in miniature: two wor
    from an old tab and one from a new, and both shapes are legal to it.
 ⚠ Do not arm before the relay-test contract and the five headless walks are green on the same build.
  Verify editor-side on a headless EDITOR, never a runner (the spine skew lesson).
+
+### Built 2026-11-16 — stages 1 and 2, dark by default
+- **Stage 1 is in the tree.** `Carrier_one` + `Carrier_join` (Ghost/N/Tribunal.g, after `Socket_real`).  Unarmed, `Carrier_join(w)` is
+   exactly `Socket_real(w)` — every tab today.  Armed (`localStorage.setItem('one_socket','1')`, or `one_socket` in the URL), the first
+    world to join stands the socket on `top.c.carrier` and the next is a TENANT: its own `%transport` row on the same port, its own
+     `w.c.on`.  `Socket_real` grew `port.tenants`, `port.pick(frame)` (the world for an envelope: the one tenant with a handler for its
+      kind — Lies' and Swarm's kinds are disjoint — else the tenant holding a Pier exactly its sender, else the door for an identity-shaped
+       `to`), `port.door()`, the control fan over every tenant (`on_hello_list`, `on_who`, `on_control_list`), and a dial that asks for
+        the door tenant's address.  The station (`Swarm_station_up`) and the Lies channel (LiesLies) both call `Carrier_join` where they
+         called `Socket_real`; the editor's `pinned_stable/Tribunal.go` has no `Carrier_join`, so it keeps the old road.
+- **What the build taught (keep these):**
+  · **A late door re-dials.**  The Lies channel usually stands first and dials bare; when the station joins, `port.door_moved()` ⇒ `rehome()`,
+     so the socket comes back at `?addr=<prepub>` and the relay's own-door rule holds (the twin-tab doubling cure needs it).  A sibling
+      tab's station at `<prepub>_N` still dials bare — exactly as the old station socket did — so `is_door` (an identity or a session seat
+       of one) decides the DOOR tenant while `is_addr` alone still decides the dial.
+  · **One hello, the station's.**  With a door tenant on the port, the Lies channel sends no hello of its own (it would only add the
+     dodge seat); it takes the station's ack as its latch and sends its flock proof on it.  The proof needs the Lies key's prepub to be
+      hello-bound on the socket — true where the station's soul key IS the Lies key (every music page); a tab where they differ will
+       see `flock_error` armed.  Not met yet; check before arming a runner.
+  · **An ack for a seat a tenant asked for is that tenant's alone** (`w.c.hello_want`): the station's arbiter hook would otherwise
+     read the Lies dodge `<prepub>_9xxx` as its door being refused and rehome there (the race window is one RTT at standup).
+- **Stage 2 is green on the headless newcomer** (2026-11-16, before any live tab is armed): `relay-test.ts` +5 (one ws: become + soul +
+   body, each name lands once, a twin apart) — PASS.  `scripts/friends_eye.mjs` (new: two strangers, A mints, B joins): **five armed walks
+    sealed, each tab on ONE socket** carrying become/hello/who and the music (repli_ready/lines, ive_got, pulse); both join orders seen
+     (Lies first then the door re-dial; Swarm first then Lies as tenant).  Two more walks read BAD for the UI, not the wire (a page whose
+      Sounditron never started; a Door face that remounted mid-step).  `twin_eye.mjs` armed: one bare holder + `_1`, sockets=1 each,
+       through a sibling reload and through the primary crashing (the heir took the bare name).  Unarmed re-runs: two sockets, sealed,
+        twins correct — the default road did not move.
+- **NOT done — the owner's steps, in order:** (1) arm ONE live music page of your own (`&one_socket` on its URL) and play from a friend
+   for a while — the music flow is the one thing headless could not show (no folder, the daemon is on another relay); (2) a RUNNER (its
+    Lies channel is the one carrying Books — runner_ask, become_book, the ledger — watch a sweep on it); (3) the editor only after
+     re-copying `gen/N/{Peeroleum,Tribunal}.go` → `pinned_stable/` and reloading it; (4) make it the default, then stage 3 (delete the
+      second dial).  ⚠ An armed tab and an unarmed one are both legal to the relay — the mixed fleet is safe by construction here.
 
 ### Not this
 - Not a relay protocol change. Not a Peeroleum change. Not the addressing model (roles vs identities

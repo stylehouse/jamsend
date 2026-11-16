@@ -32,6 +32,7 @@ Waft:Ghost/Net/Easy,desc:the wire — one spine and its carriers — the relay i
   What:the carriers,desc:Tribunal — the real websocket to the relay with auto-reconnect and backoff — mock and webrtc beside it
     Doc:Ghost/N/Tribunal.g
     Point,method:Socket_real,desc:the websocket carrier — dial reconnect bulk lane control frames hello_ok fan-out
+    Point,method:Carrier_join,desc:one socket per tab — the first world stands it and the rest are tenants — dark until armed with one_socket
     Point,method:Socket,desc:the mock carrier — loopback for Books
     Point,method:Tribunal_activate_websocket,desc:stamp the active transport on the world
     Point,method:Tribunal_fall_to_websocket,desc:webrtc failed — fall back

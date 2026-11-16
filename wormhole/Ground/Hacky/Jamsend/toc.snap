@@ -1,0 +1,6 @@
+Ground:Hacky/Jamsend,desc:Ground/Jamsend built to be measured — the caller survives an await,FromWhat:Ground:Jamsend
+  Flavour:electrode
+  Stands:Hacky/Swarm
+  Stands:Hacky/Music
+  Stands:Hacky/Cave
+  Load:Ghost/S/Jamsend.g

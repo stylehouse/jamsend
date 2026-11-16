@@ -253,7 +253,9 @@ export function grounds_derive(W, files, problems) {
             const m = ground_marks(node)
             tests = tests || node[0] === 'What:the tests'
             if (m.ground) { ground = m.ground; G(ground).from ||= name; G(ground).desc ||= node[1] }
-            for (const s of m.stands) G(ground).stands.add(s)
+            // a stands: on a What:the tests (or inside one) is what the TESTS need, so it lands on <Name>Testing — Swarm's tests
+            //  stand on Jamsend (they drive the share), and Swarm itself must not, or Jamsend → Swarm → Jamsend is a cycle
+            for (const s of m.stands) G(tests ? ground + 'Testing' : ground).stands.add(s)
             for (const c of node.slice(1)) {
                 if (Array.isArray(c)) walk(c, ground, tests)
                 else if (typeof c === 'string' && c.startsWith('Doc:')) place(c.slice(4), ground, tests)

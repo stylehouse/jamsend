@@ -5,6 +5,7 @@ Ground:Radio,desc:the music page as a Main — Radio stands on Mundo with no Boo
   Spine:Swarm
   Spine:Music
   Spine:Cave
+  Spine:Jamsend
   Spine:Ghost/O/Supervisor.g
   Load:Ghost/M/RadioPage.g
   Load:Ghost/M/Wiki.g

@@ -1,4 +1,4 @@
-Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 226 of 423 — one What per directory — give each a home in its area and re-run
+Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 226 of 427 — one What per directory — give each a home in its area and re-run
   What:Ghost/A,desc:2 files with no area
     Doc:Ghost/A/AtheAside.g
     Doc:Ghost/A/Store.g
@@ -33,7 +33,7 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 226 o
     Doc:src/lib/boot.ts
     Doc:src/lib/cluster_name.ts
     Doc:src/lib/dexie_safe.ts
-  What:src/lib/O,desc:20 files with no area
+  What:src/lib/O,desc:19 files with no area
     Doc:src/lib/O/Audio.svelte.ts
     Doc:src/lib/O/BigQualand.svelte.ts
     Doc:src/lib/O/Cello.svelte
@@ -51,7 +51,6 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 226 o
     Doc:src/lib/O/cello_blob.ts
     Doc:src/lib/O/census_codec.ts
     Doc:src/lib/O/cyto_lazy.ts
-    Doc:src/lib/O/sockcap.ts
     Doc:src/lib/O/stho.ts
     Doc:src/lib/O/vessel_store.ts
   What:src/lib/O/D,desc:5 files with no area
@@ -87,7 +86,6 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 226 o
     Doc:src/lib/O/spec/App_todo.md
     Doc:src/lib/O/spec/Arrival_todo.md
     Doc:src/lib/O/spec/AtheoryArrive_todo.md
-    Doc:src/lib/O/spec/AtheoryNexus_todo.md
     Doc:src/lib/O/spec/AtheoryStory_todo.md
     Doc:src/lib/O/spec/Attractor_todo.md
     Doc:src/lib/O/spec/Cello_meditation_todo.md
@@ -141,6 +139,7 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 226 o
     Doc:src/lib/O/spec/Story_cli_docs.md
     Doc:src/lib/O/spec/Story_future_directions.md
     Doc:src/lib/O/spec/Stuff_todo.md
+    Doc:src/lib/O/spec/Test_scripts_todo.md
     Doc:src/lib/O/spec/UI_seams_todo.md
     Doc:src/lib/O/spec/V1_cut_todo.md
     Doc:src/lib/O/spec/Vyto_client.md
@@ -171,7 +170,7 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 226 o
     Doc:src/lib/O/test/Understandication.svelte
     Doc:src/lib/O/test/Understandity.svelte
     Doc:src/lib/O/test/Understandium.svelte
-  What:src/lib/O/ui,desc:47 files with no area
+  What:src/lib/O/ui,desc:48 files with no area
     Doc:src/lib/O/ui/Actions.svelte
     Doc:src/lib/O/ui/ArriveFace.svelte
     Doc:src/lib/O/ui/ArriveSplash.svelte
@@ -219,6 +218,7 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 226 o
     Doc:src/lib/O/ui/calm.ts
     Doc:src/lib/O/ui/page_nav.ts
     Doc:src/lib/O/ui/pier_marks.ts
+    Doc:src/lib/O/ui/yay_fly.ts
   What:src/lib/O/ui/micro,desc:6 files with no area
     Doc:src/lib/O/ui/micro/Bandwidth.svelte
     Doc:src/lib/O/ui/micro/DeleteX.svelte

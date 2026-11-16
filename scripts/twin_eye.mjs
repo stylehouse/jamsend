@@ -48,7 +48,7 @@ await ctx.addInitScript(() => {
   }
 })
 const t0 = Date.now(), T = () => ((Date.now() - t0) / 1000).toFixed(1)
-const RX = /🪪|hello|door|sibling|suffix|taken|seat|👥|foreign|theft|stolen|contested|Identity|rehome|⛁|PAGEERROR/i
+const RX = /🪪|hello|door|sibling|suffix|taken|seat|👥|foreign|theft|stolen|contested|Identity|rehome|⛁|PAGEERROR|one socket/i
 const tabs = {}   // X → { p, addr, mem, errors, life }
 const watch = (tag, p) => {
   const t = tabs[tag]
@@ -58,13 +58,15 @@ const watch = (tag, p) => {
     if (/⛁ no browser storage/.test(s)) t.mem = s.slice(0, 120)
     if (RX.test(s)) console.log(T(), `${tag}#${t.life}`, s.slice(0, 230))
   })
+  // the relay sockets this life holds open — under ?one_socket (Tribunal.g Carrier_join) the verdict wants exactly one
+  p.on('websocket', ws => { if (!ws.url().includes('/relay')) return; t.socks = (t.socks || 0) + 1; ws.on('close', () => { t.socks = t.socks - 1 }) })
   p.on('pageerror', e => { t.errors.push(e.message.slice(0, 160)); console.log(T(), `${tag}#${t.life}`, 'PAGEERROR', e.message.slice(0, 200)) })
 }
 const gate = async (tag) => {
   const p = tabs[tag].p
   try { const g = p.locator('.bg-listen'); await g.waitFor({ state: 'visible', timeout: 20000 }); await g.click(); console.log(T(), tag, 'gate: listen-only') } catch { console.log(T(), tag, 'gate: none') }
 }
-const fresh_life = (tag) => { const t = tabs[tag]; t.life = (t.life || 0) + 1; t.addr = null; t.mem = null }
+const fresh_life = (tag) => { const t = tabs[tag]; t.life = (t.life || 0) + 1; t.addr = null; t.mem = null; t.socks = 0 }
 const slow_next = new Set()
 const arm_slow = async (tag) => { if (!slow_next.delete(tag)) return; await tabs[tag].p.evaluate((ms) => { try { sessionStorage.setItem('twin_slow_idb', String(ms)) } catch {} }, slow_ms) }
 for (const step of plan) {
@@ -97,8 +99,9 @@ for (const [k, t] of live) {
   if (!t.addr) bad.push(`${k}: never hello_ok'd`)
   if (t.mem) bad.push(`${k}: memory-only — ${t.mem}`)
   if (t.errors.length) bad.push(`${k}: ${t.errors.length} PAGEERROR (${t.errors[0]})`)
+  if (path.includes('one_socket') && t.socks !== 1) bad.push(`${k}: ${t.socks} relay sockets open — armed for one socket`)
 }
 console.log('\n── verdict for plan: ' + plan.join(' '))
-for (const [k, t] of live) console.log(`   ${k}#${t.life}  addr=${t.addr || '—'}${t.mem ? '  MEMORY-ONLY' : ''}`)
+for (const [k, t] of live) console.log(`   ${k}#${t.life}  addr=${t.addr || "—"}  sockets=${t.socks}${t.mem ? "  MEMORY-ONLY" : ""}`)
 console.log(bad.length ? bad.map(s => '   ✗ ' + s).join('\n') : '   ✓ one bare holder, siblings suffixed, storage real')
 await b.close(); proxy.close(); process.exit(bad.length ? 1 : 0)

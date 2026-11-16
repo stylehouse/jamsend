@@ -32,6 +32,7 @@ import { TheC } from '../src/lib/Stuff.svelte'
 import Radio from '../src/lib/gen/M/Radio.go'
 import Ra from '../src/lib/gen/M/Ra.go'
 import Swarm from '../src/lib/gen/S/Swarm.go'
+import Jamsend from '../src/lib/gen/S/Jamsend.go'   // the music half of Swarm, split out 2026-11-16
 import Supervisor from '../src/lib/gen/O/Supervisor.go'
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
@@ -43,7 +44,7 @@ async function stub_house() {
     H.Radio_trace = () => {}
     H.mainkey = (n: any) => Object.keys(n.sc)[0]
     H.c.humdinger = 1
-    for (const Ghost of [Radio, Ra, Swarm, Supervisor]) mount(Ghost, { target: document.body, props: { H } })
+    for (const Ghost of [Radio, Ra, Swarm, Jamsend, Supervisor]) mount(Ghost, { target: document.body, props: { H } })
     for (let i = 0; i < 80 && !(typeof H.Supervisor_watch === 'function'
         && typeof H.Radio_shelf_remembering === 'function'
         && typeof H.Radio_watch_shelf === 'function'

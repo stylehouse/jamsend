@@ -29,6 +29,7 @@ import { mount } from 'svelte'
 import { TheC } from '../src/lib/Stuff.svelte'
 import Ra from '../src/lib/gen/M/Ra.go'
 import Swarm from '../src/lib/gen/S/Swarm.go'
+import Jamsend from '../src/lib/gen/S/Jamsend.go'   // the music half of Swarm, split out 2026-11-16
 import Repli from '../src/lib/gen/N/Repli.go'
 import Heist from '../src/lib/gen/M/Heist.go'
 
@@ -45,7 +46,7 @@ async function stub_house(waft: any) {
         top_House() { return H },
         Radio_trace() {},
     }
-    for (const Ghost of [Ra, Swarm, Repli, Heist]) mount(Ghost, { target: document.body, props: { H } })
+    for (const Ghost of [Ra, Swarm, Jamsend, Repli, Heist]) mount(Ghost, { target: document.body, props: { H } })
     for (let i = 0; i < 80 && !(typeof H.Heist_newlyadded_note === 'function'
         && typeof H.Heist_newlyadded_rows === 'function'
         && typeof H.Heist_newlyadded_grouped === 'function'); i++) await sleep(25)

@@ -99,23 +99,15 @@ Waft:Ghost/Swarm/Easy,desc:the social layer — one soul many bodies — crew by
     Doc:Ghost/N/Peeroleum.g
     Point,method:Peeroleum_same_soul,desc:a frame from our own soul — no Pier needed
     Point,method:Peeroleum_crew_road,desc:a frame from a crew mate — the crew road
-  What:gossip,desc:the pulse — what music I have got — suggest and boast — the roster crosses on hi
+  What:gossip,desc:the pulse — the roster crosses on hi — what music I have got moved to Jamsend
     Doc:Ghost/S/Swarm.g
     Point,method:Swarm_pulse_all,desc:the heartbeat to every Pier
-    Point,method:Swarm_gossip_music,desc:tell friends what we hold
-    Point,method:Swarm_ive_got,desc:the ive_got fact
-    Point,method:Swarm_suggest,desc:suggest a track
-    Point,method:Swarm_suggest_got,desc:a suggestion landed
     Point,method:Swarm_roster_gossip,desc:the roster crosses
-    Point,method:Swarm_music_census,desc:count what is reachable
-  What:the stash,desc:what survives a reload — piers izzes chainroots crew pools heard radio reaches — a phone has no folder so this is its only home
+  What:the stash,desc:what survives a reload — piers izzes chainroots crew reaches (the music pillars are in Jamsend) — a phone has no folder so this is its only home
     Doc:Ghost/S/Swarm.g
     Point,method:Swarm_restash_all,desc:write every durable shelf
     Point,method:Swarm_piers_rehydrate,desc:piers back from the stash
     Point,method:Swarm_crew_rehydrate,desc:crew back
-    Point,method:Swarm_heard_rehydrate,desc:the Heard Mag back
-    Point,method:Swarm_pools_rehydrate,desc:pools back
-    Point,method:Swarm_radio_rehydrate,desc:radio state back
     Point,method:Swarm_account_settle,desc:the account snap settles
     Point,method:Swarm_protocol,desc:which mainkeys cross the wire — the skips
   What:theft and home,desc:a stolen name — steal back — rehome and reinstate — the cohort vessel
@@ -126,7 +118,7 @@ Waft:Ghost/Swarm/Easy,desc:the social layer — one soul many bodies — crew by
     Point,method:Swarm_reinstate,desc:stand at the bare name again
     Point,method:Swarm_cohort_vessel,desc:which tab of ours carries the cohort
     Point,method:Swarm_next_suffix,desc:the _N collision fallback
-  What:the tests
+  What:the tests,stands:Jamsend
     Doc:Ghost/Story/SwarmTesting.g
     Doc:Ghost/Story/InvSeal.g
     Doc:Ghost/Story/InvFerry.g

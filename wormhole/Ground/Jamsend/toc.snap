@@ -1,0 +1,7 @@
+Ground:Jamsend,desc:the music between friends — loaded on top of the friends layer — the share session suggestions the ive_got boast and the music pillars of the stash,FromWhat:Waft:Ghost/Swarm/Jamsend
+  Stands:Swarm
+  Stands:Music
+  Stands:Cave
+  Load:Ghost/S/Jamsend.g
+  Advice:src/lib/O/spec/AtheoryNexus_todo.md
+  Advice:src/lib/O/spec/Sharing_design.md

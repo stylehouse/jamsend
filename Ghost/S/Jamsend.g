@@ -1,0 +1,1516 @@
+// Jamsend.g — the music between friends, loaded ON TOP of the friends layer (Swarm.g).  Split out of Swarm.g
+//  2026-11-16 (AtheoryNexus_todo §0.0 E, "Identity drawn together" — the owner: an app-indifferent level, "and the
+//   Jamsend stuff loaded on top of that").  Swarm.g keeps who you are, your devices, your friends and the door;
+//    this file is what a friendship is FOR in this app: the standing share session (my stock cast to every
+//     Music-granted friend, their casts into my radio world), suggestions, the ive_got boast, and the music
+//      pillars of the reload stash (pools, the Heard takes, the radio's choice).
+//  A FILE MOVE, NO BEHAVIOUR CHANGE: every method kept its Swarm_ name and every cross-ghost `this.` call
+//   resolves exactly as before (eatfunc puts them all on the House).  The Swarm_ prefix here is HISTORY, not a
+//    home — rename (Jam_?) in one sweep once the names are ruled, not before.  Swarm.g still dispatches these
+//     frame kinds (Swarm_arm) and still calls the stash pillars from Swarm_restash_all; handing Jamsend its own
+//      kinds is the next move, with the one socket (Social_demarcation_todo §0.5).
+
+//#region stash — the music pillars of the reload stash (the rest of the stash is Swarm.g's)
+// ── %Pool is the SEVENTH pillar (2026-09-03, SoundPooling) ──────────────────────────────────────
+//  A %Pool compartment is a DECLARATION — "keep this much of this kind of music on this device" — and on a
+//   live tab it homes on the identity (Ra_pool_home), which means it rides the account snap … and a PHONE
+//    has no folder, so it never writes one.  Without this pillar every pool a phone declares dies at the
+//     next boot: the steward re-derives an empty composition and the circulation stream silently stops on
+//      exactly the device SoundPooling exists for.  Same disease as the crew cert and the standing reach,
+//       seventh organ.  Scalars only (name · take · cap · salt) — a compartment is its own record.
+Swarm_restash_pools(ident, from, st0):
+    let st = this.Swarm_stash_of(ident, st0)
+    let shelf = (from || ident).o({ SoundPooling: 1 })[0]
+    if (!st) { return 0 }
+    let rows = []
+    for (const p of (shelf ? shelf.o({ Pool: 1 }) : [])) {
+        if (!p.sc.name) { continue }
+        let e = { name: String(p.sc.name) }
+        if (p.sc.take) { e.take = String(p.sc.take) }
+        if (p.sc.cap) { e.cap = String(p.sc.cap) }
+        if (p.sc.salt) { e.salt = String(p.sc.salt) }
+        if (p.sc.who) { e.who = String(p.sc.who) }
+        if (p.sc.share) { e.share = String(p.sc.share) }
+        rows.push(e)
+    }
+    // the consent rides the pillar too (Ra_pool_consent): a phone that said yes must not be asked again
+    //  after every reload — and one that never said yes must not wake up pooling.
+    let consent = shelf ? shelf.o({ Consent: 1 })[0] : null
+    if (!rows.length && !consent) {
+        if (st.Swarm_pools) { delete st.Swarm_pools[ident.sc.prepub] }
+        return 0
+    }
+    if (!st.Swarm_pools) { st.Swarm_pools = {} }
+    let entry = { rows: rows }
+    if (consent) { entry.consent = String(consent.sc.at || '1') }
+    if (shelf && shelf.sc.budget_mb) { entry.budget_mb = String(shelf.sc.budget_mb) }
+    st.Swarm_pools[ident.sc.prepub] = entry
+    return rows.length
+// ── %Mag:heard is the EIGHTH pillar (2026-09-04, Radio_circuit_todo §5) ─────────────────────────
+//  The heard Mag is what I heard of whom and what I TOOK — the hearts I pressed and have not been
+//   brought yet.  It hangs on the identity, so it rides the account snap for free … and a PHONE HAS NO
+//    FOLDER, so on a phone the stash is its only durable home (SwarmReboot's whole premise).  Without
+//     this pillar every wish a phone makes dies at its next boot, on exactly the device the feature is
+//      for — the same disease as the crew cert, the standing reach and the pool compartment, eighth organ.
+//  WHAT TRAVELS: the takes, and ONLY the takes.  A bare hearing is a dedup mark with a thirty-day clock
+//   on it — worth nothing after a reload and, multiplied by every track a listener ever played, the fat
+//    privacy liability §6b's OBLIQUE ruling exists to prevent.  A HEART is a decision, and a decision
+//     must outlive the boot that made it.  So the stash carries `take` Cards whole (the listing rides
+//      along — it is what makes the ask legible before anything lands) and forgets the rest.
+//  MERGE LAW, stated here because two bodies WILL write (§5): `mire = max`, `take = OR`, keyed
+//   (id, pub), no device key.
+// ── ONE SERIALIZER (2026-09-17, Persistence_todo Phase 5 rung 2 — this pillar is the pattern) ──
+//  The stash entry is the Mag's SNAP TEXT under `Swarm_protocol('heard')` — the same enWaft that writes
+//   the account snap, with the reaction-only law as one skip rule — and the rehydrate is decode +
+//    Swarm_graft, the identity-keyed merge a re-import already uses.  What used to be here was a copy
+//     loop that knew the fields its author knew: a Nay carries no `take`, so the take-only filter
+//      dropped every 👎 on reload (the 2026-09-17 morning), and a new Card scalar was a silent loss
+//       until someone noticed.  Under the protocol a %Card is a %Card whatever it wears; the pages
+//        come back as the sittings they were (Cloud keyed by page), not folded into one dated page.
+//  The count returns synchronously (the rule's own answer per Card, so the log and the text agree);
+//   the text lands a few microtasks later — enWaft is async only because Travel is, no IO inside —
+//    and the stash effect writes 200ms after any mutation, so the Dexie put always carries it.
+Swarm_restash_heard(ident, from, st0):
+    let st = this.Swarm_stash_of(ident, st0)
+    if (!st || !ident) { return 0 }
+    let src = from || ident
+    let me = String(ident.sc.prepub || '')
+    let mag = src.o({ Mag: 'heard', pub: String(src.sc.prepub || '') })[0]
+    let rules = this.Swarm_protocol('heard')
+    let n = 0
+    for (const pg of (mag ? mag.o({ Cloud: 1 }) : [])) {
+        for (const card of pg.o({ Card: 1 })) { if (card.sc.id && !card.lematch(rules).skip) { n = n + 1 } }
+    }
+    let settings = mag && (mag.sc.tipped || mag.sc.no_handoff) ? 1 : 0
+    if (!mag || (!n && !settings)) {
+        if (st.Swarm_heards) { delete st.Swarm_heards[me] }
+        return 0
+    }
+    this.enWaft(mag, { matching: rules }).then((out) => {
+        if (out.errors && out.errors.length) { console.log('♥⚠ heard restash refused — ' + out.errors.join('; ')); return }
+        if (!st.Swarm_heards) { st.Swarm_heards = {} }
+        st.Swarm_heards[me] = { snap: out.snap }
+    })
+    return n
+// Swarm_heard_rehydrate — decode the stashed snap and GRAFT it onto the identity's own heard Mag.
+//  Idempotent by construction (Swarm_graft finds Mag by pub, Cloud by page, Card by (id, pub)), so a
+//   re-entered boot cannot double a wish.  The merge law's `played_through = max` (2026-09-21, renamed
+//    from `mire`) is applied to the decoded tree BEFORE the graft (graft itself is "the snap wins"), so a
+//     live card that has been played more since the stash keeps its count.  SYNC and stashed-gated like
+//      every sibling.  The reaction/verdict `_at` stamps need no such merge here — this is the SAME-SOUL
+//       stash↔identity round trip (one writer, one reader), not the cross-device merge (rung 3, "every
+//        `_at` = max") the crew mirror will need.
+//  LEGACY (entries written before 2026-09-17 carry `rows`, not `snap`): a Dexie stash on a real phone
+//   predates this and must still come back — the old row loop stays, one boot's worth, then re-stashes
+//    in the new shape at the next settle.
+Swarm_heard_rehydrate(w, ident, st0):
+    let st = st0 || this.top_House().stashed
+    let mine = st?.Swarm_heards?.[ident?.sc?.prepub]
+    if (!mine || !ident) { return 0 }
+    let me = String(ident.sc.prepub || '')
+    if (!mine.snap) { return this.Swarm_heard_rehydrate_rows(w, ident, mine) }
+    let got = this.decode_wh_lines(String(mine.snap))
+    if (!got.C) { console.log('♥⚠ heard rehydrate refused — ' + (got.errors ? got.errors.join('; ') : 'bad snap')); return 0 }
+    let live = ident.o({ Mag: 'heard', pub: me })[0]
+    let n = 0
+    for (const pg of got.C.o({ Cloud: 1 })) {
+        for (const card of pg.o({ Card: 1 })) {
+            let twin = live ? this.Heard_find(live, card.sc.id, card.sc.pub) : null
+            if (twin && +(twin.sc.played_through || 0) > +(card.sc.played_through || 0)) { card.sc.played_through = String(twin.sc.played_through) }
+            n = n + 1
+        }
+    }
+    this.Swarm_graft(ident, got.C)   // wires .c.up at every level
+    if (n) { console.log('♥ heard rehydrated — ' + n + ' reaction(s) survive the reload') }
+    return n
+// LEGACY KEY TRANSLATION (2026-09-21): a Dexie stash from before the stamps-not-flags rename carries the
+//  old flag names — `mire`→`played_through` translates directly; `take`/`nay` shared ONE `at` between them
+//   (the old flag model's own ambiguity), so it is routed by whichever reaction rode with it; `handed`
+//    carries over as a NAME with no `carried_at` (the legacy shape never had one).  `meh`, `via`, the three
+//     verdicts and `unseen` have no timestamp to recover in this shape and are left unset — safe: a stale
+//      verdict just re-asks once (Heard_takes), and a lost meh/via is low-stakes ambient metadata.
+Swarm_heard_rehydrate_rows(w, ident, mine):
+    let me = String(ident.sc.prepub || '')
+    let mag = ident.oai({ Mag: 'heard', pub: me })
+    mag.c.up = ident
+    if (mine.heard_ttl && !mag.sc.heard_ttl) { mag.sc.heard_ttl = String(mine.heard_ttl) }
+    if (mine.take_ttl && !mag.sc.take_ttl) { mag.sc.take_ttl = String(mine.take_ttl) }
+    if (mine.tipped && !mag.sc.tipped) { mag.sc.tipped = '1' }
+    if (mine.no_handoff && !mag.sc.no_handoff) { mag.sc.no_handoff = '1' }
+    let page = this.Heard_page ? this.Heard_page(mag, this.Swarm_now(w)) : null
+    if (!page) { return 0 }
+    let n = 0
+    for (const e of (mine.rows || [])) {
+        if (!e || !e.id) { continue }
+        let card = this.Heard_find(mag, e.id, e.pub) || page.i(e.pub ? { Card: 1, id: String(e.id), pub: String(e.pub) } : { Card: 1, id: String(e.id) })
+        card.c.up = card.c.up || page
+        if (e.mire && +(card.sc.played_through || 0) < +(e.mire || 0)) { card.sc.played_through = String(e.mire) }
+        if (e.at && e.take) { card.sc.hearted_at = String(e.at) }
+        else if (e.at && e.nay) { card.sc.nayed_at = String(e.at) }
+        if (e.handed) { card.sc.carried_by = String(e.handed) }
+        for (const k of this.Heard_listing_keys()) { if (e[k] != null && e[k] !== '') { card.sc[k] = String(e[k]) } }
+        card.bump()
+        n = n + 1
+    }
+    if (n) { console.log('♥ heard rehydrated (legacy rows) — ' + n + ' wish(es) survive the reload') }
+    return n
+
+// Swarm_pools_rehydrate — re-declare the compartments on the identity's %Pools shelf, in their stashed
+//  order (declaration order IS priority).  Idempotent: find-or-create by name, values refreshed.  SYNC and
+//   stashed-gated like every sibling, so no Book world moves.
+Swarm_pools_rehydrate(w, ident, st0):
+    let st = st0 || this.top_House().stashed
+    let mine = st?.Swarm_pools?.[ident.sc.prepub]
+    if (!mine || !ident) { return 0 }
+    let shelf = ident.o({ SoundPooling: 1 })[0] || ident.oai({ SoundPooling: 1, pub: String(ident.sc.prepub || 'me') })
+    shelf.c.up = ident
+    if (mine.consent) { let c = shelf.oai({ Consent: 1 }); c.c.up = shelf; if (!c.sc.at && mine.consent !== '1') { c.sc.at = String(mine.consent) } }
+    if (mine.budget_mb && String(shelf.sc.budget_mb || '') !== String(mine.budget_mb)) { shelf.sc.budget_mb = String(mine.budget_mb) }
+    let n = 0
+    for (const e of (mine.rows || [])) {
+        if (!e || !e.name) { continue }
+        let p = shelf.oai({ Pool: 1, name: String(e.name) })
+        p.c.up = shelf
+        if (e.take && String(p.sc.take || '') !== String(e.take)) { p.sc.take = String(e.take) }
+        if (e.cap && String(p.sc.cap || '') !== String(e.cap)) { p.sc.cap = String(e.cap) }
+        if (e.salt && String(p.sc.salt || '') !== String(e.salt)) { p.sc.salt = String(e.salt) }
+        if (e.who && String(p.sc.who || '') !== String(e.who)) { p.sc.who = String(e.who) }
+        if (e.share && String(p.sc.share || '') !== String(e.share)) { p.sc.share = String(e.share) }
+        p.bump()
+        n = n + 1
+    }
+    if (n) { console.log('🏊 pools rehydrated — ' + n + ' compartment(s) survive the reload') }
+    return n
+// ── the SOURCE CHOICE is the NINTH pillar (2026-09-05, the owner: *"can we get it to stay on
+//  SoundPooling if that was where its last source was pointed"* — and, in the same breath, *"unless a
+//   new friend is minted!"*) ──────────────────────────────────────────────────────────────────────
+//  WHO I AM LISTENING WITH is a DECISION — the pool rung, or one pinned holder (Radio_source_next /
+//   Radio_aim_set) — and it lived ONLY on the %Radio particle in a runtime world.  Nothing under a
+//    world is durable, so every reload silently walked the listener back to the friends-first ladder:
+//     they chose SoundPooling on purpose, refreshed, and the radio quietly stopped obeying them, with no
+//      line anywhere saying it had forgotten.  Same disease as the crew cert, the standing reach, the
+//       pool compartment and the heard Mag, ninth organ — and on a PHONE (no folder ⇒ no account snap)
+//        the stash is the only home there is.
+//  THE EXCEPTION, which is the whole reason this pillar is not three lines: a restored pin is a BLINDER.
+//   Meeting somebody new is the one event that should re-open the dial — a choice made when I had two
+//    friends must not hide the third from me forever.  So the entry carries the ROLL of friends I had at
+//     the moment I chose; a friend on today's roll who is not on that roll is NEW, and a new friend SPENDS
+//      the choice (deleted, not merely skipped — `saw` is never refreshed, so a skip would disable the
+//       restore for the rest of that stash's life and rot there unexplained).
+//  WHY THE ROLL AND NOT `pier.sc.since` ALONE.  ⚠ THE ORIGINAL REASON IS NOW FIXED, AND THE ROLL STILL
+//   STANDS — do not "simplify" it away on the strength of the repair.  It USED to be that since did not
+//    survive a reload: the stash entry was page(prepub|pub|friendly) + grants + nots with no `since`, and
+//     Swarm_piers_rehydrate re-seals through Swarm_seal, whose "a re-seal never resets it" guard met an
+//      ABSENT since and stamped Swarm_now — so a stamp comparison found EVERY friend newer than the
+//       choice on EVERY boot and dropped it every time.  `since` now travels (Swarm_pier_entry stashes it,
+//        rehydrate restores it over seal's stamp, §4.2 2026-09-08), so that specific trap is gone.
+//  THE ROLL IS STILL RIGHT, for the reason that was always the deeper one: `since` records when THE BOND
+//   formed, and the question here is when I MADE THE CHOICE.  Those are different events, and only the
+//    roll answers the second.  A friend sealed long ago but first seen by this decision is new TO IT.
+//  `at` is stamped
+//        anyway (Swarm_now, never Date.now — a Book path must be pinnable) because it is the honest
+//         record of when the decision was taken, and it is what the console line has to say.
+// Swarm_radio_roll — the friends I have RIGHT NOW, as prepubs.  Device-link rails are excluded: my own
+//  second phone arriving is not "meeting someone new", and letting it spend the choice would re-open the
+//   dial on every link ceremony.
+Swarm_radio_roll(ident):
+    let peering = ident ? this.Swarm_peering(ident) : null
+    let roll = []
+    //  a retired friendship leaves the roll (2026-09-07, the membership door) — the dial should not carry
+    //   a bond the human ended. Nascent piers stay: they simply have no music yet, which the dial handles.
+    for (const p of (peering ? this.Swarm_peers(ident) : [])) {
+        if (!p.sc.pub) { continue }
+        if (p.sc.link && this.Swarm_pier_linklive(p)) { continue }
+        roll.push(String(p.sc.pub))
+    }
+    roll.sort()
+    return roll
+// Swarm_radio_face — the %Radio the choice lives on, and ONLY when it is mine.  `top.c.radio_w` is a
+//  LIVE-tab pin by law (Swarmation: "a Book must NEVER touch top_House().c.radio_w"), and the pub check
+//   makes a puppet identity answer null rather than mirroring whichever tab happens to be running — so a
+//    Book that walks every pillar reads no radio, and this pillar stays deterministic there.
+Swarm_radio_face(ident):
+    let rw = this.top_House().c.radio_w
+    if (!rw || !ident || typeof this.Radio_pub !== 'function') { return null }
+    if (String(this.Radio_pub(rw) || '') !== String(ident.sc.prepub || '')) { return null }
+    return rw.o({ Radio: 1 })[0] || null
+// Swarm_radio_stash — write the choice, but ONLY when it is a NEW choice.  A plain mirror (restash_all
+//  runs on graft, on seal, on plenty of seams) must not re-date the decision or refresh its roll: doing
+//   so would quietly swallow the very "a new friend was minted" event the exception exists to notice.
+//    Same live-self law as every sibling — the guard is inside Swarm_stash_of, so a caller with its own
+//     `st` may drive it anywhere and a Book's puppets can never reach the House's Dexie.
+Swarm_radio_stash(w, ident, radio, st0):
+    let st = this.Swarm_stash_of(ident, st0)
+    if (!st || !ident || !radio || !radio.sc) { return 0 }
+    let want = {}
+    if (radio.sc.source) { want.source = String(radio.sc.source) }
+    if (radio.sc.aim) { want.aim = String(radio.sc.aim) }
+    if (radio.sc.aim_by) { want.aim_by = String(radio.sc.aim_by) }
+    if (!st.Swarm_radio) { st.Swarm_radio = {} }
+    // roaming the friends-first ladder is the DEFAULT, not a decision — nothing to remember, and an
+    //  entry left standing would out-live the person un-choosing it.
+    if (!want.source && !want.aim) {
+        if (st.Swarm_radio[ident.sc.prepub]) { delete st.Swarm_radio[ident.sc.prepub] }
+        return 0
+    }
+    let had = st.Swarm_radio[ident.sc.prepub]
+    if (had && String(had.source || '') === String(want.source || '') && String(had.aim || '') === String(want.aim || '')) { return 1 }
+    want.at = String(this.Swarm_now(w || radio.c.w))
+    want.saw = this.Swarm_radio_roll(ident)
+    st.Swarm_radio[ident.sc.prepub] = want
+    return 1
+Swarm_restash_radio(ident, from, st0):
+    let radio = this.Swarm_radio_face(from || ident)
+    if (!radio) { return 0 }
+    return this.Swarm_radio_stash(radio.c.w, ident, radio, st0)
+// Swarm_radio_rehydrate — put the choice back on the %Radio face.  THREE ANSWERS, and the third is
+//  load-bearing: 1 = restored, 0 = settled (nothing stashed, or the choice was spent by a new friend),
+//   null = THE FACE IS NOT STANDING YET, so the caller must ask again.  The radio world is stamped by
+//    Stoker_ensure well after the station stands, and a latch that fired on "no radio yet" would drop
+//     the restore on the floor exactly on a cold boot — which is the only boot that matters here.
+//  Idempotent and value-guarded like Swarm_pools_rehydrate: a second pass writes nothing new.
+Swarm_radio_rehydrate(w, ident, st0, radio0):
+    let st = st0 || this.top_House().stashed
+    let mine = st?.Swarm_radio?.[ident?.sc?.prepub]
+    let radio = radio0 || this.Swarm_radio_face(ident)
+    if (!radio || !radio.sc) { return null }
+    if (!mine) { return 0 }
+    // THE EXCEPTION — the owner: *"unless a new friend is minted!"*
+    let saw = {}
+    for (const p of (mine.saw || [])) { saw[String(p)] = 1 }
+    let fresh = []
+    for (const p of this.Swarm_radio_roll(ident)) { if (!saw[p]) { fresh.push(p) } }
+    if (fresh.length) {
+        let who = this.Radio_friendly ? this.Radio_friendly(radio.c.w, fresh[0]) : ''
+        console.log('📻 source NOT restored — ' + fresh.length + ' new friend(s) since the choice (' + (who || fresh[0].slice(0, 8)) + ') — the dial roams again')
+        if (st.Swarm_radio) { delete st.Swarm_radio[ident.sc.prepub] }
+        return 0
+    }
+    let said = ''
+    if (mine.aim) {
+        if (String(radio.sc.aim || '') !== String(mine.aim)) { radio.sc.aim = String(mine.aim) }
+        // a stashed aim was CHOSEN (only Radio_aim_set stashes one) — it comes back pinned, never roaming
+        radio.c.pinned = 1
+        if (mine.aim_by && String(radio.sc.aim_by || '') !== String(mine.aim_by)) { radio.sc.aim_by = String(mine.aim_by) }
+        said = 'aimed at ' + String(mine.aim_by || String(mine.aim).slice(0, 8))
+    }
+    if (mine.source) {
+        if (String(radio.sc.source || '') !== String(mine.source)) { radio.sc.source = String(mine.source) }
+        said = said ? (said + ' + ' + String(mine.source)) : ('the ' + String(mine.source) + ' rung')
+    }
+    radio.bump()
+    console.log('📻 source restored — ' + said + ' survives the reload (chosen at ' + String(mine.at || '?') + ')')
+    return 1
+//#endregion
+
+//#region suggestion — "you'd love this": durable, store-and-forward, async to their being online
+//  A %Suggest is a REFERRING particle (enid + display scalars + note — never a second %Record)
+//   living under the friendship %Pier on BOTH sides and in the pier stash (reload-proof).
+//    Delivery: best-effort NOW over the booked lane, then RE-OFFERED every time the friend's
+//     rebirth greeting arrives (their standup his us), until their suggest_got retires it —
+//      so a suggestion made at midnight lands when they surface at noon, no queue ceremony.
+//       The far side resolves the enid against the share's mirror crate (usually already
+//        there — the husk cast precedes it) and ▶ auditions at once.
+
+// mint + stash + first send.  rec = a standing %Record (mine or a mirror's); note optional.
+Swarm_suggest(w, ident, prepub, rec, note):
+    if (!rec?.sc?.id || !prepub) return false
+    let pier = this.Swarm_peering(ident)?.o({ Pier: 1, pub: String(prepub) })[0]
+    if (!pier) return false
+    let sug = pier.oai({ Suggest: 1, id: String(rec.sc.id), by: String(ident.sc.prepub) })
+    sug.c.up = pier
+    if (rec.sc.title) sug.sc.title = String(rec.sc.title).split(',').join(' ·')
+    if (rec.sc.artist) sug.sc.artist = String(rec.sc.artist).split(',').join(' ·')
+    if (note) sug.sc.note = String(note).split(',').join(' ·').slice(0, 80)
+    sug.bump()
+    this.Swarm_suggest_stash(ident, String(prepub), sug)
+    this.Swarm_suggest_send(w, ident, String(prepub), sug)
+    return true
+
+// RELIABILITY (2026-07-29 audit — see Peeroleum_send's FRAME RELIABILITY POLICY): suggest/suggest_got are
+//  RELIABLE, NOT ephemeral gossip, and deliberately so.  Unlike pulse/ive_got/repli_want they are NOT re-sent
+//   every beat — a suggest fires on the user's act and is re-offered ONLY when the friend's rebirth greeting
+//    arrives (Swarm_suggest_resend off Swarm_heard_hi), bounded to the un-`got` set (stash-capped at 24/friend),
+//     and retired the moment suggest_got lands (`sug.sc.got`).  A delivered suggest's emit is acked-then-culled
+//      like any app data; only an UNdelivered one (stalled peer) leaves an emit, and at most ~24 — nowhere near
+//       the outbox cliff, and the structural backstop caps even that.  It NEEDS in-session redelivery (a drop to
+//        an already-connected friend must resend before the next reconnect — that is the transport emit's job),
+//         so making it ephemeral would silently lose suggestions.  Durable store-and-forward = reliable.
+Swarm_suggest_send(w, ident, prepub, sug):
+    if (sug.sc.got) return false
+    let body = { kind: 'suggest', page: this.Swarm_page(ident), id: String(sug.sc.id) }
+    if (sug.sc.title) body.title = String(sug.sc.title)
+    if (sug.sc.artist) body.artist = String(sug.sc.artist)
+    if (sug.sc.note) body.note = String(sug.sc.note)
+    return this.Swarm_deliver(w, ident, prepub, body)
+
+// re-offer everything they haven't confirmed — called when their hi says they're here.
+Swarm_suggest_resend(w, ident, prepub):
+    let pier = this.Swarm_peering(ident)?.o({ Pier: 1, pub: String(prepub) })[0]
+    if (!pier) return 0
+    let sent = 0
+    for (const sug of pier.o({ Suggest: 1, by: String(ident.sc.prepub) })) {
+        if (sug.sc.got) continue
+        if (this.Swarm_suggest_send(w, ident, String(prepub), sug)) sent = sent + 1
+    }
+    return sent
+
+// hear that a friend started one of our tracks (Radio.g, THE LISTENERS' CURSOR): sealed friends only — a stranger's is a
+//  %rebuff — and it lands only where the cursor is on (Stoker_listened)
+Swarm_listened(w, ident, frame):
+    let from = frame.page?.prepub
+    let pier = from ? this.Swarm_peering(ident)?.o({ Pier: 1, pub: String(from) })[0] : null
+    if (!pier) {
+        this.Swarm_rebuff(ident, 'listened_stranger', from)
+        return
+    }
+    if (!frame.id || typeof this.Stoker_listened !== 'function') return
+    this.Stoker_listened(String(from), String(frame.id))
+
+// hear a suggestion: sealed friends only (a stranger's is a %rebuff, nothing lands).  Mint
+//  the same referring shape under MY pier for them, stash it, confirm with suggest_got.
+Swarm_suggested(w, ident, frame):
+    let from = frame.page?.prepub
+    let pier = from ? this.Swarm_peering(ident)?.o({ Pier: 1, pub: String(from) })[0] : null
+    if (!pier) {
+        this.Swarm_rebuff(ident, 'suggest_stranger', from)
+        return
+    }
+    if (!frame.id) return
+    let sug = pier.oai({ Suggest: 1, id: String(frame.id), by: String(from) })
+    sug.c.up = pier
+    if (frame.title && !sug.sc.title) sug.sc.title = String(frame.title).split(',').join(' ·')
+    if (frame.artist && !sug.sc.artist) sug.sc.artist = String(frame.artist).split(',').join(' ·')
+    if (frame.note && !sug.sc.note) sug.sc.note = String(frame.note).split(',').join(' ·').slice(0, 80)
+    sug.bump()
+    this.Swarm_suggest_stash(ident, String(from), sug)
+    this.Swarm_deliver(w, ident, String(from), { kind: 'suggest_got', page: this.Swarm_page(ident), id: String(frame.id) })
+
+// hear the confirmation: MY suggestion reached them — retire the re-offer, keep the memory.
+Swarm_suggest_got(w, ident, frame):
+    let from = frame.page?.prepub
+    let pier = from ? this.Swarm_peering(ident)?.o({ Pier: 1, pub: String(from) })[0] : null
+    if (!pier || !frame.id) return
+    let sug = pier.o({ Suggest: 1, id: String(frame.id), by: String(ident.sc.prepub) })[0]
+    if (!sug) return
+    sug.sc.got = 1
+    sug.bump()
+    this.Swarm_suggest_stash(ident, String(from), sug)
+
+// the durable lane beside grants/nots in the pier stash: keyed (id, by), capped, got carried.
+Swarm_suggest_stash(ident, prepub, sug):
+    let live = this.Swarm_live_self ? this.Swarm_live_self() : null
+    if (!live || live !== ident) return
+    let st = this.top_House().stashed
+    if (!st) return
+    if (!st.Swarm_piers) st.Swarm_piers = {}
+    let mine = st.Swarm_piers[ident.sc.prepub]
+    if (!mine) { mine = {}; st.Swarm_piers[ident.sc.prepub] = mine }
+    let e = mine[prepub]
+    if (!e) { e = { page: { prepub: prepub }, grants: [], nots: [] }; mine[prepub] = e }
+    if (!e.suggests) e.suggests = []
+    let row = { id: String(sug.sc.id), by: String(sug.sc.by) }
+    if (sug.sc.title) row.title = String(sug.sc.title)
+    if (sug.sc.artist) row.artist = String(sug.sc.artist)
+    if (sug.sc.note) row.note = String(sug.sc.note)
+    if (sug.sc.got) row.got = 1
+    let kept = []
+    for (const r of e.suggests) {
+        if (!(r.id === row.id && r.by === row.by)) kept.push(r)
+    }
+    kept.push(row)
+    e.suggests = kept.slice(-24)
+//#endregion
+
+//#region ive got — the reachable-music tally (Radio_todo §9.1c)
+//  After the seal a friendship should COUNT: each side offers a tiny collection summary — counts,
+//   never Records — as an ADDITIVE ive_got frame on the same wire as the handshake. It lands under
+//    MY %Pier for them as %IveGot,by,count facts, and the tally folds my shelf plus every live
+//     friend's last boast into ONE number a face can show (a Pier with music is a BIGGER cell).
+//      The full tree stays a DELIBERATE pull (§9.2 Selections) — the tally is the appetite for it.
+//  (The presence heartbeat that used to share this region, Swarm_pulse_all, stays in Swarm.g.)
+
+// Swarm_music_census — count MY OWN shelf in w: the %Mine,pub:<my prepub> / stock home
+//  (Radio_spec §2.2 rung 3 — was %Library,pier:; keyed by WHOSE it is, a key not a nickname, so live
+//   and Book read the same). records = every %Record; artists = distinct sc.artist. No home counts
+//    zero — an honest empty shelf, never an error.
+Swarm_music_census(w, ident):
+    let records = 0
+    let artists = new Set()
+    // opt-in census world (w.c.census_w — the live share points it at the RADIO world, where
+    //  the stoker actually shelves): unset = census w itself, the Book behaviour, unchanged.
+    let cw = w.c.census_w || w
+    for (const home of cw.o({ Mine: 1, pub: ident.sc.prepub })) {
+        for (const shelf of home.o({ stock: 1 })) {
+            for (const r of this.Ra_recs(shelf)) {
+                records = records + 1
+                if (r.sc.artist) artists.add(r.sc.artist)
+            }
+        }
+    }
+    return { records: records, artists: artists.size }
+
+// Swarm_gossip_music — the deliberate boast: census my shelf and tell every LIVE sealed friend
+//  (a revoked Pier hears nothing — the grant gates the gossip). Unsigned v1: the frame rides an
+//   authenticated link already (Books: the mail|mock wire; live: the hello-bound station) and a
+//    boast is advisory — nothing grants off it. Best-effort: returns how many friends heard.
+Swarm_gossip_music(w, ident):
+    let counts = this.Swarm_music_census(w, ident)
+    let told = 0
+    let piers = this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []
+    let granted = 0
+    for (const pier of piers) {
+        if (!this.Swarm_pier_live(pier, 'Music')) continue
+        granted = granted + 1
+        let frame = { kind: 'ive_got', page: this.Swarm_page(ident), records: counts.records, artists: counts.artists }
+        if (this.Swarm_deliver(w, ident, pier.sc.pub, frame)) told = told + 1
+    }
+    // ELECTRODE (2026-08-06) — THE ADVERTISE RATIO, and it is three numbers because the boast can
+    //  die at three different places that all look identical from the outside ("they can't see my
+    //   music").  piers → granted is the GRANT gate (revoked, or a half-seal that never got a Music
+    //    grant); granted → told is the TRANSPORT gate (Swarm_deliver found no carrier — offline, or
+    //     no route minted).  `records` is what we were boasting; a census of 0 means the shelf is the
+    //      problem and neither gate matters.  This verb previously returned `told` to a caller that
+    //       discarded it, so all three facts existed for one stack frame and were never once seen.
+    //  CENSUS BREAKDOWN (2026-08-06): live, BOTH tabs advertised `records:0` on every beat while one
+    //   of them was demonstrably serving a 474-chunk track to the other — so each was telling the
+    //    other "I have nothing" while the bytes moved fine.  A zero census has three distinct causes
+    //     that the single number cannot tell apart, so name them:
+    //      `cw`=0 ⇒ w.c.census_w was never pointed at the RADIO world, so we counted the swarm world,
+    //        which holds no %Mine and can only ever answer 0 (the default in Swarm_music_census is
+    //         `w` itself — the BOOK behaviour, wrong for a live tab);
+    //      `selfs`>0 but `homes`=0 ⇒ a %Mine exists but under a DIFFERENT pub than ident.prepub —
+    //        an identity mismatch, not an empty shelf;
+    //      `homes`>0 and `stocks`=0 ⇒ the home stands but the stoker has shelved no stock yet.
+    let cw_set = 0, homes = 0, selfs = 0, stocks = 0
+    if (typeof this.Radio_trace === 'function') {
+        try {
+            let cw = w.c.census_w || w
+            cw_set = w.c.census_w ? 1 : 0
+            selfs = cw.o({ Mine: 1 }).length
+            for (const home of cw.o({ Mine: 1, pub: ident.sc.prepub })) {
+                homes = homes + 1
+                stocks = stocks + home.o({ stock: 1 }).length
+            }
+        } catch (er) {}
+        try { this.Radio_trace(null, { ev: 'advertise', piers: piers.length, granted: granted, told: told,
+            records: +(counts.records || 0), artists: +(counts.artists || 0),
+            cw: cw_set, selfs: selfs, homes: homes, stocks: stocks }) } catch (er) {}
+    }
+    return told
+
+// Swarm_boast_on_hi — the boast a non-reply swarm_hi triggers, THROTTLED per ident.  swarm_hi is the
+//  rebirth greeting re-sent on every reconnect, so under a flapping relay (live: ws 1006 every ~600ms
+//   during a heavy heist) an un-throttled boast-per-hi is a STORM: each ive_got the far side hears books
+//    a full inbox unemit + O(depth) rollup (ive_got is off the receive-bypass, Peeroleum :664), piling the
+//     sink inbox to its 2000 backstop and starving the reliable handshakes (Invite/LinkDevice) queued in
+//      the same serial lane.  The hi-time boast is usually worthless anyway — the census stands LATER than
+//       the handshake (records:0, see Swarm_boast_floor), so the real boast is the change-triggered one.
+//        The FIRST hi in a quiet spell still boasts a new friend promptly; repeats within the cooldown are
+//         dropped.  Books drive Swarm_gossip_music DIRECTLY, so only the incidental hi-path boast is gated.
+Swarm_boast_on_hi(w, ident):
+    if (this.Swarm_hi_boast_cooling(w, ident)) return
+    ident.c.gossip_hi_at = Date.now()
+    this.Swarm_gossip_music(w, ident)
+
+// Swarm_hi_boast_cooling — true while this ident's hi-boast is still inside its cooldown, so the caller
+//  skips the boast.  Per-IDENT (not per-world) so two identities in a Book never cross-suppress.  Knob
+//   `swarm_gossip_hi_ms` (default 15s; 0 restores the old fire-every-hi behaviour).
+Swarm_hi_boast_cooling(w, ident):
+    let floor = (w.c.swarm_gossip_hi_ms == null ? 15000 : +w.c.swarm_gossip_hi_ms)
+    if (!floor) return 0
+    return ident.c.gossip_hi_at && (Date.now() - ident.c.gossip_hi_at) <= floor
+
+// Swarm_boast_floor — the boast's RE-SEND FLOOR, the twin of the re-offer floor in Swarm_share_beat.
+//  Until 2026-08-06 `Swarm_gossip_music` had exactly ONE trigger: hearing a non-reply `swarm_hi`
+//   (Swarm_hear_hi).  That fires at standup and on an era-kick — which is the one moment the census is
+//    GUARANTEED wrong, because both things it counts stand LATER than the handshake: the radio world
+//     (Stoker_ensure stamps top.c.radio_w when the dial first runs) and the share glue (Swarm_share_up
+//      stamps w.c.census_w).  So the boast said `records:0`, nothing ever recomputed it, and the peer's
+//       %IveGot read "they have nothing" for the whole session while bytes moved fine over the same
+//        seal.  The tell in the trace ring was not the zero — it was that only THREE `advertise` marks
+//         existed, all inside the first 40s, on a tab that had been up for eight minutes.
+//  Change-triggered, with a floor under it, for the same reason the re-offer has one: a mark that is
+//   wrong-but-stable is a silent permanent hole, and a floor turns any such hole into a bounded delay.
+//    The census itself is throttled separately (`boast_look_at`) because it walks the shelf — cheap at
+//     16 records, not something to run twice per 600ms beat at collection scale.
+Swarm_boast_floor(w, ident):
+    let now = Date.now()
+    if (w.c.boast_look_at && (now - w.c.boast_look_at) < 5000) return
+    w.c.boast_look_at = now
+    let cn = this.Swarm_music_census(w, ident)
+    let mark = String(cn.records || 0) + ':' + String(cn.artists || 0)
+    let floor = (w.c.swarm_boast_floor_ms == null ? 30000 : +w.c.swarm_boast_floor_ms)
+    if (w.c.boast_mark === mark && w.c.boast_at && (now - w.c.boast_at) <= floor) return
+    w.c.boast_mark = mark
+    w.c.boast_at = now
+    this.Swarm_gossip_music(w, ident)
+
+// Swarm_ive_got — hear a boast: facts land ONLY under an already-sealed %Pier for the boaster.
+//  A stranger's boast is a %rebuff and nothing else — no fact, no Pier: gossip never opens a door.
+Swarm_ive_got(w, ident, frame):
+    let pier = this.Swarm_peering(ident)?.o({ Pier: 1, pub: frame.page?.prepub })[0]
+    if (!pier) {
+        // A CREWMATE IS NEVER A STRANGER (2026-09-03).  A boast that arrives in the gap between the
+        //  ledger landing and the pier sealing is EARLY, not hostile — and the Door should not carry a
+        //   refusal of one's own Captain.  Stay silent and let the seal catch up; gossip still opens no
+        //    door (no pier is minted here), which was the rule the rebuff was protecting.
+        let cboast = ident.o({ Crew: 1 })[0]
+        let fp = String(frame.page?.prepub || '')
+        let samb = (a, b) => a && b ? (String(a).startsWith(String(b)) || String(b).startsWith(String(a))) : false
+        if (cboast && fp && cboast.o({ mate: 1 }).some((m) => String(m.sc.mate) !== String(ident.sc.prepub) && (samb(m.sc.mate, fp) || samb(m.sc.pub, fp)))) { return null }
+        this.Swarm_rebuff(ident, 'ive_got_stranger', frame.page?.prepub)
+        return null
+    }
+    this.Swarm_ive_got_fact(pier, 'records', frame.records)
+    this.Swarm_ive_got_fact(pier, 'artists', frame.artists)
+    // BOAST-HEARD electrode (2026-08-06, the trace lane): the sink half of `advertise` — without
+    //  it, "the boast never arrived" and "the boast arrived but the husks didn't" read identically
+    //   on the sink's ring.  With it the birth story is one unbroken line: advertise (their ring) →
+    //    boast-heard → crate-born → mirror-merge → want-first → page-first → dial (this ring).
+    if (typeof this.Radio_trace === 'function') {
+        try { this.Radio_trace(null, { ev: 'boast-heard', of: String(frame.page?.prepub || '').slice(0, 8), records: +(frame.records || 0) }) } catch (er) {}
+    }
+    return pier
+
+// Swarm_ive_got_fact — one %IveGot,by,count fact, updated IN PLACE (oai finds by the by: key —
+//  a fresh boast replaces the count, never a second fact).
+Swarm_ive_got_fact(pier, by, count):
+    let fact = pier.oai({ IveGot: 1, by: by })
+    fact.c.up = pier
+    fact.sc.count = String(count ?? 0)
+    fact.bump()
+    return fact
+
+// Swarm_ive_got_tally — the number a face shows: my shelf plus every live friend's last boast.
+//  Artists sum naively (counts cannot dedup across shelves) — a REACHABLE tally, not a union.
+Swarm_ive_got_tally(w, ident):
+    let own = this.Swarm_music_census(w, ident)
+    let records = own.records
+    let artists = own.artists
+    let piers = 0
+    for (const pier of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
+        if (!this.Swarm_pier_live(pier, 'Music')) continue
+        let fact = pier.o({ IveGot: 1, by: 'records' })[0]
+        if (!fact) continue
+        piers = piers + 1
+        records = records + Number(fact.sc.count || 0)
+        artists = artists + Number(pier.o({ IveGot: 1, by: 'artists' })[0]?.sc?.count || 0)
+    }
+    return { records: records, artists: artists, piers: piers }
+//#endregion
+
+//#region share — the STANDING music session: what a friendship is FOR
+//  After the seal the music must actually MOVE: my stock is served to every Music-granted
+//   friend, and their casts fill per-friend %Theirs crates in the RADIO world — the crates
+//    the Riffle browses and the radio's pool dial draws from.  Every wire below is the proven
+//     Repli machinery (the Radiation Books); this region is only the LIVE glue: arm, enroll,
+//      offer, pump.  The pump is a detached era-guarded wall-clock loop OUTSIDE the beliefs
+//       mutex, entering the machine through post_do (the carrier's own seam) so a beat never
+//        overlaps a think and never awaits unbounded inside one.
+
+// Swarm_share_granted — the Repli consent hook: the requester holds a LIVE Music grant on my
+//  page (tombstones override — Swarm_pier_live checks at use, never cached).
+Swarm_share_granted(peer):
+    let me = this.Swarm_live_self ? this.Swarm_live_self() : null
+    return this.Swarm_slot_granted(me, peer)
+
+// Swarm_share_present — the pull's source-liveness hook: only want pages over wires whose
+//  caster has pulsed recently (a want at silence is a permanent ra_wanted hole).
+//  Presence SUBTRACTS here, never adds: a relay socket being open does NOT mean that peer will
+//   serve us, so it can only rule a source OUT (the relay says their socket is gone ⇒ the want is a
+//    guaranteed hole), never in.  heard_at — an actual voucher-checked frame from them — stays the
+//     positive evidence.  Unknown presence leaves the gate exactly as it was.
+// Swarm_socket_fresh — "has the WIRE said anything lately?"  Reads the global socket_heard stamped at
+//  raw ws receipt (Lies_deliver_soon — off-think, cannot be starved by a mutex hold).  Coarse on
+//   purpose: it is only ever used to HOLD a subtractive gate open while the per-pier stamp catches up,
+//    never as positive per-pier evidence.
+Swarm_socket_fresh(p, ms):
+    let M = this.top_House ? this.top_House() : null
+    return !!(M && M.c.socket_heard && (Date.now() - M.c.socket_heard) < (+ms || 20000))
+
+// Swarm_share_greet — tell ONE pier our share is up: arm the rx for its route and send repli_ready.
+//  Was the body of Swarm_share_up's loop, which ran ONCE at share-up over the piers that existed
+//   THEN.  A friend sealed AFTER share_up never got it — no rx armed, no repli_ready — so their Mag
+//    landed and nothing wanted a single chunk: the newcomer sat at "nothing on the shelf yet" beside
+//     a friend with 41 records (2026-09-11 night, headless arrivals: 2 of 5 pulled — the other 3 had
+//      sealed a second after share_up).  Now the seal calls it too (Swarm_seal, when share_up already
+//       stands).  Idempotent: register_rx guards on route.c.repli_rx and repli_ready dedups at the far end.
+Swarm_share_greet(w, ident, p):
+    if (!p || !p.sc || !p.sc.pub) { return false }
+    if (this.Swarm_pier_husk(ident, p)) { return false }   // a husk is me — no repli_ready, no %Owed junk
+    let route = this.Swarm_station_pier(w, ident, String(p.sc.pub))
+    if (route && !route.c.repli_rx) { this.Repli_register_rx(w, route) }
+    if (!this.Swarm_deliver(w, ident, String(p.sc.pub), { kind: 'repli_ready', page: this.Swarm_page(ident) })) { this.Swarm_owed_note(w, p, 'repli_ready'); return false }
+    return true
+
+Swarm_share_present(from, w):
+    return this.Swarm_share_present_of(this.Swarm_live_self ? this.Swarm_live_self() : null, from, w)
+// Swarm_share_present_of — the same question for a named identity (the live self, or a Book's puppet).
+Swarm_share_present_of(me, from, w):
+    if (me && me.c.seat_lost && me.c.seat_lost[String(from)]) return false   // logged out of their one seat (GrantBorrowing)
+    let p = me ? this.Swarm_peering(me)?.o({ Pier: 1, pub: String(from) })[0] : null
+    // A BORROWED SOURCE (GrantBorrowing): no friendship of my own with them, but a live %Borrowing — I only
+    //  hear from them because I took the seat.  Presence still only subtracts: the relay's word, nothing more.
+    //  Checked whether or not I hold a COPY of their friendship (a Cave carries the Captain's piers, but
+    //   never hears from those friends itself, so its copy's heard_at would say no forever).
+    if (me) {
+        let bw = this.Swarm_borrowing(me, String(from))
+        if (bw && +bw.sc.exp > Math.floor(Date.now() / 1000)) return !(w && typeof this.Presence_live === 'function' && this.Presence_live(w, from) === false)
+    }
+    // heard_at is stamped in the hear funnel UNDER THE BELIEFS MUTEX (2026-08-13 audit #3), so a long
+    //  hold starves the stamp while frames pour in fine — the gate then shut on a provably-live friend
+    //   and SELF-LOCKED (shut → fewer frames → staler stamp).  Two repairs, both here: the window is
+    //    ≥4× the ~5s pulse cadence (was exactly 4 missed drains from shutting), and a RECENTLY-HEARD
+    //     SOCKET holds the gate open — undrained frames in the batch are presence the stamp hasn't
+    //      caught up to, not silence.  Presence still only ever subtracts.
+    let sockFresh = this.Swarm_socket_fresh(p, 20000)
+    if (!(p && p.c.heard_at && ((Date.now() - p.c.heard_at) < 40000 || sockFresh))) return false
+    if (w && typeof this.Presence_live === 'function' && this.Presence_live(w, from) === false) return false
+    return true
+
+// COME-BACK CATALOG, THE NEGATIVE RESULT (2026-08-11, Radio_todo §0): a pushed catalog into a
+//  returning friend's startup window is lost (their Repli_arm hasn't run), and every back-signal
+//   tried here — no_protocol complaints, offer-mark resets, a recap ask — measured a no-op,
+//    because each ceases or fires before the one moment that matters (the peer BECOMING ready).
+//     The mature fix is consent-shaped: don't push repli_lines until the peer's Grant is ACTIVE —
+//      i.e. the receiving side says "my rx is armed, send" as part of the grant lifecycle, not as
+//       frame-level reliability.  Design in Radio_todo §0 (Grant activation).
+
+// Swarm_repli_ready — GRANT ACTIVATION, the receiving half.  A sealed friend announces its Repli rx
+//  is ARMED — sent once from the bottom of ITS Swarm_share_up, i.e. from the side that KNOWS, at the
+//   moment it becomes true.  This is the signal every back-channel above tried to synthesise and
+//    could not: they all fired before or after the ready moment; this IS the ready moment.
+//  AUTHENTICATED: it rides the swarm envelope with a page in the body, so the hear funnel's voucher
+//   gate has already proven the sender is the sealed pier it claims — activation is a consent fact
+//    and must not be forgeable.  Then: stamp the route ACTIVE and un-spend the offer mark, and the
+//     ordinary 600ms beat re-offers through every gate it always used — landing, because the rx it
+//      aims at is armed by definition (measured shape: come-back catalog ~at the peer's share_up,
+//       not at the 60s floor).
+//  TODAY AN ACCELERATOR, NOT YET A GATE: a route never stamped rx_ready keeps the floor-backstopped
+//   behaviour, so an old peer that never announces loses nothing.  The maturation — offers HELD
+//    until the grant is ACTIVE, the full consent reading — is Radio_todo §0 (Grant activation).
+//  THE ASK IS ANSWERED HERE, NOT LEFT TO THE BEAT (2026-08-11, the owner: "a newly arrived peer
+//   must ask for some Mag").  The first cut only un-spent the offer mark and trusted the 600ms
+//    beat to re-offer — and two live trials still measured the come-back at the 60s floor: the
+//     beat's cadence is nominal, its PHASES are minute-scale under a wedged tour/cull, so a mark
+//      reset waits on whenever the offer loop next actually runs.  A request deserves a reply, so
+//       the offer fires RIGHT HERE, detached (the funnel dispatch does not await this handler),
+//        through the same gates and mark discipline the beat uses (Swarm_offer_now).  The reset
+//         stays: if the immediate offer throws, the mark is still null and the beat + floor
+//          backstop exactly as before.
+Swarm_repli_ready(w, ident, frame, lane):
+    let from = String(frame?.page?.prepub || '')
+    if (!from) return 0
+    let sealed = this.Swarm_peering(ident)?.o({ Pier: 1, pub: from })[0]
+    if (!sealed) return 0
+    // the asking TAB (a sibling tab of theirs asks from <from>_N — Swarm_lane_of): offer there, on that tab's own route
+    let to = (lane && String(lane).startsWith(from + '_')) ? String(lane) : from
+    let route = this.Swarm_station_pier(w, ident, to)
+    if (!route) return 0
+    route.c.rx_ready = Date.now()
+    route.c.offered_mark = null
+    route.c.offered_at = 0
+    if (typeof this.Radio_trace === 'function') {
+        try { this.Radio_trace(null, { ev: 'repli-ready', of: from.slice(0, 8) }) } catch (er) {}
+    }
+    if (w.c.station_up) this.Swarm_offer_now(w, ident, to).catch((er) => console.error('⨳ offer-now threw —', (er && er.message) || er))
+    return 1
+
+// Swarm_offer_now — one friend's Mag, offered NOW: the reply half of repli_ready's ask.  The same
+//  gates and the same mark discipline as the beat's offer loop (pier_live Music, register caster,
+//   stamp offered_mark/offered_at BEFORE the send) so the beat sees a spent mark and does not
+//    double-offer — Repli_merge dedups the far side anyway, so a race costs one husk, never a wound.
+//     No presence check: the caller holds a frame that just crossed the voucher gate, which is
+//      presence.  LIVE ONLY by the caller's station_up gate — a Book world never reaches this, so
+//       no fixture can grow %frame husks from it.  Returns 1 iff the offer was sent.
+async Swarm_offer_now(w, ident, pub):
+    if (!w || !w.c.share_up) return 0
+    if (this.Swarm_sibling_tab(ident)) return 0   // the primary tab casts this shelf; a sibling's offer would mirror it twice
+    let rw = this.top_House().c.radio_w
+    if (!rw) return 0
+    let me = String(ident.sc.prepub)
+    let them = String(pub)
+    if (them === me) return 0
+    // THE SEATS: the friendship that seats `them` — its own address (the Captain), or the Cave it is lent to.
+    let p = (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).find((q) => this.Swarm_pier_seats(q).includes(them))
+    if (!p || !this.Swarm_pier_live(p, 'Music')) return 0
+    let route = this.Swarm_station_pier(w, ident, them)
+    if (!route) return 0
+    let stock = this.Ra_home_self(rw, me)
+    if (!route.c.repli_src) this.Repli_register_caster(w, route, stock)
+    let n = this.Ra_recs(stock).length
+    let tour = String(rw.o({ Stoker: 1 })[0]?.sc?.toured || 0)
+    let mark = String(w.c.station_era || 0) + ':' + String(route.c.peer_era || 0) + ':' + n + ':' + tour
+    route.c.offered_mark = mark
+    route.c.offered_at = Date.now()
+    await this.Ra_offer_stock(w, route, me, them, stock)
+    if (typeof this.Radio_trace === 'function') {
+        try { this.Radio_trace(null, { ev: 'offer-now', of: them.slice(0, 8), n: n }) } catch (er) {}
+    }
+    return 1
+
+// Swarm_share_up — idempotent: arm Repli on the station world, wire the grant gate + the
+//  mirror conventions, and start the pump.  Needs the radio world standing (top.c.radio_w —
+//   Stoker_ensure stamps it) for the shelves; returns false until it is, callers just re-ask.
+Swarm_share_up(w, ident):
+    if (!w || !ident?.sc?.prepub) return this.Swarm_share_no(w, 'no station world or no identity')
+    if (w.c.share_up) return true
+    let rw = this.top_House().c.radio_w
+    if (!rw) return this.Swarm_share_no(w, 'radio world not standing yet')
+    // ⟨the NINTH pillar comes back HERE⟩ — this is the first moment on a live boot when BOTH halves of
+    //  the answer exist: the friends (Swarm_station_up rehydrated the piers before this effect was even
+    //   allowed to run) and the %Radio face (Stoker_ensure stamps top.c.radio_w, which is the line above).
+    //    Putting it in the station_up ladder beside its eight siblings would have been tidier and WRONG:
+    //     that ladder latches once the station stands, and the radio world stands later, so on a cold boot
+    //      the restore would have fired against no radio and latched itself off.  This caller is re-asked
+    //       until it takes (SwarmStandup's share effect retries on every tick), and the rehydrate answers
+    //        null for "the face is not standing yet" — so the latch below can only close on a real answer.
+    //  Live-only by construction: a Book never stamps top.c.radio_w, so no fixture world moves.
+    if (!w.c.radio_choice_back && this.top_House().stashed) {
+        if (this.Swarm_radio_rehydrate(w, ident) !== null) { w.c.radio_choice_back = 1 }
+    }
+    if (typeof this.Repli_arm !== 'function') return this.Swarm_share_no(w, 'Repli verbs not deposited')
+    this.Repli_arm(w)
+    w.c.repli_mirror_pier = String(ident.sc.prepub)   // my addr — the pull's from-address (Ra_restock_beat)
+    w.c.repli_mirror_by_from = 1                       // per-friend crates, keyed by the caster
+    w.c.repli_mirror_w = rw                            // crates mint in the radio world — the glass sees them
+    w.c.census_w = rw                                  // the boast counts the shelf the stoker actually fills
+    w.c.repli_allow = (peer) => this.Swarm_share_granted(peer)
+    w.c.ra_source_live = (from) => this.Swarm_share_present(from, w)
+    w.c.share_up = 1
+    if (typeof this.Radio_trace === 'function') {
+        try { this.Radio_trace(null, { ev: 'share-up' }) } catch (er) {}
+    }
+    // GRANT ACTIVATION, the announcing half (2026-08-11, the owner: *"everything needs to hang off
+    //  the Grant being established and perhaps activated"*).  Our Repli rx is armed AS OF THIS LINE
+    //   — Repli_arm ran nine lines up — so tell every sealed friend.  Their change-triggered offer
+    //    fired into our startup window and died there (the measured 65s come-back, the negative-
+    //     result note above Swarm_share_up); this frame is the one signal that fires AT the ready
+    //      moment, FROM the side that knows.  It lands in a MATURE tab by construction — the peer
+    //       that wants to offer has been up all along — so it has no startup window of its own.
+    //  Fire-and-forget: an offline friend misses nothing (their next offer meets our armed rx
+    //   anyway), and Swarm_deliver quietly returns false when a route is not ready.
+    //  LIVE STATION ONLY — Books never set station_up, and in a Book world Swarm_deliver falls to
+    //   the in-process %mail drop, which leaves %frame husks in every share fixture.  The startup
+    //    window this heals is a live-relay fact; a fixture has no startup window to lose frames in.
+    if (w.c.station_up) {
+        for (const p of (this.Swarm_peering(ident)?.o({ Pier: 1 }) || [])) { this.Swarm_share_greet(w, ident, p) }
+    }
+    this.Swarm_share_loop(w, ident)
+    // the SoundSupervisor rides alongside, on its own timer, deliberately NOT inside the beat it
+    //  watches (see Swarm_watch_loop's header — a req-based watchdog queues behind its own wedge).
+    this.Swarm_watch_loop(w)
+    return true
+
+// Swarm_share_no — WHY the share did not arm, said once per distinct reason.  Callers re-ask
+//  constantly (every radio dial), so marking each refusal would be a flood; the reason CHANGING is
+//   the whole signal, and a reason that never changes is precisely the bug — a tab stuck forever on
+//    'radio world not standing yet' is a tab that will never share music, and until 2026-08-06 that
+//     state was completely mute.  It cost an hour of reading `cw:0` and guessing which of three
+//      places had failed, when the failing verb knew the answer and threw it away.
+//  Returns false so each guard above stays a one-liner.  `.c`-only, no bump.
+Swarm_share_no(w, why):
+    if (w && w.c.share_no !== why) {
+        w.c.share_no = why
+        if (typeof this.Radio_trace === 'function') {
+            try { this.Radio_trace(null, { ev: 'share-no', why: why }) } catch (er) {}
+        }
+    }
+    return false
+
+// the pump loop: ~600ms cadence, era-guarded (a re-up cancels the stale chain — the Radio
+//  loop law), each beat a post_do so the req drains ride the mutex like a carrier delivery.
+//   BUSY-GUARDED (the human 2026-07-30, watching a heist double-write a landed file — "spastic as
+//    fuck"): `tick` used to fire `setTimeout(tick, 600)` UNCONDITIONALLY, regardless of whether the
+//     post_do'd beat from the PREVIOUS tick had actually finished — post_do queues, it doesn't await,
+//      so a beat that runs longer than 600ms (any real Heist pull, streaming megabytes) let a SECOND
+//       Swarm_share_beat start — and with it a second, concurrent Heist_keep_step — while the first was
+//        still mid-stream into the SAME destination file.  Two overlapping writers explains everything
+//         that was seen: a landed file doubling in size, a .crswap reappearing beside an already-complete
+//          .flac, sizes climbing then dropping non-monotonically.  `share_beat_running` skips firing a
+//           new beat while one is still in flight — the 600ms check keeps ticking so the very next free
+//            tick catches up immediately, no added latency once beats are fast again.
+// Swarm_cull_detached — kick the shuffle cull and BOW OUT.  The cull is a janitor whose cost is a
+//  per-record awaited disk expand, so its duration scales with the crate (539 dirs ⇒ tens of seconds)
+//   while everything the radio eats sits downstream of it in the beat.  Nothing in the beat reads its
+//    return, so the await bought us nothing and cost us the music.  Single-flight: `cull_flying` holds
+//     the start stamp, so a 30s sweep can never have a second copy started on top of it.
+//  It still REPORTS — `cull_bg_ms` is the last completed sweep's duration and rides the split as
+//   `cull_bg`.  Detaching a slow thing while also making it invisible would just move the mystery.
+Swarm_cull_detached(w, rw, stock):
+    if (w.c.cull_flying && !this.Swarm_latch_stale(w, 'cull', w.c.cull_flying)) return 0
+    if (typeof this.Ra_shuffle_cull !== 'function') return 0
+    let epoch = (w.c.cull_epoch = (+(w.c.cull_epoch || 0)) + 1)
+    w.c.cull_flying = Date.now()
+    this.Ra_shuffle_cull(rw, stock).then(() => this.Swarm_cull_done(w, epoch)).catch(() => this.Swarm_cull_done(w, epoch))
+    return 1
+
+// Swarm_cull_done — one line, two callers (settle and throw), so a cull that FAILS still clears the
+//  single-flight latch.  A latch left standing would silently retire the cull for the life of the tab.
+Swarm_cull_done(w, epoch):
+    if (epoch && epoch !== w.c.cull_epoch) return
+    w.c.cull_bg_ms = Date.now() - (+(w.c.cull_flying || Date.now()))
+    w.c.cull_flying = 0
+
+// Swarm_latch_stale — THE STALE-LATCH BREAKER (2026-08-13, the lost-heist night).  The detached trio's
+//  single-flight latches assumed their promise always SETTLES; a hung await inside (an FSA/Berth read
+//   that never answers, a wedged elvisto) held the latch forever, and every later beat then skipped the
+//    whole subsystem SILENTLY — for keep, that is "no rehydrate, no pulls, no watchdog": the owner's
+//     lost Heist.  A hold downstream of a decoupling re-couples it — worse, invisibly.
+//  Two parts, both needed:
+//   · the breaker here: past LATCH_CAP the latch is declared dead, said OUT LOUD, and the op relaunches.
+//      120s is far beyond any honest run of the three (cull's 70s crate sweep is the ceiling that set it).
+//   · the epoch in each done(): the broken flight's orphan promise may STILL settle later — without the
+//      epoch check it would clear the NEW flight's latch, and the one-writer law dies quietly.
+Swarm_latch_stale(w, name, since):
+    let LATCH_CAP = +(w.c.detached_latch_cap || 120000)
+    let held = Date.now() - (+since || Date.now())
+    if (held < LATCH_CAP) return 0
+    let why = name + ' detached op hung ' + Math.round(held / 1000) + 's — latch broken, relaunching'
+    if (name === 'keep') { why = why + (w.c.keep_beat_at ? ' (hung at: ' + w.c.keep_beat_at + ')' : ''); w.c.heist_beat_why = why }
+    console.warn('⏳⚠ ' + why)
+    if (typeof this.Radio_trace === 'function') this.Radio_trace(null, { ev: 'latch-break', op: name, held_s: Math.round(held / 1000) })
+    return 1
+
+// Swarm_tour_detached / Swarm_tour_done — the cull's twin, for the collection conveyor.  Deliberately
+//  a SEPARATE pair rather than a shared generic: `Swarm_cull_detached`/`cull_bg_ms` are already named
+//   in MusuNeGrind's (unbuilt) assertions, and renaming them to save six lines would break a Book
+//    nobody has run yet — the worst kind of breakage to introduce, because it looks like it works.
+//  Same contract: single-flight on a start stamp, duration reported as `tour_bg`, latch cleared on
+//   BOTH settle and throw (a stuck latch would retire the conveyor for the life of the tab, and a
+//    collection that stops touring stops growing — silently, which is this page's whole failure mode).
+// Swarm_keep_detached / Swarm_keep_done — the cull|tour pair's third sibling, for the heist keep
+//  driver (2026-08-13: keep=2602ms beats, 280 skips, the folder-describe crawling behind it).  Same
+//   contract: single-flight on a start stamp (the one-writer law — the "spastic as fuck" double-write
+//    of 2026-07-30 stays impossible, now by THIS latch instead of the beat's), duration reported as
+//     `keep_bg`, latch cleared on BOTH settle and throw.  The error note keeps its old home
+//      (heist_beat_why), so nothing that read it moves.
+Swarm_keep_detached(w, ident):
+    if (w.c.keep_flying && !this.Swarm_latch_stale(w, 'keep', w.c.keep_flying)) return 0
+    if (typeof this.Heist_keep_beat !== 'function') return 0
+    let epoch = (w.c.keep_epoch = (+(w.c.keep_epoch || 0)) + 1)
+    w.c.keep_flying = Date.now()
+    this.Heist_keep_beat(w, ident).then(() => this.Swarm_keep_done(w, null, epoch)).catch((er) => this.Swarm_keep_done(w, er, epoch))
+    return 1
+
+Swarm_keep_done(w, er, epoch):
+    if (epoch && epoch !== w.c.keep_epoch) return
+    if (er) w.c.heist_beat_why = '' + (er && er.message || er)
+    w.c.keep_bg_ms = Date.now() - (+(w.c.keep_flying || Date.now()))
+    w.c.keep_flying = 0
+
+Swarm_tour_detached(w, rw, stock):
+    if (w.c.tour_flying && !this.Swarm_latch_stale(w, 'tour', w.c.tour_flying)) return 0
+    if (typeof this.Stoker_tour !== 'function') return 0
+    let epoch = (w.c.tour_epoch = (+(w.c.tour_epoch || 0)) + 1)
+    w.c.tour_flying = Date.now()
+    this.Stoker_tour(rw, stock).then(() => this.Swarm_tour_done(w, epoch)).catch(() => this.Swarm_tour_done(w, epoch))
+    return 1
+
+Swarm_tour_done(w, epoch):
+    if (epoch && epoch !== w.c.tour_epoch) return
+    w.c.tour_bg_ms = Date.now() - (+(w.c.tour_flying || Date.now()))
+    w.c.tour_flying = 0
+
+// ── Swarm_beat_health — STEP 1 OF THE SUPERVISOR (spec/Supervisor_todo.md §0) ──
+//  The human, after the third silent wedge found by pasting a console at me: "there has to be a
+//   supervisor built still, to discern all these moments when we should give up and reload."
+//  This is that, at its smallest honest size: a PURE READ over state that already exists, returning
+//   a verdict. No req, no UI, no action, no reload. Those are steps 2–4 and each wants its own proof.
+//
+//  THE ONE HARD PART is telling SLOW from STUCK, and elapsed time cannot do it: `Ra_shuffle_cull`
+//   legitimately runs 70s on a 543-directory crate, so at t=30s a healthy sweep and a permanent hang
+//    are identical. The distinguisher is MONOTONIC PROGRESS — did the furthest-reached phase advance
+//     since we last looked — which is why this reads a phase CURSOR and not a duration.
+//  AND THE THRESHOLD IS SELF-CALIBRATED, per phase. A constant is wrong by construction here: `keep`
+//   and `cull` differ by three orders of magnitude, so one number would either cry wolf at the cull or
+//    never fire for the rest. Each phase learns its own rolling median and is judged against ITS OWN
+//     typical cost. The medians live on `.c`, so a reload re-learns — correct for a supervisor (a
+//      fresh tab should not inherit a wedged tab's idea of normal), and noted so nobody "fixes" it
+//       into the snap later ([[learns-over-time-on-c-never-does]] is about caches that SHOULD persist;
+//        this is the opposite case).
+//
+//  Returns { state: 'ok'|'slow'|'stuck', phase, for_ms, why } — `phase` is always named, because a
+//   verdict that says only "something is wrong" spends the one thing this session proved valuable.
+
+// Swarm_beat_phase — the furthest phase this beat has completed, as a name.  The split is a PROGRESS
+//  BAR, not a cost table: fields are zeroed at the top of each beat and stamped only on completion, so
+//   the LAST NON-ZERO field is how far the beat got.  Reading it as costs is what hid the tour stall.
+Swarm_beat_phase(w):
+    let sp = w.c.beat_split || {}
+    let order = ['cull', 'tour', 'flush', 'peers', 'keep']
+    let far = ''
+    for (const k of order) { if (+(sp[k] || 0) > 0) far = k }
+    return far
+
+// Swarm_beat_note — call once per completed beat: fold each phase's cost into a rolling median-ish
+//  centre (an EWMA — a true median would need a window per phase and this is a watchdog, not a
+//   profiler) and stamp the phase cursor whenever it MOVES.  `phase_at` is the liveness clock.
+Swarm_beat_note(w):
+    let sp = w.c.beat_split || {}
+    w.c.phase_avg = w.c.phase_avg || {}
+    for (const k of ['cull', 'tour', 'flush', 'peers', 'keep']) {
+        let v = +(sp[k] || 0)
+        if (v <= 0) continue
+        let prev = +(w.c.phase_avg[k] || 0)
+        w.c.phase_avg[k] = prev > 0 ? Math.round(prev * 0.8 + v * 0.2) : v
+    }
+    let far = this.Swarm_beat_phase(w)
+    if (far !== w.c.phase_far) {
+        w.c.phase_far = far
+        w.c.phase_at = Date.now()
+    }
+
+// Swarm_probe_beat — the SUPERVISOR'S read of the beat, and the reason Swarm_beat_health finally has
+//  a reader.  It landed 2026-08-08 and had never once been consulted by anything; a sensor with no
+//   reader gates nothing, and this repo has already caught one claim that was pure theatre.
+//  `slow` is deliberately NOT wrong: the health verb grades it at a third of the stuck bar, which is
+//   a warning about a machine that is still working.  Calling that a fault would make the sanity cell
+//    shout at every busy moment and teach the owner to ignore it — the exact failure the idle HUDs
+//     died of.  Only `stuck` is wrong.
+Swarm_probe_beat(w, sup):
+    if (!w) return { verdict: 'unknown', note: 'no swarm world' }
+    let h = this.Swarm_beat_health(w)
+    if (!h) return { verdict: 'unknown', note: 'no reading' }
+    if (h.state === 'stuck') return { verdict: 'wrong', note: String(h.why || 'the share beat is stuck') }
+    return { verdict: 'ok', note: h.state === 'slow' ? String(h.why || 'running long') : '' }
+
+Swarm_beat_health(w):
+    if (!w || !w.c.share_up) return { state: 'ok', phase: '', for_ms: 0, why: 'share is down' }
+    let order = ['cull', 'tour', 'flush', 'peers', 'keep']
+    let far = this.Swarm_beat_phase(w)
+    let next = order[order.indexOf(far) + 1] || order[0]
+    let since = Date.now() - (+(w.c.phase_at || Date.now()))
+    // a beat that is not even in flight cannot be wedged — it is simply between beats.
+    if (!w.c.share_beat_running) return { state: 'ok', phase: next, for_ms: since, why: 'idle between beats' }
+    // the phase we are WAITING ON is the one after the furthest completed one.
+    let typical = +((w.c.phase_avg || {})[next] || 0)
+    let K = +(w.c.beat_stuck_k || 20)
+    let floor_ms = (w.c.beat_stuck_floor_ms == null ? 30000 : +w.c.beat_stuck_floor_ms)
+    let bar = Math.max(floor_ms, typical * K)
+    // POSTED ≠ ENTERED, AND THE BUTLER WAS TELLING THE WRONG STORY (2026-08-13, the owner's stuck tab:
+    //  `[FAILED] your share is keeping itself up to date : keep has not completed in 50s (typical 0ms)`
+    //   on a tab whose beat had never started at all).  Swarm_share_loop latches `share_beat_running`
+    //    when it POSTS the beat, then post_do queues the callback; under a long belief-pass hold the
+    //     callback sits in H.todo and nothing inside the beat ever runs.  Everything below reads the
+    //      PHASE CURSOR, which describes the PREVIOUS beat — so the probe named `keep`, sending a reader
+    //       into the heist driver, when the heist driver had not been called.  `typical 0ms` was the
+    //        tell nobody could read: a phase with no learned duration is one that has never completed.
+    //  The log line already forks these two states (Swarm_share_loop's `bstate`, same-day audit #1) and
+    //   the Butler did not.  One surface short is how a fixed diagnosis stays unfixed for the person
+    //    actually looking at the screen.  A queued beat is graded on its OWN clock — how long it has
+    //     waited to start — and says who to suspect, which is never the phase.
+    if (!w.c.beat_entered_at && w.c.beat_posted_at) {
+        let queued = Date.now() - (+w.c.beat_posted_at)
+        if (queued > floor_ms) return { state: 'stuck', phase: 'queued', for_ms: queued, why: `the beat has waited ${Math.round(queued / 1000)}s to start — something else is holding the belief pass` }
+        if (queued > floor_ms / 3) return { state: 'slow', phase: 'queued', for_ms: queued, why: 'the beat is waiting its turn to start' }
+        return { state: 'ok', phase: 'queued', for_ms: queued, why: '' }
+    }
+    if (since > bar) return { state: 'stuck', phase: next, for_ms: since, why: `${next} has not completed in ${Math.round(since / 1000)}s (typical ${typical}ms)` }
+    if (since > bar / 3) return { state: 'slow', phase: next, for_ms: since, why: `${next} running long (typical ${typical}ms)` }
+    return { state: 'ok', phase: next, for_ms: since, why: '' }
+
+// Swarm_detached_health — §4b: the blind spot the detaches INTRODUCED.  A detached verb that never
+//  settles leaves `flying` set forever while the beat sails past it looking perfectly healthy, so the
+//   phase cursor above can report `ok` on a tab whose conveyor died. Judged the same way: against its
+//    own learned duration, never a constant.
+// ── Swarm_watch_loop — TIER ONE OF THE SOUND SUPERVISOR, AND IT MUST NOT BE A REQ ──
+//  The design this replaces had the verdict carried by a `%Watch` req. That is wrong, and the daemon
+//   session caught it: a req runs in `reqy(w).do()`, which runs in the belief pass, which runs UNDER
+//    THE BELIEFS MUTEX. So a req-based watchdog is **queued behind the very wedge it exists to
+//     detect**. Their reading off the daemon says it outright:
+//        "drain_why": "beliefs mutex held 8s by H:Mundo fn:swarm_share_beat"
+//        "queued": ["fn:handle_inbound", "think"]
+//    `think` IS the belief pass. A supervisor in that queue reports nothing until the wedge clears,
+//     at which point there is nothing left to report. I had worried about a watchdog CAUSING a wedge
+//      and not about one BEING wedged.
+//  WHY A PLAIN TIMER ESCAPES IT: a stuck `await` still lets timers fire (only a stuck `while(true)`
+//   would not), and every wedge on the list is await-shaped — a detached verb that never settles, a
+//    drive that never schedules, a socket that never answers. `Swarm_share_loop`'s own
+//     `setTimeout(tick, 600)` demonstrates the seam: the TICK fires regardless of the mutex; only the
+//      `post_do` inside it queues. So this loop uses the same outer timer and **never calls post_do,
+//       never bumps, never writes sc** — it reads `.c` counters, which are plain JS objects needing no
+//        mutex, and writes its verdict back to `.c`. It cannot be blocked by, and cannot block, the
+//         machine it watches.
+//  TIER TWO IS NOT THIS AND CANNOT BE: a tab wedged badly enough to matter cannot answer a
+//   `runner_ask health` op either — "advertises, won't answer pings" is on the very list of wedges.
+//    The external tier has to watch WITHOUT ASKING (the daemon, tracking per-peer `seq` monotonicity
+//     over a socket that stays open), and it belongs in `scripts/daemon/main.ts`'s hand-cranked loop,
+//      NOT the daemon's own belief loop — which is the thing that held the mutex for 8s.
+//       See spec/Supervisor_todo.md §4/§6.
+//  NOTICE ONLY. It logs and stamps. No reload, no user-visible action, nothing that could surprise a
+//   listener — the consent question only bites at the `act` rung and this never reaches it.
+Swarm_watch_loop(w):
+    w.c.watch_era = (w.c.watch_era || 0) + 1
+    let era = w.c.watch_era
+    const tick = () => {
+        if (era !== w.c.watch_era) return
+        try { this.Swarm_watch_look(w) } catch (er) {}
+        setTimeout(tick, 2000)
+    }
+    setTimeout(tick, 2000)
+
+// Swarm_watch_look — one pass. Transition-triggered, never a repeating shout: a supervisor that
+//  reprints every 2s trains people to filter it out, which is how the ⏳ skip line became furniture.
+Swarm_watch_look(w):
+    this.Swarm_hello_retry(w)
+    let v = this.Swarm_beat_health(w)
+    let bad = v.state === 'stuck' ? v : null
+    if (!bad) {
+        let d = this.Swarm_detached_health(w)
+        if (d.length) bad = d[0]
+    }
+    let now = bad ? (bad.phase + ':' + bad.state) : ''
+    w.c.watch = bad || v
+    // AND HAND IT TO THE SUPERVISOR.  `w.c.watch` has been stamped here every 2s since 2026-08-08 with
+    //  NOTHING ANYWHERE READING IT — the console.log below is the only consumer, and it talks to a
+    //   console nobody has open.  Registering is idempotent, so doing it from inside the loop keeps
+    //    the watch alive across a Supervisor that stood up after this loop did.
+    let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
+    if (sup) this.Supervisor_watch(sup, 'swarm.beat', 'your share is keeping itself up to date', 'standing', 'Swarm_probe_beat', w, this.Supervisor_stage('share'))
+    // …and the same courtesy for the two watches that only ever register at standup — see
+    //  Swarm_watch_repair for why they go missing and why this is guarded rather than blind.
+    if (sup) this.Swarm_watch_repair(w, sup)
+    if (now === (w.c.watch_said || '')) return
+    w.c.watch_said = now
+    if (!now) return
+    // NAME THE ORGAN. A verdict that says only "something is wrong" spends the one thing this whole
+    //  session proved valuable — every finding today came from phase attribution, not from knowing a
+    //   stall existed. The median is printed beside it so a reader can judge the judgement.
+    console.log(`👁 SoundSupervisor: ${bad.why} — the beat has not advanced past this phase. Reload clears it if it does not self-heal.`)
+
+Swarm_detached_health(w):
+    let out = []
+    for (const it of [{ k: 'cull', fly: w.c.cull_flying, bg: w.c.cull_bg_ms }, { k: 'tour', fly: w.c.tour_flying, bg: w.c.tour_bg_ms }, { k: 'keep', fly: w.c.keep_flying, bg: w.c.keep_bg_ms }]) {
+        if (!it.fly) continue
+        let since = Date.now() - (+(it.fly || Date.now()))
+        let bar = Math.max((w.c.detached_stuck_floor_ms == null ? 180000 : +w.c.detached_stuck_floor_ms), (+(it.bg || 0)) * 4)
+        if (since > bar) out.push({ state: 'stuck', phase: it.k + '(detached)', for_ms: since, why: `${it.k} has been flying ${Math.round(since / 1000)}s (last completed ${+(it.bg || 0)}ms)` })
+    }
+    return out
+
+Swarm_share_loop(w, ident):
+    w.c.share_era = (w.c.share_era || 0) + 1
+    let era = w.c.share_era
+    const tick = () => {
+        if (era !== w.c.share_era || !w.c.share_up) return
+        if (w.c.share_beat_running) {
+            // SELF-HEAL A LOST POST (2026-09-02, the ×1191 jam): POSTED-never-ENTERED used to be read as
+            //  "queued behind the beliefs mutex" — but live, the 🧱 mutex watchdog never fired AND Story
+            //   steps drained happily through the same loop, so the mutex was FREE: the posted callback
+            //    was simply LOST (an HMR module swap / a teardown racing the todo queue), and the guard
+            //     latched forever ("Reload clears it" was the only cure).  When the post is >120s old,
+            //      never entered, and the mutex is verifiably free — far beyond any honest queueing —
+            //       declare it lost, re-arm, and let the next tick re-post.  A genuinely HELD mutex
+            //        stays the watchdog's case (we do not fight it; 🧱 names the holder there).
+            if (!w.c.beat_entered_at && w.c.beat_posted_at && (Date.now() - w.c.beat_posted_at) > 120000) {
+                let mtop = this.top_House ? this.top_House() : null
+                if (!(mtop && mtop.c && mtop.c._mutex_beliefs)) {
+                    console.log('⏳⚕ share beat posted ' + Math.round((Date.now() - w.c.beat_posted_at) / 1000) + 's ago and never entered while the beliefs mutex is FREE — the posted callback was LOST (HMR/teardown swap) — re-arming the beat')
+                    w.c.share_beat_running = false
+                    w.c.beat_posted_at = 0
+                    w.c.share_beat_skipped = 0
+                    return
+                }
+            }
+            w.c.share_beat_skipped = (w.c.share_beat_skipped || 0) + 1
+            if (w.c.share_beat_skipped % 10 === 1) {
+                // carry the SPLIT into the skip line: this counter climbing is the symptom everyone
+                //  pastes, and until 2026-08-08 it named no cause.  cull/tour are disk+dig, peers is the
+                //   offer loop, keep is Heist_keep_beat — the whole heist driver, awaited inline.
+                let sp = w.c.beat_split || {}
+                // READ THIS AS A PROGRESS BAR, NOT A COST TABLE.  beat_split is zeroed at the top of
+                //  each beat and each phase stamped only on completion, so the LAST NON-ZERO field is
+                //   where the in-flight beat got to — an all-zero line means it never finished phase 1.
+                // QUEUED vs RUNNING is the first fork (audit #1): a beat posted but never entered is a
+                //  MUTEX jam (read the drain-lag marks for who holds it), not a stuck phase — and the
+                //   split below describes the PREVIOUS beat in that case, not this one.
+                let bstate = (!w.c.beat_entered_at && w.c.beat_posted_at) ? `QUEUED ${Math.round((Date.now() - w.c.beat_posted_at) / 1000)}s behind the beliefs mutex (split below is the PREVIOUS beat)` : `running ${w.c.beat_entered_at ? Math.round((Date.now() - w.c.beat_entered_at) / 1000) : '?'}s`
+                console.log(`⏳ Swarm_share_beat busy past 600ms — ${bstate} — skipping this tick (×${w.c.share_beat_skipped} so far) · cull=${+(sp.cull || 0)} tour=${+(sp.tour || 0)} flush=${+(sp.flush || 0)} peers=${+(sp.peers || 0)} (pump=${+(sp.pump || 0)} warm=${+(sp.warm || 0)}) keep=${+(sp.keep || 0)} · detached: cull_bg=${+(sp.cull_bg || 0)}${w.c.cull_flying ? '(flying)' : ''} tour_bg=${+(sp.tour_bg || 0)}${w.c.tour_flying ? '(flying)' : ''} keep_bg=${+(sp.keep_bg || 0)}${w.c.keep_flying ? '(flying)' : ''} · lead=${+(w.c.lead_s || 0)}s restock_held=${+(w.c.restock_held || 0)} (ms)`)
+            }
+        } else {
+            w.c.share_beat_running = true
+            // POSTED ≠ ENTERED (2026-08-13 audit #1): the guard is latched HERE, but post_do only queues —
+            //  under a long beliefs-mutex hold the callback sits in H.todo while every tick logs "still
+            //   running", and the split (zeroed at beat top) shows the PREVIOUS beat's numbers or all
+            //    zeros.  The all-zeros "wedge" that misled tonight's debugging was this: a beat that had
+            //     never ENTERED, blamed as one stuck in phase 1.  beat_posted_at forks the two states so
+            //      the skip line can say which; entered_at is stamped first thing inside.
+            w.c.beat_posted_at = Date.now()
+            w.c.beat_entered_at = 0
+            this.post_do(async () => {
+                if (era !== w.c.share_era) { w.c.share_beat_running = false; return }
+                w.c.beat_entered_at = Date.now()
+                let t0 = Date.now()
+                try { await this.Swarm_share_beat(w, ident) } catch (er) { this.Swarm_share_why(w, er) }
+                // RELEASE THE GUARD FIRST, ALWAYS.  Anything that runs between the beat and this line is a
+                //  potential permanent freeze: a throw here never reaches the reset, `share_beat_running`
+                //   stays true, and the busy guard skips EVERY subsequent tick — the share loop, and with it
+                //    the whole heist, stops dead with no error anyone sees.  (Learned the hard way the same
+                //     day the electrode below was added.)  Instrumentation goes AFTER the reset, wrapped.
+                w.c.share_beat_running = false
+                // SUPERVISOR STEP 1 (Supervisor_todo §4a): fold this beat's phase costs into their
+                //  rolling centres and move the phase cursor.  AFTER the guard reset and wrapped, for
+                //   the same reason the electrode below is: a throw between the beat and the reset is a
+                //    permanent freeze, and a watchdog that can wedge the thing it watches is worse than
+                //     none.  Cheap — five numbers and a comparison, no allocation per beat.
+                try { this.Swarm_beat_note(w) } catch (er) {}
+                // ELECTRODE (2026-08-05) — BEAT HEALTH, and it is silent in health.  A beat that outruns the
+                //  600ms cadence makes the NEXT tick get skipped by the busy guard above, which is how a long
+                //   landing steals the very window the OVERLAP pre-ask needed.  `ms` is this beat, `skips` is
+                //    the running skip count — a gap in the heist with `ms` spiking here and `skips` climbing is
+                //     that story; a gap with beats staying under 600ms means the cost is elsewhere (see the
+                //      heist's own `ready` mark for the source round trip).
+                let ms = Date.now() - t0
+                if (ms > 600 && typeof this.Radio_trace === 'function') {
+                    let sp = w.c.beat_split || {}
+                    try { this.Radio_trace(null, { ev: 'beat', ms: ms, skips: +(w.c.share_beat_skipped || 0), cull: +(sp.cull || 0), tour: +(sp.tour || 0), peers: +(sp.peers || 0), pump: +(sp.pump || 0), warm: +(sp.warm || 0), keep: +(sp.keep || 0), cull_bg: +(sp.cull_bg || 0), keep_bg: +(sp.keep_bg || 0) }) } catch (er) {}
+                }
+            }, { see: 'swarm_share_beat' })
+        }
+        setTimeout(tick, 600)
+    }
+    setTimeout(tick, 600)
+
+// Swarm_share_why — LOUD on a share-beat throw (the human 2026-07-29: "I want to KNOW what's going wrong",
+//  "be fatal about insanity", "fragility!").  The beat used to swallow the error into a bare one-line warn;
+//   now it prints the real error + STACK plus a size CENSUS of every collection that can silently accrue
+//    dead/dropped entries without GC — so the giant one NAMES ITSELF on the throw instead of us guessing.
+//     Pure diagnosis: every probe is wrapped so the census can never itself throw and mask the real error.
+Swarm_share_why(w, er):
+    let awaitreqs = 0
+    let awaiting = 0
+    let bufs = 0
+    let piers = 0
+    try {
+        for (const pg of w.o({ Peering: 1 })) {
+            for (const p of pg.o({ Pier: 1 })) {
+                piers = piers + 1
+                try { awaitreqs = awaitreqs + p.o({ req: 'awaitbuf' }).length } catch (e) {}
+                try { if (p.c.awaiting) awaiting = awaiting + Object.keys(p.c.awaiting).length } catch (e) {}
+                try { if (p.c.bufs) bufs = bufs + Object.keys(p.c.bufs).length } catch (e) {}
+            }
+        }
+    } catch (e) {}
+    let wanted = 0
+    let wantts = 0
+    try { if (w.c.ra_wanted) wanted = Object.keys(w.c.ra_wanted).length } catch (e) {}
+    try { if (w.c.ra_want_ts) wantts = Object.keys(w.c.ra_want_ts).length } catch (e) {}
+    let mirrecs = 0
+    let pcmpages = 0
+    let chunks = 0
+    try {
+        let rw = this.top_House().c.radio_w || w
+        for (const home of rw.o({ Theirs: 1 })) {
+            try {
+                let shelf = this.Ra_home_them(rw, String(home.sc.pub))
+                for (const rec of this.Ra_recs(shelf)) {
+                    mirrecs = mirrecs + 1
+                    try { if (rec.c.pages) pcmpages = pcmpages + rec.c.pages.length } catch (e) {}
+                    try { chunks = chunks + rec.o({ seq: 1 }).length } catch (e) {}
+                }
+            } catch (e) {}
+        }
+    } catch (e) {}
+    let census = 'piers=' + piers + ' awaitbuf_reqs=' + awaitreqs + ' awaiting=' + awaiting + ' bufs=' + bufs + ' ra_wanted=' + wanted + ' ra_want_ts=' + wantts + ' mirror_recs=' + mirrecs + ' pcm_pages=' + pcmpages + ' chunks=' + chunks
+    console.error('⨳ SHARE BEAT THREW —', (er && er.message) || er, '\n  census:', census, '\n  stack:', (er && er.stack) || '(no stack)')
+
+// one beat, all idempotent + bounded: enroll every granted friend both ways, husk-offer my
+//  stock when it (or the peer's incarnation) changed, drain the Peering reqs (awaitbufs +
+//   parked wants), feed the transcoder, and keep every friend crate's previews warming.
+async Swarm_share_beat(w, ident):
+    let rw = this.top_House().c.radio_w
+    if (!rw) return
+    // CEREMONY PRIORITY (owner 2026-08-30: "needs to stop whatever it's doing and do the ferry… maybe no stop
+    //  but you know what I mean").  A device-link ceremony is a human standing at two screens for a minute; the
+    //   share beat is hours of patient background bulk.  While a ferry is actively TRANSACTING on a live tab
+    //    (a counterparty engaged: confirm parked / soul landed / mid-send / awaiting), SIT the beat OUT so the
+    //     belief mutex and the wire belong to the ceremony (the flood queued 511 beats and the confirm crawled).
+    //      Pure deferral — nothing is cancelled; the next beat picks up where it was.  Deliberately NOT gated on
+    //       link_active (a lingering QR or an unacked ✓ would starve sharing forever) and capped at 5 minutes as
+    //        a honesty valve.  Humdinger-gated → Books never see it, fixtures untouched.
+    let cerc = this.top_House().c
+    let cfer = this.Swarm_ferry_facts(w)
+    if (cerc.humdinger && (cfer.ferrying || cfer.confirm || cfer.pending || cfer.awaiting)) {
+        if (!w.c.share_beat_ceremony_at) { w.c.share_beat_ceremony_at = Date.now() }
+        if ((Date.now() - w.c.share_beat_ceremony_at) < 300000) {
+            w.c.share_beat_ceremony = (w.c.share_beat_ceremony || 0) + 1
+            if (w.c.share_beat_ceremony % 12 === 1) { console.log('🦑⏸ share beat sitting out — a device-link ceremony has the floor (×' + w.c.share_beat_ceremony + ')') }
+            return
+        }
+    } else if (w.c.share_beat_ceremony_at) { delete w.c.share_beat_ceremony_at; delete w.c.share_beat_ceremony }
+    let me = String(ident.sc.prepub)
+    let stock = this.Ra_home_self(rw, me)
+    // BEFORE IT GOES OUT (the human's v1.0 ruling, 2026-08-06): check every Record in the shuffle
+    //  Mag still has its source, and delete the ones that don't.  Here rather than inside
+    //   Ra_offer_stock deliberately — that verb is also a Book's (RaTesting.g:904/1291), and a
+    //    disk-touching cull in it would move fixtures; the share beat is live-only, so this stays
+    //     out of every Book by construction.  Once per beat (self-throttled to 30s inside), ahead
+    //      of the friend loop: the Mag is the same for every friend, so checking it per friend
+    //       would only repeat the work.  The drop shrinks the record count, which changes the
+    //        offer `mark` below — so a cull re-offers by itself and the friend's mirror learns.
+    // THE BEAT SPLIT (2026-08-08) — where the 600ms actually goes.  The electrode in Swarm_share_loop
+    //  has reported a TOTAL `ms` since 2026-08-05, which proves the beat outran its cadence and says
+    //   nothing about which of its four phases did it — and the phases are wildly different animals: two
+    //    awaited disk/dig verbs, a per-friend offer loop, and `Heist_keep_beat`, which is the WHOLE heist
+    //     driver awaited inline (its own comment concedes "cheap when no keep stands", i.e. not cheap when
+    //      one does).  The 2026-08-08 console showed ×221 skipped ticks with no way to tell them apart.
+    //  Four numbers cost four Date.now() calls per beat and turn the next paste into an answer instead of
+    //   a suspicion.  Written to `.c` (runtime, never encoded) and read by the loop's electrode + skip log.
+    let tmark = Date.now()
+    w.c.beat_split = { cull: 0, tour: 0, flush: 0, peers: 0, keep: 0, cull_bg: +(w.c.cull_bg_ms || 0), tour_bg: +(w.c.tour_bg_ms || 0), keep_bg: +(w.c.keep_bg_ms || 0) }
+    // ── THE CULL FLIES DETACHED (2026-08-08) — the split's first verdict, and it was the cull ──
+    //  Measured on the human's tab: `cull=8475`, `cull=12327`, `cull=29671` with tour/peers/keep all 0.
+    //   So the ×221 skipped ticks were ONE phase, and not the one I suspected (I had written the heist
+    //    keep beat up as the likely culprit in Composition_todo §3.6 — the electrode refuted me).
+    //  WHY IT IS SO SLOW: `Ra_source_alive` is an awaited FSA directory expand PER RECORD, walked
+    //   serially over the whole shuffle Mag.  On a 539-directory crate that is hundreds of serial disk
+    //    round trips.  Its 30s throttle bounds how OFTEN it starts, not how long it holds the beat — and
+    //     at 29.7s it very nearly runs back-to-back with itself.
+    //  WHY THAT STARVES THE MUSIC: everything the radio eats is DOWNSTREAM of this await —
+    //   `Ra_transcode_pump` (the encoder frontier, so the 32s preview boundary never advances),
+    //    `Ra_mag_warm`, `Ra_restock_beat`, and the full-length lead pass.  A janitor sweep was holding
+    //     the supply chain hostage for up to half of every 60 seconds.  That is the starvation.
+    //  THE FIX IS THE CALL, NOT THE SWEEP: the cull is a JANITOR — nothing in this beat reads its
+    //   result, and its own comment already says "a cull re-offers by itself" because the drop changes
+    //    the offer mark on a LATER beat.  So it does not need to be awaited here; it needs to not be in
+    //     the way.  One in flight at a time (`cull_flying`), and its duration still gets reported, now as
+    //      `cull_bg` — detaching a slow thing must not also make it invisible.
+    //  Concurrency is the ordinary `o()` snapshot rule: the cull collects THEN drops, and every other
+    //   walker here iterates its own fresh `o()` array, so a detached drop cannot corrupt a live walk.
+    this.Swarm_cull_detached(w, rw, stock)
+    w.c.beat_split.cull = Date.now() - tmark
+    tmark = Date.now()
+    // AND KEEP THE WINDOW MOVING (the owner's conveyor, 2026-08-07): spawn at the end, whittle off
+    //  the top, so a friend tours the whole collection instead of its first rooms.  Here beside the
+    //   cull for the same reason that one is here — the share beat is the live-only seam, so no
+    //    Book can ever see a spontaneous dig — and BEFORE the offer below, so a turn of the wheel
+    //     re-offers on the same beat it happens rather than waiting out the floor.
+    // ── AND THE TOUR FLIES DETACHED TOO (2026-08-08, the SAME disease one organ along) ──
+    //  The reading that convicted the cull convicted this next, and the tell was every phase reading
+    //   ZERO while the beat overran ×241.  That is not "the beat is fast" — `beat_split` is zeroed at
+    //    the TOP of each beat and each phase is stamped only when it FINISHES, so an all-zero split
+    //     means the beat is wedged BEFORE the first stamp lands.  `cull=0` is now honest (the kick is
+    //      sync); the first thing after it that can hang is this tour.  Same signature was already in
+    //       the pre-detach paste (`cull=8475 tour=0 …`), so the tour stall PREDATES the retire flush
+    //        below — it was simply hidden behind a cull that hogged the beat first.
+    //  WHY IT IS SAFE TO DETACH: nothing in the beat reads a return value. The offer `mark` reads
+    //   `Stoker%toured` off the particle, so a turn of the wheel is picked up by whichever beat runs
+    //    after it lands — one beat later, which is exactly what the mark is for.
+    //  WHAT THIS UNBLOCKS: everything downstream — the offer loop, `Ra_transcode_pump` (and with it
+    //   the 32s ceiling), `Ra_mag_warm`, `Ra_restock_beat`, the lead pass. A wedged tour meant a tab
+    //    that never offered and never transcoded, which is precisely "neither is taking the other's
+    //     stream" with a healthy-looking relay.
+    this.Swarm_tour_detached(w, rw, stock)
+    w.c.beat_split.tour = Date.now() - tmark
+    tmark = Date.now()
+    // …AND TELL THE MIRRORS WHAT THE WHEEL DROPPED (2026-08-08, §3.9): the tour ledgers every
+    //  whittled id on `stock.c.retire_due`; flush it to every registered caster as the wire's own
+    //   op:delete line (Repli_retire — built, Book-proven, and never called live until today).
+    //    Without this every drop leaves a stale mirror that asks for the dead id forever — the
+    //     symmetric `serve want … no record for id` storm.  TIMED SEPARATELY (`flush`) rather than
+    //     folded into `tour`: I added it minutes before this stall was read, and a mark that cannot
+    //      exonerate my own newest edit is worth nothing.
+    if (typeof this.Repli_retire_flush === 'function') await this.Repli_retire_flush(w, me, stock)
+    w.c.beat_split.flush = Date.now() - tmark
+    tmark = Date.now()
+    this.Swarm_boast_floor(w, ident)
+    // THE LOFI STREAM'S OUTLINE (SoundPooling_todo §0.a.7 build order 2): my stock shelf publishes an empty Mag:Pooling, which the
+    //  offer loop below carries to every friend beside Mag:shuffle.  Nothing reads it yet; a reader's cursor starts generation (owed).
+    if (typeof this.Ra_pooling_publish === 'function') { try { this.Ra_pooling_publish(stock) } catch (er) {} }
+    // …and the release sweep holds the bodies those pages name (Heist_keep_beat, owed (a)) — it needs the shelf
+    w.c.pooling_shelf = stock
+    // …and the holder's cursor wanders my collection for the next pages while anyone is reading them — DETACHED: a meander is
+    //  several directory hops, and this beat has a 600ms busy budget (Ra_pooling_wander_beat guards its own re-entry)
+    if (typeof this.Ra_pooling_wander_beat === 'function') { this.Ra_pooling_wander_beat(w, stock).catch(() => {}) }
+    // THE AUTO-LEND (GrantBorrowing): while I'm the Captain, every online Cave holds a live loan per friend.
+    // A SIBLING TAB RECEIVES, IT DOES NOT CAST (2026-11-12): its shelf IS the primary tab's shelf, and an offer from <prepub>_N
+    //  would stand a second mirror of me at every friend (Theirs,pub:<prepub>_N).  So it greets and wants — its own lane — and
+    //   leaves casting and lending to the primary (Swarm_sibling_tab; Identity_persist_todo §0.1).
+    let sibling_tab = this.Swarm_sibling_tab(ident)
+    if (!sibling_tab) { try { await this.Swarm_lend_beat(w, ident) } catch (er) { console.log('⨳ lend beat threw —', er) } }
+    for (const p of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
+        if (!p.sc.pub) continue
+        if (!this.Swarm_pier_live(p, 'Music')) continue
+        // THE SEATS: cast to every address this friendship seats — the soul (the Captain), and a lent Cave (Swarm_pier_seats).
+        for (const pub of this.Swarm_pier_seats(p)) {
+            // never treat my OWN Pier as a friend: a self-offer echoes back and Repli_mirror_lib would mint a
+            //  spurious %Theirs,pub:<me> right beside my %Mine — the self-mirror the human saw on Righto.
+            if (pub === me) continue
+            let route = this.Swarm_station_pier(w, ident, pub)
+            if (!route) continue
+            if (!sibling_tab && !route.c.repli_src) this.Repli_register_caster(w, route, stock)
+            if (!route.c.repli_rx) this.Repli_register_rx(w, route)
+            if (sibling_tab) continue
+            // OFFER on change: stock grew, or the peer was reborn (offered_mark carries both).
+            //  Presence-gated — husking at silence is litter.  Repli_merge dedups the far side,
+            //   so a re-offer after rebirth is safe, just not free.  The unit is the MAG (the wire
+            //    cut, Mag_todo §4.1): the whole shuffle Mag crosses as ONE husk fragment, so the
+            //     friend's mirror wears the same paged shape — a collection arrives as its rooms.
+            if (!p.c.heard_at || ((Date.now() - p.c.heard_at) >= 40000 && !this.Swarm_socket_fresh(p, 20000))) continue
+            let n = this.Ra_recs(stock).length
+            // the tour count rides the mark because the count ALONE cannot see a rotation: a turn of the
+            //  wheel that adds one and drops one leaves `n` identical, so a pure-count mark would call a
+            //   completely different catalog "unchanged" and sit on it until the 60s floor tripped.
+            let tour = String(rw.o({ Stoker: 1 })[0]?.sc?.toured || 0)
+            let mark = String(w.c.station_era || 0) + ':' + String(route.c.peer_era || 0) + ':' + n + ':' + tour
+            // ── THE RE-OFFER FLOOR (2026-08-04) — the last-resort backstop under the whole epoch machine ──
+            //  Everything above makes "A learns B was reborn" robust; this makes "A stops sending B new
+            //   music" structurally impossible even if all of it fails.  The mark is CHANGE-triggered, so a
+            //    mark that is wrong-but-stable (a missed era, a mirror that lost the husks, a stock count
+            //     that happens to match) is a silent permanent hole with no self-heal at all.  A floor turns
+            //      any such hole into a delay of at most one interval.  Cheap: husk fragments only (no
+            //       bytes), and Repli_merge dedups the whole thing at the far side — a re-offer costs the
+            //        wire one catalog fragment per friend per minute, and buys an unconditional guarantee.
+            let floor = (w.c.swarm_offer_floor_ms == null ? 60000 : +w.c.swarm_offer_floor_ms)
+            let stale = !route.c.offered_at || (Date.now() - route.c.offered_at) > floor
+            if (route.c.offered_mark !== mark || stale) {
+                route.c.offered_mark = mark
+                route.c.offered_at = Date.now()
+                await this.Ra_offer_stock(w, route, me, pub, stock)
+            }
+        }
+    }
+    for (const peering of w.o({ Peering: 1 })) await peering.do()
+    // FINER GRAIN under `peers` (2026-08-08, hours after the split shipped): the four-way split
+    //  convicted the cull in one paste, but its `peers` bucket spans the offer loop, the Peering
+    //   drains, THE TRANSCODE PUMP, the warm/restock walk, and the lead pass — so it cannot say what
+    //    the pump itself costs, and the pump is the verb the 32s ceiling hangs off.  Two more marks
+    //     (`pump`, `warm`) cut that bucket into the pieces that matter; `peers` keeps its meaning as
+    //      "everything in this bucket", so old readings stay comparable.
+    w.c.beat_split.pump = 0
+    w.c.beat_split.warm = 0
+    let pmark = Date.now()
+    if (typeof this.Ra_transcode_pump === 'function') await this.Ra_transcode_pump(w)
+    w.c.beat_split.pump = Date.now() - pmark
+    pmark = Date.now()
+    // ── THE TRACK IN YOUR EARS BEATS THE ONE THAT MIGHT BE NEXT (the human 2026-08-08: "are we just
+    //  prioritising stuff like crap?" — yes, we were, and their tab proved it) ──
+    //  MEASURED on the live tab: FIVE distinct records held parked wants at the caster simultaneously
+    //   (`waiting=` climbing past 30), four of them stalled at off=16 for 95–324s while exactly one
+    //    advanced. Only ONE of those five was in anybody's ears. `Ra_restock_beat` deepens previews
+    //     across the WHOLE mirror crate every beat, so the playhead's asks queue behind a pile of
+    //      speculative ones — and the source's pump, which spends a bounded budget per record per
+    //       beat, then spreads that budget across all five. Nobody was prioritising anything.
+    //  THE LADDER, in the owner's own words: "prioritise the current track over the potential next
+    //   track, unless we're >16s ahead". The lead pass already spends its ASK budget on that ladder;
+    //    this applies the same rule one level up, to whether the speculative traffic runs at all.
+    //  `warm` is deliberately NOT gated: it is chunk 0 of two records per mirror — the dial's whole
+    //   domain ([[dial-domain-is-the-warm-window]]), so starving it would leave the radio with
+    //    nothing to turn TO, which is a worse failure than a thin lead. Only the deep restock waits.
+    //  Reads the PREVIOUS beat's lead (the leg that computes it runs below, ~600ms later). Staleness
+    //   is the point of `lead_at`: no fresh stamp ⇒ nothing is playing ⇒ no gate, restock full speed.
+    let lead_fresh = w.c.lead_at && (Date.now() - w.c.lead_at) < 3000
+    let hungry = lead_fresh && +(w.c.lead_s || 0) < 16
+    w.c.restock_held = hungry ? (+(w.c.restock_held || 0)) + 1 : 0
+    for (const home of rw.o({ Theirs: 1 })) {
+        if (!home.sc.pub) continue
+        let shelf = this.Ra_home_them(rw, String(home.sc.pub))
+        // the §5 warm start FIRST (2 records × their opening page — autostart-ready fast),
+        //  then the restock deepens whole previews behind it.
+        await this.Ra_mag_warm(w, shelf)
+        if (!hungry) await this.Ra_restock_beat(w, shelf, 2)
+        // the pool reads this friend's Lofi stream: ask for the next pages when its cursor nears the end (Pool.g)
+        if (typeof this.Ra_pooling_want_beat === 'function') { try { await this.Ra_pooling_want_beat(w, rw, shelf, String(home.sc.pub)) } catch (er) {} }
+    }
+    w.c.beat_split.warm = Date.now() - pmark
+    // ── the FULL-LENGTH leg: the radio is playing a FRIEND's record — keep the wire ahead of
+    //  the REAL playhead (never the Books' simulated cursor: Ra_term_stream_beat advances its
+    //   own head, and a second playhead racing the AudioContext would lie).  Want the next
+    //    missing pages inside a ~32s ahead-window from the radio's live position; an ask past
+    //     the preview PARKS at the caster and ignites its transcode (served back by its own
+    //      Ra_transcode_pump as the chunks land).  Want-once rides ra_wanted — cleared by the
+    //       rebirth reset like every other pull, so a lost want is re-askable.
+    let radio = rw.o({ Radio: 1 })[0]
+    let playing = radio ? radio.c.rec : null
+    // …unless it plays from a file here (the radio's file road — a pooled copy of their track): then the wire has nothing to do
+    let fileroad = playing && radio.c.file && radio.c.file.id === String(playing.sc.id)
+    if (playing && playing.c.from && playing.c.rx && playing.sc.id && !fileroad) {
+        let seg_s = +(playing.sc.seg_secs || 2)
+        let head = Math.floor((+(radio.sc.at || 0)) / seg_s)
+        let total = +(playing.sc.total || 0)
+        let PAGE = +(w.c.repli_page || 2)
+        // presence only (2026-08-05): this loop tests `map[off] == null` and nothing else.  Ra_chunk_map
+        //  COPIED every held chunk of the playing record on EVERY beat — inside the very beat the console
+        //   was reporting as overrunning 600ms ("skipping this tick ×71").
+        let map = this.Ra_chunk_have(playing)
+        w.c.ra_wanted = w.c.ra_wanted || {}
+        w.c.ra_want_ts = w.c.ra_want_ts || {}
+        let nowms = Date.now()
+        // THE LEAD LADDER (2026-08-08, the owner: "the main cause is not prioritising the Records
+        //  enough … prioritise the current track over the potential next track, unless we're >16s
+        //   ahead").  The ask budget was a FLAT 3 per beat whether the playhead had 30 seconds of
+        //    audio banked or two — which is the definition of not prioritising: a comfortable track
+        //     spent exactly the same wire as a starving one.  Count the CONTIGUOUS chunks held from
+        //      the head (a hole ends the lead — audio past a gap is not lead, it is after the gap)
+        //       and spend accordingly:
+        //        under 8s banked  → 6 asks, we are nearly dry and nothing else matters;
+        //        under 16s banked → 3 asks, the old constant, holding station;
+        //        16s or more      → 1 ask, just top the window up and leave the wire to everyone else.
+        //  That last rung IS the owner's "unless we're >16s ahead": a comfortable current track stops
+        //   hogging the beat, which is what leaves room for the next track's pages and the heist.
+        //  seg_s is per chunk (2s), so 4 chunks = 8s, 8 chunks = 16s — the ladder is in SECONDS, and
+        //   is written in chunks here only because the map is.
+        let lead = 0
+        while (map[head + lead] != null && lead < 64) { lead = lead + 1 }
+        let lead_s = lead * seg_s
+        let budget = 6
+        if (lead_s >= 16) { budget = 1 } else if (lead_s >= 8) { budget = 3 }
+        w.c.lead_s = lead_s        // off-snap, for the electrode + the Brink to read
+        // STAMPED, so a LATER beat can tell "the playhead is comfortable" from "nobody is playing".
+        //  A bare lead_s is indistinguishable between the two the moment the radio stops, and the
+        //   restock gate below would then throttle itself forever off a corpse reading.
+        w.c.lead_at = nowms
+        let asked = 0
+        let off = head - (head % PAGE)
+        while (off < total && off < head + 16 && asked < budget) {
+            // PAGE-WIDE, not the stride-aligned chunk alone (Ra_page_hole, Ra.g).  A live-window page
+            //  that lost ONE of its chunks to the relay's bulk-lane shed read as held here, so the
+            //   playhead ran into a hole this loop had already decided was filled — and re-asked nothing.
+            if (this.Ra_page_hole(map, off, PAGE, total)) {
+                let key = String(playing.sc.id) + ':' + off
+                // RE-ASKABLE live-window want (the starve fix, the human 2026-07-28 "both go into 'the
+                //  next piece hasn't arrived' mode after a little while"): a want lost to the wire (a
+                //   dropped reply, a reused-seq inbox collision — the Peeroleum hazards) used to be
+                //    re-askable ONLY on a full peer rebirth, so ONE lost page starved the live playhead
+                //     until reconnect — a hole that never clears.  Re-ask a still-missing live-window
+                //      page every 4s (bounded by asked<3/beat + the head+16 window), so a lost page
+                //       self-heals in a few seconds instead of dropping the audio.  ra_want_ts carries
+                //        the last-ask stamp beside the once-cursor; both clear on the same rebirth reset.
+                //  …AND THE RE-ASK INTERVAL RIDES THE LADDER TOO (2026-08-08).  A flat 4s was the last
+                //   constant in this loop, and it is the cruellest one when the playhead is nearly dry:
+                //    at seg_secs=2 it means a lost page costs FOUR SECONDS — two whole chunks of silence
+                //     — before anyone asks again, which is most of the 6s starve grace in Radio.g:439.
+                //      Under 8s banked, chase it every 1.5s; otherwise keep the 4s that was tuned for a
+                //       comfortable stream and which exists to stop a re-ask storm on a healthy wire.
+                let again_ms = lead_s < 8 ? 1500 : 4000
+                let last = w.c.ra_want_ts[key] || 0
+                if (nowms - last > again_ms) {
+                    w.c.ra_want_ts[key] = nowms
+                    w.c.ra_wanted[key] = 1
+                    await this.Repli_want_next(w, playing.c.rx, me, String(playing.c.from), String(playing.sc.id), 'opus', off)
+                    asked = asked + 1
+                }
+            }
+            off = off + PAGE
+        }
+    }
+    // the ⇊ heist gesture's follow-through rides the same beat (the human 2026-07-28): serve friends'
+    //  folder-describe asks, and carry my own %Keeps wanted→choosing→committing→done (pull the chosen
+    //   tracks into the collection).  Cheap when no keep stands; the routes it needs were registered above.
+    //   Guarded (the Ra_transcode_pump idiom) AND try-wrapped so a heist bug can NEVER break the radio
+    //    share beat — the keep driver is additive follow-through, never a dependency of the share itself.
+    w.c.beat_split.peers = Date.now() - tmark
+    tmark = Date.now()
+    // ── AND THE KEEP FLIES DETACHED TOO (2026-08-13, the cull|tour disease two organs along) ──
+    //  Measured live: keep=2602ms/958/1249 per beat with 280 skips while a heist pulled — the beat
+    //   mutex held 1-3s by swarm_share_beat, the folder-describe answer crawling ("asking S for the
+    //    folder takes aaages"), the pump and warm starved behind it.  Same shape, same cure: kick and
+    //     bow out.  Nothing downstream reads keep's return (it is the LAST phase), and the one-writer
+    //      law the beat's single-flight used to carry moves INTO the latch — `keep_flying` means at
+    //       most one Heist_keep_beat ever runs, which is STRICTER than before (beats now tick on
+    //        while a slow keep streams, but a second keep can never start on top of the first).
+    this.Swarm_keep_detached(w, ident)
+    w.c.beat_split.keep = Date.now() - tmark
+//#endregion

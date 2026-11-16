@@ -658,6 +658,46 @@ async function main() {
 		}
 	}
 
+	// ⓘ ONE SOCKET PER TAB (2026-11-16, Social_demarcation_todo §0.5 stage 1 — Tribunal.g Carrier_join, dark until armed).  The
+	//  client merges the Lies channel and the Swarm station onto ONE ws: it dials ?addr=<soul> (the door), says `become <role>`,
+	//   then the soul hello and the body hello.  The relay needs no change for that — this is the contract proving it: every name
+	//    the tab answers to lands on that one socket exactly once, and a twin tab doing the same at a session seat stays apart.
+	log('\n— one socket per tab: a role and two identity binds on one ws —')
+	{
+		const attach4 = process.env.RELAY_MOD ? (await import(process.env.RELAY_MOD)).attachRelay : attachRelay
+		const srv = createServer(); const port = await listen(srv)
+		const relay = attach4(srv, { editorRelayUrl: 'off' })
+		try {
+			const soul = await mint(), body = await mint()
+			const SOUL = prepubOf(soul.pubHex), BODY = prepubOf(body.pubHex)
+			const hello = async (b: any, k: any, want?: string) => {
+				const h = { control: 'hello', from: prepubOf(k.pubHex), pub: k.pubHex, ts: Date.now() }
+				b.send({ ...h, sign: await signHeader(h, k.privHex), ...(want ? { want } : {}) })
+			}
+			const tab = browser(port, SOUL), twin = browser(port, `${SOUL}_1`), other = browser(port, 'other', { addrless: true }), far = browser(port, 'FAR')
+			await Promise.all([tab.open, twin.open, other.open, far.open])
+			tab.send({ control: 'become', role: 'player' }); other.send({ control: 'become', role: 'player' })
+			await hello(tab, soul); await hello(tab, body)
+			const bound = await until(() => tab.ctrl.filter((m: any) => m.control === 'hello_ok').length >= 2)
+			check('one ws: become + soul hello + body hello all acknowledged', bound
+				&& tab.ctrl.some((m: any) => m.control === 'hello_ok' && m.addr === SOUL) && tab.ctrl.some((m: any) => m.control === 'hello_ok' && m.addr === BODY))
+			twin.send({ control: 'become', role: 'player' })
+			await hello(twin, soul, `${SOUL}_1`)
+			check('the twin tab (one ws too) is granted <soul>_1', await until(() => twin.ctrl.some((m: any) => m.control === 'hello_ok' && m.addr === `${SOUL}_1`)))
+			far.frame(SOUL, 'pier_hello', 80); far.frame(BODY, 'pulse', 81); far.frame('player', 'ping', 82); far.frame(`${SOUL}_1`, 'pulse', 83)
+			await until(() => [80, 81, 82].every((q) => tab.got.some((m: any) => m.header?.seq === q))); await wait(200)
+			const n = (b: any, q: number) => b.got.filter((m: any) => m.header?.seq === q).length
+			check('to:<soul> lands on the tab once', n(tab, 80) === 1)
+			check('to:<body> lands on the tab once', n(tab, 81) === 1)
+			check('to:<role> lands on the tab once (and on the other player too — the role is a broadcast)', n(tab, 82) === 1 && n(other, 82) === 1)
+			check('the twin hears none of the tab\'s own frames', n(twin, 80) === 0 && n(twin, 81) === 0)
+			check('to:<soul>_1 lands on the twin once, not the tab', n(twin, 83) === 1 && n(tab, 83) === 0)
+			tab.ws.close(); twin.ws.close(); other.ws.close(); far.ws.close()
+		} finally {
+			relay.close(); await wait(50); srv.close()
+		}
+	}
+
 	editor2.close()
 	runner.close()
 	await wait(50)

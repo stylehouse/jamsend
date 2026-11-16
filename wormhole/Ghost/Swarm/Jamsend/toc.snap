@@ -1,0 +1,28 @@
+Waft:Ghost/Swarm/Jamsend,desc:the music between friends — loaded on top of the friends layer — the share session suggestions the ive_got boast and the music pillars of the stash
+  What:the share,desc:after the seal the music moves — my stock is cast to every Music-granted friend and theirs fills my radio world — a detached beat outside the mutex
+    Doc:Ghost/S/Jamsend.g
+    Point,method:Swarm_share_up,desc:stand the share session — arm enroll offer
+    Point,method:Swarm_share_greet,desc:tell one friend our share is up
+    Point,method:Swarm_share_granted,desc:the Repli consent hook — a live Music grant
+    Point,method:Swarm_share_present,desc:the pull's source-liveness hook — presence only subtracts
+    Point,method:Swarm_share_loop,desc:the wall-clock pump — era-guarded and self-healing
+    Point,method:Swarm_share_beat,desc:one beat — cull tour offer keep
+    Point,method:Swarm_offer_now,desc:offer the catalog at once
+    Point,method:Swarm_beat_health,desc:how far the beat got — the progress bar
+  What:suggest and boast,desc:you'd love this — durable store-and-forward — and what music I have got
+    Doc:Ghost/S/Jamsend.g
+    Point,method:Swarm_suggest,desc:suggest a track
+    Point,method:Swarm_suggest_got,desc:a suggestion landed
+    Point,method:Swarm_listened,desc:a friend started one of our tracks
+    Point,method:Swarm_gossip_music,desc:tell friends what we hold
+    Point,method:Swarm_ive_got,desc:the ive_got fact
+    Point,method:Swarm_music_census,desc:count what is reachable
+  What:the music stash,desc:what of the music survives a reload — pools the Heard takes the radio's choice — called from Swarm_restash_all
+    Doc:Ghost/S/Jamsend.g
+    Point,method:Swarm_restash_pools,desc:write the pool compartments
+    Point,method:Swarm_pools_rehydrate,desc:pools back
+    Point,method:Swarm_heard_rehydrate,desc:the Heard Mag back
+    Point,method:Swarm_radio_rehydrate,desc:radio state back
+  What:the spec
+    Doc:src/lib/O/spec/AtheoryNexus_todo.md
+    Doc:src/lib/O/spec/Sharing_design.md

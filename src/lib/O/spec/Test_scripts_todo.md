@@ -23,7 +23,7 @@ Books live in `wormhole/Credence/toc.snap`, one row each, run on a live runner. 
 
 | script | proves |
 |---|---|
-| ✅ `relay-test.ts` | the `/relay`: same-origin + cross-relay delivery, signed hello binds, forged hello refused, individuation, `who`, the r2r bridge, twin tabs of a Cave (seat before courtesy bind, the heir rule, `family_gone` on close).  `RELAY_MOD=<copy.ts>` tests a scratch relay without saving `relay.ts` (a save restarts the dev server).  ⚠ "cross-relay deliver resumes after reconnect" flakes on the old relay too |
+| ✅ `relay-test.ts` | the `/relay`: same-origin + cross-relay delivery, signed hello binds, forged hello refused, individuation, `who`, the r2r bridge, twin tabs of a Cave (seat before courtesy bind, the heir rule, `family_gone` on close), one socket per tab (a role + soul + body bind on one ws, each name landing once, a twin apart).  `RELAY_MOD=<copy.ts>` tests a scratch relay without saving `relay.ts` (a save restarts the dev server).  ⚠ "cross-relay deliver resumes after reconnect" flakes on the old relay too |
 | `runner-ask-test.ts` | runner_ask / runner_ack corr-routing through one relay with a fake runner (4 checks failing, known, unfixed) |
 | `ceremony-addr-test.ts` | the `${prepub}_${rid}` addressing model — the multi-body device-link scenario on one in-process relay |
 | `cluster-trust-test.ts` | `cluster_trust.ts` sign→verify contract behind the relay's gen_write gate and the flock |
@@ -37,6 +37,7 @@ Need `~/chromelibs` (see the eye memory).  Each mints its own identity in its ow
 | script | proves / shows |
 |---|---|
 | `twin_eye.mjs` | tabs of ONE profile through a plan: `--plan="open:A wait:30 open:B wait:30 crash:A wait:30"` — steps `open`/`reload`/`close`/`crash`/`wait:N`/`slow:X` (delays the IndexedDB probe); verdict = one bare holder, siblings `_N`, nobody memory-only; exit 1 on bad.  Use `/BigSoundland` (a fresh `/Radio` mints no identity).  Spec: `Identity_persist_todo.md` §0.1 |
+| `friends_eye.mjs` | two strangers become friends: one Chromium, two profiles — A names itself and mints an invite through the Door, B opens it and joins; verdict = both sides sealed, no page errors, and under `ONE_SOCKET=1` (arms `?one_socket`, Tribunal.g `Carrier_join`) each tab ends on ONE relay socket.  `node scripts/friends_eye.mjs http://172.17.0.1:9091 <out> [secs]`.  ⚠ The UI driving is timing-bound: a walk where the page's Sounditron never starts, or the Door face remounts mid-step, reads BAD with no invite — read `<out>.A.console.log` before blaming the wire |
 | `arrival_eye.mjs` | be a newcomer: open a page, click/type on a schedule, photograph it, keep body text + console + every relay frame |
 | `runner_eye.mjs` | photograph a live page over time (`node scripts/runner_eye.mjs <url> <outprefix> [secs,…]`) |
 

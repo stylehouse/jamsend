@@ -80,6 +80,7 @@
         'Ghost/Story/ErrchannelTesting.g',// the Story ERROR CHANNEL test — ErrChannel: a captured throw rides w/%Errlog/%Err into the fixture and gates it (spec/Error_channel_todo.md; needs a live runner to record + declare)
 
         'Ghost/S/Swarm.g',              // swarm spine — identity/page/pier + the Idzeug invite (Swarm_spec.md)
+        'Ghost/S/Jamsend.g',            // the music between friends on top of Swarm — share session, suggest, ive_got, the music stash (split out 2026-11-16)
         'Ghost/Story/SwarmTesting.g',   // the Swarm* tests — SwarmStaple; more pile on here
         'Ghost/Story/InvSeal.g',        // the Inv* tests, rung 1 — the seal-seam warmth gate (cold refuses / warm parks the consent)
         'Ghost/Story/InvFerry.g',       // the Inv* tests, rung 2 — the WHOLE ferry exchange as a state machine (mint→carry→verify→claim→cross; double-spend + forged presig refuse)
@@ -432,7 +433,10 @@
             pier.c.up = peering
             pier.oai({ Ud: 1 })   // trust-everything v1: satisfy the inbox pre-Ud gate
 
-            ;(H as any).Socket_real(w)
+            // ONE SOCKET PER TAB when armed (Tribunal.g Carrier_join; off by default ⇒ exactly Socket_real).  The editor's frozen
+            //  spine (pinned_stable/Tribunal.go) has no Carrier_join, so it always takes the old road.
+            if (typeof (H as any).Carrier_join === 'function') (H as any).Carrier_join(w)
+            else (H as any).Socket_real(w)
             const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
             // THE PORT DIES WITH ITS HOUSE (2026-11-15).  An in-place remount (a Vite hot update of Otro/its imports) stops the old
             //  House and builds a new one in the SAME page — but Socket_real's port re-dials forever unless close() is called, so the
@@ -524,6 +528,18 @@
                     //       showed it, which is the argument for not making the retry silent.)
                     //  readyState 1 = OPEN, compared numerically so this is safe wherever it is evaluated.
                     if ((port.ws as any)?.readyState !== 1) return
+                    // ONE SOCKET (Carrier_join): when the station rides this same socket, ITS hello binds our identity here — a second
+                    //  Lies hello would only add the dodge seat, and the station's arbiter hook would read that seat's ack as its own
+                    //   door being refused.  Take the station's ack as ours (the fan in Tribunal stamps it), and vouch for the socket.
+                    const door = port.door?.()
+                    if (door && door !== w) {
+                        if (port.hello_ok_at && !w.c.hello_ok_at) {
+                            w.c.hello_ok_at = port.hello_ok_at
+                            if (port.last_hello_ok?.nonce) w.c.relay_nonce = String(port.last_hello_ok.nonce)
+                            void H.Lies_flock_prove(w)
+                        }
+                        return
+                    }
                     const idento = H.Lies_cluster_idento(w)
                     if (!idento?.pub || !idento?.key) return
                     if (retry) {

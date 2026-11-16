@@ -1,4 +1,5 @@
 Ground:SwarmTesting,desc:the tests of Ground/Swarm — what a Book proving it loads,FromWhat:Waft:Ghost/Swarm/Easy
+  Stands:Jamsend
   Stands:Swarm
   Load:Ghost/Story/SwarmTesting.g
   Load:Ghost/Story/InvSeal.g
