@@ -210,7 +210,10 @@ export default defineConfig({
 		//  each buys no HMR — and the docindex plugin above already filters wormhole paths out of its own
 		//   interest.  Watches are budgeted per UID on the host, and the dev server runs as uid 1000 (yours)
 		//    since 2026-09-17: the first boot as 1000 died ENOSPC on '/app/wormhole/Story/VytoNeed/003.snap'.
-		watch: { ignored: ['**/wormhole/**'] }
+		//  EXCEPT wormhole/Ground/ (2026-11-16): src/lib/A/ground.ts IMPORTS those ~30 tocs (an eager ?raw glob), so unwatched
+		//   they were served as the copy read at boot — a Spine added on disk never reached a folderless page until a restart.
+		//    Watched, a Ground change re-serves (and reloads the tabs that hold ground.ts, as a grounds.gen.js change does).
+		watch: { ignored: (p: string) => { const i = p.indexOf('/wormhole'); if (i < 0) return false; const rest = p.slice(i + 9); return !(rest === '' || rest === '/Ground' || rest.startsWith('/Ground/')) } }
 	}
 	// test: {
 	// 	workspace: [

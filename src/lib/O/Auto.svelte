@@ -1300,37 +1300,17 @@
     //    the Mains' code).  A toc whose Role: disagrees with the booted role is said, not obeyed: the role can't change after boot.
     //  Called each Auto think until done; each pass does one step and returns.
     auto_ground(w: TheC) {
-        const GROUND_WORMHOLE_MS = 3000
         const H = this as House
         const G = String(H.c.ground)
         if (!w.c.ground_read) {
-            // the wormhole's toc first (a hand edit shows on the next load); the SHIPPED copy (ground.ts ground_toc_shipped) when there
-            //  is no wormhole to ask — no storage answered within GROUND_WORMHOLE_MS, it errs, or it has no such toc (a listener's folder)
-            const shipped = ground_toc_shipped(G)
-            w.c.ground_t0 ??= Date.now()
-            let content: string | undefined
-            const rw  = w.oai({ rw_queue: 1 })
-            const req = rw.o({ req: 'ground_read' })[0] || rw.i({ req: 'ground_read', rw_name: `wormhole/Ground/${G}/toc.snap`, rw_op: 'read' })
-            if (H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })) {
-                const reply = req.sc.reply as any
-                rw.drop(req)
-                if (!reply?.error && (reply?.content ?? '').trim()) content = reply.content
-                else if (!shipped && reply?.error) return    // storage not up yet, nothing shipped — ask again next think
-                else if (shipped) console.log(`⛰ ?G=${G}: the wormhole has no Ground toc — standing on the shipped one`)
-            }
-            else if (shipped && Date.now() - (w.c.ground_t0 as number) > GROUND_WORMHOLE_MS) {
-                rw.drop(req)
-                console.log(`⛰ ?G=${G}: no wormhole answered in ${GROUND_WORMHOLE_MS}ms — standing on the shipped Ground toc`)
-            }
-            else {
-                // the Wormhole answers on a later think; make sure there is one
-                setTimeout(() => H.main(), 500)
-                return
-            }
-            content ??= shipped
+            // THE GROUND COMES WITH THE CODE (2026-11-17): every wormhole/Ground/**/toc.snap is bundled into ground.ts (~15KB, an eager
+            //  glob vite watches), so it is here synchronously and always matches the code this page runs.  There used to be a storage
+            //   read first, with a 3s timeout falling back to this copy — but a page's storage can be a GitHub mirror a push behind the
+            //    code (b8bc stood on the pushed Radio toc, no Spine:Jamsend, under the split Swarm.go), and every Ground ships anyway.
+            const content = ground_toc_shipped(G)
             if (!(content ?? '').trim()) {
                 w.c.ground_done = true
-                console.warn(`⛔ ?G=${G}: no wormhole/Ground/${G}/toc.snap — the page stands on nothing`)
+                console.warn(`⛔ ?G=${G}: no Ground ships as wormhole/Ground/${G}/toc.snap — the page stands on nothing`)
                 return
             }
             const { C, errors } = H.decode_wh_lines(content)

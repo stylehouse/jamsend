@@ -22,8 +22,10 @@ A music page (`/Radio`, `/`) is **invisible to every tool until it is diagnostic
 - `verbs --player=<pub>` lists the controls its loaded ghosts offer; run one from the hole as `:verb args` (spec/Verbs_todo.md).
    A verb that `writes` is refused on a music page by design.  `poke <Verb> --player=` fires an allowlisted no-argument UI button.
 
-**What an armed tab still will not do:** run a Book (it joins as `role:'player'`; every dispatcher filters on `runner`), or take a
- write verb.  It becomes VISIBLE, not dispatchable.
+**What an armed tab still will not do:** run a Book (it joins as `role:'player'`; every dispatcher filters on `runner`), load code,
+ be reloaded, or take a write verb.  It becomes VISIBLE, not dispatchable.  **Every one of those refusals is a row of ONE table** —
+ `Lies_gates` in LiesFunk.svelte (2026-11-16); `gates --player=<pub>` prints it with what this tab is and which rows refuse here, and a
+ refusal names its row.  Add a new "who may" rule there, never as another inline check.
 
 ## 1. Addressing
 

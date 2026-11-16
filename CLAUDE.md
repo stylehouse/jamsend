@@ -316,7 +316,7 @@ Verify a Book by asking a LIVE runner to run it — not a headless boot.
  **⚠ djamsend is NOT remote** (owner, 2026-09-28): `https://djamsend.duckdns.org:9999/?I=<pub>` is Caddy in
   front of THIS box's own `:9091` dev server (container `jamsend-dev`). Its music tabs sit on the local relay —
    use the DEFAULT `RUNNER_URL` and address one with `--player=<pub>` (`minisnap`, `console`, `crew`, `dump`,
-    `reload`). The djamsend URL is unreachable from this container; don't try it. A music tab only answers once
+    `gates`; never `reload` — only a runner is reloaded remotely). The djamsend URL is unreachable from this container; don't try it. A music tab only answers once
      DIAGNOSTIC-ARMED — the owner runs `localStorage.setItem('socklog','1')` in its DevTools and reloads (or
       opens it once with `&socklog`). `runners` lists only armed players; a missing one isn't armed.  It is the ONLY
        switch (verbs ride the same channel) — the how-to is **`spec/Tab_reach_todo.md`** (Everything: "reaching a live tab").

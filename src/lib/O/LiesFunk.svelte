@@ -2616,10 +2616,8 @@ await M.eatfunc({
             const H = this as any
             const v = H.Verb_find(name)
             if (!v) return { ok: false, result: { error: `no verb '${name}' on this tab — \`verbs\` lists what is here (its owner may not be loaded)` } }
-            const ro_only = !!(H.Lies_humdinger?.(w) && !H.Lies_is_runner?.(w))
-            const role = H.Lies_role?.(w)
-            if (v.writes && (ro_only || role === 'hacker'))
-                return { ok: false, result: { refused: `verb '${name}' writes — this tab is ${role === 'hacker' ? 'a hacker room' : 'a music-page listener'} (read-only); run it on the editor terminal` } }
+            const refused = H.Lies_gate(w, name, v.writes)
+            if (refused) return { ok: false, result: { refused } }
             // A VERB IS AN ARRIVAL (Atheory_design §3, the near move; 2026-10-28): an e:Verb elvis to this w, run by the House in
             //  its own think — Atime, like any elvis, and on Story's trace.  Who asked rides e.c.by (a prepub would make a Book
              //   machine-dependent); e.sc says only proven:1 (the relay vouched a flock key) or hand:1 (this tab's own keyboard).
@@ -2649,6 +2647,46 @@ await M.eatfunc({
                 result = { error: String(err?.message ?? err) }
             }
             return { ok: !result?.error, result }
+        },
+        // ── THE GATES — who may do what to this tab, in ONE table (2026-11-16) ────────────────────────────────
+        //  Every refusal an asker can meet for WHO this tab is lives here: the op chain and Verb_run both ask Lies_gate,
+        //   so a refusal names its row, and `runner_ask gates` prints the table.  A tab is one of four kinds: a runner (a
+        //    machine's tab), an editor (the human's live work), a hacker room (read-only by construction), a player (a
+        //     music page, someone listening).  `may` = the kinds an op runs on; `needs: 'socklog'` = the human armed this
+        //      tab (the dev switch is the consent).  A verb's row is its `writes` — a writing verb takes the 'writes' row.
+        Lies_gates(): any[] {
+            return [
+                { ops: ['run', 'release', 'retain', 'accept', 'declare', 'pick'], may: ['runner', 'editor', 'hacker'],
+                  why: 'a music page is never made to run a Book — the listener tab is theirs (owner 2026-09-01)' },
+                { ops: ['ghost_load'], may: ['runner', 'editor', 'hacker'],
+                  why: 'a music page is never made to load code (owner 2026-09-01)' },
+                { ops: ['reload'], may: ['runner'],
+                  why: 'only a machine tab is reloaded remotely — an editor holds the human live work, and a music page holds the music playing and the folder grant only the human can give back (owner 2026-09-01)' },
+                { ops: ['drag'], may: ['runner'],
+                  why: 'a remote hand on the graph is for a machine tab, like reload' },
+                { ops: ['tidy'], may: ['runner', 'editor', 'hacker', 'player'], needs: 'socklog',
+                  why: 'the one mutation a --player takes, and only while armed (runner_ask socklog on --reload --player=<id>) — the dev switch is the consent' },
+                { ops: ['writes'], may: ['runner', 'editor'],
+                  why: 'a verb that writes belongs to the editor terminal — a hacker room and a music page are read-only' },
+            ]
+        },
+        Lies_tab_kind(w: TheC): 'runner' | 'editor' | 'hacker' | 'player' {
+            const H = this as any
+            if (H.Lies_humdinger?.(w) && !H.Lies_is_runner?.(w)) return 'player'
+            const role = H.Lies_role?.(w)
+            return role === 'runner' || role === 'hacker' ? role : 'editor'
+        },
+        // Lies_gate — null when `op` may run here, else the refusal, naming its row.  `writes` = it is a verb that writes.
+        Lies_gate(w: TheC, op: string, writes?: any): string | null {
+            const H = this as any
+            const rows = H.Lies_gates() as any[]
+            const row = rows.find((r: any) => r.ops.includes(op)) ?? (writes ? rows.find((r: any) => r.ops.includes('writes')) : null)
+            if (!row) return null
+            const kind = H.Lies_tab_kind(w)
+            const said = { runner: 'a runner', editor: 'an editor', hacker: 'a hacker room', player: 'a music page' }[kind]
+            if (!row.may.includes(kind)) return `'${op}' refused — this tab is ${said}: ${row.why}`
+            if (row.needs === 'socklog' && !socklog_armed()) return `'${op}' refused — this tab is not armed: ${row.why}`
+            return null
         },
         // e_Verb — the arrival's landing (see Verb_run): one phase of a verb, in Atime
         async e_Verb(A: TheC, w: TheC, e: TheC) {
@@ -2729,14 +2767,16 @@ await M.eatfunc({
             let vdef: any = null
             try {
                 H.Lies_engage_touch(w, client)   // any activity from the holder keeps its lease alive
-                // READ-ONLY on a diagnostic humdinger (a music-page listener that stood up a read-only
-                //  channel — Lies_channel_up gated on Lies_player_seen): refuse every run-driving or
-                //   reloading op. The CLI's PLAYER_OPS gate is advisory; THIS is the authority — a music
-                //    tab can be introspected but never made to run a Book or reload (owner 2026-09-01).
-                const ro_only = H.Lies_humdinger(w) && !H.Lies_is_runner(w)
-                if (ro_only && (op === 'run' || op === 'release' || op === 'retain' || op === 'accept' || op === 'declare' || op === 'reload' || op === 'ghost_load' || op === 'pick')) {
+                // THE GATES (Lies_gates, above): who may do what to this tab — one table, the authority.  The CLI's
+                //  PLAYER_OPS is advisory; a verb meets the same table inside Verb_run.
+                const refused = (H as any).Lies_gate(w, op)
+                if (refused) {
                     ok = false
-                    result = { refused: `op '${op}' refused — this tab is a music-page listener (read-only introspection only)` }
+                    result = { refused }
+                } else if (op === 'gates') {
+                    // the table itself, and which kind this tab is — so a refusal is never a mystery
+                    result = { kind: (H as any).Lies_tab_kind(w), armed: socklog_armed() ? 1 : 0,
+                        gates: (H as any).Lies_gates().map((r: any) => ({ ...r, here: (H as any).Lies_gate(w, r.ops[0], r.ops[0] === 'writes') ? 'refused' : 'ok' })) }
                 } else if ((vdef = (H as any).Verb_find(op))) {
                     // A REGISTERED VERB WINS over the chain below (Verbs_todo §2) — the chain is the fallback while
                     //  families move out to the ghosts that own them.  The gate is Verb_run's, shared with the hole.
@@ -2787,7 +2827,7 @@ await M.eatfunc({
                     //   roster Creduler_ensure walks — so a new ghost can be brought up on a live runner
                     //    without a manifest edit.  Bounded: Lies_gen_path admits only Ghost/**.g → gen/**.go
                     //     already ON DISK, so this can load nothing the compiler did not write.  Runner-only
-                    //      (in the ro_only refusal above — a music page is never made to load code).  `stand`
+                    //      (the 'ghost_load' row of Lies_gates — a music page is never made to load code).  `stand`
                     //       mints A:<name>/w:<name> on the top House so the ghost's worker ticks; the methods
                     //        land a beat after the mount, and attend simply finds them next think.
                     const a = ask as any
@@ -2876,7 +2916,7 @@ await M.eatfunc({
                     //  NO NEW AUTHORITY, the same rule the poke allowlist states: this presses a button
                     //   a human can already press, with the same two arguments the Searchbar sends.  It
                     //    opens and reads; it writes only the Aside moment the click itself would write.
-                    //     Runner-only (in the ro_only refusal above).
+                    //     Refused on a music page (Lies_gates).
                     const a = ask as any
                     const path = String(a.path ?? '')
                     if (!path) { ok = false; result = { error: 'pick needs a path' } }
@@ -3495,8 +3535,8 @@ await M.eatfunc({
                     //    the movable nodes + the extent to aim at.  RUNNER TABS ONLY, like reload.
                     const cy = (H.top_House().c as any).cy
                     const a = ask as any
-                    if (!H.Lies_is_runner(w)) { ok = false; result = { error: 'not a runner — refusing to drag an editor tab' } }
-                    else if (!cy) { ok = false; result = { error: 'no Cytoscape canvas — is a useCyto Book mounted?' } }
+                    // runner-only: the gate above (Lies_gates)
+                    if (!cy) { ok = false; result = { error: 'no Cytoscape canvas — is a useCyto Book mounted?' } }
                     else {
                         // a nucleus (`nuc:` — the compound's own seed) and a compound are not hand-movable,
                         //  the same refusal Cytui's vsub_grab makes; they still LIST, so a caller aiming a
@@ -3534,8 +3574,8 @@ await M.eatfunc({
                     //    RUNNER TABS ONLY: an editor holds the human's live work, a machine must not
                     //     reload it out from under them.  Reply rides out first; the reload follows a
                     //      breath later so the ack survives the socket.
-                    if (!H.Lies_is_runner(w)) { ok = false; result = { error: 'not a runner — refusing to reload an editor tab' } }
-                    else { result = { reloading: true }; setTimeout(() => location.reload(), 400) }
+                    //  Runner-only is the gate above (Lies_gates, the 'reload' row).
+                    result = { reloading: true }; setTimeout(() => location.reload(), 400)
                 } else if (op === 'socklog') {
                     // ARM THE TRACE DUMP REMOTELY.  Until now the only way to get a tab writing
                     //  wormhole/_trace/*.jsonl was a human clicking 🪪 Id hatch → socklog on that tab —
@@ -3549,7 +3589,7 @@ await M.eatfunc({
                     //      a reload costs the human an AudioContext tap on a manual tab.
                     const on = (ask as any).on !== 0
                     socklog_arm(on)
-                    const willReload = !!(ask as any).reload && H.Lies_is_runner(w)
+                    const willReload = !!(ask as any).reload && !(H as any).Lies_gate(w, 'reload')   // the same row as op reload
                     result = { armed: socklog_armed(), ring: 'live within ~5s (no reload needed)',
                         tap: on ? (willReload ? 'installs on the reload below' : 'needs a reload to install')
                                : 'off at next reload',
@@ -3587,8 +3627,8 @@ await M.eatfunc({
                     //    crew tidy) — no eval, no generic door on the untrusted relay (Swarm_spec's ruling).
                     const self = (H as any).Swarm_live_self?.() as TheC | null
                     const what = String((ask as any).what ?? '')
-                    if (!socklog_armed()) { ok = false; result = { refused: 'tidy refused — arm the tab first (runner_ask socklog on --reload --player=<id>); the dev switch is the consent' } }
-                    else if (!self) { ok = false; result = { error: 'no live self identity on this tab' } }
+                    // armed-only: the gate above (Lies_gates, the 'tidy' row)
+                    if (!self) { ok = false; result = { error: 'no live self identity on this tab' } }
                     else if (what === 'crew') { result = { retired: (H as any).Swarm_crew_tidy?.(self) ?? 0 } }
                     else if (what === 'rebuffs') { let n = 0; for (const r of self.o({ rebuff: 1 })) { self.drop(r); n++ } result = { dropped: n } }
                     else if (what.startsWith('forget:')) {

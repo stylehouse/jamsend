@@ -84,7 +84,7 @@ import { DEAD_MS, SLUGGISH_MS, liveness } from '../src/lib/O/runner_liveness.mjs
 //  below for why this is safe (the tab, not the CLI, is the authority on what it will do).
 const UNKNOWN_OK = process.argv.includes('--unknown-ok')
 let PLAYER_PUB = ''   // set by --player=: the one music page a slot-addressed ask is for (sendAsk stamps it into ask.pub)
-const OPS = ['ping', 'probe', 'world', 'minisnap', 'pick', 'stemdex', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain', 'console', 'crew', 'tidy', 'ghost_load', 'atlas_callers', 'atlas_refresh', 'atlas_lint', 'electrode', 'exercise', 'flavour', 'lagoon', 'census', 'verbs', 'everything_check']
+const OPS = ['ping', 'probe', 'world', 'minisnap', 'pick', 'stemdex', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain', 'console', 'crew', 'tidy', 'ghost_load', 'atlas_callers', 'atlas_refresh', 'atlas_lint', 'electrode', 'exercise', 'flavour', 'lagoon', 'census', 'verbs', 'gates', 'everything_check']
 
 // ── court a runner via Waft:Cluster ──────────────────────────────────────────────────────────
 //  deLines the registry snap (wormhole/Cluster/toc.snap — the durable HostedIdentity directory the editor
@@ -213,9 +213,11 @@ const localHost = (() => { try { return /^(172\.17\.0\.1|localhost|127\.0\.0\.1|
 const live  = flags.has('--live') || !localHost
 
 // READ-ONLY verbs — the only ones that may target a role:'player' tab (someone's actual music page).
+//  Advisory: the tab's own table decides (LiesFunk Lies_gates — `runner_ask gates --player=<id>` prints it).  No 'reload':
+//   the tab refuses it (only a runner is reloaded remotely), so offering it here only sent the asker on a round trip.
 //  Module-scope because it now gates TWO doors: explicit --player= targeting (below), and the
 //   auto-court's humdinger veto (a player can answer a to:'runner' broadcast — see the veto).
-const PLAYER_OPS = ['ping', 'probe', 'world', 'minisnap', 'supervisor', 'state', 'rungos', 'runners', 'socklog', 'dump', 'poke', 'reload', 'snap', 'steps', 'assertions', 'console', 'crew', 'tidy', 'atlas_callers', 'atlas_refresh', 'atlas_lint', 'lagoon', 'census', 'verbs', 'everything_check']
+const PLAYER_OPS = ['ping', 'probe', 'world', 'minisnap', 'supervisor', 'state', 'rungos', 'runners', 'socklog', 'dump', 'poke', 'snap', 'steps', 'assertions', 'console', 'crew', 'tidy', 'atlas_callers', 'atlas_refresh', 'atlas_lint', 'lagoon', 'census', 'verbs', 'gates', 'everything_check']
 
 // ── liveCensus — learn who is on THIS relay, FROM the relay ─────────────────────────────────
 //  clusterRunners() above reads a LOCAL FILE.  Point RUNNER_URL at another host and that file is
@@ -1399,6 +1401,14 @@ else if (op === 'snap' && reply.result?.got_snap) {
 		console.log(`  ${v.name.padEnd(15)} ${(v.owner + '').padEnd(10)} ${(v.where + '').padEnd(9)}${v.writes ? ' ✍ writes' : '         '}  ${v.args || ''}`)
 		if (v.desc) console.log(`  ${''.padEnd(15)} ${v.desc}`)
 	}
+} else if (op === 'gates' && reply.result && Array.isArray(reply.result.gates)) {
+	// WHO MAY DO WHAT TO THIS TAB — the tab's own table (LiesFunk Lies_gates), with the kind it says it is
+	const r = reply.result
+	console.log(`gates: this tab is a ${r.kind}${r.armed ? ' (armed)' : ''}`)
+	for (const g of r.gates) {
+		console.log(`  ${g.here === 'ok' ? '✓' : '✗'} ${g.ops.join(' ').padEnd(38)} on: ${g.may.join(' ')}${g.needs ? '  needs: ' + g.needs : ''}`)
+		console.log(`    ${g.why}`)
+	}
 } else if (op === 'census' && reply.result && reply.result.diag) {
 	// the wander's map: diag on one line, then a folder table — est% is where the music is believed to be,
 	//  pick% where the draws actually went; a shuffle that is "random enough" keeps those two columns close.
@@ -1412,7 +1422,7 @@ else if (op === 'snap' && reply.result?.got_snap) {
 	for (const [k, t] of tops) console.log(`  ${k.slice(0, 32).padEnd(32)} ${String(t.known).padStart(6)} ${String(t.dirs).padStart(5)} ${String(t.fog).padStart(5)} ${String(t.est).padStart(7)} ${(100 * t.est / se).toFixed(1).padStart(6)} ${String(t.picks).padStart(6)} ${(100 * t.picks / sp).toFixed(1).padStart(6)}`)
 } else if (reply.ok === false) {
 	// a refused/failed op — surface the runner's reason on stderr (busy lease, GC'd run, unknown Book…)
-	console.error(`✗ ${op}: ${reply.result?.error ?? 'failed'}`)
+	console.error(`✗ ${op}: ${reply.result?.error ?? reply.result?.refused ?? 'failed'}`)
 	if (reply.result?.engagement) console.error(`  lease: ${JSON.stringify(reply.result.engagement)}`)
 	exitCode = 1
 } else {

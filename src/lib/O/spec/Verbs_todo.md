@@ -30,6 +30,10 @@ A **working `_todo`**, opened 2026-10-09.  Homethink §4 already named the disea
       Verified: `verbs` on da06, `everything_check` on the code room (problems: 0).  `by` reaching a verb is not yet observed live.
 - **`atime`** (2026-10-29, `verbs_Lies`, read-only): the Atime hold ring reduced per House, holder and part (Atheory_design open
    item 3).  `runner_ask` now lets ANY verb through to `--player=`: `Verb_run` is the authority and refuses a writing verb there.
+- **The gates are one table** (2026-11-16): `Lies_gates` (LiesFunk) holds every "who may do what to this tab" rule — the run family and
+   `ghost_load` (not on a music page), `reload` and `drag` (runner only), `tidy` (armed only), and the `writes` row a writing verb takes
+   (runner|editor).  The op chain and `Verb_run` both ask `Lies_gate(w, op, writes)`; `runner_ask gates` prints it.  A migrated op keeps
+   its row; a new control declares `writes` and lands on that row — no inline `Lies_is_runner` checks.
 - **Still holding Atime across disk:** `atlas_refresh` (index-served: one read + up to ATLAS_REFRESH_MAP maps) — splitting it means
    splitting Atlas_refresh itself (a prefetching nav is the likely shape).
 

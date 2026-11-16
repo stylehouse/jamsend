@@ -62,12 +62,10 @@ export function ground_from_toc(G: any): GroundRead {
     return g
 }
 
-// THE SHIPPED TOCS (2026-11-07, AtheoryArrive_todo §5): every hand-kept wormhole/Ground/<Name>/toc.snap, bundled as text.  A page
-//  reads its Ground from the wormhole when it has one (Auto auto_ground — a toc edit shows on the next load), but a listener's page
-//   has no wormhole holding Grounds at all (a phone, a folderless body, a headless eye: no storage), so the Ground it boots from must
-//    ship with the code.  ⚠ vite's watcher ignores wormhole/ (vite.config), so in dev this copy can lag its file until the server
-//     restarts — the wormhole read is first for that reason.  A NEW toc is seen once this file is re-transformed (any edit here) or the
-//      server restarts (this note was re-touched 2026-11-10 for Ground/Radio's relay/friend/catalog/music rows + the shelf's and catalog's wording).
+// THE SHIPPED TOCS (2026-11-07, AtheoryArrive_todo §5): every hand-kept wormhole/Ground/<Name>/toc.snap, bundled as text (~15KB) and
+//  served by the same server as the code, so a page's Ground always matches the code it runs.  It is the ONLY place a page reads its
+//   Ground (Auto auto_ground, 2026-11-17): a page's own storage can be a GitHub mirror a push behind, or nothing at all (a phone, a
+//    folderless page, a headless eye).  vite.config watches wormhole/Ground/, so an edit (or a new toc) re-serves without a restart.
 const SHIPPED = import.meta.glob(['/wormhole/Ground/*/toc.snap', '/wormhole/Ground/Hacky/*/toc.snap'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>
 export function ground_toc_shipped(name: string): string | undefined {
     return SHIPPED[`/wormhole/Ground/${name}/toc.snap`]

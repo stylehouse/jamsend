@@ -222,9 +222,10 @@
         GrantBorrowing (the seat/loan machinery is grant-generic; only `Swarm_slot_granted` names Music).  **Not yet gated by Books** — no
          runner was up; the owed gate is the Swarm* + Musu* sweep on e747.  Next peel: hand Jamsend its own frame kinds.
          ⚠ **A page that loaded before the split runs without it** (seen live: an armed /Radio tab at 18 ghosts — `Swarm_ive_got is not a
-          function` on every frame from its friend, emits stranding).  A folderless page reads its Ground from the copy bundled into
-           `src/lib/A/ground.ts`, which only refreshes when that file is re-transformed or the server restarts: after a Ground change,
-            touch `ground.ts` and reload the music tabs.
+          function` on every frame from its friend, emits stranding).  Two causes, both fixed 2026-11-16: vite ignored `wormhole/`, so the
+           Ground copy bundled into `src/lib/A/ground.ts` stayed the boot-time one (vite.config now watches `wormhole/Ground/`); and a page
+            read its wormhole's Ground FIRST — b8bc's wormhole is the GitHub mirror, a push behind the code (Auto `auto_ground` now stands on
+             the shipped copy and asks the wormhole only for a Ground nothing ships).
      (2) **One socket, stages 1–2, dark**: `Carrier_join` in Tribunal.g, armed per tab by `one_socket` — `Social_demarcation_todo.md`
       §0.5 "Built 2026-11-16" has what it does, what the build taught, the headless evidence, and the owner's steps to arm it.  It is a
        carrier on the top House, not yet rows on `A:Identity` — the rows come when the latch triple moves (the next step there).
