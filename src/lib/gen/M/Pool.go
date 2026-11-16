@@ -10,7 +10,7 @@ import { sha256_hex } from "$lib/Common"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Pool(): string { return '3d6675f08ce06588~g1' },
+    Ghostmeta_Ghost_M_Pool(): string { return '04b08f1f75f5c2de~g1' },
 
 // Pool.g — SOUNDPOOLING's home (split out of Ra.g 2026-09-17, SoundPooling_todo.md §0.2a — the owner:
 //  "yes to Pool.g, definitely looks big enough"). Three regions, in the order a reader should meet them:
@@ -838,6 +838,7 @@ Ra_pool_file_why(rw, rec) {
     if (this.Ra_pool_file_plays(rw, rec)) { return '' }
     let top = this.top_House ? this.top_House() : null
     if (!top || !top.c || !top.c.humdinger) { return 'no preview' }        // a Book plays chunks
+    if (rec && rec.c && rec.c.file_gone) { return 'file missing' }
     if (rec && rec.c && rec.c.file_dead) { return 'would not decode' }
     return 'cannot decode here'
 },

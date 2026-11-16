@@ -10,7 +10,7 @@ import { APP_DATA_DIR } from "$lib/app_data_dir"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '59fca4e5facb2cea~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '32bcca8c207c1cc7~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -5354,6 +5354,9 @@ Radio_file_landed(radio, job, p, er) {
     let title = String(rec.sc.title || rec.sc.id).slice(0, 40)
     if (er || !p) {
         rec.c.file_dead = 1
+        // nothing read and nothing thrown = the file is not there (read_range/bin_read answer null) — say so, not "decode" (2026-11-15:
+        //  a pooled card outliving its file read as a codec fault, here and in the pool face's tally)
+        if (!er && job.stage === 'read') { rec.c.file_gone = 1; console.log('📻⚠ file road: ' + title + ' — its file is missing'); return }
         console.log('📻⚠ file road: ' + title + ' would not decode at ' + job.stage + (er ? ' — ' + String(er).slice(0, 80) : ''))
         return
     }

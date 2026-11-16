@@ -44,23 +44,21 @@ Get this to your programmers! I'm wanting to promote myself to management. Do yo
 
 We are an ongoing project to capture the core of the universe with language, fix the computer and save the humans!
 
-Currently appearing in the guise of modern music piracy, built on a secure and open social medium, soon becoming a hive of diverse developments, attracting low-stakes creativity to the digital frontier. Oh, and all this .g code is quite ugly and I tend not to read it, we're going to fix that at some point.
+Currently appearing in the guise of modern music piracy, running on some kind of techno-social medium, soon becoming a hive of diverse developments, attracting low-stakes creativity to the digital frontier.
 
-Interesting areas of development besides the does-a-two-word-thing (music piracy) imperative:
+Interesting background developments:
 
 ## stho - new programming language
 
-Lies+Lang are compiler|infra and code editor for a new language with more path expressions etc. Promises nice database abstraction. Compiles to javascript. I've neglected it while getting this MVP done, seeking safety. Next steps: meta-programming of having all the IOexpr and Seem known at compile time... It's very creative and unblocked, a brain-teaser.
+Lies+Lang are compiler and code editor for a new language with more path expressions etc. Promises nice database abstraction. Compiles to javascript. I've neglected it while getting this MVP done, seeking safety. Next steps: meta-programming of having all the IOexpr and Seem known at compile time... It's very creative and unblocked, a brain-teaser.
 
 ## Atheory - metaphysics and H|A|w|req
 
-Atheory is the model of reality underneath everything: the containers (H), the actors living in them (A), their works (w) and the machine of requirements (req) that drives them — done again so the program is made of the same legible stuff as the data it holds.
-
-A generalised sloped wall leading into the dialectic nestling of computation, so the program can see itself. Every part will declare where it stands, every event will leave a footprint, and nothing will happen that cannot be walked back to and looked at again. The code will become a landscape, and we will cross it on foot.
+Atheory is the wire design pattern, it loads code and projects reality from place to place, computing.
 
 ## Vyto - the attractor
 
-Is the art department. Visual code. Building this seems to be very hard for LLMs in 2026, haven't done enough art!
+Is the art department. Visuals need to be worked on. Building this seems to be very hard for LLMs in 2026, haven't done enough art!
 
 An attractor is the place a system falls toward, whatever it starts from. Vyto treats information that way: every
   particle becomes a cell, the cells crowd and settle into a picture, and a hand can pin one and watch the rest flow
@@ -80,7 +78,7 @@ Using it to make a presentation of this project... To establish the nice new arc
 
 ## Story - testing
 
-It's quite a futuristic testing system. It captures big deterministic pictures, occasionally leaning on EntropyArrest. It has a huge next-generation wishlist to build, but wants it on top of Atheory.
+It's quite a futuristic testing system. It captures big deterministic pictures, occasionally leaning on EntropyArrest. It has a huge next-generation wishlist to build, but wants it on top of Atheory..
 
 ## Music
 

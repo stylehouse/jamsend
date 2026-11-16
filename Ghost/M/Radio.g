@@ -5206,6 +5206,9 @@ Radio_file_landed(radio, job, p, er):
     let title = String(rec.sc.title || rec.sc.id).slice(0, 40)
     if (er || !p) {
         rec.c.file_dead = 1
+        // nothing read and nothing thrown = the file is not there (read_range/bin_read answer null) — say so, not "decode" (2026-11-15:
+        //  a pooled card outliving its file read as a codec fault, here and in the pool face's tally)
+        if (!er && job.stage === 'read') { rec.c.file_gone = 1; console.log('📻⚠ file road: ' + title + ' — its file is missing'); return }
         console.log('📻⚠ file road: ' + title + ' would not decode at ' + job.stage + (er ? ' — ' + String(er).slice(0, 80) : ''))
         return
     }

@@ -3443,9 +3443,11 @@ export class WormholeNav {
     async bin_read(dir_path: string, filename: string): Promise<ArrayBuffer | null> {
         const parts = dir_path.split('/').filter(Boolean)
         const dir = await this.dir(...parts)
-        if (!dir) return null
+        // a stale listing is not an absence (read_range's note): a miss goes by handle
+        const miss = async () => { const got = await this.read_range(dir_path, filename, 0); return got ? got.buffer : null }
+        if (!dir) return await miss()
         if (!dir.expanded) await dir.expand()
-        if (!dir.files.find(f => f.name === filename)) return null
+        if (!dir.files.find(f => f.name === filename)) return await miss()
         const reader = await dir.getReader(filename)
         const chunks: ArrayBuffer[] = []
         for await (const chunk of reader.iterate()) chunks.push(chunk)
@@ -3475,11 +3477,19 @@ export class WormholeNav {
     //   returning the window + total size so a consumer can jump into the middle of a big asset.
     async read_range(dir_path: string, filename: string, offset: number, len?: number): Promise<{ buffer: ArrayBuffer, size: number } | null> {
         const parts = dir_path.split('/').filter(Boolean)
+        //  GO BY HANDLE, NOT BY LISTING (2026-11-15): a listing cached before Heist_land wrote the file (another handle) said
+        //   'not here' about a pooled track that was — the file road then read null and called it "would not decode".
+        //    So: no listing pre-check, and when the cached walk misses, walk the real directory handles once.
+        let file: File | null = null
+        const by = async (h: any) => { try { return await (await h.getFileHandle(filename)).getFile() } catch (e: any) { if (e && (e.name === 'NotFoundError' || e.name === 'TypeMismatchError')) return null; throw e } }
         const dir = await this.dir(...parts)
-        if (!dir) return null
-        if (!dir.expanded) await dir.expand()
-        if (!dir.files.find(f => f.name === filename)) return null
-        const file = await (await (dir as any).handle.getFileHandle(filename)).getFile()
+        if (dir) file = await by((dir as any).handle)
+        if (!file) {
+            let h: any = (this.root as any).handle
+            try { for (const part of parts) h = await h.getDirectoryHandle(part) } catch (e: any) { if (e && e.name === 'NotFoundError') return null; throw e }
+            file = await by(h)
+        }
+        if (!file) return null
         const end = len == null ? file.size : Math.min(file.size, offset + len)
         return { buffer: await file.slice(offset, end).arrayBuffer(), size: file.size }
     }

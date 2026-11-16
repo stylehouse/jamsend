@@ -434,6 +434,11 @@
 
             ;(H as any).Socket_real(w)
             const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
+            // THE PORT DIES WITH ITS HOUSE (2026-11-15).  An in-place remount (a Vite hot update of Otro/its imports) stops the old
+            //  House and builds a new one in the SAME page — but Socket_real's port re-dials forever unless close() is called, so the
+            //   dead life kept its relay seat (Vingas: `family holds …_9700` after a dexie_safe.ts save).  House.stop runs on_hangup
+            //    (and propagates down the sub-House tree), so close the port there.
+            if (port?.close && !(w.c as any).port_hangup) { ;(w.c as any).port_hangup = 1; H.on_hangup?.(() => { try { ((w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any)?.close?.() } catch {} }) }
             // Announce our relay role on EVERY (re)connect, not just the first open: Socket_real now
             //  auto-reconnects, and a returning socket must re-`become` so the relay re-binds it to this
             //   role/addr. on_open fires immediately if already open, else on each (re)open. (Set-once

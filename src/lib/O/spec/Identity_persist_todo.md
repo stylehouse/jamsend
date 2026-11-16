@@ -196,7 +196,11 @@ One browser profile = one Dexie (`thangs`) = one shelf of identities, shared by 
       arrived from b8bc9a68` — the 8-char print hid the `_1`); the `_N` is now stripped first.  (`b8bc…_2` at eed8 was the
        owner's brief third tab — explained.)  **18:41, after the fix reached eed8: the lane walk is GREEN** — the spare (`_1`) pulled
         `Repli rx 135p/2318KB … 207KB/s` with `tx 0` (a spare never casts), the holder both sent and received, and eed8 logged no
-         `reach … ignored`.  Still unwalked live: closing the holder under the NEW code (`family_gone` + `Swarm_heir_reread`).
+         `reach … ignored`.  **21:44, closing the holder under the new code — GREEN end to end:** the relay's
+          `family_gone` reached the spare first (54.956), the Web Lock granted it 0.8s later, bare `hello_ok` at 56.362, `took over
+           cleanly — re-read 4 shelf/shelves` at 58.734, account mirrored at 00.451 — no reload needed.  Nits: the relay sends one
+            `family_gone` per closed socket (the holder's Lies-channel seat `_96xx` too); Auto's "mirror held … re-read" warning
+             still prints once before the re-read clears it.
 - **The Door says when YOU are multiple (2026-11-15).**  `Swarm_cohort_stand`'s BroadcastChannel now beats `here` every 10s
    and `bye` on pagehide into `top.c.cohort_seen[vessel]` (runtime only; `%Sibling` rows are never retired, so they can't say
     "now").  DoorFace's `twins` shows one dim tag when another live tab of you is in this browser: `👥 open in N tabs — this one
@@ -210,7 +214,12 @@ One browser profile = one Dexie (`thangs`) = one shelf of identities, shared by 
      back at `_1`), three tabs (close A → B bare, C stays `_1`).  `slow:A` reproduces the memory-only state.  Run plans ONE AT A TIME —
       six browsers at once crashed Chrome.  What it can't do yet: a FRIEND in another profile (so lanes, Piers and the mirror fill are
        untested headless), N > 3 tabs, the Cave body name, a relay restart mid-plan, and the mixed fleet.  That is the larger test.
-   ⚠ Add an HMR step: saving `dexie_safe.ts` hot-remounted both Vingas tabs IN PLACE (no page reload), and the OLD life's Web Lock
+   ✅ FIXED 2026-11-15 22:56 (the paragraph below is the history): every life-scoped hold now rides `House.stop → on_hangup`, which
+    Otro's onDestroy fires on an in-place remount — Swarm's station port and LiesLies' channel port `close()`, the bare-name lock's hold
+     promise settles, a queued heir request aborts, the cohort BroadcastChannel closes and its beat stops (`Swarm_cohort_on_hangup`).
+      Proven by touching `dexie_safe.ts` with live tabs: the old sockets logged `ws CLOSE … (intentional)` and the new life stood back at
+       the bare name (Vingas) / back at `_1` behind its sibling (eed8).  BigQualand pages ride their kept House under HMR (no remount).
+  ⚠ Add an HMR step: saving `dexie_safe.ts` hot-remounted both Vingas tabs IN PLACE (no page reload), and the OLD life's Web Lock
     and relay socket survived it.  Both new lives saw "another body holds the bare name" and stood at `_2`/`_3`, while a dead
      life's socket kept the bare seat (the relay's `family holds b8bc…,b8bc…_9700,…`).  A full reload clears it.  The fix would be for
       an in-place remount to release the lock and close the station socket on destroy.

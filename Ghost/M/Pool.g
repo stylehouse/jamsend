@@ -778,6 +778,7 @@ Ra_pool_file_why(rw, rec):
     if (this.Ra_pool_file_plays(rw, rec)) { return '' }
     let top = this.top_House ? this.top_House() : null
     if (!top || !top.c || !top.c.humdinger) { return 'no preview' }        // a Book plays chunks
+    if (rec && rec.c && rec.c.file_gone) { return 'file missing' }
     if (rec && rec.c && rec.c.file_dead) { return 'would not decode' }
     return 'cannot decode here'
 Ra_pool_file_plays(rw, rec):

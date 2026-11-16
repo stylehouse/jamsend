@@ -17,7 +17,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'e8d22da6fd4cab28~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '20ca43af01134100~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -2778,6 +2778,14 @@ async Swarm_station_up(w, ident) {
     if (saddr && saddr !== ident.sc.prepub) { station.sc.address = saddr } else { delete station.sc.address }
     this.Swarm_arm(w)
     this.Socket_real(w)
+    // THE PORT DIES WITH ITS HOUSE (2026-11-15).  An in-place remount (a Vite hot update) stops the old House and builds a new one in
+    //  the SAME page; Socket_real's port re-dials forever unless close() is called, so the dead life kept its relay seat — the bare name
+    //   itself, so the new life stood at a suffix behind a ghost (Vingas, after a dexie_safe.ts save).  House.stop runs on_hangup.
+    let hang_top = this.top_House()
+    if (!w.c.port_hangup && hang_top && typeof hang_top.on_hangup === 'function') {
+        w.c.port_hangup = 1
+        hang_top.on_hangup(() => { try { w.o({ transport: 1, type: 'websocket' })[0]?.c?.port?.close?.() } catch (e) {} })
+    }
     // presence: install the who_ok hook BEFORE the socket can answer (Presence.g).  Idempotent, and
     //  arming it costs nothing if nobody ever asks — the ask itself rides the pulse round below.
     if (typeof this.Presence_arm === 'function') this.Presence_arm(w)
@@ -10241,7 +10249,9 @@ Swarm_cohort_primacy(prepub) {
             locks.request('jamsend:' + prepub + ':bare', { ifAvailable: true }, (lock) => {
                 if (!lock) { resolve({ primary: 0, lockless: 0 }); return }
                 resolve({ primary: 1, lockless: 0 })
-                return new Promise(() => {})
+                // HELD UNTIL THE TAB DIES — or until this House stops (an in-place remount: the page lives on, so the browser never
+                //  frees the lock, and the new life would find its own ghost holding the bare name).  2026-11-15.
+                return new Promise((release) => { this.Swarm_cohort_on_hangup(() => release(0)) })
             }).catch(() => resolve({ primary: 1, lockless: 1 }))
         } catch (e) { resolve({ primary: 1, lockless: 1 }) }
     })
@@ -10258,9 +10268,15 @@ Swarm_cohort_heir(ident) {
     let locks = (typeof navigator !== 'undefined' && navigator.locks) || null
     let prepub = ident?.sc?.prepub
     if (!locks || !locks.request || !prepub) return
+    // a queued request outlives its House unless aborted (an in-place remount would leave a ghost in the queue that takes the
+    //  name, re-dials a dead world and holds it) — so the House's hangup aborts the wait, or releases the lock once granted
+    let abort = null
+    try { abort = new AbortController() } catch (e) { abort = null }
+    if (abort) { this.Swarm_cohort_on_hangup(() => { try { abort.abort() } catch (e) {} }) }
     try {
-        locks.request('jamsend:' + prepub + ':bare', (lock) => {
+        locks.request('jamsend:' + prepub + ':bare', abort ? { signal: abort.signal } : {}, (lock) => {
             if (!lock) return
+            if (this.top_House().stopped) return
             let top = this.top_House()
             if (top.c.cohort) { top.c.cohort.primary = 1; top.c.cohort.taken = [] }
             let vaddr = (top.c.vessel_addr ??= {})
@@ -10274,9 +10290,17 @@ Swarm_cohort_heir(ident) {
             //   account text over the live tree (Swarm_account_rehydrate: shelves the tree lacks come in, nothing doubles), then
             //    lift the hold so this tab mirrors the account again.
             setTimeout(() => { this.Swarm_heir_reread(ident) }, 3000)
-            return new Promise(() => {})
+            return new Promise((release) => { this.Swarm_cohort_on_hangup(() => release(0)) })
         }).catch(() => {})
     } catch (e) {}
+
+},
+// Swarm_cohort_on_hangup — run fn when this page's House stops (House.stop → on_hangup).  The cohort's hold on the bare-name lock,
+//  its queued heir request, its BroadcastChannel and its 10s beat all belong to ONE life of the page; an in-place remount (a Vite hot
+//   update) stops that House while the page lives on, and none of those would otherwise ever let go.  Soft: no House API, no-op.
+Swarm_cohort_on_hangup(fn) {
+    let top = this.top_House ? this.top_House() : null
+    if (top && typeof top.on_hangup === 'function') { top.on_hangup(fn) }
 
 },
 // Swarm_heir_reread — the takeover tab's account re-read (above): graft the stashed account over the live tree, lift the hold.
@@ -10355,7 +10379,8 @@ async Swarm_cohort_stand(ident) {
             }
         }
         try { bc.postMessage({ t: 'hi', vessel: vessel }) } catch (e) {}
-        setInterval(() => say_here('here'), 10000)
+        let beat = setInterval(() => say_here('here'), 10000)
+        this.Swarm_cohort_on_hangup(() => { clearInterval(beat); try { bc.close() } catch (e) {} })
         try { window.addEventListener('pagehide', () => say_here('bye')) } catch (e) {}
         await new Promise((r) => setTimeout(r, 250))
     }
