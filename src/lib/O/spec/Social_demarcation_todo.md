@@ -34,6 +34,9 @@ A **working `_todo`** (not self-promoted — the owner reads + preens). Precipit
 5. Presence is three-valued. Suppress on `Presence_offline(x)` (=== false) only; a bare falsy read
     collapses "unknown" into "offline" and starves boot.
 
+**2026-11-16:** the one socket now goes on `A:Identity` as rows, as part of drawing Identity together —
+ `AtheoryNexus_todo.md` §0.0 E, "Identity drawn together".
+
 **Next moves, in order:**
 1. The one-socket-per-tab migration — DESIGNED in §0.5 (2026-09-12): one carrier on the top House,
     fan by `header.to` → world, one latch triple, flag-gated, headless-walk-gated. A full session to

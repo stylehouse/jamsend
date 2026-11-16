@@ -22,6 +22,8 @@ import Heist from '../src/lib/gen/M/Heist.go'
 //    like the cell being broken. Mount the ghost the face actually asks. (Diagnosed 2026-09-07; the verb
 //     layer was sound the whole time — `Heist_live_rows` resolved this fixture correctly.)
 import Heard from '../src/lib/gen/M/Heard.go'
+// Pool too: Heist asks Pool_is_machinery (moved to Pool.g with "Heist nice", 2026-11)
+import Pool from '../src/lib/gen/M/Pool.go'
 import HaulFace from '../src/lib/O/ui/HaulFace.svelte'
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
@@ -36,7 +38,7 @@ async function ghost_house() {
     H.Radio_trace = () => {}
     H.c.humdinger = 1
     H.Radio_pub = () => 'me'
-    for (const Ghost of [Heist, Heard]) mount(Ghost, { target: document.body, props: { H } })
+    for (const Ghost of [Heist, Heard, Pool]) mount(Ghost, { target: document.body, props: { H } })
     for (let i = 0; i < 80 && typeof H.Heist_live_rows !== 'function'; i++) await sleep(25)
     return H
 }
@@ -220,7 +222,7 @@ test('a capped bag says how many there really are, not how many it kept', async 
     //    means a change to the default reads as a design decision here, not as a red test.
     expect(el.querySelector('.hf-more')!.textContent!.trim()).toBe('…and 314 more')   // folded: 3 shown
     ;(el.querySelector('.hf-sepb') as HTMLElement).click(); flushSync()
-    expect(el.querySelector('.hf-more')!.textContent!.trim()).toBe('…and 305 more')   // opened: 12 shown
+    expect(el.querySelector('.hf-more')!.textContent!.trim()).toBe('…and 297 more on disk')   // opened: all 20 held shown, the rest are on disk
 
     // …and with no cap in play the two agree, so the honest case gains no phantom rows.
     const { bag: b2 } = scene(H, [])

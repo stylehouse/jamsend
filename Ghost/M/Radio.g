@@ -1868,6 +1868,25 @@ async Radio_dial(radio):
         }
         let prec = this.Radio_dial_pool_local(w, radio)
         if (prec) { console.log('📻 next [pool] ✓ ' + pname(prec) + pwl); return prec }
+        // A REPLAY STANDS ⇒ PLAY IT NOW, HEAL BEHIND (2026-11-16, Vingas: skipped through the unheard, then four Nexts sat
+        //  ~17s silent — each awaited the resurrect + a whole-file preview heal before falling to the replay it already had).
+        //   The disk work still runs; the next Next sees what it found.
+        let pready = this.Radio_dial_pool_local(w, radio, 1)
+        if (pready && typeof this.Ra_pool_owner === 'function') {
+            let powner = this.Ra_pool_owner(w)
+            let pbg = async () => {
+                if (typeof this.Ra_pool_resurrect === 'function') { await this.Ra_pool_resurrect(w, powner) }
+                if (typeof this.Ra_pool_previews_heal === 'function') { await this.Ra_pool_previews_heal(w, powner) }
+            }
+            if (!w.c.pool_heal_bg) {
+                w.c.pool_heal_bg = 1
+                pbg().catch((er) => console.log('🏊⚠ pool resurrect: ' + er)).finally(() => { w.c.pool_heal_bg = 0 })
+            }
+            radio.sc.replays = (+(radio.sc.replays || 0)) + 1
+            radio.bump()
+            console.log('📻 next [pool] ↻ replay ' + pname(pready) + ' — everything playable was heard' + pwl)
+            return pready
+        }
         if (typeof this.Ra_pool_previews_heal === 'function' && typeof this.Ra_pool_owner === 'function') {
             let powner = this.Ra_pool_owner(w)
             // …AND FROM DISK FIRST (2026-09-05, the owner's "empty" after every reload): a tab with no folder

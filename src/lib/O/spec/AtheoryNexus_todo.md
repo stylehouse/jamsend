@@ -192,6 +192,29 @@
    memory doorkeeper-and-two-of-you).  The sane shape is the Crew one: the Identity is the soul, a tab is a **seat** — `%Seat:<n>` under the
     Identity, addressed `<prepub>/<n>`, the relay delivering `to:<prepub>` to the seat that claimed it (or the Crew's choice) and `to:<prepub>/<n>`
      to exactly one.  Needs a relay change, so its own slice after E; E only must not assume one tab per Identity (put the seat in `%Page`).
+   *(2026-11-15: built narrowly as `<prepub>_N` session seats — `Identity_persist_todo.md` §0.1.)*
+
+ *Identity drawn together — rulings 2026-11-16, nothing built.*  Identity is spread over Auto (`Clustation_*`, `identity_settle`),
+  LiesLies (the flock key, its own socket and hello lock) and Swarm.g (10k lines, 278 methods, app-indifferent and Jamsend families
+   interleaved).  Draw it up into two levels:
+  - **The app-indifferent level** — `A:Identity`, which every Ground already stands: who (keys, `%Who`), the account kept (stash,
+     mirror), **the page's ONE socket** and its seat (binds, `_N` tabs, cohort/heir/Web Lock, `family_gone`; the September design is
+      `Social_demarcation_todo.md` §0.5, to be redone as rows on this A), my devices (Captain, `Grant:Crew`, charter, Link Device),
+       **my people — the Door is this level** (invites, a Pier per friend, the membership door, presence), `%Remote` calls.  The owner:
+        "Door-related stuff is indeed the lower level, it just has a default Invite `Grant:Music` defined by Jamsend."  **"Swarm" names
+         the friends part** ("Swarm for friends or something").
+  - **Jamsend on top** — sharing (`Grant:Music`, share up/greet/present), what-I've-got gossip and census, lending/borrowing seats,
+     radio, heard, pools, suggestions: its own Ground and compartment, hearing the lower level's arrivals (friend arrived, left, grant
+      changed) instead of reaching into Swarm's insides.  A runner tab stands Wire → Identity → Runner and never loads music code.
+  - **Lies after the socket leaves** keeps ~10k of its 12k lines and becomes purely the CODE tenant: compile (Cortex, Codebit, Store,
+     Funkcions), acquire+run+report (Pantheate, Rundown, become_book, the verdict wire), the runner roster and dispatch, minisnap,
+      verbs.  What leaves it (~1.5k of LiesLies): channel standup, hello lock, keepalive/advertise, the role as a bind.
+  - **More Lies-like tenants behind it**: anything that hears a kind of frame declares the kind and the trust it needs (flock key, or
+     a friend's Grant) and gets the tape for free — tab reach (console/minisnap/dump, today gated by `socklog` on Lies), the docindex
+      push, a runner's `%Job`, the Land page answering.  Open: is the flock key just another Grant kind on the same Door?
+  - **Order (proposed)**: peel the Jamsend families off Swarm first (code moves, no network behaviour change, gated by Swarm + Musu
+     Books; Electrode's cross-Ground call count is the measure of the tangle); the one-socket move second (§0.5's flag + relay-test +
+      headless walks + `twin_eye.mjs`).
 
 A→B→C is the "decide from rows" migration (disk replies, Story steps, clicks, then the ambient tick — that last step is where
  Housing's wake paths get deleted).  D and E ride on it; F is the same move in Hovercraft; G is the app the fabric is for: explore a pile, then merge a giant download folder into the collection with guided, mechanical moves.
