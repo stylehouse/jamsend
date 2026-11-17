@@ -5,6 +5,7 @@ import { DirectoryListing, FileSystemHandler } from "$lib/O/Filesystem.svelte";
 import { now_in_seconds_with_ms } from "$lib/Common";
 import { grap, grep, tex, throttle } from "$lib/Common"
 import { mount_opfs_github_nav, mount_lazy_github_nav, mount_opfs_pool_nav, JAMSEND_SOURCE } from "./WormholeOpfs.svelte.ts";
+import { mount_origin_nav } from "./OriginNav.svelte.ts";
 import { MountNav, AppTreeNav, app_tree_decision } from "./MountNav.svelte.ts";
 import { APP_DATA_DIR } from "$lib/app_data_dir";
 import { Dexie, liveQuery, type EntityTable } from '$lib/dexie_safe';   // dexie, or a Map when IndexedDB is dead (a private window)
@@ -3048,7 +3049,11 @@ export class House extends StorableHousing {
         //   scratch must not shadow the Book.  The cloud is a checkout of the repo, so its books sit at
         //    `wormhole/Story/…` inside it — AppTreeNav's `lower_at` puts that prefix back.
         A.c.app_tree = 'mounting'
-        const cloud = mount_lazy_github_nav(JAMSEND_SOURCE, { seed_only: true })
+        // THE ORIGIN FIRST (2026-11-17, OriginNav.svelte.ts): the server that sent this code serves the tree it
+        //  reads, so they cannot disagree; github `main` lags every unpushed commit.  A server without the route
+        //   (a static host, an older build) rejects, and the github mirror stands as before.
+        const cloud = mount_origin_nav()
+            .catch(e => { console.warn(`☁️ no origin tree (${e}) — the github mirror`); return mount_lazy_github_nav(JAMSEND_SOURCE, { seed_only: true }) })
             .then(nav => {
                 A.c.app_tree = 'mounted'
                 H.main(true)

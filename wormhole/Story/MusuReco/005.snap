@@ -75,9 +75,9 @@ Snap:H
                 unemit:31,type:repli_parked,seq:31,body_len:6
                 unemit:32,type:repli_parked,seq:32,body_len:6
               req:unemit,seq=33,type:repli_lines,body_hash:1e14791d64bc94044561b59a392f46aad91525d8e4967b6cada4fd52a03c44cd,body_len=99,done,to:repli_lines,finished
-              req:unemit,seq=34,type:repli_page,body_hash:cefaa2b894127e8fd045dacb2ffd36c4f67f8c5a2d96648e43f870ea314aa1a4,body_len=76800,done,to:repli_page,finished
+              req:unemit,seq=34,type:repli_page,body_hash:626174ca4a720b34a9fa04f0ad292cff6aee0f24f1f17aad54035f7e9c7ad0f8,body_len=76800,done,to:repli_page,finished
               req:unemit,seq=35,type:repli_lines,body_hash:c72e741be00bce1a146eae90e9b4822640a05e452bcd6ecca77c1cff090676bb,body_len=99,done,to:repli_lines,finished
-              req:unemit,seq=36,type:repli_page,body_hash:35afe47cdee604d8ce245bfdf2cc4e70b9e990310bde3bc153a17cb2cc32efc6,body_len=76800,done,to:repli_page,finished
+              req:unemit,seq=36,type:repli_page,body_hash:0019711772a564200f28f4aa98de1923a79ccc9d5722996f84581bcb1e7e91cb,body_len=76800,done,to:repli_page,finished
           active_transport,type:mock,open
         Mine,pub:DJ
           stock,pub:DJ

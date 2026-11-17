@@ -1,9 +1,9 @@
 Snap:H
   H:MusuReco,Run
     A:MusuReco
-      self,round=16	{"mung":["age"]}
+      self,round=15	{"mung":["age"]}
       w:MusuReco
-        self,round=16	{"mung":["age"]}
+        self,round=15	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Peering,name:DJ,req=2,ok
@@ -78,9 +78,9 @@ Snap:H
                 unemit:37,type:repli_lines,seq:37,body_len:99
                 unemit:38,type:repli_page,seq:38,body_len:76800
               req:unemit,seq=39,type:repli_lines,body_hash:21ac253fe1c6cd91e05d0472296dbf38e1bc93655fec59cf82db874d378ac691,body_len=99,done,to:repli_lines,finished
-              req:unemit,seq=40,type:repli_page,body_hash:24b9a1890054c9f9b150c584d2c0cd104833c9777590d7b7b7035cf52f10b570,body_len=76800,done,to:repli_page,finished
+              req:unemit,seq=40,type:repli_page,body_hash:9f5883e8ca2c22cdaa6f43b77b485102f02045ff664a71fdc91b3f37313926d9,body_len=76800,done,to:repli_page,finished
               req:unemit,seq=41,type:repli_lines,body_hash:c5feeaae7713859200d42245b9056e812936193d94c89845c1307d4e7362fab4,body_len=99,done,to:repli_lines,finished
-              req:unemit,seq=42,type:repli_page,body_hash:476d64a4021d1908ada3daa371e12089e3d4bea7058c4b5422db97839f879547,body_len=76800,done,to:repli_page,finished
+              req:unemit,seq=42,type:repli_page,body_hash:2a0497165e11781cc4848b83e04b8f160aeeee9ec1d999e508e14aaefa9f43a9,body_len=76800,done,to:repli_page,finished
           active_transport,type:mock,open
         Mine,pub:DJ
           stock,pub:DJ

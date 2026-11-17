@@ -1,9 +1,9 @@
 Snap:H
   H:MusuRaStream,Run
     A:MusuRaStream
-      self,round=42	{"mung":["age"]}
+      self,round=45	{"mung":["age"]}
       w:MusuRaStream,now=1751980220
-        self,round=42	{"mung":["age"]}
+        self,round=45	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Account,of:DJ
@@ -164,29 +164,29 @@ Snap:H
                   Preview,seq:13,cid:6b29fb172351bf29757d022de48b1d8d4a2eea4f7d1b94b7b014cf74166f86b9	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:14,cid:89022ef65282ca8ba3171abc9c073b73b2b12b88c21f7749b7e6865c8c5b242c	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:15,cid:1969ef0376186dcfa831100be67ea834d0766a25ef9fb842a427526ff865d349	{"ref":{"buf":"Uint8Array()"}}
-                  Stream,seq:16,head,preskip=312,cid:34fc7a5c09b0a1c3036a21800af19e500fe876d14228db783065cdea6db875e7	{"ref":{"buf":"Uint8Array()"}}
-                  Stream,seq:17,cid:9e95832868c734aab337bc57b9a091ee1e55a17bf5a8587b57b3f54f473b433d	{"ref":{"buf":"Uint8Array()"}}
-                  Stream,seq:18,cid:b1338a9ef26db062acd598b01f32752fb0345f36c0f221873935579aa484bb9e	{"ref":{"buf":"Uint8Array()"}}
-                  Stream,seq:19,cid:5f8a1a7643eccd51c69307625b0fda40514523874e1ecceb79e4db706b4e5627	{"ref":{"buf":"Uint8Array()"}}
-                  Stream,seq:20,cid:824c1c58fe0c034081a756dce9da69237901de2d7918dcf98e938257c498fbcc	{"ref":{"buf":"Uint8Array()"}}
-                  Stream,seq:21,cid:934f7119a5d61a3fc14bba214cb2e30f4d4bd3a04778fda5b24cc29e56e57d94	{"ref":{"buf":"Uint8Array()"}}
-                  Stream,seq:22,cid:67a88979681ca98994b7aefd1d9568db99a7ee644c485881796c000f78718327	{"ref":{"buf":"Uint8Array()"}}
-                  Stream,seq:23,cid:070d78f74b30dae75b77083b80cacfd77b52b838c183d03a6c14f9aefa4300ec	{"ref":{"buf":"Uint8Array()"}}
-                  Stream,seq:24,cid:e51921cf1ff522e1d4a21919c9b4864270382786e74229f00d2061f33a4699bc	{"ref":{"buf":"Uint8Array()"}}
-                  Stream,seq:25,cid:60a4dbad1777700dc24a8ff2fc3f231431c55a65ad0081a5e1a134429a006c65	{"ref":{"buf":"Uint8Array()"}}
-                  Stream,seq:26,cid:1db1d37deb0840bab0cb4ae0e84571297bf872bf20989f4e9b96cc849d10a2db	{"ref":{"buf":"Uint8Array()"}}
-                  Stream,seq:27,cid:6037b26c16fd37f037dcf274812491c9947b4aaadeed0f699466be12590c8166	{"ref":{"buf":"Uint8Array()"}}
-                  Stream,seq:28,cid:ddbf791fbbffb97d61f735f901ddd88c4d2b2e50aaa902aa7f4d85cd6dc1170a	{"ref":{"buf":"Uint8Array()"}}
-                  Stream,seq:29,cid:1df0314ca727c74a4fa2b91bcd82e05fc4a3909897a7be294bca3bd500e132de	{"ref":{"buf":"Uint8Array()"}}
-                  Stream,seq:30,cid:45ae07876a1303038e54038632d1522beae6d1e3b6382bcb380dd6d48c9afeb9	{"ref":{"buf":"Uint8Array()"}}
-                  Stream,seq:31,cid:707b004a74dec2a38dbe71ec05e29fd7c3e2b2325b40a1290b91647df4dc8814	{"ref":{"buf":"Uint8Array()"}}
-                  Stream,seq:32,cid:c7abe1a3cdc627c3c09761ac322b9888a3da5698f0cd883e1cdc643f988ede4b	{"ref":{"buf":"Uint8Array()"}}
-                  Stream,seq:33,cid:21f7f920dea2478139f7a6991449ade3aa03a5a7ce6ac1caf82f1065e80c1a47	{"ref":{"buf":"Uint8Array()"}}
-                  Stream,seq:34,cid:5f7a1d6819cd6a12adffea1b0352c16c6a4272f07879d95ce66445923521445d	{"ref":{"buf":"Uint8Array()"}}
-                  Stream,seq:35,cid:1ef84530bbf5365ad7a854c0874e1f8f3ba9509629e76519147e99ca2813f720	{"ref":{"buf":"Uint8Array()"}}
-                  Stream,seq:36,cid:28066c2fa40d088adf6b92fb00248f623b6b6d6c1f6b8d6a5d2c8ec8a972d574	{"ref":{"buf":"Uint8Array()"}}
-                  Stream,seq:37,cid:b2b708d1186398bccc504405c96a7607f8c5ad87f50c899d214ecf5796c94334	{"ref":{"buf":"Uint8Array()"}}
-                  Stream,seq:38,cid:377d1f9f480d1350df7cd0acef62fda4df8ddbe1ca3036005fca7e7ac9966a32	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:16,head,preskip=312,cid:9bbfc446923c1b66c6e1b30d65fbdf0d7abb9a970375d20bf948b2effef81a58	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:17,cid:668325fdba4197a45e5c22dee9e9d96e1a53de7016dcdf56ece49495d147a2b1	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:18,cid:306be0afd9d8f1bc18406829f597a7c6c335e852c0c8ca77493b778f1026bf3a	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:19,cid:7f2e1bf3984225a5447be8d0252a4860601ae887204752cf411e88f875531e9a	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:20,cid:b25a4bece363c87f2f40c51cf8bc2e2f4012453251a02834e8eb3594e6dfc9f0	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:21,cid:0ff62c630b9100c895e38f4ba1b8096f45c5c5033415fdc06cd9529bcc06f420	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:22,cid:05ea7e6f5944d6de940684449dfc8f43e3675035df50008eb1adc9a41a0cc3dc	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:23,cid:737a4ab09e8055c7193ae22c7664a2b07548a88693dd0fbcb3805fdcbeeea1db	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:24,cid:b405267ccd8410f40960bc40aa4a34d7eece05f0b407234a636c5c377bd6e472	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:25,cid:dd658308902374dcf4c762ca57b0551b08e42e8a7db120be2b63da6e08200579	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:26,cid:0d75bdeac6754ea2081c06541d75538aa7a2ae1503001e1d52b745601daad414	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:27,cid:d1b10ac577d74e2c4be6c54450d047ce285ed23bc1b9b3bde1f0dfebd4a70883	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:28,cid:576fde872194e954e10a901078935960d65433c4897843285471fef6a02d8c98	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:29,cid:6cbd7bf9610d9f728830583ec72d3b65c6256b7248b438cf3db3cf1101b026c2	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:30,cid:2f48ea7f652cccc4015e8376e2ccdd6977171ed0b6ab112dee8f74b947ce7207	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:31,cid:19d0f616ec0b66df4f6ddd6a649983a7f8ada39fc99357aadc366617e947e454	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:32,cid:d0d3002df10ee1f32fe92f6bcdc5f5592d0303d7ea2d03907a9af397f7fc4b25	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:33,cid:26861ede593978874fa4c6af9a2c65cc8118bfd69ce6e7767683c60fa4da0d07	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:34,cid:9f2fec28befbd18f5ef11f540cba4a3de15eb2a8c83c9fe14bcbba7d4c2ca2bb	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:35,cid:1056300c41aa9be54ee48afd3f699e8b8b31186ae209f0df0ac4bb3c54bb4b81	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:36,cid:ac8f7fcd1d51169834141990823eab4fab27ac98c4aca631f0e903a4630e49b0	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:37,cid:0d952f5edd33e74bd1888510ee30d185135f20b288493bdbf851c4fe0251fba0	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:38,cid:bad38cc2e4e604390549ca33391c6bd5b6de6752ed915cb7705297b7399a4e85	{"ref":{"buf":"Uint8Array()"}}
                 Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,path:testsounds/DJ Oscillo - Dorian D.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443
                   Preview,seq:0,head,preskip=312,cid:1cc5ebbe098e503ef79730ae1a200acd6c3c7e022c357d19925aa31cd3f9fb38	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:1,cid:7c703e2d4f45d18d623d52c0647bfc15502c2e35f78a196616b6730ee1447e14	{"ref":{"buf":"Uint8Array()"}}
@@ -227,10 +227,10 @@ Snap:H
               Preview,seq:13,cid:6b29fb172351bf29757d022de48b1d8d4a2eea4f7d1b94b7b014cf74166f86b9	{"ref":{"buf":"Uint8Array()"}}
               Preview,seq:14,cid:89022ef65282ca8ba3171abc9c073b73b2b12b88c21f7749b7e6865c8c5b242c	{"ref":{"buf":"Uint8Array()"}}
               Preview,seq:15,cid:1969ef0376186dcfa831100be67ea834d0766a25ef9fb842a427526ff865d349	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:16,head,preskip=312,cid:34fc7a5c09b0a1c3036a21800af19e500fe876d14228db783065cdea6db875e7	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:17,cid:9e95832868c734aab337bc57b9a091ee1e55a17bf5a8587b57b3f54f473b433d	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:18,cid:b1338a9ef26db062acd598b01f32752fb0345f36c0f221873935579aa484bb9e	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:19,cid:5f8a1a7643eccd51c69307625b0fda40514523874e1ecceb79e4db706b4e5627	{"ref":{"buf":"Uint8Array()"}}
+              Stream,seq:16,head,preskip=312,cid:9bbfc446923c1b66c6e1b30d65fbdf0d7abb9a970375d20bf948b2effef81a58	{"ref":{"buf":"Uint8Array()"}}
+              Stream,seq:17,cid:668325fdba4197a45e5c22dee9e9d96e1a53de7016dcdf56ece49495d147a2b1	{"ref":{"buf":"Uint8Array()"}}
+              Stream,seq:18,cid:306be0afd9d8f1bc18406829f597a7c6c335e852c0c8ca77493b778f1026bf3a	{"ref":{"buf":"Uint8Array()"}}
+              Stream,seq:19,cid:7f2e1bf3984225a5447be8d0252a4860601ae887204752cf411e88f875531e9a	{"ref":{"buf":"Uint8Array()"}}
             Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,path:testsounds/DJ Oscillo - Dorian D.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443
               Preview,seq:0,head,preskip=312,cid:1cc5ebbe098e503ef79730ae1a200acd6c3c7e022c357d19925aa31cd3f9fb38	{"ref":{"buf":"Uint8Array()"}}
               Preview,seq:1,cid:7c703e2d4f45d18d623d52c0647bfc15502c2e35f78a196616b6730ee1447e14	{"ref":{"buf":"Uint8Array()"}}
@@ -250,9 +250,7 @@ Snap:H
               Preview,seq:15,cid:b4281d115db3116379d573138d67fadd6264ef14f2f9f068c08937f728866592	{"ref":{"buf":"Uint8Array()"}}
         stream_ask:A,preview=16,at_head=14,plays=8
         stream_want=16,of:A,preview=16
-        fed:A,at_head=18,held=4
-        switched,at_head=20
+        switched,at_head=20,a_dropped=4
         see:two real opus Records stand at the caster — a session with stock to listen and a track to change to
         see:the listen began on the cached preview alone — the spool held at the boundary until the tail ran low
         see:the streaming ask went out at exactly the segment after the last preview
-        see:the playhead crossed the boundary onto transcoded chunks that arrived on demand

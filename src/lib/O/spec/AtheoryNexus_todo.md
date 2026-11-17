@@ -219,16 +219,37 @@
      music pillars of the stash, 1,490 lines moved verbatim out of Swarm.g (now 8.7k), method names kept (`Swarm_*` is history there,
       rename once named).  Its own Ground (`Ground/Jamsend`, stands on Swarm + Music + Cave; Swarm's tests stand on it — the tests drive
        the share); on the spine list and the /Radio page's Spine.  Still in Swarm: the frame dispatch (`Swarm_arm`), the restash calls, and
-        GrantBorrowing (the seat/loan machinery is grant-generic; only `Swarm_slot_granted` names Music).  **Not yet gated by Books** — no
-         runner was up; the owed gate is the Swarm* + Musu* sweep on e747.  Next peel: hand Jamsend its own frame kinds.
+        GrantBorrowing (the seat/loan machinery is grant-generic; only `Swarm_slot_granted` names Music).  **Gated 2026-11-18** — the Swarm* + Musu*
+         sweep on e747: 57 of 63 green, no red the split explains.  The 6 reds (MusuBuddy, MusuOgg, MusuReap, MusuMag, MusuRaStream,
+          MusuReco) are fixture drift: every encoded Preview|Stream chunk `cid:` differs from the recording, STABLY run to run (the bytes
+           changed, not nondeterminism; testsounds and encoder settings unchanged — suspect the runner's Chrome libopus, unproven), and
+            MusuMag's step 2 also lacks the `Crew,soul` under each Account (its 002.snap is from 2026-09-04, before cert-crew minted one;
+             MusuBuddy carries that shape).  Re-record owed, owner's go.  Next peel: hand Jamsend its own frame kinds.
          ⚠ **A page that loaded before the split runs without it** (seen live: an armed /Radio tab at 18 ghosts — `Swarm_ive_got is not a
           function` on every frame from its friend, emits stranding).  Two causes, both fixed 2026-11-16: vite ignored `wormhole/`, so the
            Ground copy bundled into `src/lib/A/ground.ts` stayed the boot-time one (vite.config now watches `wormhole/Ground/`); and a page
             read its wormhole's Ground FIRST — b8bc's wormhole is the GitHub mirror, a push behind the code (Auto `auto_ground` now stands on
-             the shipped copy and asks the wormhole only for a Ground nothing ships).
+             the shipped copy alone, 2026-11-17 — a Ground ships with the code or the page stands on nothing).
      (2) **One socket, stages 1–2, dark**: `Carrier_join` in Tribunal.g, armed per tab by `one_socket` — `Social_demarcation_todo.md`
       §0.5 "Built 2026-11-16" has what it does, what the build taught, the headless evidence, and the owner's steps to arm it.  It is a
        carrier on the top House, not yet rows on `A:Identity` — the rows come when the latch triple moves (the next step there).
+     (3) **The app tree from the origin, BUILT, NOT WIRED (2026-11-17)**: the root of (1)'s ⚠ — a folderless page reads its Books and
+      Grounds from github `main`, a push behind the code.  `src/lib/server/wormhole_serve.ts` serves `wormhole/`+`Ghost/` read-only
+       (`/__wormhole/tree` listing with a per-file stamp and the server's `build`; `/__wormhole/raw/<path>`; fenced to what github shows),
+        `src/lib/O/OriginNav.svelte.ts` reads it (LazyGithubNav's surface; stamp-validated memory cache, never stale-forever; notices the
+         build moving = version skew), `scripts/OriginNav.spec.ts` gates both.  Wiring is `origin-nav-wiring.patch` (vite.config +
+          Housing's app-tree mount, github kept as the fallback) — held back because both edits reload every live tab.  Owed after it:
+           the no-share cloud mount (Housing ~2783, the eager github seed) onto it too; LazyGithubNav's seed never re-checks a blob once
+            fetched (stale across pushes); production = one node server (adapter-node handler + `attachRelay` + `serve_wormhole`),
+             and the ghost `.go` imports (`import(/* @vite-ignore */ …)` in LiesLies/LiesFunk) bundled through an `import.meta.glob` table.
+      **WIRED 2026-11-18** (patch applied; `/__wormhole/tree` live, fence verified against the running server).  The restart it
+       cost took ~4 min and the dev server then died of a full heap (`Reached heap limit`, ~1GB, after ~6.5 days up — vite restarts
+        in-process, so every config save may strand a server's worth of heap; unmeasured: watch `docker stats jamsend-dev`).
+     (4) **NEXT, back into Atheory: the relay says when code moved.**  Every runner polls `/__gen/dige` every 2s (`Creduler_reswap`,
+      LiesLies) to learn whether a `.go` was recompiled — a 304 nearly always, and the owner finds it noise.  The relay already pushes
+       `control:docindex` to code rooms on a source change (vite.config digePlugin); push `gen` moves the same way to runners and
+        let the poll go (a long fallback at most).  It is the spine rule in small: a runner should re-import because a row SAYS the
+         code moved, not because a timer asked.
 
 A→B→C is the "decide from rows" migration (disk replies, Story steps, clicks, then the ambient tick — that last step is where
  Housing's wake paths get deleted).  D and E ride on it; F is the same move in Hovercraft; G is the app the fabric is for: explore a pile, then merge a giant download folder into the collection with guided, mechanical moves.

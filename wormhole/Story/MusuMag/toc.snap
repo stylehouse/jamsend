@@ -32,16 +32,16 @@ story:MusuMag
       sample=0.065,at=1793669395
       sample=0.095,at=1793669410
   step,dige:315b6f6c2578cea2
-  step=2,dige:e07cb20867a7a741
-  step=3,dige:9f25d278e921eb94
+  step=2,dige:a64a53757df9ddc8
+  step=3,dige:c57868f639ead6e8
     Assertion:the-mag-crosses-as,sentence:the mag crosses as one husk — the mirror wears the shuffle mag its cloud page and every record head before a single byte
     Assertion:the-warm-start-pulls,sentence:the warm start pulls the opening page of the first two records and the mag turns warm the moment record zero holds it
-  step=4,dige:bf4507048cc0bcd2
-  step=5,dige:32e4d7742834fcde
-  step=6,dige:9157183a301ebec1
-  step=7,dige:6ea5f56a87c83476
-  step=8,dige:12fda8cd947ade20
+  step=4,dige:af45667edc5480fe
+  step=5,dige:574c40ed1092ce96
+  step=6,dige:6ae85a2108a615c3
+  step=7,dige:69dd7aa08710811c
+  step=8,dige:1bd0965d5660b35e
     Assertion:a-starved-track-wears,sentence:a starved track wears its stage on the particle — the deep wants park at the caster and the record head reads parked until the transcode feeds it
-  step=9,dige:5805d90a11be4375
-  step=10,dige:8356e3c1845f2466
+  step=9,dige:f70963b42c1c595a
+  step=10,dige:3e863aeec4535784
     Assertion:the-pipeline-reads-back,sentence:the pipeline reads back end to end — the record crossed as a husk carrying no bytes then the preview page it pulled decoded to real PCM

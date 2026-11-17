@@ -43,9 +43,12 @@ import { spawn } from 'node:child_process'
 //   collection — the owner's, with 177+ rows in it — and in that file.
 // ParkCull.spec.ts is the want-lease (Daemon_todo §11): a %parked_want nobody re-asks is culled, not
 //  immortal. No Book can cover it — a Book's piers never abandon anything; the leak IS the abandonment.
+// OriginNav.spec.ts is the FENCE on the read-only app tree a server hands to any browser (wormhole_serve.ts): a
+//  regression there serves a file github never shows, and no Book runs on a folderless page to notice.
 const VITEST = ['scripts/HeistUnity.spec.ts', 'scripts/MultiHeist.spec.ts', 'scripts/HaulFace.spec.ts',
     'scripts/HeistCostLine.spec.ts', 'scripts/KeepMemoDurable.spec.ts', 'scripts/ButlerPatience.spec.ts',
     'scripts/Newlyadded.spec.ts', 'scripts/ParkCull.spec.ts', 'scripts/BootGateNoFSA.spec.ts',
+    'scripts/OriginNav.spec.ts',
     // RehealSmoke is the IMPORT gate — it proves the written .go files PARSE and MOUNT, which neither
     //  LocalGen's CHECK=1 nor any logic spec does. It earned a place here on 2026-08-14: a hand-compiled
     //   Heist.go with a duplicate `let` sailed past CHECK=1 and past RehealSmoke itself (which did not

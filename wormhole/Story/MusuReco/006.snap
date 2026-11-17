@@ -78,7 +78,7 @@ Snap:H
                 unemit:35,type:repli_lines,seq:35,body_len:99
                 unemit:36,type:repli_page,seq:36,body_len:76800
               req:unemit,seq=37,type:repli_lines,body_hash:966ae150581d4489736eb8c213aff2b3bf1637a797dfa4c31391762c454bda82,body_len=99,done,to:repli_lines,finished
-              req:unemit,seq=38,type:repli_page,body_hash:ab97a4e8119acadaea563d6df9519842b55053dd56d2852afc45a21e3d9dc352,body_len=76800,done,to:repli_page,finished
+              req:unemit,seq=38,type:repli_page,body_hash:649a8a9468e58229a09cfb947e42b5ec492cad7efddce2b842c839dd9a7e012a,body_len=76800,done,to:repli_page,finished
           active_transport,type:mock,open
         Mine,pub:DJ
           stock,pub:DJ

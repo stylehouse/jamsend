@@ -2,6 +2,7 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig, loadEnv, type PluginOption } from 'vite';
 import { attachRelay } from './src/lib/server/relay';
 import { serve_diges, write_status_waft } from './src/lib/server/dige';
+import { serve_wormhole } from './src/lib/server/wormhole_serve';
 import { readFileSync } from 'node:fs';
 
 // The trusted flock for the browser bake — off DISK first (.env.cluster-pubs, what the editor's "Set up cluster trust" writes),
@@ -83,6 +84,9 @@ function digePlugin(): PluginOption {
 		configureServer(server) {
 			server.middlewares.use((req, res, next) => {
 				try { if (serve_diges(process.cwd(), req, res)) return } catch { /* fall through to vite */ }
+				// the app tree, read-only, for pages with no repo folder (wormhole_serve.ts says why; a production
+				//  node server mounts the same function beside its relay)
+				try { if (serve_wormhole(process.cwd(), req, res)) return } catch { /* fall through to vite */ }
 				next();
 			});
 
