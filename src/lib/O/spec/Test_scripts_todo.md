@@ -91,6 +91,7 @@ Need `~/chromelibs` (see the eye memory).  Each mints its own identity in its ow
 | `MountNav.spec.ts` | the mount table over a duck-typed nav |
 | `LazyGithubNav.spec.ts` | the lazy GitHub app tree downloads only what a step diffs |
 | `OriginNav.spec.ts` | the origin serves the app tree read-only and fenced; OriginNav lists in one request and refetches only what moved |
+| `GenStore.spec.ts` | compiled ghosts stored by content (gen_store.ts): the dige equals `/__gen/dige`'s, a recompile is a new file and the old stays, `moved` names only what changed, gc keeps the manifest |
 | `StatusWaft.spec.ts` | the dev server writes a Waft the tab's own decoder reads (Docindex first slice) |
 | `IndexRoster.spec.ts` | Atlas rosters from the index Waft instead of walking the tree |
 | `MapEncode.spec.ts` | the Map/index serialises as C** |

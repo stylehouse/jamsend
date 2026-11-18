@@ -368,7 +368,9 @@ async Atlas_pass(w, req, nav):
     //    written. It could only ever be created by a tab that did not need it. The condition that
     //     actually holds is: something changed, OR this stand did not come from a supermap in the
     //      first place (so there is none, or a partial one, to improve on).
-    if (!more && (w.c.supermap_dirty || !w.c.super_took)) await this.Atlas_super_put(w)
+    //  …and once THIS stand has saved, "did not come from a supermap" is answered: without super_saved a cold browser re-encoded and
+    //   re-put the whole census (4MB) on every settled pass, 22 times in 70s on a LandPage that also stands the wire (2026-11-18)
+    if (!more && (w.c.supermap_dirty || (!w.c.super_took && !w.c.super_saved))) await this.Atlas_super_put(w)
     await this.Atlas_report(w)
     if (adopted || mapped || more) this.i_elvisto(w, 'think')
 
@@ -789,6 +791,7 @@ async Atlas_super_put(w):
         if (out.errors.length) return
         await db.super.put({ key: this.Atlas_super_key(), snap: out.snap, at: Date.now(),
                              docs: w.o({ Doc: 1 }).length })
+        w.c.super_saved = 1
         console.log('🗂 supermap saved — ' + Math.round(out.snap.length / 1024) + 'KB')
     } catch (e) {
         console.warn('🗂 supermap save failed', e)

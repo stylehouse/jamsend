@@ -3,6 +3,7 @@ import { defineConfig, loadEnv, type PluginOption } from 'vite';
 import { attachRelay } from './src/lib/server/relay';
 import { serve_diges, write_status_waft } from './src/lib/server/dige';
 import { serve_wormhole } from './src/lib/server/wormhole_serve';
+import { gen_store_new, gen_store_sync, gen_store_gc } from './src/lib/server/gen_store';
 import { readFileSync } from 'node:fs';
 
 // The trusted flock for the browser bake — off DISK first (.env.cluster-pubs, what the editor's "Set up cluster trust" writes),
@@ -137,6 +138,39 @@ function digePlugin(): PluginOption {
 			const interesting = (p: string) => /\.(g|svelte|ts|md)$/.test(p) && !p.includes('/wormhole/');
 			for (const ev of ['add', 'change', 'unlink'] as const)
 				server.watcher.on(ev, (p: string) => { if (interesting(p)) refresh(ev); });
+
+			// CODE MOVED (2026-11-18, AtheoryNexus_todo §0.00 steps 1+2) — the twin of the docindex push above, for the BUILT side.
+			//  Every .go in the flavour trees is mirrored into src/lib/gen-dige/<Name>.<dige>.go (gen_store.ts says why: a ?swap=
+			//   query can serve new bytes under an old name; a dige-named file cannot), and a recompile is pushed as
+			//    control:'gen' {moved:[{gen,dige}]} to every tab that runs ghosts — runners too, which the docindex push skips.
+			//     The tab re-imports the named file at its next safe seam (Creduler_reswap) instead of polling /__gen/dige every 2s.
+			//  The boot sync pushes nothing: a restart reloads every tab anyway, and they boot on the new trees.
+			const gen_st = gen_store_new();
+			try { const t0 = Date.now(); gen_store_sync(process.cwd(), gen_st); const gone = gen_store_gc(process.cwd(), gen_st.manifest);
+				console.log(`🧬 gen store: ${Object.keys(gen_st.manifest).length} builds (${Date.now() - t0}ms${gone ? `, ${gone} old dropped` : ''})`) }
+			catch (e) { console.warn('🧬 gen store boot failed', e) }
+			let gen_pending: NodeJS.Timeout | null = null;
+			let gen_noticed = 0;
+			const gen_refresh = () => {
+				if (!gen_noticed) gen_noticed = Date.now();
+				if (gen_pending) clearTimeout(gen_pending);
+				gen_pending = setTimeout(() => {
+					gen_pending = null;
+					const event_at = gen_noticed; gen_noticed = 0;
+					try {
+						const r = gen_store_sync(process.cwd(), gen_st);
+						if (!r.moved.length) return;
+						const relay = (globalThis as any).__peeroleum_relay;
+						const n = relay?.broadcast?.({ control: 'gen', event_at, written_at: Date.now(), moved: r.moved.slice(0, 64), moved_n: r.moved.length },
+							['runner', 'editor', 'hacker', 'player']) ?? 0;
+						console.log(`🧬 code moved → ${n} socket(s): ${r.moved.slice(0, 3).map(m => m.gen + '@' + (m.dige || '∅')).join(' ')}${r.moved.length > 3 ? ' …' : ''}`);
+					} catch (e) { console.warn('🧬 gen store sync failed', e) }
+				}, 250);
+			};
+			// a build in a flavour tree — never the store itself (gen-dige would loop)
+			const built = (p: string) => /\/src\/lib\/gen(-[a-z]+)?\/.+\.go$/.test(p) && !p.includes('/src/lib/gen-dige/');
+			for (const ev of ['add', 'change', 'unlink'] as const)
+				server.watcher.on(ev, (p: string) => { if (built(p)) gen_refresh(); });
 		},
 	};
 }

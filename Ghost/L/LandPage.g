@@ -2,7 +2,11 @@
 //  What wears `main:Land,role:hacker`, so the derived Ground/Land carries Main:Land and Role:hacker, Auto stands A:Land/w:Land on
 //   Mundo, and its think is Land(A,w) below.  The Hackarium (/BigWordland) stands the same land inside a Book's Run House, with the
 //    docks and Langui; this is the land with no Book under it — what it knows, said as rows, and its controls, which are the verbs.
-//  Role hacker: a verb that writes is refused (Verb_run), the tab stands no relay channel and claims no editor seat.
+//  Role hacker: a verb that writes is refused (Verb_run) and the tab claims no editor seat.  It DOES stand the wire (2026-11-18, the
+//   owner: "the hacker page might want to have a remote runner, I see no reason why it has to be scared of the relay"): A:Wire /
+//    w:Wire,hacker on the top House binds the relay's read-only player door, so the page hears what the server pushes (control:gen,
+//     code moved → A:Code's tape; control:docindex) and runner_ask reaches it with --player=.  Only the wire — not an A:Lies, which
+//      stands the whole Lies dock (tried 2026-11-18: a LIES panel and a stuck GhostList download on a folderless page).
 //
 //      A:Land / w:Land
 //        %Census:Atlas,docs,mapped          ← what the code SAYS — files rostered, and mapped so far
@@ -35,6 +39,7 @@ IMPORT()
 
 // Land — the page's think: the face once, the land's Ground once (with what it stands on — the cave wants the glass), then the rows
 Land(A, w):
+    this.Land_wire()
     if (!w.c.face) {
         w.c.face = 1
         let uis = this.oai_enroll(this, { watched: 'UIs' })
@@ -57,6 +62,15 @@ Land(A, w):
         w.c.tell_again = null
         this.main()
     }, LAND_TELL_MS)
+
+// Land_wire — the relay channel and nothing else, each think (every step is idempotent): the live spine's transport (gen/N, as a code room rides it), the
+//  channel (Lies_role reads w%hacker → the player door, never a seat), and its keepalive.  Not in a production build (Lies_player_seen)
+Land_wire():
+    let wire = this.top_House().oai({ A: 'Wire' }).oai({ w: 'Wire', hacker: 1 })
+    this.Lies_transport_up(wire)
+    this.Lies_channel_up(wire)
+    this.Lies_keepalive(wire)
+    return wire
 
 // e_Land_grounded — the land's code is in: stand its worlds on the top House, where every reader looks them up by name, with the
 //  reader's face on this page.  Then read what the Books measured, once
@@ -109,6 +123,14 @@ Land_tell(w):
         moved |= this.Land_say(w, 'Electrode', { armed: T.armed ? 1 : null, flavour: top.c.flavour || null })
     }
     if (top.o({ A: 'Lagoon' })[0]) moved |= this.Land_say(w, 'Lagoon', {})
+    // code moved (A:Code's tape, LiesLies Code_heard): how many builds the server pushed, and the last — the page stays on its own build
+    let tape = top.o({ A: 'Code' })[0]?.o({ w: 'Code' })[0]?.o({ TheAIO: 'moved' })[0]
+    if (tape) {
+        let heard = tape.o({ TheAHeard: 1 })
+        let last = heard[heard.length - 1]
+        let said = last ? String(last.sc.gen).split('/').pop() + (last.sc.dige ? '@' + String(last.sc.dige).slice(0, 8) : ' gone') : null
+        moved |= this.Land_say(w, 'Code', { heard: '' + (tape.sc.heard || 0), last: said })
+    }
     return moved
 
 // Land_exercise_read — every Book's Exercise toc, read OUTSIDE Atime (a few hundred disk reads), landed by e_Land_exercised inside it

@@ -245,11 +245,7 @@
       **WIRED 2026-11-18** (patch applied; `/__wormhole/tree` live, fence verified against the running server).  The restart it
        cost took ~4 min and the dev server then died of a full heap (`Reached heap limit`, ~1GB, after ~6.5 days up — vite restarts
         in-process, so every config save may strand a server's worth of heap; unmeasured: watch `docker stats jamsend-dev`).
-     (4) **NEXT, back into Atheory: the relay says when code moved.**  Every runner polls `/__gen/dige` every 2s (`Creduler_reswap`,
-      LiesLies) to learn whether a `.go` was recompiled — a 304 nearly always, and the owner finds it noise.  The relay already pushes
-       `control:docindex` to code rooms on a source change (vite.config digePlugin); push `gen` moves the same way to runners and
-        let the poll go (a long fallback at most).  It is the spine rule in small: a runner should re-import because a row SAYS the
-         code moved, not because a timer asked.
+     (4) **NEXT: code named by its content, and the push** — §0.00 below.
 
 A→B→C is the "decide from rows" migration (disk replies, Story steps, clicks, then the ambient tick — that last step is where
  Housing's wake paths get deleted).  D and E ride on it; F is the same move in Hovercraft; G is the app the fabric is for: explore a pile, then merge a giant download folder into the collection with guided, mechanical moves.
@@ -258,6 +254,118 @@ A→B→C is the "decide from rows" migration (disk replies, Story steps, clicks
  the alarm until A); `mode:new` picked before the toc read lands; Stands inferred from the Credence row; the 8 Desk-runner reds
   (HohoTiles, HohoWaftMap, Vyto Bunch/Mitosis/Seek/Staple/Freeze); `%Clock` in place of `w.sc.now`; HohoNets' verdict; TimeSpool
    and Credulation churn.  *Checked 2026-11-03:* MusuOgg has no revert damage (no diff).
+
+## 0.00 The next piece — code named by its content, then the push (2026-11-18, owner's office hour)
+
+*Agreed with the owner: the gen push is next.  This is the plan, the reasoning, and — just as load-bearing — what it is NOT
+ spreading into.  Read before building.*
+
+**The three jobs, renamed while talking: wire → projection → cell.**  The wire is delivery (who, how, acked or not).
+ Projection is what the rows MEAN when they land — a faithful copy of state from somewhere else, its staleness, its merge.
+  A cell (Cello_todo.md: Door, Radio, Heist, Haul, Pier — panes Cellui fits) is where a projection is SEEN.
+   "Rows arriving in a cell" is projection's last step.  (Candidate naming; Atheory_todo §0.0 still says "projecting reality".)
+
+**Why the push needs content names first.**  Today one `.g` compiles to one `.go` per FLAVOUR, each flavour a parallel tree:
+ `src/lib/gen/` (plain), `src/lib/gen-electrode/` (the Hacky measuring twins, `Flavour:electrode`), `src/lib/pinned_stable/`
+  (the editor's frozen spine).  A flavour — or anyone's personal hack — costs a whole directory; it doesn't scale.  And a tab
+   re-imports a changed `.go` by cache-busting its URL (`?swap=<etag>`, LiesLies `Creduler_reswap`), found by polling
+    `/__gen/dige` every 2s — the noise the owner hates.
+
+**The plan, in order.**
+1. **Code named by its content.**  A compiled ghost is `(source, flavour) → dige`, stored once BY dige.  A Ground resolves to
+    a small MANIFEST of those diges; a build is a manifest.  A tab imports by dige — a new dige is a new name, so no cache-busting
+     and nothing can be stale.  This is where `%TheACode` is heading anyway (an A holds its code, by dige).
+2. **The push.**  "Code moved" = "Ground X's manifest changed: Atlas.g is now dige Y", pushed over the relay to the tabs standing
+    on X (the relay already pushes `control:docindex` to code rooms — digePlugin in vite.config).  It lands as an OUTSIDE
+     arrival — a taped `%TheAHeard` — and the tab re-imports because a row says so.  The 2s poll goes (a long fallback at most).
+3. **Story gets it free.**  A Book's run pins one manifest — "a run never mixes two versions" becomes structural, not a
+    `running` guard.  A Book can INJECT "gen moved" as a fake outside arrival (like a key press) and watch the page react; it
+     needs no remote tape.
+- **Two arrivals, not one (owner, 2026-11-18: "is it supposed to be importing or editing that code?").**  About one ghost:
+   **source moved** (the `.g` — a DOC; the page reads|edits it; `control:docindex` already pushes this) and **code moved** (the `.go`
+    — the page RUNS it, standing on it).  A save → compile → land chain links them.  The push names which, with the dige; the page
+     reacts by its RELATION to that ghost: holds a Doc of it (re-read; a source move that isn't my own save's echo is a CONFLICT —
+      shown, never overwriting the buffer), stands on it (re-import at a seam), or both — then code-moved after my own save is the
+       CONFIRMATION the edit landed and runs: the hacker page's save→running loop.  Open: how each relation reacts in the room.
+- **Measured before designing:** how many tabs import how many `.go`; whether vite serves a dige-named file as cheaply.  And the
+   flavour trees' consumers (Electrode, the editor's pinned spine — see [[editor-rides-the-frozen-spine]]) must keep working.
+- **MEASURED + BUILT 2026-11-18 (steps 1+2, server half live-tested, wiring a held patch).**  Vite caches a module by its whole
+   URL: a repeated `?swap=` ≈10ms, a new one = a fresh svelte compile (265–550ms).  But a query is NOT a content name — when the
+    file moves, vite invalidates every module of it, so `?swap=<old>` serves the NEW bytes.  Hence real files: `src/lib/gen-dige/
+     <Name>.<dige>.go`, never rewritten (every `.go` imports only `$lib/…`, so a copy runs anywhere).  `src/lib/server/gen_store.ts`
+      (+ `scripts/GenStore.spec.ts`, in checks): the dige IS `/__gen/dige`'s, so a tab's map indexes the store; the flavour trees
+       stay and the store mirrors them (105 builds, 11MB, cold sync 136ms, warm 2ms); `moved` = code moved; gc drops builds
+        outside the manifest after 24h.  **The wiring** (one patch, restarts the dev server): digePlugin syncs on boot and on any
+         `.go` change, broadcasting `control:'gen' {moved:[{gen,dige}]}` to runner+editor+hacker+player; LiesLies `Lies_gen_heard`
+          keeps the pushed map on the top House, wakes the sweep, and drops the 2s poll to a 60s fallback; `Creduler_reswap`
+           imports a PUSHED dige by name (only pushed — a failed module import stays failed for the page's life), else `?swap=`.
+   **WIRED + LIVE-VERIFIED 2026-11-18** on e747 (a probe comment on ErrchannelTesting.g, compiled, then reverted): `🧬 code moved`
+    heard 253–321ms after the `.go` write, one swap `(by content)`, no reload; Book ErrChannel green after.  Found + fixed on the way:
+     the push AND vite's HMR wake each started a sweep, so one ghost swapped twice — `Creduler_reswap` now runs one sweep at a
+      time (a mid-sweep wake asks for one more), and the HMR wake stands down once a push has been heard.
+- **WHO SWAPS (owner, 2026-11-18: "the hacker page must run a stable version of the code").**  Swapping is per tab, by role:
+   a RUNNER swaps at a seam (it exists to run the current code); the HACKER PAGE stays on its build — its tools must not move
+    under it — and SHOWS what moved; to see edited code run it asks a runner, never itself.  So "sweep every stood ghost" is a
+     runner-only change, not a page one.
+- **The push as rows — BUILT 2026-11-18** (LiesLies `Code_heard`, live on e747): `A:Code / w:Code / %TheAIO:moved,keep:32`, one
+   `%TheAHeard:<n>,take,gen,dige|gone` per build per push — Theory.g TheA_io's tape shape, with no synapse (nothing eats it yet;
+    Stuffica's screen tape is the precedent).  It lands on the House it is called on: live, the top House (never snapped — Books
+     snap their Run House); a Book calls it on its own House to FAKE an arrival.  Lag rides `.c`.  ⚠ The hacker page (LandPage)
+      stands no relay channel, so today only a runner hears; giving it a read-only ear is the next piece.
+- **The hacker page hears — BUILT 2026-11-18** (owner: "I see no reason why it has to be scared of the relay").  Two hacker pages,
+   both `role:hacker`: `/BigWordland` (the Hackarium — the land inside a Book's Run House, with docks; it always had a channel) and
+    `/Desk?G=Land` (LandPage — the land with no Book, not yet everything BigWordland is; it had none).  LandPage now stands ONLY
+     the wire: `LandPage.g Land_wire` → `A:Wire / w:Wire,hacker` on the top House, transport + channel + keepalive, the read-only
+      player door.  NOT an `A:Lies` — tried first: it mounts the whole Lies dock (a LIES panel, a stuck GhostList download).
+       `Lies_has_docks` says no for `w:Wire`, so it never asks for the editor seat.  Headless-verified: `🧬 code moved` heard 255ms
+        after the write, clean page.  Found on the way: a cold browser re-saved Atlas's 4MB supermap on EVERY settled pass (22× in
+         70s) — `super_saved` now ends that.  Not yet: runner_ask reach (`--player=`) — the headless page sent no hello (no `?I=`),
+          so check it on a real tab.
+   **The page SHOWS it (2026-11-18):** `%Census:Code,heard,last` (LandPage `Land_tell`) → the groundline's "code moved N last
+    X.go@dige" (headless-verified); and a pane whose doc built a heard `.go` (gen[-flavour]/X/Y.go ↔ Ghost/X/Y.g) wears
+     "⚙ code moved" (LandPane + LandMember `moved` prop; the title says the page stays on its own build).  The badge is NOT yet
+      seen live: a folderless page opens no panes ("no repo on this tab — Atlas has no nav").  **Next candidate: a folderless
+       hacker page reads code from the ORIGIN** (OriginNav as Atlas's nav, read-only) — but the fence serves only `wormhole/` +
+        `Ghost/`; Atlas also roots `src/` and `scripts/`, so widening it is the owner's call (dev serves src as modules anyway).
+   Hackarium is red on a fixture from 2026-09-08 (~1500 lines of drift: GroundUsed/TheACode rows, `examining loopy:1`) — none of
+    it this work; not accepted (not obvious), wants a look.
+   Still owed: Ground-loaded ghosts are not swept on a runner (spine only); Story pinning a manifest (step 3).
+
+**Rulings from the talk (owner, 2026-11-18).**
+- **An emit is a fact once sent.**  Data that changes is a NEW emit, never a rewrite; nothing rewinds or replays with different
+   data.  Encode-once (Peeroleum's `body_hash`, `dige`) is caching — a speed-up, not meaning — and stays out of the core.
+    Owner: "be a little wary of loading too much into a tiny space."
+- **Names: roles in the code, addresses only on the tape.**  Code says `friend`; Identity resolves it at send time; the tape
+   records who it actually reached (replay, audit).  Nothing is hardcoded.
+- **Question 3 (same A both ends?) dissolved**: mirrors are naturally same-shape; pulses may go any A → any A it holds a grant to.
+
+**NOT spreading into (each is real, each is parked — say so if one starts leaking in):**
+- **Mirrors as a general thing.**  Not well understood.  Repli is the one network mirror (Seem's observed pairing at its core);
+   a Story snap is a mirror; a cell drawing particles is a mirror.  The way in is a page with the three side by side — what is
+    copied, what decides "the same thing", what happens when a row goes — and it is an owner session, not a build.
+- **Pulse vs projection over the wire.**  Owner's point: going outside means ENCODING, which is a Seem-like act wanting to avoid
+   re-encoding.  So a remote thing may arrive as a pulse (an event, a taped Heard) or as a projection (a Seem mirror that
+    updates) — probably both.  The gen push is a pulse and needs no Seem; don't design projections from it.
+- **Names across the wire.**  `_A_near` (Atheory_design §1.15) resolves a name inside one House — built, proven (AthePondNear).
+   "friend" resolves by Swarm's Crew/Peering/grants.  That these are ONE act ("a name resolved by nearness; on the wire, near =
+    by grant|crew") is a claim to test, not known.
+- **Remote waits and vanishing peers.**  A cross-wire ask needs a lease; who sets its length, and what a LATE answer looks like
+   after the lease lapsed, is uninvented.
+- **Trust on the synapse.**  Is `grant:Music` enough, or does the flock key become a grant kind?
+- **Remote tapes.**  A Heard's `from:` points into a tape you may not be able to read.  Whether tapes ever travel is open; Story
+   does not need it (it injects locally).
+- **Version skew between As.**  OriginNav now carries a server `build`; a pulse may need its sender's code version (build N
+   hearing N+1).  Content-named code makes "version" = "manifest", which is the hook — don't build the check yet.
+- **What a "place" is** — a tab, an A, an identity, a Crew?  Fuzzy today (one person, many tabs, one Crew).
+- **Merge on the wire** (Repli's successor, fractures) — the vaguest of all.
+- **The first wire pair** (`suggest`/`suggest_got` in Jamsend.g, or `runner_ask`+ack by `corr`) — after the push, which is the
+   smallest real case of "a remote thing arrives as an outside Heard".
+
+**Also owed, not Atheory:** three timing reds want holds, not accepts — MusuMag step 7 (finished `req:unemit` count at the snap),
+ MusuBuddy step 7 (`parked_want` count), MusuRaStream step 2 (a `%see` not yet landed).  The finished `req:unemit` rows are
+  Peeroleum's inbox keeping its dead transient reqs (CLAUDE.md "an owner drops its finished transient reqs") — spine surgery, so
+   the Book-side hold (Coding_guide "Wake ≠ Hold") is the near fix.  And the dev server died of a full heap 2026-11-18 after ~6.5
+    days of in-process vite restarts — unmeasured; `docker stats jamsend-dev` will say if it climbs.
 
 ## 0. What to get on with next
 

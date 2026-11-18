@@ -10,9 +10,9 @@
     import { tick } from "svelte"
     import StemHive from "$lib/O/ui/StemHive.svelte"
     import LandGlyph from "./LandGlyph.svelte"
-    let { n, doc, tint = '', home = false, chain = [], at = '', lit = new Set<string>(), focus = new Set<string>(), glyph = [], error = '',
+    let { n, doc, tint = '', home = false, chain = [], at = '', moved = '', lit = new Set<string>(), focus = new Set<string>(), glyph = [], error = '',
           onreach, onopen, oncode, onclose, onerupt }: {
-        n: string, doc: string, tint?: string, home?: boolean, chain?: any[], at?: string, lit?: Set<string>, focus?: Set<string>, glyph?: any[], error?: string,
+        n: string, doc: string, tint?: string, home?: boolean, chain?: any[], at?: string, moved?: string, lit?: Set<string>, focus?: Set<string>, glyph?: any[], error?: string,
         onreach?: (method: string) => any, onopen?: (doc: string, method: string) => void, oncode?: (method?: string) => void,
         onclose?: () => void, onerupt?: () => void
     } = $props()
@@ -81,7 +81,7 @@
 
 <div class="member" data-pane={n} style={tint ? `--tint:${tint}` : ''}>
     <div class="bar">
-        <b>{n}</b>{#if home}<span class="home" title="in the Ground in view">⌂</span>{/if} <span class="doc" title={doc}>{doc}</span>{#if at}<span class="at">· {at}</span>{/if}
+        <b>{n}</b>{#if home}<span class="home" title="in the Ground in view">⌂</span>{/if} <span class="doc" title={doc}>{doc}</span>{#if at}<span class="at">· {at}</span>{/if}{#if moved}<span class="moved" title={moved}>⚙ code moved</span>{/if}
         {#if focus.size}<small title="this pane's focus — an area's main functions">{focus.size} in focus</small>{/if}
         <span class="gap"></span>
         {#if onerupt}<button type="button" title="erupt — open the docs this one calls and is called by, busiest first" onclick={onerupt}>✺</button>{/if}
@@ -120,6 +120,7 @@
     .member { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; border: 1px solid #23453a; border-radius: 6px;
         overflow: hidden; background: #0b1310 }
     .home { color: var(--tint, #8fd3b0) }
+    .moved { color: #e0b060; margin-left: .5em }
     .bar { border-left: 4px solid var(--tint, transparent); display: flex; gap: 6px; align-items: baseline; padding: 2px 8px; background: #16281f;
         font: 11px ui-monospace, monospace }
     .doc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 0 1 auto }

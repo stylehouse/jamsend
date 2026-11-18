@@ -38,10 +38,20 @@
             const lw = M?.o?.({ A: 'Lagoon' })[0]?.o?.({ w: 'Lagoon' })[0]
             const wires = (w?.o({ Wire: 1 }) ?? []).map((r: any) => ({ ...r.sc }))
             const lit = (n: string) => new Set<string>(wires.flatMap((x: any) => [x.from_pane === n ? x.from : null, x.to_pane === n ? x.to : null]).filter(Boolean))
+            // CODE MOVED, next to the Doc: A:Code's tape (LiesLies Code_heard — the server's control:gen push) names builds; a pane whose
+            //  doc built one is badged.  The page does NOT swap — it stays on the build it loaded (the owner, 2026-11-18); this only says
+            //   that the code it shows has a newer build out there (a runner has it at its next seam)
+            const tape = M?.o?.({ A: 'Code' })[0]?.o?.({ w: 'Code' })[0]?.o?.({ TheAIO: 'moved' })[0]
+            const built: Record<string, string> = {}
+            for (const h of (tape?.o({ TheAHeard: 1 }) ?? []) as any[]) {
+                const m = /^gen(?:-([a-z]+))?\/(.+)\.go$/.exec(String(h.sc.gen ?? ''))
+                if (!m) continue
+                built[`Ghost/${m[2]}.g`] = `${h.sc.dige ? 'built @' + String(h.sc.dige).slice(0, 8) : 'build gone'}${m[1] ? ' (' + m[1] + ' flavour)' : ''} — heard #${h.sc.TheAHeard}; this page stays on its own build`
+            }
             const panes = (w?.o({ Pane: 1 }) ?? []).map((r: any) => {
                 const n = String(r.sc.Pane), code = !!r.sc.code
                 const b = !code && lw && typeof H?.Lagoon_beads === 'function' ? H.Lagoon_beads(lw, String(r.sc.doc)) : null
-                return { n, doc: String(r.sc.doc), code, line: Number(r.sc.line) || 1, at: r.sc.at ? String(r.sc.at) : '',
+                return { n, doc: String(r.sc.doc), code, moved: built[String(r.sc.doc)] ?? '', line: Number(r.sc.line) || 1, at: r.sc.at ? String(r.sc.at) : '',
                     text: String(r.c.text ?? ''), focus: new Set<string>(r.o({ Focus: 1 }).map((x: any) => String(x.sc.Focus))), chain: b?.chain ?? [], error: b?.error ?? (!code && !lw ? 'no A:Lagoon standing yet' : ''), lit: lit(n) }
             })
             const layout = String(w?.o({ Layout: 1 })[0]?.sc.Layout ?? 'grid')
@@ -57,7 +67,7 @@
                 defs: x.o({ Def: 1 }).map((d: any) => ({ method: String(d.sc.Def), doc: String(d.sc.doc ?? ''), desc: String(d.sc.desc ?? '') })),
                 cites: x.o({ Cites: 1 }).map((c: any) => String(c.sc.Cites)), tests: x.o({ Tests: 1 }).map((t: any) => String(t.sc.Tests)) }))
             const aim_name = String(w?.o({ Aim: 1 })[0]?.sc.Aim ?? 'Land')
-            return { areas, aim_name, slices, atlas: cen('Atlas'), electrode: cen('Electrode'), lagoon: cen('Lagoon'), exercise: ex, panes, layout, wires, weave }
+            return { areas, aim_name, slices, atlas: cen('Atlas'), electrode: cen('Electrode'), lagoon: cen('Lagoon'), code: cen('Code'), exercise: ex, panes, layout, wires, weave }
         })
     })
 
@@ -216,6 +226,7 @@
             <span title="Electrode's call tap on this tab">· tap <b>{view.electrode ? (view.electrode.armed ? '⚡ armed' : 'unarmed') : 'not standing'}</b></span>
             <span title="Atlas — what the code says">· census <b>{view.atlas ? (view.atlas.waiting ?? `${view.atlas.mapped}/${view.atlas.docs}`) : 'not standing'}</b></span>
             <span class="dim" title="Lagoon — the reader the seek asks">· reader {view.lagoon ? 'on' : 'off'}</span>
+            {#if view.code}<span title="builds the server pushed (control:gen) since this page loaded — it stays on its own build">· code moved <b>{view.code.heard}</b>{#if view.code.last}<span class="dim">&nbsp;last {view.code.last}</span>{/if}</span>{/if}
         </div>
         {#if open_area}
             {@const a = open_area}
@@ -302,10 +313,10 @@
         <section class="panes scrollbig {view.layout}" bind:this={panes_el}>
             {#each view.panes as p (p.n)}
                 {#if p.code}
-                    <LandPane n={p.n} doc={p.doc} text={p.text} line={p.line} at={p.at} tint={tint(p.doc)} home={home(p.doc)} onclose={() => run(`:pane close ${p.n}`)}
+                    <LandPane n={p.n} doc={p.doc} text={p.text} line={p.line} at={p.at} moved={p.moved} tint={tint(p.doc)} home={home(p.doc)} onclose={() => run(`:pane close ${p.n}`)}
                         onfold={() => run(`:pane fold ${p.n}`)} />
                 {:else}
-                    <LandMember n={p.n} doc={p.doc} chain={p.chain} at={p.at} tint={tint(p.doc)} home={home(p.doc)} lit={p.lit} error={p.error}
+                    <LandMember n={p.n} doc={p.doc} chain={p.chain} at={p.at} moved={p.moved} tint={tint(p.doc)} home={home(p.doc)} lit={p.lit} error={p.error}
                         focus={p.focus} glyph={glyph_areas} onreach={(m) => (typeof H?.Land_reach === 'function' ? H.Land_reach(m, p.doc) : null)}
                         onopen={(doc, m) => run(`:pane open ${doc} --reuse --at=${m}`)}
                         oncode={(m) => run(`:pane code ${p.n}${m ? ' ' + m : ''}`)} onclose={() => run(`:pane close ${p.n}`)}

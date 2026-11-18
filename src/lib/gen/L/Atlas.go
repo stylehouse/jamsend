@@ -171,7 +171,7 @@ const ATLAS_EXT   = { g: 1, svelte: 1, ts: 1, md: 1 }
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Atlas(): string { return '667e5c17b8c39d7f~g1' },
+    Ghostmeta_Ghost_L_Atlas(): string { return 'c80b73be7fe35c76~g1' },
 
 // Atlas.g — every doc's %Map, kept.  The first ghost in Ghost/L/ (the land; spec home for now:
 //  Stemdex_todo.md §0 "relation EDGES", 2026-09-05).  `Atlas` is a PLACEHOLDER name — an atlas is a
@@ -383,7 +383,9 @@ async Atlas_pass(w, req, nav) {
     //    written. It could only ever be created by a tab that did not need it. The condition that
     //     actually holds is: something changed, OR this stand did not come from a supermap in the
     //      first place (so there is none, or a partial one, to improve on).
-    if (!more && (w.c.supermap_dirty || !w.c.super_took)) await this.Atlas_super_put(w)
+    //  …and once THIS stand has saved, "did not come from a supermap" is answered: without super_saved a cold browser re-encoded and
+    //   re-put the whole census (4MB) on every settled pass, 22 times in 70s on a LandPage that also stands the wire (2026-11-18)
+    if (!more && (w.c.supermap_dirty || (!w.c.super_took && !w.c.super_saved))) await this.Atlas_super_put(w)
     await this.Atlas_report(w)
     if (adopted || mapped || more) this.i_elvisto(w, 'think')
 
@@ -814,6 +816,7 @@ async Atlas_super_put(w) {
         if (out.errors.length) return
         await db.super.put({ key: this.Atlas_super_key(), snap: out.snap, at: Date.now(),
                              docs: w.o({ Doc: 1 }).length })
+        w.c.super_saved = 1
         console.log('🗂 supermap saved — ' + Math.round(out.snap.length / 1024) + 'KB')
     } catch (e) {
         console.warn('🗂 supermap save failed', e)

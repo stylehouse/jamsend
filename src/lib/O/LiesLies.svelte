@@ -206,6 +206,7 @@
         //   keep `Lies_is_editor` for DUTIES (the relay, the Cluster claim, writes).  The split is the
         //    whole of role:hacker — see Lies_role above.
         Lies_has_docks(w?: TheC): boolean {
+            if (w?.sc?.w === 'Wire') return false   // a wire-only world (LandPage's w:Wire,hacker) hears; it has nothing to write from
             const r = (this as House).Lies_role(w)
             return r === 'editor' || r === 'hacker'
         },
@@ -501,6 +502,7 @@
                     w.c.lies_control_hooked = 1
                     ;((w.c as any).on_control_list ??= []).push((frame: any) => {
                         if (frame?.control === 'docindex') H.Lies_docindex_heard(w, frame)
+                        else if (frame?.control === 'gen') H.Lies_gen_heard(w, frame)
                         else if (frame?.control === 'changed') H.Lies_changed_heard(w, frame)
                         else if (typeof frame?.control === 'string' && frame.control.startsWith('seat_')) H.Lies_seat_heard(w, frame)
                         else if (frame?.control === 'flock_ok' || frame?.control === 'flock_error') H.Lies_flock_heard(w, frame)
@@ -1646,6 +1648,9 @@
                         hot?.on?.('vite:afterUpdate', (payload: any) => {
                             const gens = ((payload?.updates ?? []) as any[]).filter(u => /\/gen\/.+\.go(\?|$)/.test(String(u?.path ?? u?.acceptedPath ?? '')))
                             if (!gens.length) return
+                            // once the server pushes code moved (Lies_gen_heard), that push IS the wake — a second one here
+                            //  only raced it into a double swap (seen 2026-11-18: the same ghost swapped twice in 1ms)
+                            if ((H.top_House() as any).c.gen_push_live) return
                             H.tlog(`👻 vite hot-updated ${gens.length} gen .go — waking the reswap sweep`)
                             w.c.reswap_last = 0
                             H.main()
@@ -1737,9 +1742,83 @@
             }
         },
 
+        // Lies_gen_heard — the server says CODE moved (vite.config digePlugin, control:'gen'): these builds are now these
+        //  diges, each stored as src/lib/gen-dige/<Name>.<dige>.go (gen_store.ts).  Kept on the TOP House, since the world that
+        //   hears the relay need not be the one Creduler_reswap sweeps.  Once one push is heard the poll drops to a slow fallback
+        //    (GEN_FALLBACK_MS) and a push wakes the sweep at once.  Only a pushed dige is imported BY NAME: a server that sends
+        //     no push may have no store, and a failed module import stays failed for the life of the page.
+        //  "Code moved", not "source moved" (the .g Doc — control:'docindex'); AtheoryNexus_todo §0.00 "Two arrivals".
+        Lies_gen_heard(w: TheC, frame: any) {
+            const H = this as House
+            const top = H.top_House() as any
+            const pushed = (top.c.gen_pushed ??= {}) as Record<string, string>
+            for (const m of (frame?.moved ?? []) as { gen: string, dige: string }[]) {
+                if (!m?.gen) continue
+                if (m.dige) pushed[m.gen] = m.dige
+                else delete pushed[m.gen]
+            }
+            top.c.gen_push_live = 1
+            top.Code_heard(frame)
+            w.c.reswap_last = 0
+            if (top.c.reswap_w) (top.c.reswap_w as TheC).c.reswap_last = 0
+            const lag = frame?.event_at ? Date.now() - Number(frame.event_at) : null
+            H.tlog(`🧬 code moved: ${(frame?.moved ?? []).length} build(s)${lag != null ? ` (${lag}ms since the write)` : ''}`)
+            H.main()
+        },
+
+        // Creduler_reswap — one sweep at a time.  A sweep awaits fetches and imports, so a second wake landing mid-sweep
+        //  would see the same un-advanced baseline and swap the same ghost again; it asks for one more sweep instead.
+        // Code_heard — "code moved" as ROWS, on THIS House: the outside's arrival written down where the page can see it and a Book
+        //  can fake it (AtheoryNexus_todo §0.00 step 2).  One take per push, one %TheAHeard per build — Theory.g TheA_io's tape shape:
+        //
+        //      A:Code / w:Code
+        //        %TheAIO:moved,heard:7,takes:3,keep:32
+        //          %TheAHeard:6,take:3,gen:gen/Story/ErrchannelTesting.go,dige:c3ec53c4ae91cbc5
+        //          %TheAHeard:7,take:3,gen:gen-electrode/A/AtheFishTesting.go,gone        ← the build went away
+        //
+        //  A tape and no synapse (Stuffica's screen tape is the precedent): nothing eats these yet, so a synapse would only pile
+        //   pulses.  The Heard is the FACT and is never rewritten; what a tab does about it is its own (a runner swaps at a seam;
+        //    the hacker page stays on a stable build and shows it — it stands no relay channel yet, so live only a runner hears).
+        //  Live this is the top House (not snapped — Books snap their Run House); a Book calls it on its own House.  The lag (server
+        //   write → heard) rides .c: a wall-clock duration in .sc would red any snap that ever carried it.
+        Code_heard(frame: any) {
+            const H = this as House
+            const cw = H.oai({ A: 'Code' }).oai({ w: 'Code' })
+            const tape = cw.oai({ TheAIO: 'moved' })
+            const take = Number(tape.sc.takes || 0) + 1
+            let n = Number(tape.sc.heard || 0)
+            const lag = frame?.event_at ? Date.now() - Number(frame.event_at) : undefined
+            for (const m of (frame?.moved ?? []) as { gen: string, dige: string }[]) {
+                if (!m?.gen) continue
+                n++
+                const heard = tape.i({ TheAHeard: String(n), take, gen: m.gen, ...(m.dige ? { dige: m.dige } : { gone: 1 }) })
+                if (lag != null) heard.c.lag = lag
+            }
+            cw.oai({ TheAIO: 'moved' }, { heard: n, takes: take, keep: 32 })
+            const all = tape.o({ TheAHeard: 1 }) as TheC[]
+            while (all.length > 32) tape.drop(all.shift()!)
+            return tape
+        },
+
         async Creduler_reswap(w: TheC) {
             const H = this as House
-            const POLL_MS = 2000                                   // throttle: at most one ETag sweep per 2s
+            if (w.c.reswap_busy) { w.c.reswap_again = 1; return }
+            w.c.reswap_busy = 1
+            try { await H.Creduler_reswap_once(w) }
+            finally {
+                w.c.reswap_busy = undefined
+                if (w.c.reswap_again) { w.c.reswap_again = undefined; w.c.reswap_last = 0; H.i_elvisto(w, 'think') }
+            }
+        },
+
+        async Creduler_reswap_once(w: TheC) {
+            const H = this as House
+            const top = H.top_House() as any
+            top.c.reswap_w = w
+            // throttle: at most one sweep per 2s — or, once the server has pushed (Lies_gen_heard), a slow fallback, since a
+            //  push wakes the sweep itself (the owner, 2026-11-18: "that constant dige GET is super annoying")
+            const GEN_FALLBACK_MS = 60_000
+            const POLL_MS = top.c.gen_push_live ? GEN_FALLBACK_MS : 2000
             // NOT ON THE DAEMON (2026-10-14): it swaps ghosts off its own disk watch, so this probe was a fetch (or ~35
             //  HEADs) every 2s at its ORIGIN — prod — for nothing.  The polling itself is a case for Atheory_todo
             //   ("code changes should push out to the runners that need them").
@@ -1772,7 +1851,10 @@
             //    accelerator with no new way to be wrong, which is the same posture the Atlas dige
             //     index takes.  A dige is also a STRONGER signal than the ETag it replaces: vite's
             //      ETag moves with mtime, so a touched-but-identical .go used to force a re-import.
-            const served = await H.Creduler_gen_diges(w)
+            const pushed = (top.c.gen_pushed ?? {}) as Record<string, string>
+            const fetched = await H.Creduler_gen_diges(w)
+            // a pushed dige is newer than any poll's — it wins; both are the same alphabet (gen_store's dig = dige.ts's)
+            const served = fetched ? { ...fetched, ...pushed } : null
             // TWO BASELINES, ONE PER SOURCE, and they must never be compared across.  A vite ETag and a
             //  content dige are different alphabets for the same question, so a tab that answered from
             //   HEADs and then got the served map — or lost it again, which one dev-server hiccup does —
@@ -1803,8 +1885,11 @@
                 //   enrolment so a failed fetch/parse leaves the old (working) component mounted + the ETag
                 //    un-advanced (we retry next sweep) rather than tearing down into a blank.
                 let component: any
+                let byname: string | null = null
                 try {
-                    const module = await import(/* @vite-ignore */ `../../lib/${gen}?swap=${encodeURIComponent(etag)}`)
+                    // BY CONTENT when the server pushed this dige: the stored file can never be another build's bytes
+                    byname = served && pushed[gen] === etag ? `gen-dige/${gen.split('/').pop()!.replace(/\.go$/, '')}.${etag}.go` : null
+                    const module = await import(/* @vite-ignore */ byname ? `../../lib/${byname}` : `../../lib/${gen}?swap=${encodeURIComponent(etag)}`)
                     component = module.default
                 } catch (e) {
                     H.tlog(`👻 reswap ${gen}: import failed — ${String((e as any)?.message ?? e)} (keeping live version)`)
@@ -1818,7 +1903,7 @@
                 uis.i({ UI: 'Pantheate-include', gen_path: gen, swap: etag, component })
                 etags[gen] = etag                                  // only advance the baseline on a real swap
                 swapped++
-                H.tlog(`👻 reswap ${gen} @ ${etag}`)
+                H.tlog(`👻 reswap ${gen} @ ${etag}${byname ? ' (by content)' : ''}`)
             }
 
             w.c.reswap_wanted = wanted && swapped === 0 ? 1 : undefined
