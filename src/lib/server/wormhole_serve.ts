@@ -19,8 +19,10 @@
 //  NOTHING WRITES.  Writes belong to the person (their folder, their OPFS) or to the editor terminal —
 //   a listener's server never takes a file from a browser.
 //
-//  WHAT IS SERVED — the fence.  Only `wormhole/` and `Ghost/` (the same two subpaths the github mirror
-//   carried: DEFAULT_SUBPATHS in WormholeOpfs), and inside them only what would be PUBLIC on github
+//  WHAT IS SERVED — the fence.  `wormhole/` and `Ghost/` (the two subpaths the github mirror carried — DEFAULT_SUBPATHS in
+//   WormholeOpfs — all a music page reads) and, since 2026-11-18, `src/` and `scripts/`: a hacker page with no folder reads the
+//    CODE from here too (Atlas_origin_nav; the owner: "all that and more"), so it needs no repo on the tab and may sit on another
+//     box.  All four are public on github already.  Inside them only what would be PUBLIC on github
 //    anyway: no dot-files or dot-dirs (`.crswap`, `.tree_index.json`), no `_`-dirs (`_socklog`,
 //     `_trace` — relay dumps, gitignored), no `shots/` (untracked screenshots), no `*.crswap`.
 //   Paths are segment-checked (no `..`, no empty, no backslash) and resolved under the root, so no
@@ -36,8 +38,9 @@ import { createHash } from 'node:crypto'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, resolve, sep } from 'node:path'
 
-export const WORMHOLE_ROOTS = ['wormhole', 'Ghost']
-const SKIP_DIR: Record<string, 1> = { shots: 1, node_modules: 1 }
+export const WORMHOLE_ROOTS = ['wormhole', 'Ghost', 'src', 'scripts']
+// gen-dige: the content-named .go store (gen_store.ts) — derived, gitignored, and every build twice; its source trees are served
+const SKIP_DIR: Record<string, 1> = { shots: 1, node_modules: 1, 'gen-dige': 1 }
 const BOOT = Date.now()
 
 export function wormhole_build(): string {

@@ -1,0 +1,18 @@
+Snap:H
+  H:AtheCodePin,Run
+    A:AtheCodePin
+      self,round=3	{"mung":["age"]}
+      w:AtheCodePin
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+    A:Code
+      self,round=2	{"mung":["age"]}
+      w:Code
+        self,round=2	{"mung":["age"]}
+        Built:gen/Toy/Pond.go,dige:p1
+        Built:gen/Toy/Heron.go,dige:h1
+        TheAIO:moved,heard=3,takes=2,keep=32
+          TheAHeard:1,take,gen:gen/Toy/Pond.go,dige:p2
+          TheAHeard:2,take,gen:gen/Toy/Elsewhere.go,dige:e2
+          TheAHeard:3,take=2,gen:gen/Toy/Heron.go,dige:h2
+        TheAPin:run-1,book:AtheCodePin

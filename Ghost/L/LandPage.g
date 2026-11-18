@@ -36,6 +36,9 @@ IMPORT()
     const LAND_ERUPT_K = 3
     // how many of an area's docs open when it is pressed (the ones holding most of its main functions)
     const LAND_AREA_K = 4
+    // what a hacker page may ask a runner (Land_ask): reading, and running a Book ON THE RUNNER — never accept|reload|declare|poke
+    const LAND_ASK_OPS = ['ping', 'state', 'steps', 'run', 'snap', 'minisnap', 'console', 'rungos']
+    const LAND_ASK_MS = 20000
 
 // Land — the page's think: the face once, the land's Ground once (with what it stands on — the cave wants the glass), then the rows
 Land(A, w):
@@ -204,10 +207,61 @@ verbs_Land():
           desc: 'panes — docs side by side as members (their objects) or CodeMirror (code n) · wires between them · weave <Book> colours the wires by its Exercise',
           read: (w, a) => H.Land_pane_read(a),
           land: (w, a, got) => H.Land_pane_land(a, got) },
+        { name: 'ask', where: 'terminal', writes: 0, args: 'ping|state|steps|run|snap|minisnap|console|rungos [Book|n|path] [--to=<pub>] [--depth=n] [--tail=n] [--grep=re]',
+          desc: 'ask a runner over this page’s wire, as runner_ask does — the relay lets it through only once this tab proved a cluster flock key; run drives the RUNNER, never this page',
+          run: (w, a) => H.Land_ask(a) },
         { name: 'slice', where: 'terminal', writes: 0, args: 'cut|merge|split|go <k> [act]',
           desc: 'the slices of looking — cut one now · merge k into the one before · split k before its act i · go back to k (acting there branches)',
           run: (w, a) => H.Land_slice(a) },
     ]
+
+// Land_ask — one runner_ask from THIS page, over its wire (Land_wire): the frame scripts/runner_ask.mjs sends, answered by the corr-matched
+//  runner_ack the relay routes back (its ackBack) and Tribunal fans to w:Wire's on_control_list.  The relay's ASK GATE refuses a socket that
+//   never proved a flock key at hello — so a page with no identity (no ?I=) or no flock key is told so, by the relay, in the answer.
+//  The page stays on its own build; what it can do with the answer is look — the remote half of the save→running loop (AtheoryNexus §0.00)
+async Land_ask(a):
+    let op = String(a.verb || 'ping')
+    if (LAND_ASK_OPS.indexOf(op) < 0) return { error: op + ' is not askable from a hacker page — only ' + LAND_ASK_OPS.join(' ') }
+    let wire = this.top_House().o({ A: 'Wire' })[0]?.o({ w: 'Wire' })[0]
+    let port = wire?.o({ transport: 1, type: 'websocket' })[0]?.c.port
+    let ws = port?.ws
+    if (!ws || ws.readyState !== 1) return { error: 'this page has no live wire to the relay' }
+    let arg = a.args && a.args.length > 1 ? String(a.args[1]) : ''
+    let ask = { op: op, client: 'land:' + (location?.pathname || 'page') }
+    if (op === 'run') {
+        if (!arg) return { error: 'run needs a Book' }
+        ask.book = arg
+    }
+    if (op === 'snap') ask.n = Number(arg) || 1
+    if (op === 'minisnap') ask.path = arg || 'mundo'
+    if (a.depth) ask.depth = Number(a.depth)
+    if (a.tail) ask.tail = Number(a.tail)
+    if (a.grep) ask.grep = String(a.grep)
+    let to = a.to ? String(a.to) : 'runner'
+    let corr = 'land-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7)
+    let hooks = (wire.c.on_control_list ??= [])
+    let got = await new Promise((resolve) => {
+        let timer = null
+        let hear = (frame) => {
+            if (frame?.control !== 'runner_ack' || String(frame.corr) !== corr || frame.phase === 'received') return
+            done(frame)
+        }
+        let done = (frame) => {
+            clearTimeout(timer)
+            let i = hooks.indexOf(hear)
+            if (i >= 0) hooks.splice(i, 1)
+            resolve(frame)
+        }
+        hooks.push(hear)
+        timer = setTimeout(() => done(null), LAND_ASK_MS)
+        try {
+            ws.send(JSON.stringify({ header: { type: 'runner_ask', from: 'player', to: to, seq: Date.now(), corr: corr }, ask: ask, corr: corr }))
+        } catch (er) {
+            done({ ok: false, result: { error: 'send failed — ' + String(er?.message ?? er) } })
+        }
+    })
+    if (!got) return { error: 'no answer in ' + LAND_ASK_MS / 1000 + 's from ' + to }
+    return { to: to, op: op, ok: got.ok !== false, result: got.result ?? got }
 
 // the w:Land this page holds — a verb arrives on whichever w asked (the face's, or a relay's), so find it by name
 Land_w():

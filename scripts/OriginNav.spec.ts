@@ -4,7 +4,7 @@
 //  The claims: listing is ONE request and free afterwards; a read pulls a file once and then serves it
 //   from memory UNTIL the server says it moved (the stamp) — the stale-forever class LazyGithubNav's
 //    OPFS seed has is exactly what this must not have; the fence serves only what github would show
-//     (no _socklog/_trace, dot-files, shots/, .crswap, no `..` escape); nothing writes; a server
+//     (no _socklog/_trace, dot-files, shots/, .crswap, the gen-dige store, nothing outside the four roots, no `..` escape); nothing writes; a server
 //      without the route REJECTS the mount so the caller falls back to github; a build id that moves
 //       under a living tab is noticed.
 
@@ -39,7 +39,9 @@ beforeAll(async () => {
     put('wormhole/shots/a.png', 'png')
     put('wormhole/Cluster/toc.snap.crswap', 'swap')
     put('wormhole/Cluster/.hidden', 'dot')
-    put('src/lib/server/relay.ts', 'not served')
+    put('src/lib/server/relay.ts', 'served — the code, for a folderless hacker page')
+    put('src/lib/gen-dige/Theory.abc.go', 'derived store')
+    put('docs/notes.md', 'not a root')
     put('.env', 'TOKEN=no')
     server = createServer((req, res) => { if (!serve_wormhole(root, req, res)) { res.statusCode = 404; res.end() } })
     await new Promise<void>(r => server.listen(0, '127.0.0.1', () => r()))
@@ -48,21 +50,22 @@ beforeAll(async () => {
 afterAll(() => { server?.close(); rmSync(root, { recursive: true, force: true }) })
 
 describe('wormhole_serve — the fence', () => {
-    it('serves wormhole/ and Ghost/ only, never what github would not show', () => {
+    it('serves the four roots only, never what github would not show', () => {
         expect(wormhole_servable('wormhole/Ground/Radio/toc.snap')).toBe(true)
         expect(wormhole_servable('Ghost/M/Radio.g')).toBe(true)
-        for (const bad of ['src/lib/server/relay.ts', '.env', 'wormhole/_trace/dump.json', 'wormhole/shots/a.png',
+        expect(wormhole_servable('src/lib/server/relay.ts')).toBe(true)
+        for (const bad of ['docs/notes.md', 'src/lib/gen-dige/Theory.abc.go', '.env', 'wormhole/_trace/dump.json', 'wormhole/shots/a.png',
             'wormhole/Cluster/toc.snap.crswap', 'wormhole/Cluster/.hidden', 'wormhole/../.env', 'wormhole//x', 'wormhole', 'wormhole\\x'])
             expect(wormhole_servable(bad), bad).toBe(false)
     })
     it('lists exactly the servable files', async () => {
         const body = await (await fetch(`${base}/__wormhole/tree`)).json()
-        expect(Object.keys(body.files).sort()).toEqual(['Ghost/M/Radio.g', 'wormhole/Ground/Radio/toc.snap',
+        expect(Object.keys(body.files).sort()).toEqual(['Ghost/M/Radio.g', 'src/lib/server/relay.ts', 'wormhole/Ground/Radio/toc.snap',
             'wormhole/Story/Sounditron/001.snap', 'wormhole/Story/Sounditron/toc.snap'])
         expect(body.build).toMatch(/^dev:\d+$/)
     })
     it('refuses escapes, fenced files and writes', async () => {
-        for (const p of ['/__wormhole/raw/wormhole/%2E%2E/.env', '/__wormhole/raw/src/lib/server/relay.ts',
+        for (const p of ['/__wormhole/raw/wormhole/%2E%2E/.env', '/__wormhole/raw/docs/notes.md', '/__wormhole/raw/src/lib/gen-dige/Theory.abc.go',
             '/__wormhole/raw/wormhole/_trace/dump.json', '/__wormhole/raw/wormhole/Cluster/.hidden'])
             expect((await fetch(base + p)).status, p).toBe(404)
         expect((await fetch(`${base}/__wormhole/raw/wormhole/Ground/Radio/toc.snap`, { method: 'PUT', body: 'x' })).status).toBe(405)
@@ -101,6 +104,13 @@ describe('OriginNav', () => {
         const later = new Date(Date.now() + 5000); utimesSync(join(root, 'wormhole/Story/Sounditron/001.snap'), later, later)
         await nav.manifest(true)
         expect(await nav.read_file('wormhole/Story/Sounditron', '001.snap')).toBe('step 1, edited\n')
+    })
+    it('lists a file with the mtime + size a walker keys on', async () => {
+        const nav = await mount_origin_nav({ base })
+        const f = (await nav.dir('src', 'lib', 'server'))!.files.find(x => x.name === 'relay.ts')!
+        expect(f.size).toBe(Buffer.byteLength('served — the code, for a folderless hacker page'))
+        expect(f.modified).toBeInstanceOf(Date)
+        expect(await nav.read_file('src/lib/server', 'relay.ts')).toMatch(/^served/)
     })
     it('notices a Book added on the server', async () => {
         const nav = await mount_origin_nav({ base })

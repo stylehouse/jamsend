@@ -1,0 +1,9 @@
+Snap:H
+  H:AtheCodePin,Run
+    A:AtheCodePin
+      self,round	{"mung":["age"]}
+      w:AtheCodePin
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok
+    A:Code
+      w:Code

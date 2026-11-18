@@ -23,7 +23,7 @@
 //   · WRITES: none of its own.  An optional `scratch` nav takes them and shadows reads (the no-share
 //      cloud mount's shape); without one, writes are refused loudly — AppTreeNav never sends any.
 
-type Listing = { name: string, directories: { name: string }[], files: { name: string }[], expanded: boolean, expand(): Promise<void> }
+type Listing = { name: string, directories: { name: string }[], files: { name: string, modified?: Date, size?: number }[], expanded: boolean, expand(): Promise<void> }
 type Scratch = { read_file?: any, bin_read?: any, write_file?: any, bin_write?: any, bin_append?: any, bin_writer?: any, bin_rm?: any, dir?: any }
 
 const REFRESH_MS = 3000
@@ -141,13 +141,13 @@ export class OriginNav {
     async dir(...parts: string[]): Promise<Listing | null> {
         const files = await this.manifest()
         const prefix = parts.length ? parts.join('/') + '/' : ''
-        const dirs = new Set<string>(), names = new Set<string>()
+        const dirs = new Set<string>(), names = new Map<string, string>()   // name → stamp ('' = scratch's)
         let exists = !parts.length
         for (const p in files) {
             if (prefix && !p.startsWith(prefix)) continue
             exists = true
             const rest = p.slice(prefix.length).split('/')
-            if (rest.length === 1) names.add(rest[0])
+            if (rest.length === 1) names.set(rest[0], files[p])
             else dirs.add(rest[0])
         }
         const live = this.scratch?.dir ? await this.scratch.dir(...parts).catch(() => null) : null
@@ -155,13 +155,18 @@ export class OriginNav {
             if (live.expand && !live.expanded) await live.expand().catch(() => {})
             exists = true
             for (const d of live.directories ?? []) dirs.add(d.name)
-            for (const f of live.files ?? []) if (!f.name.startsWith('.')) names.add(f.name)
+            for (const f of live.files ?? []) if (!f.name.startsWith('.')) names.set(f.name, '')
         }
         if (!exists) return null
         return {
             name: parts.length ? parts[parts.length - 1] : '/',
             directories: [...dirs].sort().map(name => ({ name })),
-            files: [...names].sort().map(name => ({ name })),
+            // a file's mtime + size, off its stamp (`<mtimeMs>-<size>`) — what a walker (Atlas) keys its cache on, the same
+            //  floored mtime /__atlas/dige serves, so a served dige matches without a read
+            files: [...names.keys()].sort().map(name => {
+                const m = /^(\d+)-(\d+)$/.exec(names.get(name) ?? '')
+                return m ? { name, modified: new Date(Number(m[1])), size: Number(m[2]) } : { name }
+            }),
             expanded: true,
             async expand() { /* already whole — the manifest is the listing */ },
         }

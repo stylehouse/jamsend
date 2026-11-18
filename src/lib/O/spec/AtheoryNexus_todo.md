@@ -278,7 +278,18 @@ A→B→C is the "decide from rows" migration (disk replies, Story steps, clicks
 2. **The push.**  "Code moved" = "Ground X's manifest changed: Atlas.g is now dige Y", pushed over the relay to the tabs standing
     on X (the relay already pushes `control:docindex` to code rooms — digePlugin in vite.config).  It lands as an OUTSIDE
      arrival — a taped `%TheAHeard` — and the tab re-imports because a row says so.  The 2s poll goes (a long fallback at most).
-3. **Story gets it free.**  A Book's run pins one manifest — "a run never mixes two versions" becomes structural, not a
+3. **BUILT 2026-11-19 — what a tab runs, and when it may change, as rows** (LiesLies `Code_w/Code_pin/Code_unpin/Code_built/
+    Code_due`; Book **AtheCodePin**, 5 steps, 4 oaths, green ×3).  `A:Code / w:Code` holds the tape (`%TheAHeard`), `%Built:<gen>,dige`
+     per build the tab RUNS (spine AND Ground-included — the shelf is swept now too, re-mounted as `Lies_ghost_include` mounts), and
+      `%TheAPin:<run>,book` while a Story run is in flight.  `Code_due` = held builds whose newest Heard dige ≠ `%Built`, nothing while
+       a pin stands, nothing for a build `gone`.  `Creduler_reswap` takes exactly that (plus, for a missed push, the served map's
+        word) and moves `%Built` — its old w.c maps (`reswap_diges`, `gen_pushed`) are gone.  Live on e747: `%Built` for 10 builds;
+         a spine compile heard → swapped by content 29ms later → `%Built` moved.  The Book stands its OWN A:Code with made-up
+          builds on its Run House, so the rule is proven without importing anything.  Found on the way: the one-sweep latch could
+           never clear if a sweep hung (an import in flight across a dev-server restart) — it is a timestamp now, let go after 30s;
+            and a runner can miss LiesLies HMR entirely (e747 ran pre-edit code for hours, no `hot updated` line) — `reload` it.
+   The original wording, kept for the Story half still owed (a Book INJECTING a fake arrival into a real page and watching it react):
+    **Story gets it free.**  A Book's run pins one manifest — "a run never mixes two versions" becomes structural, not a
     `running` guard.  A Book can INJECT "gen moved" as a fake outside arrival (like a key press) and watch the page react; it
      needs no remote tape.
 - **Two arrivals, not one (owner, 2026-11-18: "is it supposed to be importing or editing that code?").**  About one ghost:
@@ -324,9 +335,21 @@ A→B→C is the "decide from rows" migration (disk replies, Story steps, clicks
    **The page SHOWS it (2026-11-18):** `%Census:Code,heard,last` (LandPage `Land_tell`) → the groundline's "code moved N last
     X.go@dige" (headless-verified); and a pane whose doc built a heard `.go` (gen[-flavour]/X/Y.go ↔ Ghost/X/Y.g) wears
      "⚙ code moved" (LandPane + LandMember `moved` prop; the title says the page stays on its own build).  The badge is NOT yet
-      seen live: a folderless page opens no panes ("no repo on this tab — Atlas has no nav").  **Next candidate: a folderless
-       hacker page reads code from the ORIGIN** (OriginNav as Atlas's nav, read-only) — but the fence serves only `wormhole/` +
-        `Ghost/`; Atlas also roots `src/` and `scripts/`, so widening it is the owner's call (dev serves src as modules anyway).
+      seen live: a folderless page opens no panes ("no repo on this tab — Atlas has no nav").
+- **A folderless hacker page reads the code from the ORIGIN — BUILT 2026-11-18** (owner: "all that and more").  `wormhole_serve`
+   roots `src/` + `scripts/` too (2930 files, 81ms; the `gen-dige` store skipped); OriginNav listings carry each file's `modified` +
+    `size` off its stamp (what Atlas keys its cache on — the same floored mtime `/__atlas/dige` serves); `Atlas_nav` falls back to
+     `Atlas_origin_nav` (mounted once, read-only; writes throw).  Headless, no folder: census 718/718, a pane opened on
+      `Ghost/A/AtheFishTesting.g`, and after a push it wore "⚙ code moved".  ⚠ Editing `wormhole_serve.ts` did NOT restart vite
+       (only `vite.config.ts` itself does) — `touch vite.config.ts`, and check `/__wormhole/tree`'s `build` moved.
+- **The page asks a runner — BUILT 2026-11-18**: LandPage verb `:ask ping|state|steps|run|snap|minisnap|console|rungos [arg]
+   [--to=<pub>]` sends runner_ask's own frame over the page's wire and awaits the corr-matched `runner_ack` (no accept|reload|
+    declare|poke).  Headless it was REFUSED by the relay's ask gate ("needs a hello signed by a cluster flock key") — right for a
+     page with no identity or flock key; PASS PATH VERIFIED 2026-11-18 on the owner's Land tab (`&I=new` → 5c738deb): `runner_ask ask --player=5c738deb…` ran the verb there, the tab's wire passed the relay's ask gate (flock proven) and brought back e747's ping.  (A registered verb IS a runner_ask op — LiesFunk dispatches `Verb_find(op)` first.)  Oddity: `w:Wire` grows a `req:Store,eternal` — something treats it as a Lies world; harmless so far, unexplained.  Then the
+      loop closes: save → code moved (badge) → `:ask run <Book>` on a runner → read its answer.
+   Every Desk page is now someone (Wallet_todo §2, `Otro.svelte`): a Land page with no `?I=` is the `hacker` identity, as BigWordland.
+   Owed, small: a folderless page's OriginNav still POLLS `/__wormhole/tree` (a 304 every ~9s while Atlas reads) — let the
+    docindex/gen pushes mark it stale and stretch REFRESH_MS, the same push-not-poll as `/__gen/dige`.
    Hackarium is red on a fixture from 2026-09-08 (~1500 lines of drift: GroundUsed/TheACode rows, `examining loopy:1`) — none of
     it this work; not accepted (not obvious), wants a look.
    Still owed: Ground-loaded ghosts are not swept on a runner (spine only); Story pinning a manifest (step 3).

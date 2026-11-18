@@ -126,6 +126,12 @@
             // a hacker page (Ground/Land) boots no machine role: only the House role, which Lies_role reads
             else if (role === 'hacker') h.c.role = 'hacker'
             else console.log(`⛰ ?G=${ground}: a page with no machine role — its Ground's Mains are the page`)
+            // EVERY PAGE IS SOMEONE (owner 2026-11-18, Wallet_todo §2): a Ground page with no ?I= resumes|mints its ROLE's identity,
+            //  the one its Big*land twin uses (BigQualand: id_role + assume_identity) — so /Desk?G=Land and /BigWordland are the same
+            //   `hacker` someone, /Desk?G=Radio and /BigSoundland the same `sound` one.  Without it a Desk page was no one: no hello
+            //    under an address, unreachable by --player=, its asks refused.  ?I= still wins (Auto's ensure_default skips an active one)
+            const id_role = role === 'hacker' ? 'hacker' : role === 'player' ? 'sound' : null
+            if (id_role) { (h.c as any).id_role = id_role; (h.c as any).assume_identity = true }
         }
         else if (on_grid) {                        h.c.boot_role = 'runner' }
         if (remote_wormhole) h.c.remote_wormhole = true

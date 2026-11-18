@@ -1743,20 +1743,15 @@
         },
 
         // Lies_gen_heard — the server says CODE moved (vite.config digePlugin, control:'gen'): these builds are now these
-        //  diges, each stored as src/lib/gen-dige/<Name>.<dige>.go (gen_store.ts).  Kept on the TOP House, since the world that
-        //   hears the relay need not be the one Creduler_reswap sweeps.  Once one push is heard the poll drops to a slow fallback
-        //    (GEN_FALLBACK_MS) and a push wakes the sweep at once.  Only a pushed dige is imported BY NAME: a server that sends
-        //     no push may have no store, and a failed module import stays failed for the life of the page.
+        //  diges, each stored as src/lib/gen-dige/<Name>.<dige>.go (gen_store.ts).  Written down as rows on the TOP House's
+        //   A:Code (Code_heard) — the world that hears the relay need not be the one Creduler_reswap sweeps, and the sweep judges
+        //    the tape against %Built (Code_due).  Once one push is heard the poll drops to a slow fallback (GEN_FALLBACK_MS), a push
+        //     wakes the sweep at once, and builds are imported BY NAME — a server that never pushed may have no store, and a failed
+        //      module import stays failed for the life of the page.
         //  "Code moved", not "source moved" (the .g Doc — control:'docindex'); AtheoryNexus_todo §0.00 "Two arrivals".
         Lies_gen_heard(w: TheC, frame: any) {
             const H = this as House
             const top = H.top_House() as any
-            const pushed = (top.c.gen_pushed ??= {}) as Record<string, string>
-            for (const m of (frame?.moved ?? []) as { gen: string, dige: string }[]) {
-                if (!m?.gen) continue
-                if (m.dige) pushed[m.gen] = m.dige
-                else delete pushed[m.gen]
-            }
             top.c.gen_push_live = 1
             top.Code_heard(frame)
             w.c.reswap_last = 0
@@ -1764,6 +1759,56 @@
             const lag = frame?.event_at ? Date.now() - Number(frame.event_at) : null
             H.tlog(`🧬 code moved: ${(frame?.moved ?? []).length} build(s)${lag != null ? ` (${lag}ms since the write)` : ''}`)
             H.main()
+        },
+
+        // ── WHAT THIS TAB RUNS, AND WHEN IT MAY CHANGE (AtheoryNexus_todo §0.00 step 3) ──
+        //  The sweep below used to keep its own maps on w.c (a baseline per source, the pushed diges) and gate on a bare `running`
+        //   test.  Now the facts are rows on A:Code, beside the tape they are judged against:
+        //
+        //      A:Code / w:Code
+        //        %TheAIO:moved,…            ← what the server said moved (Code_heard)
+        //          %TheAHeard:<n>,gen,dige
+        //        %Built:<gen>,dige          ← what this tab RUNS, per build it holds (spine and Ground-included alike)
+        //        %TheAPin:<run>,book        ← a Story run in flight pins the code: while one stands nothing is taken
+        //
+        //  "A run never mixes two versions" is then a fact you can read — the pin — not a branch; and "re-import because a row says
+        //   so" is literal: a build is DUE when its newest Heard names a dige its %Built does not (Code_due).  Live this is the top
+        //    House (never snapped); a Book stands its own on its Run House and proves the rule there without touching real code.
+        Code_w(): TheC {
+            return (this as House).oai({ A: 'Code' }).oai({ w: 'Code' })
+        },
+        Code_pin(cw: TheC, run: string, book?: string) {
+            for (const p of cw.o({ TheAPin: 1 }) as TheC[]) if (p.sc.TheAPin !== run) cw.drop(p)
+            return cw.oai({ TheAPin: run }, book ? { book } : {})
+        },
+        Code_unpin(cw: TheC) {
+            for (const p of cw.o({ TheAPin: 1 }) as TheC[]) cw.drop(p)
+        },
+        Code_built(cw: TheC, gen: string, dige: string) {
+            const row = cw.oai({ Built: gen })
+            if (row.sc.dige !== dige) { row.sc.dige = dige; row.bump_version?.() }
+            return row
+        },
+        // Code_due — the builds to take now: for each held build, the newest Heard naming it, when its dige is not what this tab
+        //  runs.  Nothing while a pin stands; nothing for a build never baselined (no %Built — the first observation IS what runs);
+        //   nothing for a build that went away (`gone` — keep running what we have).  [{gen, dige}], in tape order.
+        Code_due(cw: TheC, held: string[]): { gen: string, dige: string }[] {
+            if (cw.o({ TheAPin: 1 }).length) return []
+            const want = new Set(held)
+            const newest = new Map<string, string>()
+            const tape = cw.o({ TheAIO: 'moved' })[0] as TheC | undefined
+            for (const h of (tape?.o({ TheAHeard: 1 }) ?? []) as TheC[]) {
+                const gen = String(h.sc.gen ?? '')
+                if (!want.has(gen)) continue
+                if (h.sc.dige) newest.set(gen, String(h.sc.dige))
+                else newest.delete(gen)
+            }
+            const due: { gen: string, dige: string }[] = []
+            for (const [gen, dige] of newest) {
+                const built = cw.o({ Built: gen })[0] as TheC | undefined
+                if (built?.sc.dige && built.sc.dige !== dige) due.push({ gen, dige })
+            }
+            return due
         },
 
         // Creduler_reswap — one sweep at a time.  A sweep awaits fetches and imports, so a second wake landing mid-sweep
@@ -1802,8 +1847,12 @@
 
         async Creduler_reswap(w: TheC) {
             const H = this as House
-            if (w.c.reswap_busy) { w.c.reswap_again = 1; return }
-            w.c.reswap_busy = 1
+            // …but a sweep can hang (an import in flight when the dev server restarts never settles), and a latch that never clears
+            //  would stop every sweep after it — so the latch is a timestamp, and one older than RESWAP_STUCK_MS is let go
+            const RESWAP_STUCK_MS = 30_000
+            if (w.c.reswap_busy && Date.now() - (w.c.reswap_busy as number) < RESWAP_STUCK_MS) { w.c.reswap_again = 1; return }
+            if (w.c.reswap_busy) H.tlog(`👻 reswap: the last sweep never finished (${Math.round((Date.now() - (w.c.reswap_busy as number)) / 1000)}s) — sweeping anyway`)
+            w.c.reswap_busy = Date.now()
             try { await H.Creduler_reswap_once(w) }
             finally {
                 w.c.reswap_busy = undefined
@@ -1830,12 +1879,16 @@
             // Safe seam: never swap while a run is in flight (would mix two code versions into the snap).
             //  A candidate detected now is remembered (the ETag map is only advanced on a real swap), so
             //   it re-surfaces on the next ready tick once the run settles.
+            //  The run's PIN is that fact as a row on A:Code (Code_pin) — Code_due takes nothing while it stands.
+            const cw = top.Code_w() as TheC
             const inflight = H.Lies_rungo_record(w)
             const running  = !!inflight && inflight.sc.phase !== 'done' && inflight.sc.phase !== 'failed'
             if (running) {
+                H.Code_pin(cw, String(inflight.sc.uid ?? inflight.sc.book ?? 'run'), inflight.sc.book ? String(inflight.sc.book) : undefined)
                 if (w.c.reswap_wanted) H.i_elvisto(w, 'think')     // keep re-checking so we catch the boundary
                 return
             }
+            H.Code_unpin(cw)
 
             const uis   = H.oai_enroll(H, { watched: 'UIs' })
             let swapped = 0
@@ -1851,10 +1904,25 @@
             //    accelerator with no new way to be wrong, which is the same posture the Atlas dige
             //     index takes.  A dige is also a STRONGER signal than the ETag it replaces: vite's
             //      ETag moves with mtime, so a touched-but-identical .go used to force a re-import.
-            const pushed = (top.c.gen_pushed ?? {}) as Record<string, string>
             const fetched = await H.Creduler_gen_diges(w)
-            // a pushed dige is newer than any poll's — it wins; both are the same alphabet (gen_store's dig = dige.ts's)
-            const served = fetched ? { ...fetched, ...pushed } : null
+            // what this tab HOLDS: the spine (watched:UIs, re-enrolled to swap) and every Ground-included build on the include shelf
+            //  (mounted once by Lies_ghost_include; re-mounted to swap).  An aside include is never swept — it is someone's scratch.
+            const held: { gen: string, kind: 'spine' | 'shelf' }[] = []
+            for (const p of H.Creduler_ghosts() ?? []) { const gen = H.Lies_gen_path(p); if (gen) held.push({ gen, kind: 'spine' }) }
+            for (const row of (H.Lies_include_shelf()?.o({ GhostInclude: 1 }) ?? []) as TheC[]) {
+                const gen = String(row.sc.GhostInclude)
+                if (row.sc.stood === 'yes' && !row.sc.aside && /\.go$/.test(gen) && !held.some(x => x.gen === gen)) held.push({ gen, kind: 'shelf' })
+            }
+            // served mode: the baseline is %Built (first observation = what runs), and what is due is the tape's newest (Code_due)
+            //  or, for a push this tab missed, the served map's.  Both are one alphabet (gen_store's dig = dige.ts's).
+            const due = fetched ? H.Code_due(cw, held.map(x => x.gen)) : []
+            const served: Record<string, string> | null = fetched ? { ...fetched } : null
+            if (served) {
+                for (const x of held) if (served[x.gen] && !cw.o({ Built: x.gen }).length) H.Code_built(cw, x.gen, served[x.gen])
+                for (const d of due) served[d.gen] = d.dige
+            }
+            // by content only where the server keeps a store — it has said so by pushing (a failed module import is permanent)
+            const by_content = !!top.c.gen_push_live
             // TWO BASELINES, ONE PER SOURCE, and they must never be compared across.  A vite ETag and a
             //  content dige are different alphabets for the same question, so a tab that answered from
             //   HEADs and then got the served map — or lost it again, which one dev-server hiccup does —
@@ -1862,11 +1930,10 @@
             //     for nothing.  Keeping them apart makes a source flip cost one re-baseline (the
             //      `!(gen in etags)` branch below) and no swap at all, which is the honest answer:
             //       nothing on disk moved, only the way we asked.
-            const etags = served ? ((w.c.reswap_diges ??= {}) as Record<string, string>)
-                                 : ((w.c.reswap_etags ??= {}) as Record<string, string>)
-            for (const p of H.Creduler_ghosts() ?? []) {
-                const gen = H.Lies_gen_path(p)
-                if (!gen) continue
+            //  (served mode keeps that baseline as %Built rows on A:Code; the HEAD fallback keeps its etags on w.c as before)
+            const etags: Record<string, string> = served ? {} : ((w.c.reswap_etags ??= {}) as Record<string, string>)
+            if (served) for (const b of cw.o({ Built: 1 }) as TheC[]) if (b.sc.dige) etags[String(b.sc.Built)] = String(b.sc.dige)
+            for (const { gen, kind } of (served ? held : held.filter(x => x.kind === 'spine'))) {
                 const url = `/src/lib/${gen}`
                 let etag: string | null = served ? (served[gen] ?? null) : null
                 if (!served) {
@@ -1888,7 +1955,7 @@
                 let byname: string | null = null
                 try {
                     // BY CONTENT when the server pushed this dige: the stored file can never be another build's bytes
-                    byname = served && pushed[gen] === etag ? `gen-dige/${gen.split('/').pop()!.replace(/\.go$/, '')}.${etag}.go` : null
+                    byname = served && by_content ? `gen-dige/${gen.split('/').pop()!.replace(/\.go$/, '')}.${etag}.go` : null
                     const module = await import(/* @vite-ignore */ byname ? `../../lib/${byname}` : `../../lib/${gen}?swap=${encodeURIComponent(etag)}`)
                     component = module.default
                 } catch (e) {
@@ -1896,12 +1963,25 @@
                     continue
                 }
                 if (!component) continue
+                if (kind === 'shelf') {
+                    // a Ground-included build: mount the new one as Lies_ghost_include does — its eatfunc overwrites the methods
+                    mount(component, { target: document.createElement('div'), props: { H } })
+                    const src = gen.replace(/^gen(-[a-z]+)?\//, 'Ghost/').replace(/\.go$/, '.g')
+                    const ghost = H.Lies_ghost_get(src)
+                    H.Lies_include_shelf().oai({ GhostInclude: gen }, ghost ? { dige: ghost } : {})
+                    if (served) H.Code_built(cw, gen, etag)
+                    else etags[gen] = etag
+                    swapped++
+                    H.tlog(`👻 reswap ${gen} @ ${etag}${byname ? ' (by content)' : ''} — Ground-included`)
+                    continue
+                }
                 for (const old of uis.o({ UI: 'Pantheate-include', gen_path: gen }) as TheC[]) uis.drop(old)
                 // component rides in .sc exactly as Lies_ghost_set / Pantheate enrol it (Otro reads
                 //  uiC.sc.component); the added `swap` key changes keyser() so Otro's keyed #each
                 //   unmounts the old mount and mounts the fresh one (re-running its onMount eatfunc).
                 uis.i({ UI: 'Pantheate-include', gen_path: gen, swap: etag, component })
-                etags[gen] = etag                                  // only advance the baseline on a real swap
+                if (served) H.Code_built(cw, gen, etag)            // only advance the baseline on a real swap
+                else etags[gen] = etag
                 swapped++
                 H.tlog(`👻 reswap ${gen} @ ${etag}${byname ? ' (by content)' : ''}`)
             }

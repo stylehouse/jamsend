@@ -3977,3 +3977,56 @@ AthePondFog_witness(w):
         this.story_swear(w, 'a re-seat after a cull keeps every Regard — the pages re-formed as new particles and every point paired by name — R1 still heard page 1')
     }
 //#endregion
+//#region the test routine — Book AtheCodePin
+// what a tab runs, and when it may change (AtheoryNexus_todo §0.00 step 3; LiesLies Code_due).  The runner's swap judges its tape of
+//  "code moved" arrivals (%TheAHeard, Code_heard) against what it runs (%Built) and takes nothing while a Story run pins the code
+//   (%TheAPin) — a run never mixes two versions.  This Book stands its OWN A:Code on its Run House, with made-up builds and diges, and
+//    proves that rule as rows: nothing is imported, the runner's real code is untouched.
+AtheCodePin(A,w):
+    w oai %req:wrangle,eternal
+        await &AtheCodePin_drive,w,req
+        req%ok = 1
+
+async AtheCodePin_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 5
+    let n = run?.c.step_n
+    if (n == null || n === req.c.did_step) return
+    req.c.did_step = n
+    let cw = this.Code_w()
+    let held = ['gen/Toy/Pond.go', 'gen/Toy/Heron.go']
+    let due = () => this.Code_due(cw, held).map((d) => d.gen + '@' + d.dige).join(' ')
+    if (n === 2) {
+        w.i({ desc: 'the tab runs two builds — then the server says one of them moved, and a build it does not hold moved too' })
+        this.Code_built(cw, 'gen/Toy/Pond.go', 'p1')
+        this.Code_built(cw, 'gen/Toy/Heron.go', 'h1')
+        this.Code_heard({ moved: [{ gen: 'gen/Toy/Pond.go', dige: 'p2' }, { gen: 'gen/Toy/Elsewhere.go', dige: 'e2' }] })
+        if (due() === 'gen/Toy/Pond.go@p2') {
+            this.story_swear(w, 'a held build whose newest heard dige is not what runs is due — only that one — a build this tab does not hold never is')
+        }
+    }
+    if (n === 3) {
+        w.i({ desc: 'a run pins the code — then the other build moves too' })
+        this.Code_pin(cw, 'run-1', 'AtheCodePin')
+        this.Code_heard({ moved: [{ gen: 'gen/Toy/Heron.go', dige: 'h2' }] })
+        if (due() === '' && cw.o({ TheAIO: 'moved' })[0]?.o({ TheAHeard: 1 }).length === 3) {
+            this.story_swear(w, 'while a run pins the code nothing is due — what moved waits on the tape')
+        }
+    }
+    if (n === 4) {
+        w.i({ desc: 'the run ends — unpinned — and the tab takes the pond' })
+        this.Code_unpin(cw)
+        let both = due()
+        this.Code_built(cw, 'gen/Toy/Pond.go', 'p2')
+        if (both === 'gen/Toy/Pond.go@p2 gen/Toy/Heron.go@h2' && due() === 'gen/Toy/Heron.go@h2') {
+            this.story_swear(w, 'unpinned both waiting builds are due — taking one leaves the other')
+        }
+    }
+    if (n === 5) {
+        w.i({ desc: 'the heron build goes away on the server' })
+        this.Code_heard({ moved: [{ gen: 'gen/Toy/Heron.go', dige: '' }] })
+        if (due() === '' && cw.o({ Built: 'gen/Toy/Heron.go' })[0]?.sc.dige === 'h1') {
+            this.story_swear(w, 'a build that went away is not due — the tab keeps running what it has')
+        }
+    }
+//#endregion

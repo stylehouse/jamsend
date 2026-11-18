@@ -8,6 +8,7 @@ import { lang, lang_for_path } from "$lib/O/lang/lang"
 import { dig } from "$lib/Common"
 import { is_testing } from "$lib/L/testing"
 import { Dexie } from "dexie"
+import { mount_origin_nav } from "$lib/O/OriginNav.svelte.ts"
 
 // ATLAS_MAPPER — the mapper's own version, stamped on every %Doc as `by`.  A row whose `by` is
 //  behind gets re-mapped even though its text dige is unchanged: the INDEX changed, not the doc
@@ -171,7 +172,7 @@ const ATLAS_EXT   = { g: 1, svelte: 1, ts: 1, md: 1 }
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Atlas(): string { return 'c80b73be7fe35c76~g1' },
+    Ghostmeta_Ghost_L_Atlas(): string { return '40b678f9e9ef6be7~g1' },
 
 // Atlas.g — every doc's %Map, kept.  The first ghost in Ghost/L/ (the land; spec home for now:
 //  Stemdex_todo.md §0 "relation EDGES", 2026-09-05).  `Atlas` is a PLACEHOLDER name — an atlas is a
@@ -242,8 +243,26 @@ Atlas_plan(w) {
 Atlas_nav() {
     let top = this.top_House()
     let A = top.o({ A: 'Wormhole' })[0]
-    if (!A) return null
-    return A.c.nav ?? null
+    if (A?.c.nav) return A.c.nav
+    return this.Atlas_origin_nav()
+
+},
+// Atlas_origin_nav — a tab with no repo folder reads the code from the server that sent it (OriginNav, read-only; 2026-11-18, the
+//  owner: a hacker page needs no folder, and may be on another box).  Mounted once, in the background: null until it answers,
+//   then a wake.  A server without the route (a static host) leaves it null — the old "no repo on this tab" answer.  Writes throw.
+Atlas_origin_nav() {
+    let top = this.top_House()
+    if (top.c.origin_nav) return top.c.origin_nav
+    if (top.c.origin_nav_asked || typeof window === 'undefined') return null
+    top.c.origin_nav_asked = 1
+    mount_origin_nav()
+        .then((nav) => {
+            top.c.origin_nav = nav
+            console.log('🗺 Atlas reads the code from the origin (' + nav.label + ')')
+            top.main()
+        })
+        .catch((er) => console.log('🗺 no repo and no origin tree — ' + String(er?.message ?? er)))
+    return null
 },
 //#endregion
 
