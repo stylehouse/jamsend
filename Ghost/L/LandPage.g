@@ -127,7 +127,7 @@ Land_tell(w):
     }
     if (top.o({ A: 'Lagoon' })[0]) moved |= this.Land_say(w, 'Lagoon', {})
     // code moved (A:Code's tape, LiesLies Code_heard): how many builds the server pushed, and the last — the page stays on its own build
-    let tape = top.o({ A: 'Code' })[0]?.o({ w: 'Code' })[0]?.o({ TheAIO: 'moved' })[0]
+    let tape = top.o({ A: 'Codes' })[0]?.o({ A: 'Code' })[0]?.o({ w: 'Code' })[0]?.o({ TheAIO: 'moved' })[0]
     if (tape) {
         let heard = tape.o({ TheAHeard: 1 })
         let last = heard[heard.length - 1]

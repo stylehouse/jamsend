@@ -1,16 +1,25 @@
 Snap:H
   H:AtheCodePin,Run
     A:AtheCodePin
-      self,round=2	{"mung":["age"]}
+      self,round=3	{"mung":["age"]}
       w:AtheCodePin
-        self,round=2	{"mung":["age"]}
+        self,round=3	{"mung":["age"]}
         req:wrangle,eternal,ok
-    A:Code
-      self,round	{"mung":["age"]}
-      w:Code
+    A:Codes
+      TheAAttend:run
+      A:Code
+        w:Code
+          TheASynapse:moved,sum:latest
+            TheAWoke,count,pulses
+          Built:gen/Toy/Pond.go,dige:p1
+          Built:gen/Toy/Heron.go,dige:h1
+          TheAIO:moved,heard=2,keep=32,takes
+            TheAHeard:1,take,gen:gen/Toy/Pond.go,dige:p2
+            TheAHeard:2,take,gen:gen/Toy/Elsewhere.go,dige:e2
+          Take:gen/Toy/Pond.go,dige:p2
+      self,round=2	{"mung":["age"]}
+      w:Codes
         self,round	{"mung":["age"]}
-        Built:gen/Toy/Pond.go,dige:p1
-        Built:gen/Toy/Heron.go,dige:h1
-        TheAIO:moved,heard=2,takes,keep=32
-          TheAHeard:1,take,gen:gen/Toy/Pond.go,dige:p2
-          TheAHeard:2,take,gen:gen/Toy/Elsewhere.go,dige:e2
+      TheARun,rounds,quiet
+        TheARound:1
+          TheAWent:Code

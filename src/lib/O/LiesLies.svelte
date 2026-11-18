@@ -43,7 +43,8 @@
     import { SLUGGISH_MS, DEAD_MS, LIVE_MS, PIER_CULL_MS } from "$lib/O/runner_liveness.mjs"
     import { sockcap_lines, sockcap_count, SOCKCAP_BOOT, socklog_armed } from "$lib/O/sockcap"   // TEMP: relay-socket dump
     import { ghost_ledger_of } from "$lib/O/lang/compile"   // GhostLedger version identity (become_book version-gate)
-    import { ground_read, ground_spine_paths, ground_flavour_gen } from "$lib/A/ground"   // a ?G page's spine is its Ground's Spine: rows
+    import { ground_read, ground_spine_paths, ground_flavour_gen } from "$lib/A/ground"
+    import { origin_navs_stale } from "$lib/O/OriginNav.svelte.ts"   // a push marks the origin tree stale (push, not poll)   // a ?G page's spine is its Ground's Spine: rows
 
     let { M } = $props()
 
@@ -938,6 +939,7 @@
         Lies_docindex_heard(w: TheC, frame: any) {
             const H = this as House
             const heard_at = Date.now()
+            origin_navs_stale()   // source moved — an origin-read tree asks again on its next read
             const moved: { path: string, dige: string }[] = Array.isArray(frame?.moved) ? frame.moved : []
             const event_at = Number(frame?.event_at) || 0, written_at = Number(frame?.written_at) || 0
             // the receipt itself, synchronously — the ladder's wire hops need no tick to be read
@@ -1753,6 +1755,7 @@
             const H = this as House
             const top = H.top_House() as any
             top.c.gen_push_live = 1
+            origin_navs_stale()
             top.Code_heard(frame)
             w.c.reswap_last = 0
             if (top.c.reswap_w) (top.c.reswap_w as TheC).c.reswap_last = 0
@@ -1774,27 +1777,63 @@
         //  "A run never mixes two versions" is then a fact you can read — the pin — not a branch; and "re-import because a row says
         //   so" is literal: a build is DUE when its newest Heard names a dige its %Built does not (Code_due).  Live this is the top
         //    House (never snapped); a Book stands its own on its Run House and proves the rule there without touching real code.
+        // THE COMPARTMENT (2026-11-19, "Atheory runs this"): A:Code stands in a holder marked %TheAAttend:run, so the House's own run
+        //  loop (Theory TheA_attend_runs, every think) moves it when a pulse waits on its synapse — the way every outside arrival is
+        //   meant to come in.  An arrival (Code_heard) is taped AND poked; the MOVE (Code_woken: sync, its own rows only) decides —
+        //    %Take:<gen>,dige for each build due; and the EFFECT stays at the edge: the sweep (Creduler_reswap — an import is async, a
+        //     move must not be) does what the %Take rows say, moves %Built, drops the Take.  Decision in the compartment, IO outside it.
+        //
+        //      A:Codes  %TheAAttend:run
+        //        A:Code / w:Code
+        //          %TheASynapse:moved,sum:latest     ← poked by Code_heard / Code_unpin
+        //          %TheAIO:moved … %TheAHeard         ← the tape
+        //          %Built:<gen>,dige  %TheAPin:<run>  ← what runs; a run in flight
+        //          %Take:<gen>,dige                   ← what the move decided this tab should take next
         Code_w(): TheC {
-            return (this as House).oai({ A: 'Code' }).oai({ w: 'Code' })
+            const H = this as House
+            const holder = H.oai({ A: 'Codes' })
+            holder.oai({ TheAAttend: 'run' })
+            const cw = holder.oai({ A: 'Code' }).oai({ w: 'Code' })
+            cw.oai({ TheASynapse: 'moved' }, { sum: 'latest' })
+            return cw
+        },
+        // Code_poke — something the move judges by changed: a pulse on the synapse, and a knock (Theory TheA_poke).  Absent Theory
+        //  (no Core on this House) nothing moves, and the sweep's served-map fallback still catches a missed build
+        Code_poke(cw: TheC) {
+            const H = this as House
+            const syn = cw.o({ TheASynapse: 'moved' })[0] as TheC | undefined
+            if (syn && typeof (H as any).TheA_poke === 'function') (H as any).TheA_poke(syn, {})
+        },
+        // Code_woken — the move: the %Take rows, decided again from scratch off the compartment's own rows
+        Code_woken(w: TheC, _synapse?: TheC, _pulse?: TheC) {
+            const H = this as House
+            for (const t of w.o({ Take: 1 }) as TheC[]) w.drop(t)
+            for (const d of H.Code_due(w)) w.i({ Take: d.gen, dige: d.dige })
         },
         Code_pin(cw: TheC, run: string, book?: string) {
             for (const p of cw.o({ TheAPin: 1 }) as TheC[]) if (p.sc.TheAPin !== run) cw.drop(p)
+            // a pin takes back what was decided — the move decides again when it lifts (Code_unpin pokes)
+            for (const t of cw.o({ Take: 1 }) as TheC[]) cw.drop(t)
             return cw.oai({ TheAPin: run }, book ? { book } : {})
         },
         Code_unpin(cw: TheC) {
-            for (const p of cw.o({ TheAPin: 1 }) as TheC[]) cw.drop(p)
+            const pins = cw.o({ TheAPin: 1 }) as TheC[]
+            if (!pins.length) return
+            for (const p of pins) cw.drop(p)
+            ;(this as House).Code_poke(cw)
         },
         Code_built(cw: TheC, gen: string, dige: string) {
             const row = cw.oai({ Built: gen })
             if (row.sc.dige !== dige) { row.sc.dige = dige; row.bump_version?.() }
+            for (const t of cw.o({ Take: gen }) as TheC[]) if (t.sc.dige === dige) cw.drop(t)
             return row
         },
-        // Code_due — the builds to take now: for each held build, the newest Heard naming it, when its dige is not what this tab
-        //  runs.  Nothing while a pin stands; nothing for a build never baselined (no %Built — the first observation IS what runs);
-        //   nothing for a build that went away (`gone` — keep running what we have).  [{gen, dige}], in tape order.
-        Code_due(cw: TheC, held: string[]): { gen: string, dige: string }[] {
+        // Code_due — the builds to take now: for each held build (one with a %Built — the first observation IS what runs), the
+        //  newest Heard naming it, when its dige is not what this tab runs.  Nothing while a pin stands; nothing for a build that
+        //   went away (`gone`).  [{gen, dige}], in tape order.  `held` narrows it (default: every %Built)
+        Code_due(cw: TheC, held?: string[]): { gen: string, dige: string }[] {
             if (cw.o({ TheAPin: 1 }).length) return []
-            const want = new Set(held)
+            const want = new Set(held ?? (cw.o({ Built: 1 }) as TheC[]).map(b => String(b.sc.Built)))
             const newest = new Map<string, string>()
             const tape = cw.o({ TheAIO: 'moved' })[0] as TheC | undefined
             for (const h of (tape?.o({ TheAHeard: 1 }) ?? []) as TheC[]) {
@@ -1814,7 +1853,7 @@
         // Creduler_reswap — one sweep at a time.  A sweep awaits fetches and imports, so a second wake landing mid-sweep
         //  would see the same un-advanced baseline and swap the same ghost again; it asks for one more sweep instead.
         // Code_heard — "code moved" as ROWS, on THIS House: the outside's arrival written down where the page can see it and a Book
-        //  can fake it (AtheoryNexus_todo §0.00 step 2).  One take per push, one %TheAHeard per build — Theory.g TheA_io's tape shape:
+        //  can fake it (AtheoryNexus_todo §0.00 step 2).  One %TheAHeard per build per push, its take: the move that will eat it — Theory.g TheA_io's tape shape:
         //
         //      A:Code / w:Code
         //        %TheAIO:moved,heard:7,takes:3,keep:32
@@ -1828,7 +1867,7 @@
         //   write → heard) rides .c: a wall-clock duration in .sc would red any snap that ever carried it.
         Code_heard(frame: any) {
             const H = this as House
-            const cw = H.oai({ A: 'Code' }).oai({ w: 'Code' })
+            const cw = H.Code_w()
             const tape = cw.oai({ TheAIO: 'moved' })
             const take = Number(tape.sc.takes || 0) + 1
             let n = Number(tape.sc.heard || 0)
@@ -1839,9 +1878,11 @@
                 const heard = tape.i({ TheAHeard: String(n), take, gen: m.gen, ...(m.dige ? { dige: m.dige } : { gone: 1 }) })
                 if (lag != null) heard.c.lag = lag
             }
-            cw.oai({ TheAIO: 'moved' }, { heard: n, takes: take, keep: 32 })
+            // only the MOVE counts takes (Theory TheA_move); a Heard's take: names the move that will eat it, as TheA_io stamps it
+            cw.oai({ TheAIO: 'moved' }, { heard: n, keep: 32 })
             const all = tape.o({ TheAHeard: 1 }) as TheC[]
             while (all.length > 32) tape.drop(all.shift()!)
+            H.Code_poke(cw)
             return tape
         },
 
@@ -1915,10 +1956,13 @@
             }
             // served mode: the baseline is %Built (first observation = what runs), and what is due is the tape's newest (Code_due)
             //  or, for a push this tab missed, the served map's.  Both are one alphabet (gen_store's dig = dige.ts's).
-            const due = fetched ? H.Code_due(cw, held.map(x => x.gen)) : []
+            // what the move decided (Code_woken's %Take rows), for builds this tab holds
+            const due = fetched ? (cw.o({ Take: 1 }) as TheC[]).map(t => ({ gen: String(t.sc.Take), dige: String(t.sc.dige) })).filter(d => held.some(x => x.gen === d.gen)) : []
             const served: Record<string, string> | null = fetched ? { ...fetched } : null
             if (served) {
-                for (const x of held) if (served[x.gen] && !cw.o({ Built: x.gen }).length) H.Code_built(cw, x.gen, served[x.gen])
+                let based = 0
+                for (const x of held) if (served[x.gen] && !cw.o({ Built: x.gen }).length) { H.Code_built(cw, x.gen, served[x.gen]); based++ }
+                if (based) H.Code_poke(cw)   // new baselines: let the move judge the tape against them
                 for (const d of due) served[d.gen] = d.dige
             }
             // by content only where the server keeps a store — it has said so by pushing (a failed module import is permanent)

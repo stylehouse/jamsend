@@ -260,6 +260,28 @@ A→B→C is the "decide from rows" migration (disk replies, Story steps, clicks
 *Agreed with the owner: the gen push is next.  This is the plan, the reasoning, and — just as load-bearing — what it is NOT
  spreading into.  Read before building.*
 
+> **STATE, end of 2026-11-19 — read this block first; the bullets below are the trail.**
+> - **Built and live:** code named by content (`gen_store.ts`, `src/lib/gen-dige/`), the `control:gen` push, and — as of today — the
+>    runner's swap run BY ATHEORY: `A:Codes %TheAAttend:run / A:Code / w:Code` is a compartment.  An arrival (`Code_heard`) is taped
+>     (`%TheAHeard`, its `take:` = the move that will eat it) and POKES `%TheASynapse:moved`; the House's run loop moves it; the move
+>      (`Code_woken`, sync, own rows only) writes `%Take:<gen>,dige` for each held build due (`Code_due`: newest Heard ≠ `%Built`, none
+>       while `%TheAPin` stands, none for `gone`); the EFFECT stays at the edge — `Creduler_reswap` imports what the Takes say, moves
+>        `%Built`, drops the Take.  Book **AtheCodePin** proves it (5 steps, 4 oaths, ×3 green); live on e747 a spine compile went
+>         heard → move → swapped in 12ms.  This is the first outside arrival Atheory RUNS on real code — the shape later arrivals follow.
+> - **The hacker page** (`/Desk?G=Land`) needs no folder (code from the origin), hears pushes on a read-only wire, badges a pane whose
+>    build moved, and `:ask`s a runner (gated by cluster trust).  Every Desk page is someone (`Otro`: its Role's identity).  OriginNav
+>     now polls only as a fallback once a push is heard (6 tree asks before the first push, 0 in the 75s after).
+> - **⚠ Knowledge that bites:** a runner can MISS a LiesLies HMR entirely (e747 ran pre-edit code for hours, no `hot updated`) —
+>    after editing LiesLies, `runner_ask reload --runner=…` before trusting a live check.  Editing a module vite.config IMPORTS may
+>     not restart the dev server — only `vite.config.ts` itself does (check `/__wormhole/tree`'s `build`).  The first swap after a
+>      runner reload can come from vite's HMR wake (served map, `?swap=`) before any push is heard — fine, not a fault.
+> - **Parked by the owner ("don't get lost in simulation; easy later"):** the wire pair — `:ask`'s answer as an outside Heard on the
+>    page — and a Book that INJECTS an arrival into a real page.  The wallet (`Wallet_todo.md`) — "we might need it".  The
+>     one-socket appliance + identity sprawl (ibid. §0).
+> - **Next, when picked up:** (a) the Ground-included sweep has only been proven on the spine live — prove a shelf build swaps
+>    (`👻 reswap … — Ground-included`); (b) push `wormhole/` changes too (new Books/Grounds), so OriginNav's fallback can go;
+>     (c) owed housekeeping — timing reds (MusuMag, MusuBuddy, MusuRaStream), Hackarium's stale fixture, the production server.
+
 **The three jobs, renamed while talking: wire → projection → cell.**  The wire is delivery (who, how, acked or not).
  Projection is what the rows MEAN when they land — a faithful copy of state from somewhere else, its staleness, its merge.
   A cell (Cello_todo.md: Door, Radio, Heist, Haul, Pier — panes Cellui fits) is where a projection is SEEN.

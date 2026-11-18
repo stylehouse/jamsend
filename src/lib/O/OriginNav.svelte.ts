@@ -27,6 +27,13 @@ type Listing = { name: string, directories: { name: string }[], files: { name: s
 type Scratch = { read_file?: any, bin_read?: any, write_file?: any, bin_write?: any, bin_append?: any, bin_writer?: any, bin_rm?: any, dir?: any }
 
 const REFRESH_MS = 3000
+// PUSH, NOT POLL (2026-11-19, the owner on /__gen/dige: "super annoying and should be the relay telling the client").  A page that
+//  hears the server's pushes (control:docindex — source moved; control:gen — code moved) calls origin_navs_stale(), which marks
+//   every live OriginNav stale and stretches its poll to this slow fallback (wormhole/ itself — Books, Grounds — is not pushed yet,
+//    so the fallback is what still catches a new Book there).  A page that never hears a push keeps REFRESH_MS.
+const PUSHED_REFRESH_MS = 60_000
+const LIVE = new Set<OriginNav>()
+export function origin_navs_stale() { for (const nav of LIVE) nav.stale() }
 
 export class OriginNav {
     is_origin = true               // the seam a diagnostic recognises, beside is_opfs_github / is_remote
@@ -36,6 +43,7 @@ export class OriginNav {
     build: string | null = null    // the build the FIRST manifest named — this tab's code is that build's
     build_moved: string | null = null
     fetched = 0                    // file bodies pulled this session — the honest progress number
+    pushed = false                 // a push has been heard: the poll is only a fallback now
     scratch: Scratch | null
 
     _files: Record<string, string> | null = null
@@ -51,12 +59,16 @@ export class OriginNav {
         this.scratch = o.scratch ?? null
         this.fetch = o.fetch ?? ((...a: Parameters<typeof fetch>) => fetch(...a))
         this.label = `origin${this.base ? ' ' + this.base : ''} (live, read-only)`
+        LIVE.add(this)
     }
+
+    // stale — the server said something moved: the next read asks again (a 304 if the move was not under our roots)
+    stale() { this.pushed = true; this._at = 0 }
 
     // manifest — the listing, refreshed by conditional GET when older than REFRESH_MS.  A failed refresh
     //  keeps the last good listing: a blip must not take the tree away mid-session.
     async manifest(force = false): Promise<Record<string, string>> {
-        if (this._files && !force && Date.now() - this._at < REFRESH_MS) return this._files
+        if (this._files && !force && Date.now() - this._at < (this.pushed ? PUSHED_REFRESH_MS : REFRESH_MS)) return this._files
         if (this._refreshing) return this._refreshing
         this._refreshing = (async () => {
             try {

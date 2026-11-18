@@ -112,6 +112,19 @@ describe('OriginNav', () => {
         expect(f.modified).toBeInstanceOf(Date)
         expect(await nav.read_file('src/lib/server', 'relay.ts')).toMatch(/^served/)
     })
+    it('once pushed, it polls slowly and a push makes it ask again', async () => {
+        const { asked, f } = counted()
+        const nav = await mount_origin_nav({ base, fetch: f })
+        nav.stale()                                                   // a push heard: the poll is a fallback now
+        await nav.manifest()
+        const n = asked.length
+        nav._at = Date.now() - 5000                                   // past the plain 3s refresh — a pushed nav does not ask
+        await nav.manifest()
+        expect(asked.length).toBe(n)
+        nav.stale()                                                   // another push: it asks on the next read
+        await nav.manifest()
+        expect(asked.length).toBe(n + 1)
+    })
     it('notices a Book added on the server', async () => {
         const nav = await mount_origin_nav({ base })
         put('wormhole/Story/NewBook/toc.snap', 'Book:NewBook\n')

@@ -5,5 +5,8 @@ Snap:H
       w:AtheCodePin
         self,round	{"mung":["age"]}
         req:wrangle,eternal,ok
-    A:Code
-      w:Code
+    A:Codes
+      TheAAttend:run
+      A:Code
+        w:Code
+          TheASynapse:moved,sum:latest

@@ -4,12 +4,12 @@ story:AtheCodePin
   Opt
     For
   Stands:CoreTesting
-  step,dige:fb462f4b167e1dba
-  {"step":2,"desc":"the tab runs two builds — then the server says one of them moved, and a build it does not hold moved too","dige":"0928a631296af00a"}
-    Assertion:a-held-build-whose,sentence:a held build whose newest heard dige is not what runs is due — only that one — a build this tab does not hold never is
-  step=3,desc:a run pins the code — then the other build moves too,dige:6754a5c620e1f6b4
-    Assertion:while-a-run-pins,sentence:while a run pins the code nothing is due — what moved waits on the tape
-  step=4,desc:the run ends — unpinned — and the tab takes the pond,dige:2899f6877b8b2ab9
-    Assertion:unpinned-both-waiting-builds,sentence:unpinned both waiting builds are due — taking one leaves the other
-  step=5,desc:the heron build goes away on the server,dige:3e63b09ed39af4c0
-    Assertion:a-build-that-went,sentence:a build that went away is not due — the tab keeps running what it has
+  step,dige:e4a8f2b860f83268
+  {"step":2,"desc":"the tab runs two builds — then the server says one of them moved, and a build it does not hold moved too","dige":"0413f03abbea3797"}
+    Assertion:an-arrival-moves-the,sentence:an arrival moves the compartment — it takes a held build whose newest heard dige is not what runs — only that one — a build this tab does not hold never
+  step=3,desc:a run pins the code — then the other build moves too,dige:49013a97232f558f
+    Assertion:while-a-run-pins,sentence:while a run pins the code the move takes nothing — what moved waits on the tape
+  step=4,desc:the run ends — unpinned — and the tab takes the pond,dige:9e626386e7f2d9ec
+    Assertion:unpinning-moves-it-again,sentence:unpinning moves it again — both waiting builds are taken — doing one leaves the other
+  step=5,desc:the heron build goes away on the server,dige:b35a8a761b63943f
+    Assertion:a-build-that-went,sentence:a build that went away is not taken — the tab keeps running what it has

@@ -3978,55 +3978,70 @@ AthePondFog_witness(w):
     }
 //#endregion
 //#region the test routine — Book AtheCodePin
-// what a tab runs, and when it may change (AtheoryNexus_todo §0.00 step 3; LiesLies Code_due).  The runner's swap judges its tape of
-//  "code moved" arrivals (%TheAHeard, Code_heard) against what it runs (%Built) and takes nothing while a Story run pins the code
-//   (%TheAPin) — a run never mixes two versions.  This Book stands its OWN A:Code on its Run House, with made-up builds and diges, and
-//    proves that rule as rows: nothing is imported, the runner's real code is untouched.
+// what a tab runs, and when it may change — as an Atheory compartment (AtheoryNexus_todo §0.00 step 3; LiesLies Code_*).  An arrival
+//  (Code_heard: "code moved") is taped and POKES A:Code's synapse; the House's own run loop (Theory TheA_attend_runs) moves it, and the
+//   move (Code_woken) decides — %Take:<gen>,dige for each held build whose newest Heard is not what runs (%Built), none while a Story
+//    run pins the code (%TheAPin).  The runner's sweep then does what the Takes say; here nothing is imported — this Book stands its OWN
+//     A:Code on its Run House with made-up builds, so each step acts, holds until the move has happened, and reads the Takes.
 AtheCodePin(A,w):
     w oai %req:wrangle,eternal
         await &AtheCodePin_drive,w,req
         req%ok = 1
 
+// the Takes the move wrote, as text — and how many times it has moved
+AtheCodePin_takes(cw):
+    return cw.o({ Take: 1 }).map((t) => t.sc.Take + "@" + t.sc.dige).join(" ")
+AtheCodePin_moves(cw):
+    return cw.o({ TheASynapse: "moved" })[0]?.o({ TheAWoke: 1 })[0]?.sc.count || 0
+
 async AtheCodePin_drive(w, req):
     let run = this.c.run
-    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 5
+    if (run && run.sc && run.sc.mode === "new") run.sc.total = 5
     let n = run?.c.step_n
     if (n == null || n === req.c.did_step) return
     req.c.did_step = n
     let cw = this.Code_w()
-    let held = ['gen/Toy/Pond.go', 'gen/Toy/Heron.go']
-    let due = () => this.Code_due(cw, held).map((d) => d.gen + '@' + d.dige).join(' ')
     if (n === 2) {
-        w.i({ desc: 'the tab runs two builds — then the server says one of them moved, and a build it does not hold moved too' })
-        this.Code_built(cw, 'gen/Toy/Pond.go', 'p1')
-        this.Code_built(cw, 'gen/Toy/Heron.go', 'h1')
-        this.Code_heard({ moved: [{ gen: 'gen/Toy/Pond.go', dige: 'p2' }, { gen: 'gen/Toy/Elsewhere.go', dige: 'e2' }] })
-        if (due() === 'gen/Toy/Pond.go@p2') {
-            this.story_swear(w, 'a held build whose newest heard dige is not what runs is due — only that one — a build this tab does not hold never is')
-        }
+        w.i({ desc: "the tab runs two builds — then the server says one of them moved, and a build it does not hold moved too" })
+        this.Code_built(cw, "gen/Toy/Pond.go", "p1")
+        this.Code_built(cw, "gen/Toy/Heron.go", "h1")
+        this.Code_heard({ moved: [{ gen: "gen/Toy/Pond.go", dige: "p2" }, { gen: "gen/Toy/Elsewhere.go", dige: "e2" }] })
     }
     if (n === 3) {
-        w.i({ desc: 'a run pins the code — then the other build moves too' })
-        this.Code_pin(cw, 'run-1', 'AtheCodePin')
-        this.Code_heard({ moved: [{ gen: 'gen/Toy/Heron.go', dige: 'h2' }] })
-        if (due() === '' && cw.o({ TheAIO: 'moved' })[0]?.o({ TheAHeard: 1 }).length === 3) {
-            this.story_swear(w, 'while a run pins the code nothing is due — what moved waits on the tape')
-        }
+        w.i({ desc: "a run pins the code — then the other build moves too" })
+        this.Code_pin(cw, "run-1", "AtheCodePin")
+        this.Code_heard({ moved: [{ gen: "gen/Toy/Heron.go", dige: "h2" }] })
     }
     if (n === 4) {
-        w.i({ desc: 'the run ends — unpinned — and the tab takes the pond' })
+        w.i({ desc: "the run ends — unpinned — and the tab takes the pond" })
         this.Code_unpin(cw)
-        let both = due()
-        this.Code_built(cw, 'gen/Toy/Pond.go', 'p2')
-        if (both === 'gen/Toy/Pond.go@p2 gen/Toy/Heron.go@h2' && due() === 'gen/Toy/Heron.go@h2') {
-            this.story_swear(w, 'unpinned both waiting builds are due — taking one leaves the other')
-        }
     }
     if (n === 5) {
-        w.i({ desc: 'the heron build goes away on the server' })
-        this.Code_heard({ moved: [{ gen: 'gen/Toy/Heron.go', dige: '' }] })
-        if (due() === '' && cw.o({ Built: 'gen/Toy/Heron.go' })[0]?.sc.dige === 'h1') {
-            this.story_swear(w, 'a build that went away is not due — the tab keeps running what it has')
+        w.i({ desc: "the heron build goes away on the server" })
+        this.Code_heard({ moved: [{ gen: "gen/Toy/Heron.go", dige: "" }] })
+    }
+    if (n >= 2) this.AtheStoryInStory_hold(w, () => {
+        if (this.AtheCodePin_moves(cw) < n - 1) return false
+        this.AtheCodePin_witness(w, cw, n)
+        return true
+    })
+
+AtheCodePin_witness(w, cw, n):
+    let takes = this.AtheCodePin_takes(cw)
+    if (n === 2 && takes === "gen/Toy/Pond.go@p2") {
+        this.story_swear(w, "an arrival moves the compartment — it takes a held build whose newest heard dige is not what runs — only that one — a build this tab does not hold never")
+    }
+    if (n === 3 && takes === "" && cw.o({ TheAIO: "moved" })[0]?.o({ TheAHeard: 1 }).length === 3) {
+        this.story_swear(w, "while a run pins the code the move takes nothing — what moved waits on the tape")
+    }
+    if (n === 4 && takes === "gen/Toy/Pond.go@p2 gen/Toy/Heron.go@h2" && !w.c.took_pond) {
+        w.c.took_pond = 1
+        this.Code_built(cw, "gen/Toy/Pond.go", "p2")
+        if (this.AtheCodePin_takes(cw) === "gen/Toy/Heron.go@h2") {
+            this.story_swear(w, "unpinning moves it again — both waiting builds are taken — doing one leaves the other")
         }
+    }
+    if (n === 5 && takes === "" && cw.o({ Built: "gen/Toy/Heron.go" })[0]?.sc.dige === "h1") {
+        this.story_swear(w, "a build that went away is not taken — the tab keeps running what it has")
     }
 //#endregion

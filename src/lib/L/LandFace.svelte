@@ -41,7 +41,7 @@
             // CODE MOVED, next to the Doc: A:Code's tape (LiesLies Code_heard — the server's control:gen push) names builds; a pane whose
             //  doc built one is badged.  The page does NOT swap — it stays on the build it loaded (the owner, 2026-11-18); this only says
             //   that the code it shows has a newer build out there (a runner has it at its next seam)
-            const tape = M?.o?.({ A: 'Code' })[0]?.o?.({ w: 'Code' })[0]?.o?.({ TheAIO: 'moved' })[0]
+            const tape = M?.o?.({ A: 'Codes' })[0]?.o?.({ A: 'Code' })[0]?.o?.({ w: 'Code' })[0]?.o?.({ TheAIO: 'moved' })[0]
             const built: Record<string, string> = {}
             for (const h of (tape?.o({ TheAHeard: 1 }) ?? []) as any[]) {
                 const m = /^gen(?:-([a-z]+))?\/(.+)\.go$/.exec(String(h.sc.gen ?? ''))

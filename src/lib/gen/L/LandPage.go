@@ -28,7 +28,7 @@ const LAND_ASK_MS = 20000
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_LandPage(): string { return 'bc05146a991d1d24~g1' },
+    Ghostmeta_Ghost_L_LandPage(): string { return 'dae4a43f7dfd6ee8~g1' },
 
 // LandPage.g — the land as a page: /Desk?I=<who>&G=Land, the code landscape (spec/Wordland_todo.md §0).  Waft:Everything's land
 //  What wears `main:Land,role:hacker`, so the derived Ground/Land carries Main:Land and Role:hacker, Auto stands A:Land/w:Land on
@@ -142,7 +142,7 @@ Land_tell(w) {
     }
     if (top.o({ A: 'Lagoon' })[0]) moved |= this.Land_say(w, 'Lagoon', {})
     // code moved (A:Code's tape, LiesLies Code_heard): how many builds the server pushed, and the last — the page stays on its own build
-    let tape = top.o({ A: 'Code' })[0]?.o({ w: 'Code' })[0]?.o({ TheAIO: 'moved' })[0]
+    let tape = top.o({ A: 'Codes' })[0]?.o({ A: 'Code' })[0]?.o({ w: 'Code' })[0]?.o({ TheAIO: 'moved' })[0]
     if (tape) {
         let heard = tape.o({ TheAHeard: 1 })
         let last = heard[heard.length - 1]

@@ -1,51 +1,51 @@
 Credulation,of_Book:AtheCodePin
-  {"run":0,"at":1795032036.82,"ok":1,"ok_pct":null,"mode":"new"}
+  run=0,at=1795034387.729,ok=0,ok_pct=0,mode:check
     TheACode:Ground/Core,dige:2682d56be9e219ea
     TheACode:Ground/Story,dige:eeae0a8324ad76e5
-    TheACode:Ground/CoreTesting,dige:4f1e4de682c8259d
+    TheACode:Ground/CoreTesting,dige:2c63a48cf4521ff9
     uses:Ghost_A_Theory,dige:bc1f5fad74703498~g1
     uses:Ghost_A_Stuffica,dige:a6371235df378ec7~g1
     uses:Ghost_A_Ground,dige:470a1c17b0c9fb46~g1
     uses:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1
-    uses:Ghost_A_AtheTesting,dige:49bfcbc3d72b308c~g1
+    uses:Ghost_A_AtheTesting,dige:2433b21c286bf738~g1
     uses:Ghost_A_AtheFishTesting,dige:3d13bf77d88a5d90~g1
-  {"run":1,"at":1795032052.348,"ok":1,"ok_pct":null,"mode":"new"}
+  run,at=1795034395.022,ok=0,ok_pct=0,mode:check
     TheACode:Ground/Core,dige:2682d56be9e219ea
     TheACode:Ground/Story,dige:eeae0a8324ad76e5
-    TheACode:Ground/CoreTesting,dige:4f1e4de682c8259d
+    TheACode:Ground/CoreTesting,dige:2c63a48cf4521ff9
     uses:Ghost_A_Theory,dige:bc1f5fad74703498~g1
     uses:Ghost_A_Stuffica,dige:a6371235df378ec7~g1
     uses:Ghost_A_Ground,dige:470a1c17b0c9fb46~g1
     uses:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1
-    uses:Ghost_A_AtheTesting,dige:49bfcbc3d72b308c~g1
+    uses:Ghost_A_AtheTesting,dige:2433b21c286bf738~g1
     uses:Ghost_A_AtheFishTesting,dige:3d13bf77d88a5d90~g1
-  run=2,at=1795032056.104,ok,ok_pct,mode:check
+  run=2,at=1795034404.02,ok,ok_pct,mode:check
     TheACode:Ground/Core,dige:2682d56be9e219ea
     TheACode:Ground/Story,dige:eeae0a8324ad76e5
-    TheACode:Ground/CoreTesting,dige:4f1e4de682c8259d
+    TheACode:Ground/CoreTesting,dige:2c63a48cf4521ff9
     uses:Ghost_A_Theory,dige:bc1f5fad74703498~g1
     uses:Ghost_A_Stuffica,dige:a6371235df378ec7~g1
     uses:Ghost_A_Ground,dige:470a1c17b0c9fb46~g1
     uses:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1
-    uses:Ghost_A_AtheTesting,dige:49bfcbc3d72b308c~g1
+    uses:Ghost_A_AtheTesting,dige:2433b21c286bf738~g1
     uses:Ghost_A_AtheFishTesting,dige:3d13bf77d88a5d90~g1
-  run=3,at=1795032079.165,ok,ok_pct,mode:check
+  run=3,at=1795034408.565,ok,ok_pct,mode:check
     TheACode:Ground/Core,dige:2682d56be9e219ea
     TheACode:Ground/Story,dige:eeae0a8324ad76e5
-    TheACode:Ground/CoreTesting,dige:4f1e4de682c8259d
+    TheACode:Ground/CoreTesting,dige:2c63a48cf4521ff9
     uses:Ghost_A_Theory,dige:bc1f5fad74703498~g1
     uses:Ghost_A_Stuffica,dige:a6371235df378ec7~g1
     uses:Ghost_A_Ground,dige:470a1c17b0c9fb46~g1
     uses:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1
-    uses:Ghost_A_AtheTesting,dige:49bfcbc3d72b308c~g1
+    uses:Ghost_A_AtheTesting,dige:2433b21c286bf738~g1
     uses:Ghost_A_AtheFishTesting,dige:3d13bf77d88a5d90~g1
-  run=4,at=1795032083.632,ok,ok_pct,mode:check
+  run=4,at=1795034413.112,ok,ok_pct,mode:check
     TheACode:Ground/Core,dige:2682d56be9e219ea
     TheACode:Ground/Story,dige:eeae0a8324ad76e5
-    TheACode:Ground/CoreTesting,dige:4f1e4de682c8259d
+    TheACode:Ground/CoreTesting,dige:2c63a48cf4521ff9
     uses:Ghost_A_Theory,dige:bc1f5fad74703498~g1
     uses:Ghost_A_Stuffica,dige:a6371235df378ec7~g1
     uses:Ghost_A_Ground,dige:470a1c17b0c9fb46~g1
     uses:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1
-    uses:Ghost_A_AtheTesting,dige:49bfcbc3d72b308c~g1
+    uses:Ghost_A_AtheTesting,dige:2433b21c286bf738~g1
     uses:Ghost_A_AtheFishTesting,dige:3d13bf77d88a5d90~g1
