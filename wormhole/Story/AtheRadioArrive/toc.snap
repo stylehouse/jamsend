@@ -1,0 +1,18 @@
+story:AtheRadioArrive
+  Styles
+  Plan
+  Opt
+    For
+  Stands:CoreTesting
+  Stands:Ghost/M/RadioPage.g
+  step,dige:7ada4b7d122bbe9e
+  {"step":2,"desc":"a stranger — music on the shelf, the station up, no friends","dige":"15d0ad2f296690b9"}
+    Assertion:a-stranger-with-no,sentence:a stranger with no friends goes straight in — every notch still open is moot with the same why — and the radio is pressed
+  step=3,desc:a friend online but their catalog not here yet — and nothing of mine on the shelf,dige:36814ad5dd87c33d
+    Assertion:a-friend-online-is,sentence:a friend online is waited for — the notches met so far are rows — the next reading is asked for by a Wake at 20s — nothing is pressed yet
+  step=4,desc:their catalog lands and a track is ready,dige:c01d371a217a7248
+    Assertion:their-track-ready-settles,sentence:their track ready settles the music notch met and presses the radio on that friend
+  step=5,desc:a friend heard a minute ago is not online — then nothing changes until the wait runs out,dige:8c898d3028fbe04e
+    Assertion:an-expected-friend-who,sentence:an expected friend who never shows is given up on at the deadline the move asked for — not by a timer
+  step=6,desc:playing my own music as a stopgap — and a friend's track becomes ready,dige:9f0c6dc706bbdd74
+    Assertion:playing-a-stopgap-the,sentence:playing a stopgap the radio crosses to a friend the moment their track is ready

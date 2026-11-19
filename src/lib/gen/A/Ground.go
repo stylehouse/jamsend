@@ -15,7 +15,7 @@ const GROUND_STALL_S = 20
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_Ground(): string { return '470a1c17b0c9fb46~g1' },
+    Ghostmeta_Ghost_A_Ground(): string { return 'f1fcfd0131cf6131~g1' },
 
 // Ground.g — what a tab stands on, said as particles on the A that stands on it (spec/Aprac_todo.md §0.5).
 //
@@ -418,9 +418,11 @@ Ground_arrive_A(H, name) {
     return null
 
 },
-// …the row that meets it, on the A or one of its ws
+// …the row that meets it, on the A or one of its ws — or a compartment it holds (A:Radio %TheAAttend:run > A:Arrive/w:Arrive decides
+//  the page's arrival as a move, so its %Arrived rows live one A down)
 Ground_arrive_row(A, by, val) {
-    for (const n of [A, ...A.o({ w: 1 })]) {
+    let held = A.o({ TheAAttend: 'run' }).length ? A.o({ A: 1 }).flatMap((B) => B.o({ w: 1 })) : []
+    for (const n of [A, ...A.o({ w: 1 }), ...held]) {
         let row = n.o({ [by]: val })[0]
         if (row) return row
     }

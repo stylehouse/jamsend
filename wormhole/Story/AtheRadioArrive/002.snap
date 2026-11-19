@@ -1,0 +1,29 @@
+Snap:H
+  H:AtheRadioArrive,Run
+    A:AtheRadioArrive
+      self,round=3	{"mung":["age"]}
+      w:AtheRadioArrive
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Decided:shelf radio relay~no friends yet friend~no friends yet catalog~no friends yet music~no friends yet | press~arrived | 
+    A:Lone
+      TheAAttend:run
+      A:Arrive
+        w:Arrive
+          TheAIO:sense,keep=32,heard,takes
+            TheAHeard:1,take,ms=1000,stock=3,resting,radio,state:off,humdinger,stood,piers=0,online=0
+          TheASynapse:sense,sum:latest
+            TheAWoke,count,pulses
+          Arrived:shelf
+          Arrived:radio
+          Since:music,ms=1000
+          Arrived:relay,moot:no friends yet
+          Arrived:friend,moot:no friends yet
+          Arrived:catalog,moot:no friends yet
+          Arrived:music,moot:no friends yet
+          Take:press,why:arrived
+      self,round	{"mung":["age"]}
+      w:Lone
+      TheARun,rounds,quiet
+        TheARound:1
+          TheAWent:Arrive

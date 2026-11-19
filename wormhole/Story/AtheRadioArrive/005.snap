@@ -1,0 +1,81 @@
+Snap:H
+  H:AtheRadioArrive,Run
+    A:AtheRadioArrive
+      self,round=10	{"mung":["age"]}
+      w:AtheRadioArrive
+        self,round=10	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Decided:shelf radio relay~no friends yet friend~no friends yet catalog~no friends yet music~no friends yet | press~arrived | 
+        Decided:shelf~no music found to stock radio relay friend |  | 21001
+        Decided:shelf~no music found to stock radio relay friend catalog music | press~the latest friend | 
+        Decided:shelf radio relay friend~their music is still on its way catalog~their music is still on its way music~their music is still on its way | press~arrived | 
+    A:Lone
+      TheAAttend:run
+      A:Arrive
+        w:Arrive
+          TheAIO:sense,keep=32,heard,takes
+            TheAHeard:1,take,ms=1000,stock=3,resting,radio,state:off,humdinger,stood,piers=0,online=0
+          TheASynapse:sense,sum:latest
+            TheAWoke,count,pulses
+          Arrived:shelf
+          Arrived:radio
+          Since:music,ms=1000
+          Arrived:relay,moot:no friends yet
+          Arrived:friend,moot:no friends yet
+          Arrived:catalog,moot:no friends yet
+          Arrived:music,moot:no friends yet
+          Take:press,why:arrived
+      self,round=8	{"mung":["age"]}
+      TheARun,rounds,quiet
+        TheARound:1
+          TheAWent:Arrive
+      w:Lone
+        self,round=7	{"mung":["age"]}
+    A:Waiting
+      TheAAttend:run
+      A:Arrive
+        w:Arrive
+          TheAIO:sense,keep=32,heard=2,takes=2
+            TheAHeard:1,take,ms=1000,stock=0,resting,radio,state:off,humdinger,stood,piers=2,online,expected,relay
+            TheAHeard:2,take=2,ms=6000,stock=0,resting,radio,state:off,humdinger,stood,piers=2,online,expected,relay,known,playable,ready
+          TheASynapse:sense,sum:latest
+            TheAWoke,count=2,pulses=2
+          Arrived:shelf,moot:no music found to stock
+          Arrived:radio
+          Since:music,ms=1000
+          Arrived:relay
+          Arrived:friend
+          Alone
+          Arrived:catalog
+          Arrived:music
+          Take:press,why:the latest friend
+      self,round=6	{"mung":["age"]}
+      TheARun,rounds,quiet
+        TheARound:1
+          TheAWent:Arrive
+      w:Waiting
+        self,round=5	{"mung":["age"]}
+    A:Late
+      TheAAttend:run
+      A:Arrive
+        w:Arrive
+          TheAIO:sense,keep=32,heard=2,takes=2
+            TheAHeard:1,take,ms=1000,stock=3,resting,radio,state:off,humdinger,stood,piers,online=0,expected,relay
+            TheAHeard:2,take=2,ms=21001,stock=3,resting,radio,state:off,humdinger,stood,piers,online=0,expected,relay
+          TheASynapse:sense,sum:latest
+            TheAWoke,count=2,pulses=2
+          Arrived:shelf
+          Arrived:radio
+          Since:music,ms=1000
+          Arrived:relay
+          Alone
+          Arrived:friend,moot:their music is still on its way
+          Arrived:catalog,moot:their music is still on its way
+          Arrived:music,moot:their music is still on its way
+          Take:press,why:arrived
+      self,round=2	{"mung":["age"]}
+      w:Late
+        self,round	{"mung":["age"]}
+      TheARun,rounds,quiet
+        TheARound:1
+          TheAWent:Arrive

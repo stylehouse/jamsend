@@ -9,6 +9,9 @@ Started 2026-11-04 from the Supervisor talk (`AtheoryNexus_todo.md` E, "NEXT SES
 
 ## 0. What to get on with next
 
+- **2026-11-19 — /Radio's arrival RUNS ON ATHEORY (rung 1 of §7, "Radio on rows").**  The page's decisions — the splash notches, the
+   8s/20s deadlines, the autopress, the crossover — are a compartment `A:Radio > A:Arrive`: the edge senses and tapes only news, the move
+    decides, `Radio_ran` acts.  Book AtheRadioArrive ×3 green; seen live on a headless stranger and the owner's b8bc page.  Next: §7's rungs.
 - **2026-11-10 — /Radio goes straight in (owner: *"default to starting to play when we boot up completely … switch to the first peer that
    appears … dropping through seems premature … it should be going straight in there"*).**  (a) Ground/Radio's Lift is now `music`
     (RadioPage_music): the splash holds until a friend's track is playable — moot at once with no friends, after 5s with none online,
@@ -322,3 +325,58 @@ Started 2026-11-04 from the Supervisor talk (`AtheoryNexus_todo.md` E, "NEXT SES
 **Later:** Story + Supervisor are one job at two tenses — the Supervisor holds standing questions now, a Story films and compares to a
  recording.  A noticing Story (a step per Supervisor fold move, the Arrive rows its oaths) is the renovated Sounditron.  Not for v1.1: the
   Supervisor already uploads Health (counts + verdicts, prod only, per-boot id — Supervisor.g "the report that travels"); /log unread so far.
+
+## 7. Radio on rows — porting the music page onto Atheory, rung by rung (2026-11-19)
+
+*Owner, 2026-11-19: "I thought we already moved Radio onto Atheory... technically not? … porting Radio to Atheory and Stuffica is a
+ reasonable next move".*  Technically not, until today: `/Radio` STOOD on a Ground (E, slices 1–3a — `A:Radio` a Main, no Book), but
+  everything inside ran on the old country — the think re-run on every House tick, a 1s timer that re-ran the whole think "because the
+   stoker tells nobody", a 2.5s pump, and the faces reading live House state.  The port moves one organ at a time, each the same shape:
+
+> **The edge senses → the move decides → the edge acts.**  A reading of the world is TAPED (Theory `TheA_io`) only when it says
+>  something new; the move (sync, its own rows only) decides from the reading alone and writes rows — what is true (`%Arrived`), when
+>   it next wants news (`%Wake` — a deadline is a row, not a timer), what to do (`%Take`); the holder's edge (`<A>_ran`, Theory
+>    `TheA_edge`, after each run) does the Takes.  So the organ's whole story is its tape, and a Book plays made-up readings through
+>     the REAL move — no radio, no friends, no timing (AtheCodePin is the same shape for code; this is the second).
+
+**Rung 1 BUILT 2026-11-19 — the arrival.**  `A:Radio %TheAAttend:run > A:Arrive/w:Arrive` (RadioPage.g "THE ARRIVAL ON ROWS"):
+ `RadioPage_sense` (edge: shelf, radio state, relay, friends online/expected/all-off, station, catalog, playable, ready) → `Arrive_woken`
+  (the splash's rules as tuned live 2026-11-10: notches met|moot, the 8s/20s deadlines as `%Wake`, `%Take:press` once music settles or a
+   friend arrives after it waited `%Alone`, `%Take:cross` off a stopgap) → `Radio_ran` (presses, crosses, re-senses).  The 1s think timer
+    is now a 1s SENSE (reads, tapes only on change) that stops once in; the pump senses every 2.5s after.  The Supervisor finds `%Arrived`
+     one A down (Ground.g `Ground_arrive_row` looks into the compartments a `%TheAAttend:run` A holds).  Gone: `RadioPage_arrive|music|once|
+      settle|met|listen|cross`.  **Book AtheRadioArrive** (5 oaths, ×3 green): a stranger goes straight in; a friend online is waited for
+       with a Wake at 20s; their track ready presses on them; an expected no-show is given up at the Wake, not by a timer; a stopgap crosses.
+  **Seen live:** a headless stranger (`/Radio?socklog`, da1cd…) taped 12 readings and went in "no friends yet"; the owner's folderless page
+   (b8bc…) ran it — 3 friends all offline → "none of your friends are online", pressed, playing.  Read any page's tape with
+    `runner_ask minisnap 'mundo>A:Radio>A:Arrive' --depth=3 --player=<pub>`.
+  **Theory gained `TheA_edge`** (the holder is the edge): after each run of a `%TheAAttend:run` holder, (1) any Stuffica view standing on
+   a compartment it moved is walked and committed (in UItime) — before this nothing outside a Book ever committed a view after a real run;
+    (2) its `<A>_ran(P, run)` is called, may be async, and a throw is a counting `%TheAFault:edge` on the holder.
+
+**The rungs after, in order (proposed):**
+2. **The stoker tells.**  `Stoker_look` digs on its own setTimeout chain and nobody hears it finish — the arrival's 1s sense exists for it.
+    Let the stoker's rest (stock counted, churn ended) be an arrival on `A:Arrive` (`RadioPage_sense` called from its end), then the 1s
+     clock can go.  Small; then the friends' presence edge (Swarm's hear funnel, `Presence_heard`) and a catalog landing (Repli) the same way.
+3. **A press is an arrival.**  RadioFace's ▶/⏭/♥ call `Radio_go`/`Radio_skip` straight from the template.  Make each a Stuffica arrival
+    on a compartment `A:Radio > A:Dial/w:Dial` (a `%TheAIO:screen` take): the move decides (play, skip, aim, pin — today's Radio_go/skip
+     guards: era, superseded, digging), the edge does the audio.  Book: the dial's decisions from taped presses + readings.
+4. **The radio's state machine on rows.**  off|digging|playing|paused and the era are `.sc`/`.c` on `%Radio`, changed by awaits inside
+    Radio_go.  As rows on w:Dial moved by arrivals (pressed, chunk landed, track ended, device adopted), the era is the Turn.  The AUDIO pump
+     (`Radio_pump`'s era-guarded setTimeout chain, Ra.g's buffers) stays a clock at the edge — real time is an honest outside.
+5. **The faces as views.**  Once 3–4 move the radio by runs, RadioFace reads a Stuffica view of w:Dial (committed by `TheA_edge`) instead
+    of the live particle — the screen sees no middle of a run.
+6. **The pump** (pulse_all, retx/liveness sweeps, runstepped) is the WIRE's cadence (Peeroleum) — it moves with the wire, not with Radio.
+
+**Stuffica, looked at again for elegance (owner: "can we get more elegance there..?").**  What reads well: a view is a Seem; walked only
+ when what it shows moved; committed only when what it shows changed, all together after a run.  What doesn't, and why:
+- *Three ways in* — `Stuffica_commit(run)` (after a run), `Stuffica_refresh` (a caller says the pile settled), `Stuffica_stirred` (Stuffmush
+   polls version counters 2×/s).  Only the first is the Atheory one; the other two exist because the piles they show (Story's This/The, the
+    Supervisor's watches, Mundo itself) are moved by the OLD country, which says nothing.  They shrink as those piles move onto runs — they are
+     not Stuffica's to fix.  The first is now wired into the real loop (`TheA_edge`).
+- *The door* (`Stuffica_arrive`: a JS queue + a 20ms/300ms timer on `w.c.door`, taped at take time) looks like a re-invention of `TheA_io` +
+   a run — and on a compartment in the run loop it would be: a burst within one think IS one take, the run's own definition.  But today's
+    screen worlds (Stuffmush, Storica, ArriveFace) are loose `TheC`s a Svelte component holds — in no House, under no holder — so nothing would
+     run them.  Rung 3 is where it changes: the dial's presses go through a compartment that IS in the loop, and the door's timer is only for
+      loose screen worlds.  Proposal when rung 3 lands: stand the screen worlds as compartments under one `A:Screen %TheAAttend:run` on the top
+       House, and let `Stuffica_arrive` be `TheA_io(screen, 'screen', sc)` + a knock — the queue and its timer go.

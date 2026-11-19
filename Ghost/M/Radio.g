@@ -3255,7 +3255,13 @@ Stoker_state(st, state):
     if (st.sc.Stoker !== state) {
         st.sc.Stoker = state
         st.bump()
+        this.Stoker_told(st)
     }
+
+// Stoker_told — THE STOKER TELLS (AtheoryArrive_todo §7 rung 2): a changed state or count is news to a page whose arrival is a
+//  compartment (RadioPage.g RadioPage_sense — absent off /Radio, and a no-op where no A:Radio stands, as in a Book)
+Stoker_told(st):
+    if (this.RadioPage_sense && st.c.w) this.RadioPage_sense(st.c.w)
 
 // Stoker_wake — the radio came alive (or a churn was asked while parked): run the watch loop.
 //  Idempotent while awake — one loop per stoker, a fresh era per wake.
@@ -3471,7 +3477,10 @@ Stoker_census(st, shelf, radio):
     let changed = 0
     if (st.sc.stock !== recs.length) { st.sc.stock = recs.length; changed = 1 }
     if (st.sc.fresh !== fresh) { st.sc.fresh = fresh; changed = 1 }
-    if (changed) st.bump()
+    if (changed) {
+        st.bump()
+        this.Stoker_told(st)
+    }
 
 // Stoker_cull — the recordWear inheritance (the old Radios.svelte ghost's death circuitry,
 //  simplified): the shelf is a WORKING crate, not an archive — past the cap, HEARD records

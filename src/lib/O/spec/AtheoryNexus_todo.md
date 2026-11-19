@@ -7,6 +7,21 @@
     parked it leaves for the doc named.  Older lists it gathers: `Atheory_design.md` §1.15 "Remaining conceptualisations" and §3
      "Where it's heading".*
 
+## WHERE WE ARE — one row per country (kept current at every handoff; last 2026-11-19)
+
+*Owner 2026-11-19: "I'm failing to be informed of where we're at enough, when I wander along."  This table is the answer: read it
+ first, then the doc its row names.  Update the row you moved, in the same change.*
+
+| country | where it stands | next | doc |
+|---|---|---|---|
+| **Atheory: rows, not signals** (frontiers A–F below) | A door ✓ · B disk drains itself ✓ · C first part ✓ · D Jobs ✓ · E slices 1–3a ✓ · F not started.  Two outside arrivals now RUN on it: code moved (A:Codes, AtheCodePin) and /Radio's arrival (A:Radio>A:Arrive, AtheRadioArrive); Theory's holder edge (`TheA_edge`) does what a move decided and commits views | C (Story waits by news) and F (reqs — the owner: "might want a bunch of rethinking since pulses happen") are the old country's biggest leftovers; mine to do unmanaged | §0.0 below, Coding_guide |
+| **/Radio onto Atheory + Stuffica** | on a Ground since 11-07; rung 1 (the arrival as a compartment) built 11-19; the stoker tells it (rung 2, first part) | rung 2 rest (friends + catalog tell) → 3 a press is an arrival → 4 the radio's state on rows → 5 faces as views | AtheoryArrive_todo §7 |
+| **Stuffica** | views + door built (Aprac §0); real runs now commit views | the door becomes TheA_io once screen worlds stand in the loop (with Radio rung 3) | AtheoryArrive_todo §7, Aprac_todo |
+| **The land** (code legible) | Atlas, Electrode, /Desk?G=Land, panes, `:ask`, code push + content names | writing on the Land page (a pane that edits + `:compile` on the editor seat) | §0.00 here, Wordland_todo |
+| **Jamsend** (the music) | /Radio tuned live 11-10; pile built, owner-unseen | owner's look at /Desk?G=Pile; Musu `cid:` re-record (owner's go) | Pile_todo, Radio_todo |
+| **Identity + the socket** | first peel (Jamsend.g) ✓, one-socket carrier dark, every Desk page is someone ✓ | parked by the owner (wallet, appliance) | Wallet_todo, Social_demarcation_todo §0.5 |
+| **Further off** | the language (Cstructures), the glass, Emotion | — | DocIndex |
+
 ## 0.0 The land — where the work is (2026-11-03, owner: "a big lay-of-the-Atheory-land picture … so I can direct you to the actual frontier")
 
 **The spine of it.**  A thing should run because a row is WAITING for it (a pulse on a synapse, a knock kept at a door, a

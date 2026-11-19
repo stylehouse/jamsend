@@ -10,28 +10,23 @@ import RadioPageFace from "$lib/O/ui/RadioPageFace.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_RadioPage(): string { return '5680e5c024effe45~g1' },
+    Ghostmeta_Ghost_M_RadioPage(): string { return 'c9dd542c967b6c5b~g1' },
 
 // RadioPage.g — the Radio as a page: /Radio, which is /Desk?I=<who>&G=Radio (spec/AtheoryArrive_todo.md §5).  Ground/Radio's Main is Radio, so Auto
 //  stands A:Radio/w:Radio on Mundo and its think is Radio(A,w) below — the music page with no Book under it.  On / the same organs
 //   stand inside the Sounditron Book's world (Sounditron_glass); here they stand on the Main's own w, and what the Book's beats used to
 //    hold the boot on is said as rows instead: each of Ground/Radio's Arrive rows is met by an %Arrived:<key> this think writes on
-//     w:Radio, and the Supervisor folds them (Ground.g Ground_arrive) for the splash (O/ui/ArriveSplash.svelte) to read.
+//     w:Radio or its compartment (A:Arrive), and the Supervisor folds them (Ground.g Ground_arrive) for the splash (O/ui/ArriveSplash.svelte) to read.
 //
-//      A:Radio / w:Radio
+//      A:Radio / w:Radio   %TheAAttend:run on A:Radio
 //        %Radio:off,face:Radio          ← Radio_ensure — the face particle RadioFace draws
 //        %Stoker:idle,face:Stoker,…     ← Stoker_ensure — preheated once, so the first ▶ finds stock
 //        %Mag:Lineup,…                  ← Radio_lineup_ensure
 //        %Door:open,face:Door           ← the front door's cell
 //        %Arrived:spine                 ← stood at all ⇒ the spine loaded (Auto stands a Main only after the Creduler)
-//        %Arrived:shelf                 ← a track stands on the shelf (moot: the stoker came to rest with none)
-//        %Arrived:radio                 ← the radio can be pressed
-//        %Arrived:relay                 ← our socket to the relay is open
-//        %Arrived:friend                ← a friend is online (heard in the last 30s)
-//        %Arrived:catalog               ← their tracks are listed here (a mirror with records)
-//        %Arrived:music                 ← a friend's track is playable (Lift)
-//         …each moot with why: no friends, none online, or waited — and when music settles, every notch still open settles with it
-//
+//      A:Radio / A:Arrive / w:Arrive    ← the rest of the arrival, decided as a MOVE (THE ARRIVAL ON ROWS, below):
+//        %Arrived:shelf · radio · relay · friend · catalog · music   …each met, or moot with why — the Supervisor finds them one A down
+//         (Ground_arrive_row), and when music settles every notch still open settles with it
 //  The glass is Cello (O/Cellui.svelte, as on / — port-holes, no voronoi): RadioPageFace mounts it on Mundo, and with no Vyto world
 //   commissioned it casts every faced particle under an A's w — these organs.  Not yet here: the Link cell (DoorFace's "link a
 //    device" asks Sounditron_link_open, absent on this page), the friends' shelves, the Wikipedia cell, the focus a press asks for.
@@ -43,6 +38,8 @@ Radio(A, w) {
         let uis = this.oai_enroll(this, { watched: 'UIs' })
         uis.oai({ UI: 'Radio' }, { component: RadioPageFace })
     }
+    // the page's arrival is decided by a compartment this A holds (THE ARRIVAL ON ROWS, below); the spine is met by standing at all
+    A.oai({ TheAAttend: 'run' })
     w.oai({ Arrived: 'spine' })
     this.Radio_ensure(w)
     let st = this.Stoker_ensure(w)
@@ -55,7 +52,8 @@ Radio(A, w) {
         door.c.up = w
     }
     this.RadioPage_organs(w)
-    this.RadioPage_arrive(w, st)
+    this.RadioPage_sense(w)
+    this.RadioPage_clock(w)
     this.RadioPage_pump(w)
 
 },
@@ -76,73 +74,6 @@ RadioPage_organs(w) {
         yay.c.up = w
         this.top_House().bump_version?.()
     }
-
-},
-// RadioPage_arrive — the rows the Ground's Arrive: rows are met by.  The stoker digs on its own detached loop and tells nobody, so
-//  until everything has arrived this think asks itself again in a second (the Supervisor's stall clock is what gives up, not this)
-RadioPage_arrive(w, st) {
-    let stock = st.sc.stock
-    let resting = st.sc.Stoker !== 'churning'
-    if (stock != null && +stock > 0) this.RadioPage_met(w, 'shelf')
-    else if (stock != null && resting) this.RadioPage_met(w, 'shelf', 'no music found to stock')
-    // the radio is ready once the shelf has said either way: an empty shelf still opens the door (the face digs on ▶), and a
-    //  moot Lift would never lift — Supervisor_arrived counts only met|ok
-    if (w.o({ Arrived: 'shelf' }).length) this.RadioPage_met(w, 'radio')
-    if (w.o({ Arrived: 'radio' }).length) this.RadioPage_music(w)
-    if (w.o({ Arrived: 'music' }).length || w.c.ask_again) return
-    w.c.ask_again = setTimeout(() => {
-        w.c.ask_again = null
-        this.main()
-    }, 1000)
-
-},
-// RadioPage_music — THE SPLASH HOLDS FOR A FRIEND'S MUSIC (owner 2026-11-10: *"dropping through seems premature … start listening to
-//  the latest peer still online? it should be going straight in there"*).  Met the moment a friend's track is playable; moot at once
-//   with no friends, after 5s with none of them online, after 12s while one is online and their music is still crossing.  Either way
-//    the splash lifts and RadioPage_listen starts the radio: on that friend, or on a stopgap the crossover leaves when they arrive.
-//  THE NOTCHES ON THE WAY (owner 2026-11-10: *"could do with a few more notches of progress"*): relay → friend → catalog → music, each
-//   met as it happens, so the bar moves while a friend's music crosses instead of sitting on one sentence.
-RadioPage_music(w) {
-    if (w.o({ Arrived: 'music' }).length) return
-    let radio = w.o({ Radio: 1 })[0]
-    if (!radio || !this.Radio_pool_census) return this.RadioPage_settle(w, 'no radio here')
-    if (!w.c.music_since) w.c.music_since = Date.now()
-    let waited = Date.now() - w.c.music_since
-    if (this.RadioPage_relay_open()) this.RadioPage_once(w, 'relay')
-    let piers = this.RadioPage_piers()
-    let online = piers.filter((p) => this.RadioPage_online(p))
-    if (online.length) this.RadioPage_once(w, 'friend')
-    let c = this.Radio_pool_census(w, radio)
-    if (c.known) this.RadioPage_once(w, 'catalog')
-    if (this.RadioPage_friend_ready(w, radio, c)) return this.RadioPage_settle(w, '')
-    // "no friends" only once the station has stood — the friends (the account's %Pier rows) land with it, and before then an empty
-    //  list is "not loaded yet", not "nobody" (measured 2026-11-10: the splash waived at 4s, 37s before the account rehydrated)
-    let sw = this.Swarm_station_world ? this.Swarm_station_world() : null
-    let stood = !!(sw && sw.c && sw.c.station_up)
-    if (!piers.length && (stood || waited > 8000)) return this.RadioPage_settle(w, 'no friends yet')
-    if (!piers.length) return
-    // WHO WE EXPECT (owner 2026-11-10: *"it goes through to playing LOCAL rather than S … the peers we were connected to <1m ago should
-    //  be tried first"*): a friend online now, or one this tab heard in the minute before it reloaded, is worth waiting 20s for.  Nobody
-    //   is given up on until the relay says every friend is offline, or 8s pass with no sign of any of them.
-    let expected = online.length || piers.some((p) => this.RadioPage_recent(String(p.sc.pub)))
-    let all_off = piers.every((p) => this.Presence_offline && this.Presence_offline(String(p.sc.pub)))
-    if (!expected && (all_off || waited > 8000)) return this.RadioPage_settle(w, 'none of your friends are online')
-    if (waited > 20000) return this.RadioPage_settle(w, 'their music is still on its way')
-
-},
-// …a notch met, once (a later moot never un-meets it)
-RadioPage_once(w, key) {
-    let row = w.o({ Arrived: key })[0]
-    if (row && !row.sc.moot) return row
-    return this.RadioPage_met(w, key)
-
-},
-// …music settles (met when why is '', else moot), and every notch still open settles moot with the same why
-RadioPage_settle(w, why) {
-    for (const key of ['relay', 'friend', 'catalog']) {
-        if (!w.o({ Arrived: key }).length) this.RadioPage_met(w, key, why || 'not needed — the music is here')
-    }
-    return why ? this.RadioPage_met(w, 'music', why) : this.RadioPage_met(w, 'music')
 
 },
 // the station socket is open (Radio_relay_down's probe, the other way round): A:Clustation > w:Swarm's websocket transport
@@ -235,23 +166,6 @@ RadioPage_friend_ready(w, radio, c) {
     return !!(lu && lu.o({ Card: 1 }).some((k) => k.c.rec))
 
 },
-// RadioPage_cross — off the stopgap the moment a friend can be heard: Radio_crossover's gates (once a stopgap, only out of solo,
-//  throttled 1.5s) with RadioPage_friend_ready for its "something to play", aimed at the latest friend first.  It skips, as
-//   Radio_crossover does, so the dial (friend-first) picks what's next.
-RadioPage_cross(w, radio) {
-    if (radio.c.crossed || !radio.sc.solo) return 0
-    let now = Date.now()
-    if (radio.c.cross_at && now - radio.c.cross_at < 1500) return 0
-    radio.c.cross_at = now
-    if (!this.RadioPage_friend_ready(w, radio)) return 0
-    radio.c.crossed = 1
-    let who = this.RadioPage_latest(w, radio)
-    this.Radio_trace(null, { ev: 'crossover', of: who.slice(0, 8) })
-    console.log('📻⇢ crossing to ' + (radio.sc.aim_by || who.slice(0, 8) || 'a friend') + ' — off the stopgap')
-    this.Radio_skip(radio)
-    return 1
-
-},
 // RadioPage_latest — the friend to listen with: of those with a playable track, the one heard most recently.  Aims the radio at them,
 //  unpinned (the dial prefers their records and falls through to everyone's once theirs are heard); a human's pinned aim is left alone.
 RadioPage_latest(w, radio) {
@@ -283,12 +197,211 @@ RadioPage_latest(w, radio) {
     return best
 
 },
-// …one milestone met (or moot, with why) — said once; a moot that later comes true is said again, met
-RadioPage_met(w, key, moot) {
-    let row = w.o({ Arrived: key })[0]
-    if (row && (row.sc.moot || null) === (moot || null)) return row
-    if (row) w.drop(row)
-    return w.i(moot ? { Arrived: key, moot } : { Arrived: key })
+// ── THE ARRIVAL ON ROWS (2026-11-19, AtheoryArrive_todo §7) — the page's decisions are an Atheory compartment.  What used to be read
+//  and decided on every think (and a 1s timer that re-ran the whole think "because the stoker tells nobody") is three parts now:
+//   - THE EDGE SENSES (RadioPage_sense): a reading of the world — the shelf, the radio's state, the relay, the friends, their
+//      catalog — said as one row and TAPED (Theory TheA_io) only when it changed, or when the move asked to be woken by then;
+//   - THE MOVE DECIDES (Arrive_woken: sync, its own rows only, from the reading alone): which notches are met or moot, when it next
+//      wants a reading (%Wake — a deadline is a row, not a timer), and what to do — %Take:press, %Take:cross;
+//   - THE EDGE ACTS (Radio_ran, Theory TheA_edge — after the run, outside it): presses, crosses, and drops the Takes it did.
+//  So the splash's whole story is the tape: what was seen, when, and what was decided — and a Book can play one back (AtheRadioArrive).
+//
+//      A:Radio  %TheAAttend:run              ← holds the compartment; still thought (Radio(A,w) above)
+//        w:Radio …the organs
+//        A:Arrive / w:Arrive
+//          %TheAIO:sense,heard,takes,keep:32
+//            %TheAHeard:7,take:7,ms:5210,stock:12,resting,radio,state:off,relay,piers:2,online:1,expected,stood,known
+//          %TheASynapse:sense,sum:latest     ← a reading is whole: the newest wins
+//          %Arrived:shelf · %Arrived:friend · %Arrived:music,moot:none of your friends are online …
+//          %Since:music,ms:1180              ← the wait for a friend's music began (page clock, ms)
+//          %Wake,ms:9180                     ← a reading is wanted by then, changed or not
+//          %Alone                            ← off with nothing playable when first looked: a friend arriving presses
+//          %Take:press,why:arrived           ← decided; Radio_ran does it
+RadioPage_aw(A) {
+    if (!A) return null
+    let B = A.o({ A: 'Arrive' })[0]
+    let aw = B ? B.o({ w: 'Arrive' })[0] : null
+    if (aw) return aw
+    aw = A.oai({ A: 'Arrive' }).oai({ w: 'Arrive' })
+    aw.oai({ TheAIO: 'sense' }, { keep: 32 })
+    aw.oai({ TheASynapse: 'sense' }, { sum: 'latest' })
+    return aw
+
+},
+// RadioPage_reading — the world as the move needs it, every fact a plain scalar (a yes rides as 1 or absent).  The edge's read: it may
+//  mint (Radio_lineup_fill inside friend_ready), the move never does.  Once in, only what the radio's next decision needs is read
+RadioPage_reading(w, aw) {
+    let r = {}
+    let st = w.o({ Stoker: 1 })[0]
+    // the shelf only until it has said: after that the stoker's churn is no news to this move
+    if (st && st.sc.stock != null && !aw.o({ Arrived: 'shelf' }).length) {
+        r.stock = +st.sc.stock
+        if (st.sc.Stoker !== 'churning') r.resting = 1
+    }
+    let radio = w.o({ Radio: 1 })[0]
+    if (!radio || !this.Radio_pool_census) return r
+    r.radio = 1
+    let state = String(radio.sc.Radio || 'off')
+    r.state = state
+    if (radio.sc.solo) r.solo = 1
+    if (radio.c.crossed) r.crossed = 1
+    if (radio.c.ever_played || radio.c.auto_pressed) r.played = 1
+    if (this.top_House().c.humdinger) r.humdinger = 1
+    let arriving = !aw.o({ Arrived: 'music' }).length
+    let listening = state === 'playing' ? (r.solo && !r.crossed) : (state === 'off' && !r.played)
+    if (!arriving && !listening) return r
+    if (this.RadioPage_relay_open()) r.relay = 1
+    let piers = this.RadioPage_piers()
+    let online = piers.filter((p) => this.RadioPage_online(p))
+    r.piers = piers.length
+    r.online = online.length
+    if (online.length || piers.some((p) => this.RadioPage_recent(String(p.sc.pub)))) r.expected = 1
+    if (piers.length && piers.every((p) => this.Presence_offline && this.Presence_offline(String(p.sc.pub)))) r.all_off = 1
+    let sw = this.Swarm_station_world ? this.Swarm_station_world() : null
+    if (sw && sw.c && sw.c.station_up) r.stood = 1
+    let c = this.Radio_pool_census(w, radio)
+    if (c.known) r.known = 1
+    if (c.playable) r.playable = 1
+    if (this.RadioPage_friend_ready(w, radio, c)) r.ready = 1
+    return r
+
+},
+// RadioPage_sense — the edge: read, and tape the reading if it says something new (or a %Wake came due), knocking the House so its run
+//  loop moves the compartment.  Called by the think, the page clock and the pulse; reading is cheap and taping is rare
+RadioPage_sense(w) {
+    let A = this.top_House().o({ A: 'Radio' })[0]
+    let aw = this.RadioPage_aw(A)
+    if (!aw || !this.TheA_io) return null
+    let r = this.RadioPage_reading(w, aw)
+    let said = JSON.stringify(r)
+    let ms = Math.round(performance.now())
+    let wake = +(aw.o({ Wake: 1 })[0]?.sc.ms || 0)
+    if (said === aw.c.said && !(wake && ms >= wake)) return null
+    aw.c.said = said
+    let heard = this.TheA_io(A.o({ A: 'Arrive' })[0], 'sense', { ms, ...r })
+    this.knock?.('sense', 'Radio')
+    return heard
+
+},
+// RadioPage_clock — the page's one timer: a reading a second while the page is arriving (the stoker and the friends tell nobody yet —
+//  each that learns to poke the compartment itself takes a reason off this clock).  After that the pulse senses, every 2.5s
+RadioPage_clock(w) {
+    if (w.c.clock) return
+    let aw = this.RadioPage_aw(this.top_House().o({ A: 'Radio' })[0])
+    if (aw && aw.o({ Arrived: 'music' }).length && this.top_House().c.humdinger) return
+    w.c.clock = setTimeout(() => {
+        w.c.clock = null
+        this.RadioPage_sense(w)
+        this.RadioPage_clock(w)
+    }, 1000)
+
+},
+// Arrive_woken — THE MOVE.  From the newest reading alone (the pulse), decide again from scratch: the notches (met once, a moot that comes
+//  true is said again met), the next %Wake, and the %Take rows.  The rules are the splash's (owner 2026-11-10, tuned live): the shelf has
+//   said either way ⇒ the radio is ready; a friend's track ready ⇒ music; no friends once the station stood (or 8s); none online and
+//    nobody expected (or 8s); an expected friend gets 20s.  Then going in: an off radio that never played is pressed once music has
+//     settled (a humdinger page), or the first time a friend's track is playable after it waited alone; a stopgap crosses to a friend
+//      the moment one is ready
+Arrive_woken(w, synapse, pulse) {
+    let s = pulse.sc
+    let ms = +(s.ms || 0)
+    for (const t of w.o({ Take: 1 })) w.drop(t)
+    for (const t of w.o({ Wake: 1 })) w.drop(t)
+    let met = (key, moot) => {
+        let row = w.o({ Arrived: key })[0]
+        if (row && (row.sc.moot || null) === (moot || null)) return row
+        if (row) w.drop(row)
+        return w.i(moot ? { Arrived: key, moot } : { Arrived: key })
+    }
+    let once = (key) => {
+        let row = w.o({ Arrived: key })[0]
+        if (!row || row.sc.moot) met(key)
+    }
+    let has = (key) => w.o({ Arrived: key }).length > 0
+    let settle = (why) => {
+        for (const key of ['relay', 'friend', 'catalog']) {
+            if (!has(key)) met(key, why || 'not needed — the music is here')
+        }
+        if (why) {
+            met('music', why)
+        } else {
+            met('music')
+        }
+    }
+    if (s.stock != null && +s.stock > 0) {
+        met('shelf')
+    } else if (s.stock != null && s.resting) {
+        met('shelf', 'no music found to stock')
+    }
+    if (has('shelf')) met('radio')
+    if (has('radio') && !has('music')) this.Arrive_music(w, s, ms, once, settle)
+    this.Arrive_listen(w, s)
+
+},
+// …the wait for a friend's music: the notches on the way, the deadlines as %Wake
+Arrive_music(w, s, ms, once, settle) {
+    if (!s.radio) return settle('no radio here')
+    let since = w.o({ Since: 'music' })[0]
+    if (!since) since = w.i({ Since: 'music', ms })
+    let waited = ms - +(since.sc.ms || 0)
+    if (s.relay) once('relay')
+    if (s.online) once('friend')
+    if (s.known) once('catalog')
+    if (s.ready) return settle('')
+    if (!s.piers && (s.stood || waited > 8000)) return settle('no friends yet')
+    let at = +(since.sc.ms || 0)
+    if (!s.piers) return w.i({ Wake: 1, ms: at + 8001 })
+    if (!s.expected && (s.all_off || waited > 8000)) return settle('none of your friends are online')
+    if (waited > 20000) return settle('their music is still on its way')
+    w.i({ Wake: 1, ms: at + (s.expected || waited > 8000 ? 20001 : 8001) })
+
+},
+// …going in: what the radio should do, as Takes
+Arrive_listen(w, s) {
+    if (!s.radio) return
+    if (s.state === 'playing') {
+        if (s.solo && !s.crossed && s.ready) w.i({ Take: 'cross' })
+        return
+    }
+    if (s.state !== 'off' || s.played) return
+    if (w.o({ Arrived: 'music' }).length && s.humdinger) {
+        w.i({ Take: 'press', why: s.ready ? 'the latest friend' : 'arrived' })
+        return
+    }
+    if (!s.playable) {
+        w.oai({ Alone: 1 })
+        return
+    }
+    if (w.o({ Alone: 1 }).length) w.i({ Take: 'press', why: 'a friend came' })
+
+},
+// Radio_ran — THE EDGE ACTS (Theory TheA_edge, after each run of A:Radio's compartments): does what the Takes say and drops each one done.
+//  What it changes (pressed, crossed) is read back by the next sense — the edge never decides, the move never acts.  Off a page (a Book
+//   stands A:Radio with no w:Radio) there is nothing to act on and the Takes stay, for the Book to read
+Radio_ran(P, run) {
+    let w = P.o({ w: 'Radio' })[0]
+    let aw = P.o({ A: 'Arrive' })[0]?.o({ w: 'Arrive' })[0]
+    if (!w || !aw) return
+    let radio = w.o({ Radio: 1 })[0]
+    if (!radio) return
+    for (const t of aw.o({ Take: 1 })) {
+        aw.drop(t)
+        if (t.sc.Take === 'press' && !radio.c.auto_pressed) {
+            radio.c.auto_pressed = 1
+            let who = this.RadioPage_latest(w, radio)
+            this.Radio_trace(null, { ev: 'autopress', why: String(t.sc.why || ''), of: who.slice(0, 8) })
+            let p = this.Radio_go(radio, null)
+            if (p && p.catch) p.catch((er) => {})
+        }
+        if (t.sc.Take === 'cross' && !radio.c.crossed) {
+            radio.c.crossed = 1
+            let who = this.RadioPage_latest(w, radio)
+            this.Radio_trace(null, { ev: 'crossover', of: who.slice(0, 8) })
+            console.log('📻⇢ crossing to ' + (radio.sc.aim_by || who.slice(0, 8) || 'a friend') + ' — off the stopgap')
+            this.Radio_skip(radio)
+        }
+    }
+    this.RadioPage_sense(w)
 
 },
 // ── THE PAGE'S NAVIGATION (2026-11-07) — what a face asks of the page: make a cell the main one, open the Link cell, open a friend's.
@@ -398,7 +511,7 @@ async RadioPage_pump_beat(w, n) {
         let ident = M.Swarm_live_self ? M.Swarm_live_self() : null
         let sw = ident && M.Swarm_station_world ? M.Swarm_station_world() : null
         this.RadioPage_organs(w)
-        this.RadioPage_listen(w)
+        this.RadioPage_sense(w)
         this.RadioPage_remember()
         this.RadioPage_ask(w)
         if (sw && n % 2 === 0) {
@@ -412,46 +525,6 @@ async RadioPage_pump_beat(w, n) {
         w.c.pump_warned = 1
     }
     setTimeout(() => { this.RadioPage_pump_beat(w, n + 1) }, 2500)
-
-},
-// RadioPage_listen — a friend's music arriving, heard on the pulse (owner 2026-11-09: *"the 'waiting on Vingas's music' is still there
-//  after Vingas has come online … if there were no peers, it should start playing that coming online peer's music automatically, when
-//   ready"*).  On / the Sounditron's beats did both; /Radio had neither — Radio_autopress leans on Sounditron_* (absent here), and the
-//    crossover was only reached per landed chunk, so a friend whose records were already warm never crossed in.
-//   - PLAYING ON A STOPGAP (sc.solo: our own music, still wishing for a friend): ask Radio_crossover every beat — it is gated cheap on
-//      solo, throttled, and skips to the friend pool the moment a friend's track is playable, which ends the "waiting on X" line.
-//   - OFF, AND NOTHING WAS PLAYABLE WHEN WE FIRST LOOKED: the first time a friend's track is playable, start (once a sitting, and never
-//      after the radio has played — a pause is somebody's decision).  Without a gesture Radio_go rolls deaf until the page is touched.
-//   - AND THE PAGE STARTS ITSELF (owner 2026-11-10: *"default to starting to play when we boot up completely"*): once the splash has
-//      lifted (%Arrived:music), an off radio that has never played is pressed — on the latest friend if one is playable, else on a
-//       stopgap (SoundPooling first, then the own shelf — Radio_dial), which the crossover leaves for the latest friend.
-RadioPage_listen(w) {
-    let radio = w.o({ Radio: 1 })[0]
-    if (!radio || !this.Radio_pool_census) return
-    let state = radio.sc.Radio || 'off'
-    if (state === 'playing') {
-        if (radio.sc.solo) this.RadioPage_cross(w, radio)
-        return
-    }
-    if (state !== 'off' || radio.c.ever_played || radio.c.auto_pressed) return
-    if (w.o({ Arrived: 'music' }).length && this.top_House().c.humdinger) {
-        radio.c.auto_pressed = 1
-        let who = this.RadioPage_latest(w, radio)
-        this.Radio_trace(null, { ev: 'autopress', why: who ? 'the latest friend' : 'arrived', of: who.slice(0, 8) })
-        let p0 = this.Radio_go(radio, null)
-        if (p0 && p0.catch) p0.catch((er) => {})
-        return
-    }
-    let c = this.Radio_pool_census(w, radio)
-    if (!c.playable) {
-        radio.c.waited_alone = 1
-        return
-    }
-    if (!radio.c.waited_alone) return
-    radio.c.auto_pressed = 1
-    this.Radio_trace(null, { ev: 'autopress', why: 'a friend came', of: (c.names[0] || '') })
-    let p = this.Radio_go(radio, null)
-    if (p && p.catch) p.catch((er) => {})
 
 },
 // ── THE CAST (2026-11-09) — which cells the glass draws, decided here and only read by RadioPageFace.  Sounditron_commission's

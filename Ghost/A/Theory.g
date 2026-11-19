@@ -743,9 +743,40 @@ TheA_attend_runs():
     for (const P of holders) {
         let ready = this.TheA_all(P).filter(A => A.o({ w: 1 }).some(w => w.o({ TheASynapse: 1 }).some(s => s.o({ TheAPulse: 1 }).length)))
         if (!ready.length) continue
-        if (this.TheA_run(P, null, ready, null, P)) ran++
+        let run = this.TheA_run(P, null, ready, null, P)
+        if (!run) continue
+        ran++
+        this.TheA_edge(P, run)
     }
     return ran
+
+// TheA_edge — THE HOLDER IS THE EDGE (2026-11-19, the /Radio page on rows).  A move decides and writes rows; what those rows ask
+//  of the world — an import, a play, a frame sent — is done OUTSIDE the run, by the A holding the compartments: after each run the
+//   loop calls its <A>_ran(P, run), if it defines one (A:Radio → Radio_ran).  Called by name, so a holder without one costs
+//    nothing.  It is not a move: it may be async, read anything and act, and whatever it learns comes back in as an arrival
+//     (TheA_io), never by writing a compartment's rows.  A throw is a counting %TheAFault:edge on the holder, as a move's is
+TheA_edge(P, run):
+    // the screen first: a view standing on a compartment this run moved is walked and committed now (Stuffica.g: views commit AFTER
+    //  the run, every changed one together) — held still in UItime, since a walk awaits.  Without one, nothing is read
+    if (this.Stuffica_commit && this.TheA_all(P).some((A) => A.o({ w: 1 }).some((w) => w.o({ TheAView: 1 }).length))) {
+        let commit = () => this.Stuffica_commit(run)
+        let held = this.UItime ? this.UItime(commit, 'Stuffica commit ' + P.sc.A) : commit()
+        if (held && typeof held.then === 'function') held.then(() => {}, (e) => console.warn('🛑 TheA edge: Stuffica commit — ' + String(e?.message || e).split('\n')[0]))
+    }
+    let name = P.sc.A + '_ran'
+    let fn = this[name]
+    if (typeof fn !== 'function') return
+    let fault = (e) => {
+        let had = P.o({ TheAFault: 'edge', wake: name })[0]
+        P.oai({ TheAFault: 'edge', wake: name }, { n: (had?.sc.n || 0) + 1, err: String(e?.message || e).split('\n')[0].slice(0, 120) })
+        if (!had) console.warn('🛑 TheA edge: ' + name + ' — ' + String(e?.message || e).split('\n')[0])
+    }
+    try {
+        let back = fn.call(this, P, run)
+        if (back && typeof back.then === 'function') back.then(() => {}, fault)
+    } catch (e) {
+        fault(e)
+    }
 
 // TheA_poke — a pulse from outside onto a synapse, and a knock on the House's door to deliver it (TheA_attend_runs, next
 //  think; a shut door — a Story between steps — keeps the knock for the next step: Housing knock()).  Untaped: a compartment

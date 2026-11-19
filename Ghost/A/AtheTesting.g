@@ -4045,3 +4045,104 @@ AtheCodePin_witness(w, cw, n):
         this.story_swear(w, "a build that went away is not taken — the tab keeps running what it has")
     }
 //#endregion
+//#region the test routine — Book AtheRadioArrive
+// the /Radio page's arrival as an Atheory compartment (AtheoryArrive_todo §7; RadioPage.g "THE ARRIVAL ON ROWS").  The page's edge reads
+//  the world and tapes a reading only when it changed; the move (Arrive_woken) decides the splash's notches, when it next wants a reading
+//   (%Wake), and what the radio should do (%Take:press|cross); the holder's edge (Radio_ran) acts.  Here no radio stands: each step stands
+//    its own holder with made-up readings, holds until the move has happened, and reads what was decided — a holder with no w:Radio has
+//     nothing to act on, so the Takes stay to be read.
+AtheRadioArrive(A,w):
+    w oai %req:wrangle,eternal
+        await &AtheRadioArrive_drive,w,req
+        req%ok = 1
+
+// one holder's compartment, and what it decided, as text
+AtheRadioArrive_aw(name):
+    let P = this.o({ A: name })[0]
+    if (!P) {
+        P = this.oai({ A: name })
+        P.oai({ TheAAttend: 'run' })
+    }
+    return this.RadioPage_aw(P)
+AtheRadioArrive_moves(aw):
+    return aw.o({ TheASynapse: "sense" })[0]?.o({ TheAWoke: 1 })[0]?.sc.count || 0
+AtheRadioArrive_said(aw):
+    let arrived = aw.o({ Arrived: 1 }).map((r) => r.sc.Arrived + (r.sc.moot ? "~" + r.sc.moot : "")).join(" ")
+    let takes = aw.o({ Take: 1 }).map((t) => t.sc.Take + (t.sc.why ? "~" + t.sc.why : "")).join(" ")
+    let wake = aw.o({ Wake: 1 })[0]?.sc.ms || ""
+    return arrived + " | " + takes + " | " + wake
+AtheRadioArrive_read(aw, sc):
+    this.TheA_io(aw.c.A || this.TheA_A(aw), "sense", sc)
+    this.knock?.("sense", "AtheRadioArrive")
+
+async AtheRadioArrive_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === "new") run.sc.total = 6
+    let n = run?.c.step_n
+    if (n == null || n === req.c.did_step) return
+    req.c.did_step = n
+    let page = { stock: 3, resting: 1, radio: 1, state: "off", humdinger: 1, stood: 1 }
+    let aw = null
+    let want = 1
+    if (n === 2) {
+        w.i({ desc: "a stranger — music on the shelf, the station up, no friends" })
+        aw = this.AtheRadioArrive_aw("Lone")
+        this.AtheRadioArrive_read(aw, { ms: 1000, ...page, piers: 0, online: 0 })
+    }
+    if (n === 3) {
+        w.i({ desc: "a friend online but their catalog not here yet — and nothing of mine on the shelf" })
+        aw = this.AtheRadioArrive_aw("Waiting")
+        this.AtheRadioArrive_read(aw, { ms: 1000, ...page, stock: 0, piers: 2, online: 1, expected: 1, relay: 1 })
+    }
+    if (n === 4) {
+        w.i({ desc: "their catalog lands and a track is ready" })
+        aw = this.AtheRadioArrive_aw("Waiting")
+        want = 2
+        this.AtheRadioArrive_read(aw, { ms: 6000, ...page, stock: 0, piers: 2, online: 1, expected: 1, relay: 1, known: 1, playable: 1, ready: 1 })
+    }
+    if (n === 5) {
+        w.i({ desc: "a friend heard a minute ago is not online — then nothing changes until the wait runs out" })
+        aw = this.AtheRadioArrive_aw("Late")
+        want = 2
+        this.AtheRadioArrive_read(aw, { ms: 1000, ...page, piers: 1, online: 0, expected: 1, relay: 1 })
+    }
+    if (n === 6) {
+        w.i({ desc: "playing my own music as a stopgap — and a friend's track becomes ready" })
+        aw = this.AtheRadioArrive_aw("Stopgap")
+        this.AtheRadioArrive_read(aw, { ms: 500, ...page, state: "playing", solo: 1, played: 1, piers: 1, online: 1, expected: 1, relay: 1, known: 1, ready: 1 })
+    }
+    if (!aw) return
+    this.AtheStoryInStory_hold(w, () => {
+        let moves = this.AtheRadioArrive_moves(aw)
+        // the late friend: once the first reading is in, the same facts again at the deadline the move asked for
+        if (n === 5 && moves === 1 && !w.c.late_again) {
+            let wake = +(aw.o({ Wake: 1 })[0]?.sc.ms || 0)
+            if (!wake) return false
+            w.c.late_again = 1
+            this.AtheRadioArrive_read(aw, { ms: wake, ...page, piers: 1, online: 0, expected: 1, relay: 1 })
+            return false
+        }
+        if (moves < want) return false
+        this.AtheRadioArrive_witness(w, aw, n)
+        return true
+    })
+
+AtheRadioArrive_witness(w, aw, n):
+    let said = this.AtheRadioArrive_said(aw)
+    w.i({ Decided: said })
+    if (n === 2 && said === "shelf radio relay~no friends yet friend~no friends yet catalog~no friends yet music~no friends yet | press~arrived | ") {
+        this.story_swear(w, "a stranger with no friends goes straight in — every notch still open is moot with the same why — and the radio is pressed")
+    }
+    if (n === 3 && said === "shelf~no music found to stock radio relay friend |  | 21001" && aw.o({ Alone: 1 }).length) {
+        this.story_swear(w, "a friend online is waited for — the notches met so far are rows — the next reading is asked for by a Wake at 20s — nothing is pressed yet")
+    }
+    if (n === 4 && said === "shelf~no music found to stock radio relay friend catalog music | press~the latest friend | ") {
+        this.story_swear(w, "their track ready settles the music notch met and presses the radio on that friend")
+    }
+    if (n === 5 && said === "shelf radio relay friend~their music is still on its way catalog~their music is still on its way music~their music is still on its way | press~arrived | ") {
+        this.story_swear(w, "an expected friend who never shows is given up on at the deadline the move asked for — not by a timer")
+    }
+    if (n === 6 && said === "shelf radio relay friend catalog music | cross | ") {
+        this.story_swear(w, "playing a stopgap the radio crosses to a friend the moment their track is ready")
+    }
+//#endregion

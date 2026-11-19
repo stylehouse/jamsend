@@ -1,0 +1,7 @@
+Snap:H
+  H:AtheRadioArrive,Run
+    A:AtheRadioArrive
+      self,round	{"mung":["age"]}
+      w:AtheRadioArrive
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

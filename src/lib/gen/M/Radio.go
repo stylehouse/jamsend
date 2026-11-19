@@ -10,7 +10,7 @@ import { APP_DATA_DIR } from "$lib/app_data_dir"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '1e5d3cec56f6e12f~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return 'ce19632879c4438a~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -3341,7 +3341,14 @@ Stoker_state(st, state) {
     if (st.sc.Stoker !== state) {
         st.sc.Stoker = state
         st.bump()
+        this.Stoker_told(st)
     }
+
+},
+// Stoker_told — THE STOKER TELLS (AtheoryArrive_todo §7 rung 2): a changed state or count is news to a page whose arrival is a
+//  compartment (RadioPage.g RadioPage_sense — absent off /Radio, and a no-op where no A:Radio stands, as in a Book)
+Stoker_told(st) {
+    if (this.RadioPage_sense && st.c.w) this.RadioPage_sense(st.c.w)
 
 },
 // Stoker_wake — the radio came alive (or a churn was asked while parked): run the watch loop.
@@ -3563,7 +3570,10 @@ Stoker_census(st, shelf, radio) {
     let changed = 0
     if (st.sc.stock !== recs.length) { st.sc.stock = recs.length; changed = 1 }
     if (st.sc.fresh !== fresh) { st.sc.fresh = fresh; changed = 1 }
-    if (changed) st.bump()
+    if (changed) {
+        st.bump()
+        this.Stoker_told(st)
+    }
 
 },
 // Stoker_cull — the recordWear inheritance (the old Radios.svelte ghost's death circuitry,
