@@ -99,6 +99,9 @@ export class SoundSystem {
             //     sound AND the `ac` facet never advertises (LiesLies RUNNER_FACETS reads AC_ready off this
             //      very object).  A resampled seam is a blemish; no audio is the app not working.  So ask,
             //       and take the plain context if asking fails.
+            //  THE SILENT SWITCH (2026-11-20, a friend's phone played nothing): iOS Safari mutes Web Audio in silent mode
+            //   unless the page says it is a player.  Set before the context starts; a UA without the API skips it.
+            try { if ((navigator as any).audioSession) (navigator as any).audioSession.type = 'playback' } catch {}
             try {
                 this.AC = new AudioContext({ sampleRate: 48000, latencyHint: 'playback' });
             } catch (er) {
