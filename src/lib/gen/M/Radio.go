@@ -10,7 +10,7 @@ import { APP_DATA_DIR } from "$lib/app_data_dir"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return 'a7528573aa542210~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return 'b98d1f813c8c905f~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -314,7 +314,10 @@ Radio_skip(radio) {
         if (old) { try { old.close() } catch (er) {} }
         radio.c.aud = radio.c.gat.new_audiolet()
     }
-    this.Radio_state(radio, 'playing')
+    // 'digging', NOT 'playing' (2026-11-19, found by the cursor — A:Sound's tape on a live page): nothing is placed yet, so 'playing' here
+    //  was a prediction, and when the next track was still decoding the pump wrote 'digging' straight back — playing → digging →
+    //   playing at every turn of the dial.  Radio_go's 2026-08-10 rule: the pump says 'playing' when it actually feeds
+    this.Radio_state(radio, 'digging')
     this.Radio_pump(radio, era)
 
 },

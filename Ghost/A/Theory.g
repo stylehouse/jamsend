@@ -1383,3 +1383,55 @@ TheA_thaw(H, snap):
     if (C) H.i(C)
     return C
 //#endregion
+//#region The cursor — every compartment on this tab, read from anywhere (2026-11-19)
+//  What a compartment keeps is already the whole story: its tape (%TheAIO > %TheAHeard — what arrived) and its rows (what its move
+//   decided: %Arrived, %Take, %Built, %Sounding …).  The verb `tapes` says them for every A on every House of this tab, so one tab can
+//    read another's (Land's `:ask tapes --to=<pub>`, `runner_ask tapes --player=<pub>`) — the cursor that goes all the way round the
+//     program, one compartment at a time.  Read only.
+verbs_Theory():
+    let H = this
+    return [
+        { name: 'tapes', where: 'terminal', writes: 0, args: '[--n=3] [--grep=<A or w name>]',
+          desc: 'every Atheory compartment on this tab — what arrived on its tapes and what its move decided',
+          run: (w, a) => H.TheA_tapes(a) },
+    ]
+
+// TheA_tapes — { tab, compartments: [{ at, ios: [{ io, heard, takes, last: [lines] }], woke, rows: [lines] }] } — every w holding a %TheAIO,
+//  found from each House down through every A; `n` arrivals per tape (newest last), `grep` keeps the ones whose path names it
+TheA_tapes(a):
+    let n = Math.max(1, Math.min(32, +(a?.n || 3)))
+    let grep = a?.grep ? String(a.grep) : ''
+    let out = []
+    let walk = (C, at) => {
+        for (const A of C.o({ A: 1 })) {
+            let here = at + '>A:' + A.sc.A
+            for (const w of A.o({ w: 1 })) {
+                let ios = w.o({ TheAIO: 1 })
+                let path = here + '>w:' + w.sc.w
+                if (ios.length && (!grep || path.includes(grep))) out.push(this.TheA_tape_said(w, path, ios, n))
+            }
+            walk(A, here)
+        }
+    }
+    let houses = this.every_House ? this.every_House() : [this]
+    for (const h of houses) walk(h, 'H:' + h.sc.H)
+    return { tab: String(this.top_House().sc.H || ''), compartments: out }
+
+// …a row as notation: %Built:gen/A/Theory.go,dige:… — the mainkey WITH its value (TheA_row_say drops it: it says a point, whose
+//  value is its of=), a yes as the bare key
+TheA_cursor_say(row):
+    let say = (k, v) => (v === 1 || v === '1' ? k : k + ':' + v)
+    return Object.entries(row.sc).map(([k, v]) => say(k, v)).join(',')
+
+// …one compartment said: its tapes, how often it moved, and its own rows (Atheory's furniture left out)
+TheA_tape_said(w, at, ios, n):
+    let said = { at, ios: [], woke: 0, rows: [] }
+    for (const io of ios) {
+        let heard = io.o({ TheAHeard: 1 })
+        said.ios.push({ io: String(io.sc.TheAIO), heard: +(io.sc.heard || 0), takes: +(io.sc.takes || 0),
+            last: heard.slice(-n).map((h) => this.TheA_cursor_say(h)) })
+    }
+    for (const s of w.o({ TheASynapse: 1 })) said.woke += +(s.o({ TheAWoke: 1 })[0]?.sc.count || 0)
+    said.rows = w.o().filter((r) => !Object.keys(r.sc)[0].startsWith('TheA')).slice(0, 16).map((r) => this.TheA_cursor_say(r))
+    return said
+//#endregion

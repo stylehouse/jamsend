@@ -115,6 +115,7 @@ AtlasStaple's run (397 flows) is mostly NOT Atlas: it is a Book booting and stan
 | `:pane align <method>` · `:pane arrange grid\|row\|column` · `:pane close <n>\|all` | layout |
 | `:slice cut\|merge\|split\|go` | §4 |
 | `:lagoon join --book=<Book>` · `:lagoon oath` · `:electrode top` · `:atlas_refresh` · `:verbs` | the reader, the tap, the census |
+| `:tapes` · `:ask tapes --to=<pub> [--n=k] [--grep=Radio]` | THE CURSOR (Theory.g, 2026-11-19): every Atheory compartment on this tab, or on another (a runner; a music page once socklog-armed) — what arrived on each tape and what its move decided, drawn as rows, not JSON.  `runner_ask tapes --player=<pub>` is the same from a shell |
 
 ## 6. Not built yet
 

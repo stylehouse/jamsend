@@ -7,6 +7,7 @@
     import LandPane from "./LandPane.svelte"
     import LandMember from "./LandMember.svelte"
     import LandGlyph from "./LandGlyph.svelte"
+    import TapesFace from "./TapesFace.svelte"
     import { LAND_SECTIONS } from "./land_map"
     import { GROUNDS } from "$lib/A/grounds.gen.js"
     const SECS = ['I', 'II', 'III', 'IV', '—']
@@ -74,7 +75,14 @@
     // the hole
     let line = $state(':lagoon oath')
     let busy = $state(false)
-    let answer: { q: string, ok: boolean, text: string } | null = $state(null)
+    let answer: { q: string, ok: boolean, text: string, tapes?: any } | null = $state(null)
+    // an answer holding a tab's compartments (the `tapes` verb, here or asked of another tab) is drawn as the cursor, not as JSON
+    const tapes_in = (x: any, depth = 0): any => {
+        if (!x || typeof x !== 'object' || depth > 4) return null
+        if (Array.isArray(x.compartments)) return x
+        for (const v of Object.values(x)) { const t = tapes_in(v, depth + 1); if (t) return t }
+        return null
+    }
     const SHOW_MAX = 6000
     async function run(q = line) {
         const w = land_w()
@@ -83,7 +91,7 @@
         try {
             const r = await H.Land_verb(w, q)
             const text = JSON.stringify(r?.result ?? r, null, 1) ?? ''
-            answer = { q, ok: !!r?.ok, text: text.length > SHOW_MAX ? text.slice(0, SHOW_MAX) + `\n… ${text.length - SHOW_MAX} more chars` : text }
+            answer = { q, ok: !!r?.ok, text: text.length > SHOW_MAX ? text.slice(0, SHOW_MAX) + `\n… ${text.length - SHOW_MAX} more chars` : text, tapes: tapes_in(r) }
         } catch (e: any) {
             answer = { q, ok: false, text: String(e?.message ?? e) }
         }
@@ -190,7 +198,7 @@
     let tally = $derived(view.wires.reduce((t: any, x: any) => { t[x.state || 'declared'] = (t[x.state || 'declared'] ?? 0) + 1; return t }, {}))
 
     const hit = (doc: string, line: any, at?: string) => run(`:pane open ${doc}:${Number(line) || 1} --reuse${at ? ` --at=${at}` : ''}`)
-    const QUICK = [':lagoon oath', ':electrode top', ':pane open Lagoon_join Atlas_nav Land_tell', ':pane arrange row', ':verbs']
+    const QUICK = [':lagoon oath', ':electrode top', ':pane open Lagoon_join Atlas_nav Land_tell', ':pane arrange row', ':verbs', ':tapes', ':ask tapes']
 </script>
 
 <div class="land">
@@ -269,7 +277,8 @@
             <button disabled={busy}>{busy ? '…' : 'run'}</button>
             {#each QUICK as q}<button type="button" class="q" disabled={busy} onclick={() => { line = q; run(q) }}>{q}</button>{/each}
         </form>
-        {#if answer}<pre class="scrollbig" class:bad={!answer.ok}>{answer.q}
+        {#if answer?.tapes}<div class="scrollbig"><small>{answer.q}</small><TapesFace tapes={answer.tapes} /></div>
+        {:else if answer}<pre class="scrollbig" class:bad={!answer.ok}>{answer.q}
 {answer.text}</pre>{/if}
     </section>
     <section>

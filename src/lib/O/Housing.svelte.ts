@@ -3363,7 +3363,12 @@ export class WormholeNav {
 
     // dir_at — dir() from a single '/'-joined path string (avoids a spread-call at every discovery site).
     async dir_at(path: string): Promise<DirectoryListing | null> { return this.dir(...path.split('/').filter(Boolean)) }
-    // walk named path segments, expanding lazily
+    // A LISTING IS A HINT, NOT AN ANSWER (2026-11-19, the one rule — Organs_todo §3 Housing).  A DirectoryListing's `directories`
+    //  and `files` are a snapshot from its last expand(), and anything written since through another handle (another op, another
+    //   tab, a hand on disk) is missing from it.  So a cached walk may say yes, but never no: on a miss, dir() walks again re-listing
+    //    every level (creating nothing), and _file() re-lists the directory once.  Patched one call at a time before this (bin_rm
+    //     re-expanding, read_range and bin_read going by handle, read_file re-listing); they all stand on these two now.
+    // walk named path segments, expanding lazily — and on a miss, once more with every level re-listed
     async dir(...parts: string[]): Promise<DirectoryListing | null> {
         const key = parts.join('/')
         if (this._cache.has(key)) return this._cache.get(key)!
@@ -3371,11 +3376,18 @@ export class WormholeNav {
         for (const part of parts) {
             if (!here.expanded) await here.expand()
             const next = here.directories.find(d => d.name === part)
-            if (!next) return null
+            if (!next) return this.dir_fresh(...parts)
             here = next
         }
         this._cache.set(key, here)
         return here
+    }
+    // is this file in the directory?  The listing first; a miss re-lists once (the rule above)
+    async _file(dir: DirectoryListing, filename: string): Promise<boolean> {
+        if (!dir.expanded) await dir.expand()
+        if (dir.files.find(f => f.name === filename)) return true
+        await dir.expand()
+        return !!dir.files.find(f => f.name === filename)
     }
     // make any directory in your way
     async mkdirp(...parts: string[]): Promise<DirectoryListing> {
@@ -3424,8 +3436,7 @@ export class WormholeNav {
         return !!(e && (e.name === 'NotFoundError' || /not be found/i.test(String(e?.message ?? e))))
     }
 
-    // dir_fresh — dir() for a directory the cached listings may predate (made since by another tab, or by hand on disk): every level
-    //  re-listed on the way down, creating nothing.  Only walked after a miss
+    // dir_fresh — dir()'s second walk: every level re-listed on the way down, creating nothing.  Only walked after a miss
     async dir_fresh(...parts: string[]): Promise<DirectoryListing | null> {
         let here = this.root
         const built: string[] = []
@@ -3442,18 +3453,9 @@ export class WormholeNav {
 
     async read_file(dir_path: string, filename: string): Promise<string | null> {
         const parts = dir_path.split('/').filter(Boolean)
-        // a DIRECTORY the listing predates is no more an absence than a file is (2026-11-19: a new Book's dir, made on disk, read as
-        //  missing — Story took it for a new Book and its first save wrote a toc without the hand-written Stands: lines)
-        const dir = (await this.dir(...parts)) ?? (await this.dir_fresh(...parts))
-        if (!dir) return null
-        if (!dir.expanded) await dir.expand()
-        if (!dir.files.find(f => f.name === filename)) {
-            // the cached listing may predate the file (written since by another op|tab) —
-            //  re-list once before answering not_found: a false "no" here is DESTRUCTIVE
-            //   upstream (Story reads an absent toc as a NEW Book and re-records over it)
-            await dir.expand()
-            if (!dir.files.find(f => f.name === filename)) return null
-        }
+        // a false "no" here is DESTRUCTIVE upstream (Story reads an absent toc as a NEW Book and records over it) — hence the rule
+        const dir = await this.dir(...parts)
+        if (!dir || !(await this._file(dir, filename))) return null
         const reader = await dir.getReader(filename)
         const chunks: ArrayBuffer[] = []
         for await (const chunk of reader.iterate()) chunks.push(chunk)
@@ -3466,11 +3468,7 @@ export class WormholeNav {
     async bin_read(dir_path: string, filename: string): Promise<ArrayBuffer | null> {
         const parts = dir_path.split('/').filter(Boolean)
         const dir = await this.dir(...parts)
-        // a stale listing is not an absence (read_range's note): a miss goes by handle
-        const miss = async () => { const got = await this.read_range(dir_path, filename, 0); return got ? got.buffer : null }
-        if (!dir) return await miss()
-        if (!dir.expanded) await dir.expand()
-        if (!dir.files.find(f => f.name === filename)) return await miss()
+        if (!dir || !(await this._file(dir, filename))) return null
         const reader = await dir.getReader(filename)
         const chunks: ArrayBuffer[] = []
         for await (const chunk of reader.iterate()) chunks.push(chunk)
@@ -3486,10 +3484,7 @@ export class WormholeNav {
         const parts = dir_path.split('/').filter(Boolean)
         const dir = await this.dir(...parts)
         if (!dir) return false
-        // ALWAYS re-expand: a listing cached by an earlier dir() may predate a write made through another
-        //  handle (Heist_land writes via mkdirp/getWriter), so a stale `files` would say 'not here' about a
-        //   file that is.  Then remove by handle and let NotFound answer false rather than pre-checking.
-        try { await dir.expand() } catch {}
+        // remove by handle and let NotFound answer false — no listing pre-check (the rule above)
         try { await (dir as any).handle.removeEntry(filename) } catch (e: any) { if (e && e.name === 'NotFoundError') return false; throw e }
         dir.files = dir.files.filter(f => f.name !== filename)
         return true
@@ -3500,18 +3495,12 @@ export class WormholeNav {
     //   returning the window + total size so a consumer can jump into the middle of a big asset.
     async read_range(dir_path: string, filename: string, offset: number, len?: number): Promise<{ buffer: ArrayBuffer, size: number } | null> {
         const parts = dir_path.split('/').filter(Boolean)
-        //  GO BY HANDLE, NOT BY LISTING (2026-11-15): a listing cached before Heist_land wrote the file (another handle) said
-        //   'not here' about a pooled track that was — the file road then read null and called it "would not decode".
-        //    So: no listing pre-check, and when the cached walk misses, walk the real directory handles once.
-        let file: File | null = null
-        const by = async (h: any) => { try { return await (await h.getFileHandle(filename)).getFile() } catch (e: any) { if (e && (e.name === 'NotFoundError' || e.name === 'TypeMismatchError')) return null; throw e } }
+        //  GO BY HANDLE, NOT BY LISTING (2026-11-15): the file itself is asked for, never looked up in `files` (the rule above;
+        //   dir() already re-walks a directory the listing predates)
         const dir = await this.dir(...parts)
-        if (dir) file = await by((dir as any).handle)
-        if (!file) {
-            let h: any = (this.root as any).handle
-            try { for (const part of parts) h = await h.getDirectoryHandle(part) } catch (e: any) { if (e && e.name === 'NotFoundError') return null; throw e }
-            file = await by(h)
-        }
+        if (!dir) return null
+        let file: File | null = null
+        try { file = await (await (dir as any).handle.getFileHandle(filename)).getFile() } catch (e: any) { if (e && (e.name === 'NotFoundError' || e.name === 'TypeMismatchError')) return null; throw e }
         if (!file) return null
         const end = len == null ? file.size : Math.min(file.size, offset + len)
         return { buffer: await file.slice(offset, end).arrayBuffer(), size: file.size }

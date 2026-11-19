@@ -85,11 +85,7 @@
 ## 3. The core (DocIndex I)
 
 ### Housing (`src/lib/O/Housing.svelte.ts`): the House, its mutex, and the folder navs
-- **Front door:** CLAUDE.md "House"; the navs in `Atheory_design.md` §2 (ledger row for `dir_fresh`).
-- **Debt: the navs trust cached directory listings.**  `DirectoryListing.files` is a snapshot, and a file written through
-   another handle is missing from it.  So far this has been fixed one call at a time: `bin_rm` re-expands (2026-09), `read_range` and
-    `bin_read` go by handle (2026-11-15), `WormholeNav.read_file` re-lists (`dir_fresh`, 2026-11-19).  `dir()` itself
-     still walks cached `directories`.  The cure is one rule in one place, not another patch per call.
+- **Front door:** CLAUDE.md "House"; the navs in `Atheory_design.md` §2 (ledger row "A LISTING IS A HINT": the FSA nav's one rule, 2026-11-19).
 - **Murk:** there are four navs (Housing FSA, `WormholeOpfs`, `MountNav`, `RemoteWormholeNav`) plus overlays.  Whether a
    verb behaves the same across them is checked by hand (`nav-verb-three-layers` in memory).
 

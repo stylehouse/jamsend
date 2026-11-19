@@ -295,7 +295,10 @@ Radio_skip(radio):
         if (old) { try { old.close() } catch (er) {} }
         radio.c.aud = radio.c.gat.new_audiolet()
     }
-    this.Radio_state(radio, 'playing')
+    // 'digging', NOT 'playing' (2026-11-19, found by the cursor — A:Sound's tape on a live page): nothing is placed yet, so 'playing' here
+    //  was a prediction, and when the next track was still decoding the pump wrote 'digging' straight back — playing → digging →
+    //   playing at every turn of the dial.  Radio_go's 2026-08-10 rule: the pump says 'playing' when it actually feeds
+    this.Radio_state(radio, 'digging')
     this.Radio_pump(radio, era)
 
 // Radio_heist_now — "⏎ heists" (the owner 2026-08-07): grab what is playing RIGHT NOW, at the moment

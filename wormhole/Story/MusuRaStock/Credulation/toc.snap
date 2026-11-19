@@ -1,8 +1,8 @@
 Credulation,of_Book:MusuRaStock
-  run=0,at=1795051229.198,ok,ok_pct,mode:check
-    TheACode:Ground/Core,dige:83c324005b85656c
+  run=0,at=1795086879.559,ok,ok_pct,mode:check
+    TheACode:Ground/Core,dige:7180c3d6e5d088ba
     TheACode:Ground/Story,dige:eeae0a8324ad76e5
-    uses:Ghost_A_Theory,dige:9ca760e0f6c50a78~g1
+    uses:Ghost_A_Theory,dige:88f09650219f5c16~g1
     uses:Ghost_A_Stuffica,dige:a6371235df378ec7~g1
     uses:Ghost_A_Ground,dige:f1fcfd0131cf6131~g1
     uses:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1

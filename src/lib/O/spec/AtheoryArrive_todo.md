@@ -361,6 +361,11 @@ Started 2026-11-04 from the Supervisor talk (`AtheoryNexus_todo.md` E, "NEXT SES
     Still owed for FOLDERLESS pages (OriginNav): `wormhole/` is deliberately unwatched (5k+ snaps blew the inotify budget, ENOSPC 2026-09-17),
      so a pushed "wormhole moved" would watch only `Story/<Book>/toc.snap` and the dirs — a vite.config change, i.e. a dev-server restart: the owner's call.
 
+**The cursor (2026-11-19, uncommitted):** every compartment on any tab, read from anywhere — the verb `tapes` (Theory.g "The cursor"),
+ `runner_ask tapes --player=<pub>`, and on the Land page `:tapes` / `:ask tapes --to=<pub>` drawn by `L/TapesFace.svelte`.  On eed's page it
+  showed all four of today's compartments live (Codes · Dial · Arrive · Sound).  The rest of the program grows into it as each organ
+   becomes a compartment — the identity/socket join is the next that would.
+
 **The rungs after, in order (proposed):**
 2. **The stoker tells.**  *BUILT 2026-11-19 (uncommitted): what tells now calls `RadioPage_news` (a 100ms-coalesced sense, only for the
     page's own world) — the stoker (`Stoker_told`), a landed chunk (`Radio_nudge`), a presence answer (Presence.g `Presence_take`) — and
@@ -395,7 +400,10 @@ Started 2026-11-04 from the Supervisor talk (`AtheoryNexus_todo.md` E, "NEXT SES
         2026-08-10 "'digging' NOT 'playing' until the device is real" scar is exactly a prediction written as an observation).  The era
          becomes the Turn that decided the want; the pump keeps its clock.  First slice BUILT 2026-11-19 (uncommitted): every
           `Radio_state` move is taped on `A:Radio > A:Sound` (RadioPage.g "WHAT THE AUDIO DID": `%TheAHeard:<n>,ms,state,was,id`, keep 64;
-           the move keeps the newest as `%Sounding`) — nothing decides from it yet.  Read: `minisnap 'mundo>A:Radio>A:Sound' --depth=3 --player=<pub>`.  Was:  off|digging|playing|paused and the era are `.sc`/`.c` on `%Radio`, changed by awaits inside
+           the move keeps the newest as `%Sounding`) — nothing decides from it yet.  Read: `minisnap 'mundo>A:Radio>A:Sound' --depth=3 --player=<pub>`.
+           **Its first finding (eed's live page, 2026-11-19):** each track opening goes playing → digging → playing within the same ms
+            (`take:9` holds two moves at one `ms`) — the state word flickers at every open, invisible until it was taped.  Worth a look
+             before the want/is split: which caller sets digging there (the file road's `!(radio.c.end > AC.currentTime)` check, Radio.g ~5538?).  Was:  off|digging|playing|paused and the era are `.sc`/`.c` on `%Radio`, changed by awaits inside
     Radio_go.  As rows on w:Dial moved by arrivals (pressed, chunk landed, track ended, device adopted), the era is the Turn.  The AUDIO pump
      (`Radio_pump`'s era-guarded setTimeout chain, Ra.g's buffers) stays a clock at the edge — real time is an honest outside.
 5. **The faces as views.**  Once 3–4 move the radio by runs, RadioFace reads a Stuffica view of w:Dial (committed by `TheA_edge`) instead

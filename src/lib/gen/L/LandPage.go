@@ -20,7 +20,7 @@ const LAND_ERUPT_K = 3
 // how many of an area's docs open when it is pressed (the ones holding most of its main functions)
 const LAND_AREA_K = 4
 // what a hacker page may ask a runner (Land_ask): reading, and running a Book ON THE RUNNER — never accept|reload|declare|poke
-const LAND_ASK_OPS = ['ping', 'state', 'steps', 'run', 'snap', 'minisnap', 'console', 'rungos']
+const LAND_ASK_OPS = ['ping', 'state', 'steps', 'run', 'snap', 'minisnap', 'console', 'rungos', 'tapes']
 const LAND_ASK_MS = 20000
 
     let { H } = $props()
@@ -28,7 +28,7 @@ const LAND_ASK_MS = 20000
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_LandPage(): string { return 'dae4a43f7dfd6ee8~g1' },
+    Ghostmeta_Ghost_L_LandPage(): string { return '12908a43afb1b344~g1' },
 
 // LandPage.g — the land as a page: /Desk?I=<who>&G=Land, the code landscape (spec/Wordland_todo.md §0).  Waft:Everything's land
 //  What wears `main:Land,role:hacker`, so the derived Ground/Land carries Main:Land and Role:hacker, Auto stands A:Land/w:Land on
@@ -226,7 +226,7 @@ verbs_Land() {
           desc: 'panes — docs side by side as members (their objects) or CodeMirror (code n) · wires between them · weave <Book> colours the wires by its Exercise',
           read: (w, a) => H.Land_pane_read(a),
           land: (w, a, got) => H.Land_pane_land(a, got) },
-        { name: 'ask', where: 'terminal', writes: 0, args: 'ping|state|steps|run|snap|minisnap|console|rungos [Book|n|path] [--to=<pub>] [--depth=n] [--tail=n] [--grep=re]',
+        { name: 'ask', where: 'terminal', writes: 0, args: 'ping|state|steps|run|snap|minisnap|console|rungos|tapes [Book|n|path] [--to=<pub>] [--depth=n] [--tail=n] [--grep=re] [--n=k]',
           desc: 'ask a runner over this page’s wire, as runner_ask does — the relay lets it through only once this tab proved a cluster flock key; run drives the RUNNER, never this page',
           run: (w, a) => H.Land_ask(a) },
         { name: 'slice', where: 'terminal', writes: 0, args: 'cut|merge|split|go <k> [act]',
@@ -257,6 +257,8 @@ async Land_ask(a) {
     if (a.depth) ask.depth = Number(a.depth)
     if (a.tail) ask.tail = Number(a.tail)
     if (a.grep) ask.grep = String(a.grep)
+    // tapes (Theory.g, the cursor): how many arrivals per tape
+    if (a.n) ask.n = Number(a.n)
     let to = a.to ? String(a.to) : 'runner'
     let corr = 'land-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7)
     let hooks = (wire.c.on_control_list ??= [])
