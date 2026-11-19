@@ -279,6 +279,16 @@
         if (!pending_iz) return null
         try { return (H as any)?.Swarm_invite_state?.(pending_iz) ?? null } catch { return null }
     })
+    // WHO, AND TO WHAT (owner 2026-11-19, watching a phone: under "you were invited" it should "juist say 'by S 7950f3 to Music'")
+    //  the inviter's name off the URL (or the reload stash), their short pub off the token, and what the token admits to
+    let invite_by = $derived.by(() => {
+        if (!pending_iz) return ''
+        let t: any = null
+        try { t = (H as any)?.Swarm_token_parse?.(pending_iz) } catch {}
+        const from = boot_param('From') || invite_pending()?.from || ''
+        const who = [from, t?.prepub ? String(t.prepub).slice(0, 6) : ''].filter(Boolean).join(' ')
+        return who ? 'by ' + who + (t?.to ? ' to ' + t.to : '') : ''
+    })
     let landing = $derived.by(() => {
         void tick
         if (!pending_iz) return false
@@ -314,7 +324,8 @@
         const named = !!climb_self?.sc?.friendly
         const rungs: { text: string, done: boolean }[] = []
         // (no rung before the identity stands — the panel above already spins "making you an identity…")
-        if (climb_self) rungs.push({ text: named ? 'you are ' + climb_self.sc.friendly : 'you have an identity — now a name', done: named })
+        // (and none while the name is owed: the panel above is asking for it, and a spinner under it waits on the person, not the machine)
+        if (named) rungs.push({ text: 'you are ' + climb_self.sc.friendly, done: true })
         if (named) rungs.push({ text: st === 'redeeming' || sealed ? 'hello sent to ' + from : 'saying hello to ' + from + '…', done: st === 'redeeming' || sealed })
         if (st === 'redeeming' || sealed) rungs.push({ text: sealed ? from + ' answered — you are friends' : 'waiting for ' + from + ' to answer…', done: sealed })
         if (sealed) rungs.push({ text: climb_pool ? from + "'s music is here — " + climb_pool + (climb_pool === 1 ? ' track' : ' tracks') : from + "'s music is on its way…", done: climb_pool > 0 })
@@ -584,7 +595,7 @@
                          rather than news about a machine with nobody on it. -->
                     {#if landing_seen || stage === 'door'}
                         {#if landing && is_mycave}<h2 class="ask">🪞 linking this device</h2>
-                        {:else if landing}<h2 class="ask">you were invited</h2>
+                        {:else if landing}<h2 class="ask">you were invited</h2>{#if invite_by}<p class="by">{invite_by}</p>{/if}
                         {:else if boot_param('Adopt')}<h2 class="ask">🪞 Link Device</h2>
                         {:else if stage === 'door'}<h2 class="ask">music here is shared with friends</h2>{/if}
                         <!-- `arrival` ONLY while an invite is actually being worked through
@@ -846,6 +857,7 @@
     h2 { font-weight: 400; font-size: 1.35rem; margin: 0; max-width: 22em; line-height: 1.4;
          letter-spacing: .01em; }
     h2.ask { font-size: 1.7rem; font-weight: 300; }
+    p.by { margin: -0.4rem 0 0.8rem; opacity: 0.7; font-size: 1rem; }
     /* the floor state — quiet on purpose: it is the card admitting the machine has not spoken yet,
        and it must never read louder than a row of real news. */
     h2.dark { opacity: .55; font-weight: 300; }

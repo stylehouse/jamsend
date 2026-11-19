@@ -507,6 +507,8 @@
     let pose = $derived.by(() => { void H?.version; void tick; return String(n?.c?.pose ?? 'big') })
     // A LINK IN FLIGHT — the Door's "🔗 Link Device" becomes the way BACK to it (owner 2026-09-29: "it's hard to get
     //  back to Link from Door, it should be more like '[Link] in progress'").  Read-only probes, ticked like pose.
+    // this browser has no folder picker (Safari, a phone) — it can listen, never share its own music
+    const no_fsa = typeof window !== 'undefined' && !('showDirectoryPicker' in window)
     let link_live = $derived.by(() => {
         void H?.version; void tick
         try {
@@ -721,6 +723,8 @@
                     {/if}
                 {/if}
             </div>
+            <!-- NO FOLDER HERE (owner 2026-11-19: the warning "should be inside YOU") — said beside the Link Device that answers it -->
+            {#if no_fsa}<div class="df-note">⚠ this browser can’t open a music folder — to share your own music, 🔗 Link Device to a computer running Chrome</div>{/if}
             {#if face.family.length}
                 <!-- THE FAMILY — this soul's bodies by instance name (facet D: "Captain Grav and Cave
                      Guw").  One soul, many bodies; the NAME belongs to each instance (its own name-gate

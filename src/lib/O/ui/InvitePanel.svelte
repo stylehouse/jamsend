@@ -947,8 +947,10 @@
                  friend will scan for nothing.  Stated as what is certain (no folder ⇒ no sharing) and
                  NOT as a promise that listening still works — that is a separate claim nobody here has
                  tested on a real Safari, and a welcome screen is the wrong place to guess. -->
-            {#if no_fsa}
-                <span class="ip-note ip-warn">⚠ this browser can’t open your music folder — to share your own music, open BigSoundland in Chrome</span>
+            <!-- ONE WARNING PER SCREEN (owner 2026-11-19): a landing already said it beside the join (above), and the Door says it
+                 inside YOU beside 🔗 Link Device — so this one speaks only on the bare strip -->
+            {#if no_fsa && !iz && !arrival && !inglass}
+                <span class="ip-note ip-warn">⚠ this browser can’t open a music folder — to share your own music, 🔗 Link Device to a computer running Chrome</span>
             {/if}
             {#if arrival}
                 <!-- ARRIVAL — no mint half at all.  Not "the button is hidden": the whole
