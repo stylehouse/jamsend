@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Presence(): string { return '8ae1e053f96333ce~g1' },
+    Ghostmeta_Ghost_N_Presence(): string { return 'dd6695894078bd8b~g1' },
 
 // Presence — WHO IS ONLINE, asked once instead of guessed a hundred times.
 //  The relay already holds the only authoritative answer: `locals`, its addr→sockets map, kept
@@ -123,6 +123,8 @@ Presence_take(w, frame) {
     p.c.answered_at = Date.now()
     p.c.answered_n = online.length
     p.bump()
+    // who is online is news to a page whose arrival is a compartment (RadioPage.g RadioPage_news; absent elsewhere)
+    if (this.RadioPage_news) this.RadioPage_news()
     return true
 
 },

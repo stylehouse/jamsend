@@ -19,6 +19,9 @@
 - **III. Jamsend**: this particular app, music between friends.
 - **IV. The visual end**: how all of it is drawn (the glass, and Cello, which the app foundation owns rather than Jamsend).
 
+**The panopticon: `Organs_todo.md`.**  Every organ of the program as one row: what it is for, its front door here, and
+ its debt, murk and dark flags in one line each.  Read it before starting in an area; when you clear or find trouble, fix its line.
+
 The bet runs under all four: **`Homethink_todo.md`**, the posture (every kind of state as legible living matter a group
  can see, prove and rewrite; the tells that it's being broken), with `Emotion_todo.md` (the will that drives the land).
 
@@ -50,7 +53,7 @@ What any app built on the engine gets: a person with bodies and friends, a wire 
 | 9 | **Crew and identity** | `Crew_todo.md` | souls and bodies: one identity on many devices (Captain, Caves), `Grant:Crew`, the charter, linking a device, invites | `Wallet_todo.md` (what this tab is on the wire, at a glance — design), `LinkDevice_leak_todo.md`, `Identity_persist_todo.md`, `Swarm_spec.md` (the p2p social side), `Swarm_compact_invite_todo.md`, `Pier_todo.md`, `Grantwalk_handover.md` |
 | 10 | **Trust** | `Trust_todo.md` §0–§1 | what's cryptographically real on the wire and what isn't; the session-key plan (WT1–4); trust ceremonies as one substrate (§3–§4) | `Signed_call_todo.md` (signed RPC over the relay), `Sharing_design.md`, `Crew_todo.md` |
 | 11 | **The wire** | `Peeroleum_spec.md` | how a frame crosses: carriers, the relay, outbox/inbox, the handshake, Repli (catalog + pages), Reach (cross-body work) | `Wire_spec.md`, `Repli_design.md`, `Repli_idspace_todo.md`, `Reach_todo.md`, `Backpressure_todo.md`, `Netsitu_todo.md`, `Network_procedures_todo.md` (how to build a multi-party feature), `Networky_directions_todo.md`, `Peeroleum_handover.md` |
-| 12 | **Cluster, relay and runners** | `Cluster_spec.md` | the relay, addressing, how a tab boots into a role, how runners are found and courted | `ClusterAddressing_todo.md`, `Engage_integration.md` |
+| 12 | **Cluster, relay and runners** | `Cluster_spec.md` | the relay, addressing, how a tab boots into a role, how runners are found and courted | `ClusterAddressing_todo.md`, `Engage_integration.md`, `Social_demarcation_todo.md` §"Built 2026-11-16" (one relay socket per tab, `one_socket`, dark) |
 
 Cello (#21) is owned by this section too: it's the app foundation's cells and Door, filed under IV because it's drawn.
 
@@ -77,6 +80,7 @@ Cello (#21) is owned by this section too: it's the app foundation's cells and Do
 
 ## Ledgers and sweeps (cross-topic)
 
+`Organs_todo.md` is the standing one (organ by organ, current).  The rest are dated snapshots:
 `Fallen_out_of_mind_todo.md` (social/attention designs already ruled: read before redesigning), `Loose_ends_todo.md`,
  `Everything_todo.md` (the cross-spec index of 2026-09), `Frontier.md`, `V1_cut_todo.md`.
 

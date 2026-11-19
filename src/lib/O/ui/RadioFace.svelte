@@ -129,7 +129,18 @@
     //    Meh side effect (Radio_meh_ms, 20s) on whatever was playing.  Deliberately not suppressed here:
     //     a source-driven skip is the same act a manual ⏭ would be, and diverging would be a second,
     //      inconsistent skip behaviour rather than one.
+    // A CHOICE IS AN ARRIVAL NOW (2026-11-19, AtheoryArrive_todo §7 rung 3): Radio_press says the press once and Radio.g decides it
+    //  (Dial_decide — the `changed` capture below is its rule, made from one reading before anything mutates), on /Radio as a move on
+    //   A:Dial.  The bodies below are the fallback for a tab whose Radio.go predates it.
+    const press = (p: Record<string, string>) => {
+        const R = H as any
+        if (typeof R?.Radio_press !== 'function') return false
+        try { R.Radio_press(n, p); H?.bump_version?.() } catch {}
+        menu = false
+        return true
+    }
     const aim_to = (pub: string) => {
+        if (press({ press: 'aim', pub })) return
         const changed = !!face.own || face.source === 'pool' || String(n?.sc?.aim || '') !== pub
         try { (H as any)?.Radio_aim_set?.(n, pub); if (changed) (H as any)?.Radio_skip?.(n); H?.bump_version?.() } catch {}
         menu = false
@@ -137,12 +148,14 @@
     // the pool is the one row that is not a holder, so it goes through the old flip rather than the aim —
     //  and only when we are not already there (Radio_source_next is a toggle, not a setter).
     const aim_pool = () => {
+        if (press({ press: 'pool' })) return
         const changed = face.source !== 'pool'
         try { if (changed) { (H as any)?.Radio_source_next?.(n); (H as any)?.Radio_skip?.(n) } ; H?.bump_version?.() } catch {}
         menu = false
     }
     // your own shelf, as a row (owner 2026-09-06: "LOCAL isn't in the source list") — a setter, not the flip.
     const aim_own = () => {
+        if (press({ press: 'own' })) return
         const changed = !face.own
         try { (H as any)?.Radio_own_set?.(n, 1); if (changed) (H as any)?.Radio_skip?.(n); H?.bump_version?.() } catch {}
         menu = false
@@ -150,6 +163,7 @@
     // ROAMING IS A CHOICE TOO (see the menu row below) — a dedicated handler, not Radio_own_set(n,0)
     //  composed inline with aim_to(''), so `changed` can be captured before EITHER mutation runs.
     const aim_any = () => {
+        if (press({ press: 'any' })) return
         const changed = !!face.own || face.source === 'pool' || !!n?.sc?.aim
         try { (H as any)?.Radio_own_set?.(n, 0) } catch {}
         try { (H as any)?.Radio_aim_set?.(n, ''); if (changed) (H as any)?.Radio_skip?.(n); H?.bump_version?.() } catch {}
@@ -162,7 +176,7 @@
     const outside_close = (e: MouseEvent) => { if (menu && srcwrap && !srcwrap.contains(e.target as Node)) menu = false }
     // more than one place to listen from ⇒ the press is a chooser; else it stays the old flip.
     let chooser = $derived(sources.length + (pool_ok ? 1 : 0) > 1)
-    const chip_press = () => { if (chooser) { menu = !menu } else { try { (H as any)?.Radio_source_next?.(n) } catch {} } }
+    const chip_press = () => { if (chooser) { menu = !menu } else if (!press({ press: 'flip' })) { try { (H as any)?.Radio_source_next?.(n) } catch {} } }
     // THE DIG CHIP WAITS 2s (owner 2026-11-12: *"every time I hit next-track, the 'looking for a friend to play...' briefly
     //  spuriously appears"*) — a Next passes through 'digging' for the moment it takes to dial; only a dig that LASTS is news.
     //   A plain variable (not state): the 1s `tick` re-derives it.

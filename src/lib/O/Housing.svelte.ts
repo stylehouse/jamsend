@@ -3424,9 +3424,27 @@ export class WormholeNav {
         return !!(e && (e.name === 'NotFoundError' || /not be found/i.test(String(e?.message ?? e))))
     }
 
+    // dir_fresh — dir() for a directory the cached listings may predate (made since by another tab, or by hand on disk): every level
+    //  re-listed on the way down, creating nothing.  Only walked after a miss
+    async dir_fresh(...parts: string[]): Promise<DirectoryListing | null> {
+        let here = this.root
+        const built: string[] = []
+        for (const part of parts) {
+            await here.expand()
+            const next = here.directories.find(d => d.name === part)
+            if (!next) return null
+            built.push(part)
+            this._cache.set(built.join('/'), next)
+            here = next
+        }
+        return here
+    }
+
     async read_file(dir_path: string, filename: string): Promise<string | null> {
         const parts = dir_path.split('/').filter(Boolean)
-        const dir = await this.dir(...parts)
+        // a DIRECTORY the listing predates is no more an absence than a file is (2026-11-19: a new Book's dir, made on disk, read as
+        //  missing — Story took it for a new Book and its first save wrote a toc without the hand-written Stands: lines)
+        const dir = (await this.dir(...parts)) ?? (await this.dir_fresh(...parts))
         if (!dir) return null
         if (!dir.expanded) await dir.expand()
         if (!dir.files.find(f => f.name === filename)) {

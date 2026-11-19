@@ -354,14 +354,48 @@ Started 2026-11-04 from the Supervisor talk (`AtheoryNexus_todo.md` E, "NEXT SES
    a compartment it moved is walked and committed (in UItime) — before this nothing outside a Book ever committed a view after a real run;
     (2) its `<A>_ran(P, run)` is called, may be async, and a throw is a counting `%TheAFault:edge` on the holder.
 
+**A new Book's toc, read too early (found + FIXED 2026-11-19, Housing `WormholeNav.read_file` → `dir_fresh`):** a Book dir made on disk
+ moments before its first run read as ABSENT — the runner's cached listing of `Story/` predated it — so Story took it for a new Book and its
+  first save wrote a toc without the hand-written `Stands:` lines (AtheRadioArrive's hollow first run).  A missing directory is now re-listed
+   level by level before the answer is no (ledger row in Atheory_design §2); probed: a toc written seconds before `run` read as `mode:check`.
+    Still owed for FOLDERLESS pages (OriginNav): `wormhole/` is deliberately unwatched (5k+ snaps blew the inotify budget, ENOSPC 2026-09-17),
+     so a pushed "wormhole moved" would watch only `Story/<Book>/toc.snap` and the dirs — a vite.config change, i.e. a dev-server restart: the owner's call.
+
 **The rungs after, in order (proposed):**
-2. **The stoker tells.**  `Stoker_look` digs on its own setTimeout chain and nobody hears it finish — the arrival's 1s sense exists for it.
+2. **The stoker tells.**  *BUILT 2026-11-19 (uncommitted): what tells now calls `RadioPage_news` (a 100ms-coalesced sense, only for the
+    page's own world) — the stoker (`Stoker_told`), a landed chunk (`Radio_nudge`), a presence answer (Presence.g `Presence_take`) — and
+     the 1s clock became a DEADLINE clock: it wakes at the move's `%Wake`, with a 5s net for what still doesn't tell (the relay
+      opening).  A friend's catalog landing tells already: Repli's `repli_on_land` calls `Radio_nudge`.  And `Radio_state` (every off|digging|
+       playing|paused move) tells, so a press or a crossover reads the radio's state at once rather than on the 2.5s pulse.  Seen headless: a stranger went in at 5.4s on 5 readings, then silence (the
+       first walk this morning took 12 readings, one a second).*  Was:  `Stoker_look` digs on its own setTimeout chain and nobody hears it finish — the arrival's 1s sense exists for it.
     Let the stoker's rest (stock counted, churn ended) be an arrival on `A:Arrive` (`RadioPage_sense` called from its end), then the 1s
      clock can go.  Small; then the friends' presence edge (Swarm's hear funnel, `Presence_heard`) and a catalog landing (Repli) the same way.
-3. **A press is an arrival.**  RadioFace's ▶/⏭/♥ call `Radio_go`/`Radio_skip` straight from the template.  Make each a Stuffica arrival
+3. **A press is an arrival.**  *3a BUILT 2026-11-19 (uncommitted, for the owner's 6pm look): the SOURCE CHOICES.*  Radio.g "THE DIAL ON
+    ROWS": RadioFace's chooser rows (a friend · any friend · LOCAL · SoundPool) and the chip's flip call `Radio_press(n, {press, pub?})`;
+     on /Radio the press is taped with the radio's choice as it stood (`Dial_reading`) on `A:Radio > A:Dial`, the move (`Dial_woken` →
+      pure `Dial_decide`) writes Takes in order, `Radio_ran` does them (`Dial_do` → the radio's own verbs).  Off /Radio (/, Books) the
+       same rules are decided and done at once.  The face's careful "capture `changed` before any mutation" (RadioFace's comment) is now
+        the decision's whole input — one reading, before anything moves.  Known edge: two presses inside one think are each decided against the reading taped
+         at its own click, so the second doesn't see the first's effect (the face, acting at once, did) — a double-click on one chooser row is
+          the only way to hit it, and it decides a redundant skip at worst.  **Book AtheRadioDial** (6 oaths, ×3 green; step 7 proves Theory's `TheA_edge` commit on a real run: a Stuffica view standing on the
+         dial is walked and committed by the run that moved it, nobody refreshing it — and its commit has to KNOCK the step's hold, since it lands
+          after the think in UItime and a ttlilt holds, never wakes: without the knock the step slept its 90s out).  Live: A:Dial stands
+         clean on a headless page, but a stranger has no chooser — **owed: the owner presses a source on a page with friends**, then
+          `runner_ask minisnap 'mundo>A:Radio>A:Dial' --depth=4 --player=<pub>` shows the tape.  ▶ ⏭ ♥ 👎 stay direct (the click is the
+           gesture the AudioContext waits on; sticky activation PROBABLY carries a deferred resume, unproven — a headless probe can't tell: headless Chromium starts an AudioContext
+            `running` before any click, whatever --autoplay-policy says; only a real browser can — owner's call before moving them).
+    **The rest of 3:**  RadioFace's ▶/⏭/♥ call `Radio_go`/`Radio_skip` straight from the template.  Make each a Stuffica arrival
     on a compartment `A:Radio > A:Dial/w:Dial` (a `%TheAIO:screen` take): the move decides (play, skip, aim, pin — today's Radio_go/skip
      guards: era, superseded, digging), the edge does the audio.  Book: the dial's decisions from taped presses + readings.
-4. **The radio's state machine on rows.**  off|digging|playing|paused and the era are `.sc`/`.c` on `%Radio`, changed by awaits inside
+4. **The radio's state machine on rows.**  *Mapped 2026-11-19 (read only):* `sc.Radio` moves through ONE setter, `Radio_state`, from 13
+    places — Radio_go (digging, off), Radio_pause (paused), the open (playing), the pump (digging, off, starved ⇄ playing) and the file road
+     (Radio.g ~5538–5578, playing ⇄ digging on `AC.currentTime`) — and `radio.c.era` (25 uses) is how a stale await knows it lost.  The
+      split the rows want: what the person WANTS (on|paused, which source — a move's rows, decided from presses: rung 3) vs what the audio IS
+       (no device · digging · sounding · starved · ended — reported by the pump, an OBSERVATION taped as an arrival, never predicted: the
+        2026-08-10 "'digging' NOT 'playing' until the device is real" scar is exactly a prediction written as an observation).  The era
+         becomes the Turn that decided the want; the pump keeps its clock.  First slice BUILT 2026-11-19 (uncommitted): every
+          `Radio_state` move is taped on `A:Radio > A:Sound` (RadioPage.g "WHAT THE AUDIO DID": `%TheAHeard:<n>,ms,state,was,id`, keep 64;
+           the move keeps the newest as `%Sounding`) — nothing decides from it yet.  Read: `minisnap 'mundo>A:Radio>A:Sound' --depth=3 --player=<pub>`.  Was:  off|digging|playing|paused and the era are `.sc`/`.c` on `%Radio`, changed by awaits inside
     Radio_go.  As rows on w:Dial moved by arrivals (pressed, chunk landed, track ended, device adopted), the era is the Turn.  The AUDIO pump
      (`Radio_pump`'s era-guarded setTimeout chain, Ra.g's buffers) stays a clock at the edge — real time is an honest outside.
 5. **The faces as views.**  Once 3–4 move the radio by runs, RadioFace reads a Stuffica view of w:Dial (committed by `TheA_edge`) instead
@@ -374,6 +408,15 @@ Started 2026-11-04 from the Supervisor talk (`AtheoryNexus_todo.md` E, "NEXT SES
    polls version counters 2×/s).  Only the first is the Atheory one; the other two exist because the piles they show (Story's This/The, the
     Supervisor's watches, Mundo itself) are moved by the OLD country, which says nothing.  They shrink as those piles move onto runs — they are
      not Stuffica's to fix.  The first is now wired into the real loop (`TheA_edge`).
+- *Every face wrote the same scaffolding* — a Look class with a $state counter, a loose screen world, stood/loaded/busy flags, the
+   door-from-refresh dance, `void look.v; untrack(…)` reads.  **BUILT 2026-11-19 (uncommitted): `src/lib/O/ui/screen.svelte.ts`, one
+    `Screen`** — `new Screen(() => H, w_name, views, needs)`, then `seat(view, pile, stirred?)` (In), `read(fn, empty)` (Show),
+     `arrive(view, sc)` / `asked(view)` (Out).  ArriveFace and Stuffmush moved onto it (each lost ~25 lines and every flag); both seen
+      rendering headless (the rack on a /Desk?G=Runner page, Stuffmush's C** on /Desk?G=Land).  Storica moved too, the same afternoon: the
+       Screen learned one counter PER VIEW (`look(name)`, each bumping the screen's as well — Storica redraws plan, live, snap and hand
+        separately) and a serial `door(why, fn)` for a face that seats several views at once; Storica lost its Look class, its own world, the
+         stand() and the refresh chain.  Seen on a headless runner page running AtheRadioArrive: "Storica 0/0 plan 1 · live 1".  PileFace
+          (presses only, no views) needs nothing.
 - *The door* (`Stuffica_arrive`: a JS queue + a 20ms/300ms timer on `w.c.door`, taped at take time) looks like a re-invention of `TheA_io` +
    a run — and on a compartment in the run loop it would be: a burst within one think IS one take, the run's own definition.  But today's
     screen worlds (Stuffmush, Storica, ArriveFace) are loose `TheC`s a Svelte component holds — in no House, under no holder — so nothing would

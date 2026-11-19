@@ -1,8 +1,8 @@
 Credulation,of_Book:HohoSurprise
-  run=0,at=1793699107.79,ok,ok_pct,mode:check
-    TheACode:Ground/Core,dige:45bcad169c771a95
-    TheACode:Ground/Story,dige:4e68d17d2644adca
-    uses:Ghost_A_Theory,dige:804ebab235555f08~g1
-    uses:Ghost_A_Stuffica,dige:1f0ec09474696daa~g1
-    uses:Ghost_A_Ground,dige:315f819fcbdd91d3~g1
-    uses:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
+  run=0,at=1795052154.042,ok,ok_pct,mode:check
+    TheACode:Ground/Core,dige:83c324005b85656c
+    TheACode:Ground/Story,dige:eeae0a8324ad76e5
+    uses:Ghost_A_Theory,dige:9ca760e0f6c50a78~g1
+    uses:Ghost_A_Stuffica,dige:a6371235df378ec7~g1
+    uses:Ghost_A_Ground,dige:f1fcfd0131cf6131~g1
+    uses:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1

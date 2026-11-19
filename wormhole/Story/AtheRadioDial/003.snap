@@ -1,0 +1,25 @@
+Snap:H
+  H:AtheRadioDial,Run
+    A:AtheRadioDial
+      self,round=5	{"mung":["age"]}
+      w:AtheRadioDial
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Decided:aim~grav skip
+        Decided:aim~grav
+    A:Chooser
+      TheAAttend:run
+      A:Dial
+        w:Dial
+          TheAIO:press,keep=32,heard=2,takes=2
+            TheAHeard:1,take,press:aim,pub:grav,state:playing,gat
+            TheAHeard:2,take=2,press:aim,pub:grav,state:playing,gat,aim:grav
+          TheASynapse:press,sum:count
+            TheAWoke,count=2,pulses=2
+          Take:aim,pub:grav
+      self,round=4	{"mung":["age"]}
+      w:Chooser
+        self,round=3	{"mung":["age"]}
+      TheARun,rounds,quiet
+        TheARound:1
+          TheAWent:Dial

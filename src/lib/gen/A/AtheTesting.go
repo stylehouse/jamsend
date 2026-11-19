@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_A_AtheTesting(): string { return '86c2bc6b9843ea55~g1' },
+    Ghostmeta_Ghost_A_AtheTesting(): string { return '0a795eab6080a8a8~g1' },
 
 // AtheTesting.g — Atheory's proof (Ghost/A/Theory.g; spec/Atheory_todo.md §0.2 "The first Atheory tests").
 //
@@ -4554,6 +4554,111 @@ AtheRadioArrive_witness(w, aw, n) {
     }
     if (n === 6 && said === "shelf radio relay friend catalog music | cross | ") {
         this.story_swear(w, "playing a stopgap the radio crosses to a friend the moment their track is ready")
+    }
+},
+//#endregion
+//#region the test routine — Book AtheRadioDial
+// where to listen from, chosen — as an Atheory compartment (AtheoryArrive_todo §7 rung 3; Radio.g "THE DIAL ON ROWS").  A press on the
+//  source chooser is taped with the radio's choice as it stood; the move (Dial_woken → Dial_decide) writes the Takes in order — the
+//   one-control law (own · a friend · the pool), and a changed source heard at once (a skip, or a go when nothing has started).  No
+//    radio here: a holder with made-up readings, each step holding until the move happened, then reading what it decided.
+AtheRadioDial(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.AtheRadioDial_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+AtheRadioDial_moves(dw) {
+    return dw.o({ TheASynapse: "press" })[0]?.o({ TheAWoke: 1 })[0]?.sc.count || 0
+},
+AtheRadioDial_said(dw) {
+    return dw.o({ Take: 1 }).map((t) => t.sc.Take + (t.sc.pub ? "~" + t.sc.pub : "") + (t.sc.any ? "~any" : "") + (t.sc.on ? "~on" : "") + (t.sc.off ? "~off" : "")).join(" ")
+
+},
+async AtheRadioDial_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === "new") run.sc.total = 7
+    let n = run?.c.step_n
+    if (n == null || n === req.c.did_step) return
+    req.c.did_step = n
+    let P = this.o({ A: "Chooser" })[0]
+    if (!P) {
+        P = this.oai({ A: "Chooser" })
+        P.oai({ TheAAttend: "run" })
+    }
+    let dw = this.Dial_aw(P)
+    let B = P.o({ A: "Dial" })[0]
+    // each step reads only what it decided: the Takes before it were done (dropped) by an edge this Book plays by hand
+    for (const t of dw.o({ Take: 1 })) dw.drop(t)
+    let press = (sc) => {
+        this.TheA_io(B, "press", sc)
+        this.knock?.("press", "AtheRadioDial")
+    }
+    if (n === 2) {
+        w.i({ desc: "playing with any friend — Grav is chosen" })
+        press({ press: "aim", pub: "grav", state: "playing", gat: 1 })
+    }
+    if (n === 3) {
+        w.i({ desc: "Grav chosen again" })
+        press({ press: "aim", pub: "grav", state: "playing", gat: 1, aim: "grav" })
+    }
+    if (n === 4) {
+        w.i({ desc: "my own records, while with Grav" })
+        press({ press: "own", state: "playing", gat: 1, aim: "grav" })
+    }
+    if (n === 5) {
+        w.i({ desc: "the radio never started — SoundPool is chosen, then chosen again before anything moved" })
+        press({ press: "pool", state: "off" })
+        press({ press: "pool", state: "off", pool: 1 })
+    }
+    if (n === 6) {
+        w.i({ desc: "on my own records — any friend" })
+        press({ press: "any", state: "playing", gat: 1, own: 1 })
+    }
+    if (n === 7) {
+        w.i({ desc: "a screen shows the dial's Takes — then Inko is chosen" })
+        // a commit lands after the run (UItime), outside any think: it is news to this step's hold, so it knocks
+        let H = this
+        let ui = { n: 0, commit() { this.n = this.n + 1; H.knock?.("commit", "AtheRadioDial") } }
+        w.c.dial_ui = ui
+        this.Stuffica_view(dw, "takes", ["Take"], ui, { says: ["pub", "any", "on", "off"] })
+        press({ press: "aim", pub: "inko", state: "playing", gat: 1, aim: "grav" })
+    }
+    if (n < 2) return
+    let want = n >= 5 ? n : n - 1
+    this.AtheStoryInStory_hold(w, () => {
+        if (this.AtheRadioDial_moves(dw) < want) return false
+        if (n === 7 && !(w.c.dial_ui && w.c.dial_ui.n >= 1)) return false
+        this.AtheRadioDial_witness(w, dw, n)
+        return true
+    })
+
+},
+AtheRadioDial_witness(w, dw, n) {
+    let said = this.AtheRadioDial_said(dw)
+    w.i({ Decided: said || "nothing" })
+    if (n === 2 && said === "aim~grav skip") {
+        this.story_swear(w, "choosing a friend is heard at once — the aim then a skip")
+    }
+    if (n === 3 && said === "aim~grav") {
+        this.story_swear(w, "choosing the friend already chosen re-aims and skips nothing")
+    }
+    if (n === 4 && said === "own~on skip") {
+        this.story_swear(w, "choosing my own records while with a friend — own on then a skip")
+    }
+    if (n === 5 && said === "flip go") {
+        this.story_swear(w, "a choice made before the radio started starts it — a go not a skip — and the same choice again decides nothing")
+    }
+    if (n === 6 && said === "own~off aim~any skip") {
+        this.story_swear(w, "any friend from my own records — own off then the aim cleared then a skip — in that order")
+    }
+    if (n === 7) {
+        let shown = this.Stuffica_points(dw, "takes").map((pt) => pt.sc.TheATrace + ":" + pt.sc.of + (pt.sc.pub ? "~" + pt.sc.pub : "")).join(" ")
+        w.i({ Shown: shown || "nothing", commits: w.c.dial_ui.n })
+        if (said === "aim~inko skip" && shown === "Take:aim~inko Take:skip") {
+            this.story_swear(w, "a view standing on the dial is walked and committed by the run that moved it — nobody asked it to refresh")
+        }
     }
 },
 //#endregion

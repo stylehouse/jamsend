@@ -16,14 +16,20 @@
     //  The render ledger counts every draw of each part: window.__storica_ledger() (as Pondland's __pond_ledger).
     import { untrack } from 'svelte'
     import { TheC } from '$lib/Stuff.svelte'
+    import { Screen } from '$lib/O/ui/screen.svelte'
     import type { House } from '$lib/O/Housing.svelte'
 
     let { H }: { H: House } = $props()
 
-    class Look { v = $state(0); commit() { this.v++ } }
-    const looks: Record<string, Look> = { plan: new Look(), live: new Look(), snap: new Look(), hand: new Look() }
-    const Wv = new TheC({ c: {}, sc: { w: 'Storica' } })
-    let stood = false
+    // the screen (O/ui/screen.svelte.ts): its world and one counter per view — each part redraws on its own view's commits
+    const screen = new Screen(() => H, 'Storica', [
+        { name: 'plan', kinds: ['step'], opts: { says: ['dige', 'desc'] } },
+        { name: 'live', kinds: ['Step'], opts: { says: ['ok', 'caveat', 'accepted', 'dige'] } },
+        { name: 'snap', kinds: ['*'], opts: { deep: 1 } },
+        { name: 'hand', kinds: ['StoryLeash', 'StoryAt'], opts: { says: ['n'] } },
+    ], ['Stuffica_refresh', 'TheA_seem_walk'])
+    const Wv = screen.w
+    const looks = { plan: screen.look('plan'), live: screen.look('live'), snap: screen.look('snap'), hand: screen.look('hand') }
     // the step open in the strip — not a $state: where the screen stands is a row on the snap view's Seem (%TheAAt), put there by an
     //  arrival at the door (Stuffica_arrive) and read on the view's commit.  So are the pins (%TheAPin).  The lenses stay $state
     const seem_of = (name: string) => Wv.o({ TheASeem: name })[0] as TheC | undefined
@@ -60,17 +66,8 @@
     ;(window as any).__storica_ledger = () => ({ ledger: { ...ledger }, commits: { plan: looks.plan.v, live: looks.live.v } })
 
     // a ghost_load can land after mount, so this is asked again on every flush
-    const loaded = () => typeof (H as any).Stuffica_refresh === 'function' && typeof (H as any).TheA_seem_walk === 'function'
+    const loaded = () => screen.loaded()
     let ready = $state(loaded())
-
-    function stand() {
-        if (stood) return
-        stood = true
-        H.Stuffica_view(Wv, 'plan', ['step'], looks.plan, { says: ['dige', 'desc'] })
-        H.Stuffica_view(Wv, 'live', ['Step'], looks.live, { says: ['ok', 'caveat', 'accepted', 'dige'] })
-        H.Stuffica_view(Wv, 'snap', ['*'], looks.snap, { deep: 1 })
-        H.Stuffica_view(Wv, 'hand', ['StoryLeash', 'StoryAt'], looks.hand, { says: ['n'] })
-    }
 
     // a snap decoded once: the same text is the same tree, so a refresh re-seats nothing
     const trees = new Map<string, TheC | null>()
@@ -93,9 +90,8 @@
         return { tree: text ? tree_of(text) : null, from: live ? 'live' : recorded ? 'recorded' : null }
     }
 
-    // after each settled flush: point the views at today's The and This (a new run makes new ones), then refresh.  Serial —
-    //  a refresh walks over awaits, and two at once would interleave their walks
-    let refreshing: Promise<any> = Promise.resolve()
+    // after each settled flush: point the views at today's The and This (a new run makes new ones), then refresh.  Serial (the
+    //  screen's door) — a refresh walks over awaits, and two at once would interleave their walks
     $effect(() => {
         const This = H.ave.ob({ This: 1 })[0] as TheC | undefined
         void H.ave.ob({ story_analysis: 1 })[0]
@@ -105,7 +101,7 @@
         if (now !== untrack(() => ready)) ready = now
         if (!now) return
         untrack(() => {
-            stand()
+            screen.stand()
             const w = story_A()?.o({ w: 'Story' })[0] as TheC | undefined
             if (w !== sw) sw = w
             H.Stuffica_from(Wv, 'hand', w)
@@ -126,9 +122,7 @@
                 H.Stuffica_from(Wv, 'snap', snap.tree)
                 return H.Stuffica_refresh(Wv, ['plan', 'live', 'snap', 'hand'])
             }
-            const door = (H as any).Stuffica_door
-            refreshing = refreshing.then(() => (door ? (H as any).Stuffica_door(Wv, 'settle', seat) : seat()))
-                .catch(e => console.warn('Storica refresh', e))
+            screen.door('settle', seat)
         })
     })
 

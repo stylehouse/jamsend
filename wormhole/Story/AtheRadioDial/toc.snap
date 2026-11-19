@@ -1,0 +1,20 @@
+story:AtheRadioDial
+  Styles
+  Plan
+  Opt
+    For
+  Stands:CoreTesting
+  Stands:Music
+  step,dige:ba3459a996a7dc4d
+  step=2,desc:playing with any friend — Grav is chosen,dige:a260ab6cfd9958ad
+    Assertion:choosing-a-friend-is,sentence:choosing a friend is heard at once — the aim then a skip
+  step=3,desc:Grav chosen again,dige:4c9e611f1a855bd0
+    Assertion:choosing-the-friend-already,sentence:choosing the friend already chosen re-aims and skips nothing
+  {"step":4,"desc":"my own records, while with Grav","dige":"8e568f6ffc082ecb"}
+    Assertion:choosing-my-own-records,sentence:choosing my own records while with a friend — own on then a skip
+  {"step":5,"desc":"the radio never started — SoundPool is chosen, then chosen again before anything moved","dige":"b3ec7909f7384b47"}
+    Assertion:a-choice-made-before,sentence:a choice made before the radio started starts it — a go not a skip — and the same choice again decides nothing
+  step=6,desc:on my own records — any friend,dige:0b183253d8630121
+    Assertion:any-friend-from-my,sentence:any friend from my own records — own off then the aim cleared then a skip — in that order
+  step=7,desc:a screen shows the dial's Takes — then Inko is chosen,dige:398a474bcf963b8f
+    Assertion:a-view-standing-on,sentence:a view standing on the dial is walked and committed by the run that moved it — nobody asked it to refresh

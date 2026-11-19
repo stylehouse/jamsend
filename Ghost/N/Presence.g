@@ -107,6 +107,8 @@ Presence_take(w, frame):
     p.c.answered_at = Date.now()
     p.c.answered_n = online.length
     p.bump()
+    // who is online is news to a page whose arrival is a compartment (RadioPage.g RadioPage_news; absent elsewhere)
+    if (this.RadioPage_news) this.RadioPage_news()
     return true
 
 // Presence_fresh(w, ms) — is the last answer recent enough to be believed?  Default 30s: the relay

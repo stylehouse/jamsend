@@ -10,13 +10,15 @@
 ## WHERE WE ARE — one row per country (kept current at every handoff; last 2026-11-19)
 
 *Owner 2026-11-19: "I'm failing to be informed of where we're at enough, when I wander along."  This table is the answer: read it
- first, then the doc its row names.  Update the row you moved, in the same change.*
+ first, then the doc its row names.  Update the row you moved, in the same change.  Its twin is `Organs_todo.md` (the
+ panopticon, 2026-11-19): this table says where each country is GOING; that one says what is WRONG inside each organ — debt,
+ murk, dark switches — a line deleted when cleared.*
 
 | country | where it stands | next | doc |
 |---|---|---|---|
 | **Atheory: rows, not signals** (frontiers A–F below) | A door ✓ · B disk drains itself ✓ · C first part ✓ · D Jobs ✓ · E slices 1–3a ✓ · F not started.  Two outside arrivals now RUN on it: code moved (A:Codes, AtheCodePin) and /Radio's arrival (A:Radio>A:Arrive, AtheRadioArrive); Theory's holder edge (`TheA_edge`) does what a move decided and commits views | C (Story waits by news) and F (reqs — the owner: "might want a bunch of rethinking since pulses happen") are the old country's biggest leftovers; mine to do unmanaged | §0.0 below, Coding_guide |
-| **/Radio onto Atheory + Stuffica** | on a Ground since 11-07; rung 1 (the arrival as a compartment) built 11-19; the stoker tells it (rung 2, first part) | rung 2 rest (friends + catalog tell) → 3 a press is an arrival → 4 the radio's state on rows → 5 faces as views | AtheoryArrive_todo §7 |
-| **Stuffica** | views + door built (Aprac §0); real runs now commit views | the door becomes TheA_io once screen worlds stand in the loop (with Radio rung 3) | AtheoryArrive_todo §7, Aprac_todo |
+| **/Radio onto Atheory + Stuffica** | on a Ground since 11-07; rung 1 (the arrival as a compartment) built 11-19; the stoker tells it (rung 2, first part); rung 2 done (the stoker, chunks, presence and the radio's state tell; the clock wakes at deadlines); rung 3a the source choices as a compartment (A:Dial, AtheRadioDial) — uncommitted, owner press owed; rung 4 mapped | rung 2 rest (friends + catalog tell) → 3 a press is an arrival → 4 the radio's state on rows → 5 faces as views | AtheoryArrive_todo §7 |
+| **Stuffica** | views + door built (Aprac §0); real runs commit views (proven: AtheRadioDial step 7); every face stands on one `Screen` (O/ui/screen.svelte.ts — ArriveFace, Stuffmush, Storica; uncommitted) | the door becomes TheA_io once screen worlds stand in the loop | AtheoryArrive_todo §7, Aprac_todo |
 | **The land** (code legible) | Atlas, Electrode, /Desk?G=Land, panes, `:ask`, code push + content names | writing on the Land page (a pane that edits + `:compile` on the editor seat) | §0.00 here, Wordland_todo |
 | **Jamsend** (the music) | /Radio tuned live 11-10; pile built, owner-unseen | owner's look at /Desk?G=Pile; Musu `cid:` re-record (owner's go) | Pile_todo, Radio_todo |
 | **Identity + the socket** | first peel (Jamsend.g) ✓, one-socket carrier dark, every Desk page is someone ✓ | parked by the owner (wallet, appliance) | Wallet_todo, Social_demarcation_todo §0.5 |
@@ -65,6 +67,24 @@
 | **E** | **A page is an Identity standing on a Ground** (THE MAP 1, reworded — owner 2026-11-03: no `?B=`, a runner is told its Books) | `?I=` says who; the Ground says what it stands on — `Ground/Runner` = Core + Story + Runner, whose `A:Runner` takes `%Job` arrivals (D) in place of Auto's pick/teardown/rebuild; the Story's buttons become pokes on the Desk's Hand (like the step strip). RULED: `/Desk?I=…&G=Runner` — the Ground names the role (default: its name lowercased); see *E thought through* below | the twin tax; Auto; everything.js | the fleet green on Ground/Runner tabs |
 | **F** | **Reqs by pulse** (Hovercraft) | one req held by `%TheAWait` instead of a ttlilt, then the rest | 56 ttlilts | its Book byte-identical |
 | **G** | **The pile as a landscape** (owner 2026-11-03, replaces porting a music organ) — **its own doc now: `Pile_todo.md`** (the showroom for Atheory, with the intro) | a filesystem listing (local FSA or remote mount) drawn as a floaty space; then a Heist setup that shows what is already where it goes and offers the user's OWN categories; then a merge page: a second FSA's download pile listened through and dialled into the collection, a long workflow kept over sessions | — (the first app built on the fabric) | a Book per rung |
+
+**C and F thought through (2026-11-19, a proposal for the owner's ruling — nothing built).**
+- *Where Story's step time goes, measured* (runner e747, the last 60 steps of the day, `quiesce` marks in the supply trace): ~0.2s a step;
+   the 50ms poll (`poll_step`) blamed 165 polls on `in_Atime` (the 75ms quiet window after the last think) and 8 on a ttlilt, none on
+    todo or leave_running.  So for an Athe Book **the poll is not where the time goes** — the quiet window is, and it is small.  The hours
+     are in the music/Hoho Books' HOLDS: 107 `expecting()` call sites, each a ttlilt that ends the step by running out (`⏱ timeout`) when the
+      work's own finish isn't news.
+- **C, proposed — the step ends on news.**  (1) A hold is a row with its answer: `expecting()` writes `%TheAWait` on the step and the work's
+   promise ANSWERS it (a pulse); its deadline stays only as an ALARM — running out is a red, not a caveated green.  (2) The Run House says
+    "settled" at the end of a beliefs cycle with no todo and no wait standing; Story arms ONE quiet-window timer per settled news (a new
+     cycle cancels it) — `poll_step`'s 50ms chain goes.  (3) The rekick and the stall blip stay, as alarms on a 1s timer.  **First slice:
+      (1) for `expecting()` alone** (one function, 107 callers unchanged) — gate: the Musu+Hoho sweep, `⏱ timeout` count before vs after.
+- **F, the owner's "reqs might want a bunch of rethinking since pulses happen" — agreed, and the rethink says: don't port reqs.**  A req is
+   three things fused: a standing intent (eternal|permanent), a pass-local gate (`sc.ok`), and a hold (its ttlilt).  Atheory already has each
+    apart — the intent is a row the move re-decides from (`%Take`, rebuilt every move: Code, Arrive, Dial), the gate is just the move's
+     output, the hold is `%TheAWait`.  So "reqs by pulse" is not converting reqs one by one: an organ that moves onto a compartment takes its
+      reqs with it and Hovercraft shrinks by attrition.  **Ask: (a) attrition (my
+       recommendation), or (b) re-found req itself on pulses?**
 
 **Progress 2026-11-03 (afternoon).**  **A BUILT** — every think for a shut House is kept at the door as a row (`c.door_rows`), both
  Storys open/shut it, Run trace `door think×N`.  **B's root BUILT** — the drain drives itself (a push microtasks `answer_calls`, the gate

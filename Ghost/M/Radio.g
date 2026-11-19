@@ -65,6 +65,10 @@ Radio_state(radio, state):
     //  Radio_state is the state machine every transition flows through.  A throw here — a missing
     //   House, a Vyto that refuses — must never be able to stop the music.
     if (was !== state) { try { this.Radio_focus_tell(radio, state) } catch (er) {} }
+    // and news to a page whose arrival is a compartment (RadioPage.g RadioPage_news: a press or a crossover reads the state)
+    if (was !== state && this.RadioPage_news) { try { this.RadioPage_news(radio.c.w) } catch (er) {} }
+    // and what the audio DID, taped (RadioPage.g RadioPage_heard_sound — AtheoryArrive_todo §7 rung 4, observation only)
+    if (was !== state && this.RadioPage_heard_sound) { try { this.RadioPage_heard_sound(radio, state, was) } catch (er) {} }
 
 // Radio_focus_tell — THE PANEL OVER THE GUTS (the human 2026-08-07: "the underworld situation, all the
 //  machinery leading up to the radio getting on, then the radio swallows it all like a panel being placed
@@ -1570,6 +1574,107 @@ Radio_sources(w, radio):
         if (own) { out.push({ pub: '', own: 1, name: 'LOCAL', tracks: own, live: 1, aimed: (radio && radio.sc && radio.sc.own) ? 1 : 0 }) }
     }
     return out
+//#region THE DIAL ON ROWS — a choice of where to listen is an arrival (AtheoryArrive_todo §7 rung 3)
+//  The source chooser (a friend · any friend · your own · SoundPool · the chip's flip) used to decide in the FACE: each handler
+//   captured `changed` before any ghost call, because Radio_own_set clears `own` and a skip read after it missed (RadioFace's own
+//    warning).  Now a press is said once — the press and the radio's choice as it stood (Dial_reading) — and Dial_decide, pure,
+//     turns it into Takes in order.  On /Radio that is a MOVE: the press is taped on A:Radio > A:Dial (Radio_press → TheA_io), the
+//      run loop moves it (Dial_woken) and the holder's edge does the Takes (Radio_ran → Dial_do).  Anywhere else (/, a Book) the same
+//       rules are decided and done at once.  ▶ and ⏭ stay direct: the click is the gesture the AudioContext waits on.
+//
+//      A:Radio %TheAAttend:run
+//        A:Dial / w:Dial
+//          %TheAIO:press,heard,takes,keep:32
+//            %TheAHeard:3,take:3,press:aim,pub:940f…,state:playing,gat,own     ← what was pressed, and the choice it was pressed on
+//          %TheASynapse:press,sum:count      ← every press is its own decision
+//          %Take:own,off · %Take:aim,pub:940f… · %Take:skip                   ← decided; Radio_ran does them in order
+
+// the radio's choice as it stands: the reading a press is decided against (a yes rides as 1 or absent)
+Dial_reading(radio):
+    let r = { state: String(radio.sc.Radio || 'off') }
+    if (radio.c.gat) r.gat = 1
+    if (radio.sc.own) r.own = 1
+    if (radio.sc.source === 'pool') r.pool = 1
+    if (radio.sc.aim) r.aim = String(radio.sc.aim)
+    return r
+
+// Dial_decide — PURE: a press (aim+pub · any · own · pool · flip) against a reading → the Takes, in order.  A choice that changes where
+//  the music comes from is heard at once (owner 2026-09-22: "when I change the source it should hit the next track button for me") —
+//   a skip, or, with no device yet, a go (Radio_skip's own rule)
+Dial_decide(r, p):
+    let takes = []
+    let heard = (changed) => {
+        if (changed) takes.push(r.gat ? { Take: 'skip' } : { Take: 'go' })
+    }
+    if (p.press === 'aim') {
+        takes.push({ Take: 'aim', pub: String(p.pub) })
+        heard(!!r.own || !!r.pool || String(r.aim || '') !== String(p.pub))
+    }
+    if (p.press === 'any') {
+        takes.push({ Take: 'own', off: 1 })
+        takes.push({ Take: 'aim', any: 1 })
+        heard(!!r.own || !!r.pool || !!r.aim)
+    }
+    if (p.press === 'own') {
+        takes.push({ Take: 'own', on: 1 })
+        heard(!r.own)
+    }
+    if (p.press === 'pool' && !r.pool) {
+        takes.push({ Take: 'flip' })
+        heard(1)
+    }
+    if (p.press === 'flip') takes.push({ Take: 'flip' })
+    return takes
+
+// Radio_press — what the face calls: { press, pub? }.  Taped on the page's dial when there is one, else decided and done at once
+Radio_press(radio, p):
+    if (!radio || !radio.sc || !p || !p.press) return 0
+    let r = this.Dial_reading(radio)
+    let A = this.top_House().o({ A: 'Radio' })[0]
+    let B = A && radio.c.w && A.o({ w: 'Radio' })[0] === radio.c.w ? A.o({ A: 'Dial' })[0] : null
+    if (B && this.TheA_io) {
+        let sc = { press: String(p.press), ...r }
+        if (p.pub) sc.pub = String(p.pub)
+        this.TheA_io(B, 'press', sc)
+        this.knock?.('press', 'Radio')
+        return 1
+    }
+    this.Dial_do(radio, this.Dial_decide(r, p))
+    return 1
+
+// Dial_aw — stand the dial's compartment under a holder (RadioPage's think, or a Book)
+Dial_aw(A):
+    if (!A) return null
+    let B = A.o({ A: 'Dial' })[0]
+    let dw = B ? B.o({ w: 'Dial' })[0] : null
+    if (dw) return dw
+    dw = A.oai({ A: 'Dial' }).oai({ w: 'Dial' })
+    dw.oai({ TheAIO: 'press' }, { keep: 32 })
+    dw.oai({ TheASynapse: 'press' }, { sum: 'count' })
+    return dw
+
+// Dial_woken — THE MOVE: one press, its Takes written after any still waiting (sum:count — each press decides against the reading taped
+//  with it)
+Dial_woken(w, synapse, pulse):
+    let s = pulse.sc
+    let p = { press: s.press, pub: s.pub }
+    for (const t of this.Dial_decide(s, p)) w.i(t)
+
+// Dial_do — THE EDGE: the Takes, in order, through the radio's own verbs (each keeps its own laws: the one-control exclusivity, the
+//  pin, the stash mirror)
+Dial_do(radio, takes):
+    for (const t of takes) {
+        if (t.Take === 'aim') this.Radio_aim_set(radio, t.any ? '' : String(t.pub || ''))
+        if (t.Take === 'own') this.Radio_own_set(radio, t.on ? 1 : 0)
+        if (t.Take === 'flip') this.Radio_source_next(radio)
+        if (t.Take === 'skip') this.Radio_skip(radio)
+        if (t.Take === 'go') {
+            let p = this.Radio_go(radio, null)
+            if (p && p.catch) p.catch((er) => {})
+        }
+    }
+    if (takes.length) this.top_House().bump_version?.()
+//#endregion
 // Radio_own_set — PIN the dial to your own shelf, or release it, as a SETTER (Radio_source_toggle is a flip,
 //  which a chooser row cannot use — pressing LOCAL twice must not bounce you back to friends).  Choosing own
 //   is one control with the pool and the aim, the same law Radio_aim_set keeps: you cannot be on your own
@@ -3029,6 +3134,8 @@ Radio_nudge(w):
     //  (SwarmStandup) nudges with an undefined world — w.o() then threw (caught, but noisy in every fresh
     //   boot, owner 2026-08-31).  A nudge at nothing is simply a no-op.
     if (!w) return
+    // news for a page whose arrival is a compartment (RadioPage.g RadioPage_news — coalesced, O(1) here)
+    if (this.RadioPage_news) this.RadioPage_news(w)
     let radio = w.o({ Radio: 1 })[0]
     if (!radio) return
     // A PLAYING RADIO IS NOT DEAF (2026-08-08, the human: a friend who comes online mid-track stays
@@ -3259,9 +3366,9 @@ Stoker_state(st, state):
     }
 
 // Stoker_told — THE STOKER TELLS (AtheoryArrive_todo §7 rung 2): a changed state or count is news to a page whose arrival is a
-//  compartment (RadioPage.g RadioPage_sense — absent off /Radio, and a no-op where no A:Radio stands, as in a Book)
+//  compartment (RadioPage.g RadioPage_news — absent off /Radio, and a no-op for any world but the page's own, as in a Book)
 Stoker_told(st):
-    if (this.RadioPage_sense && st.c.w) this.RadioPage_sense(st.c.w)
+    if (this.RadioPage_news && st.c.w) this.RadioPage_news(st.c.w)
 
 // Stoker_wake — the radio came alive (or a churn was asked while parked): run the watch loop.
 //  Idempotent while awake — one loop per stoker, a fresh era per wake.

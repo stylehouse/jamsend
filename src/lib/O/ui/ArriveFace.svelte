@@ -12,32 +12,17 @@
     //    tick and say nothing about who moved — and COMMITS only when a watch's verdict changed, so the rack redraws on news, not
     //     on the clock.  What a click does (list, open a row) arrives at the door as rows on the view's Seem (%TheAOpen).
     import { untrack } from "svelte"
-    import { TheC } from "$lib/Stuff.svelte"
+    import { Screen } from "$lib/O/ui/screen.svelte"
     import SupervisorPanel from "$lib/O/ui/SupervisorPanel.svelte"
     let { H = null }: { H?: any } = $props()
 
-    class Look { v = $state(0); commit() { this.v++ } }
-    const look = new Look()
-    const Wv = new TheC({ c: {}, sc: { w: 'Arrive' } })
     const NAME = 'rack'
-    let stood = false
+    const screen = new Screen(() => H, 'Arrive', [{ name: NAME, kinds: ['Watch'], opts: { says: ['verdict', 'patience', 'note', 'met', 'sentence', 'orphan'] } }], ['Supervisor_line'])
     let guts = $state(false)
 
     let M = $derived(H?.top_House ? H.top_House() : H)
     const sup_w = () => M?.o?.({ A: 'Supervisor' })[0]?.o?.({ w: 'Supervisor' })[0] ?? null
-    const loaded = () => typeof H?.Stuffica_door === 'function' && typeof H?.Supervisor_line === 'function'
-    function refresh() {
-        if (!loaded() || document.hidden) return
-        if (!stood) {
-            stood = true
-            H.Stuffica_view(Wv, NAME, ['Watch'], look, { says: ['verdict', 'patience', 'note', 'met', 'sentence', 'orphan'] })
-        }
-        const pile = untrack(sup_w)
-        H.Stuffica_door(Wv, 'refresh', () => {
-            H.Stuffica_from(Wv, NAME, pile)
-            return H.Stuffica_refresh(Wv, [NAME])
-        }).catch((e: any) => console.warn('ArriveFace refresh', e))
-    }
+    const refresh = () => screen.seat(NAME, untrack(sup_w))
     $effect(() => {
         refresh()
         const iv = setInterval(refresh, 1000)
@@ -45,19 +30,13 @@
     })
 
     // Show: on a commit, each point's watch flattened by the Supervisor (its line), and what the screen asked to see
-    let lines = $derived.by(() => {
-        void look.v
-        return untrack(() => (loaded() ? H.Stuffica_points(Wv, NAME).map((p: any) => p.c.C && H.Supervisor_line(p.c.C)).filter(Boolean)
-            .sort((a: any, b: any) => (a.stage - b.stage) || (a.i - b.i)) : []))
-    })
-    let asked = $derived.by(() => {
-        void look.v
-        return new Set(untrack(() => Wv.o({ TheASeem: NAME })[0]?.o({ TheAOpen: 1 }).map((r: any) => String(r.sc.TheAOpen)) ?? []))
-    })
+    let lines = $derived.by(() => screen.read(() => H.Stuffica_points(screen.w, NAME).map((p: any) => p.c.C && H.Supervisor_line(p.c.C)).filter(Boolean)
+        .sort((a: any, b: any) => (a.stage - b.stage) || (a.i - b.i)), []))
+    let asked = $derived.by(() => screen.read(() => screen.asked(NAME), new Set<string>()))
     let listing = $derived(asked.has('list'))
-    const flip = (what: string) => H.Stuffica_arrive(Wv, { view: NAME, ...(asked.has(what) ? { shut: what } : { open: what }) })
+    const flip = (what: string) => screen.arrive(NAME, asked.has(what) ? { shut: what } : { open: what })
 
-    let world = $derived.by(() => { void look.v; return untrack(sup_w) })
+    let world = $derived.by(() => screen.read(sup_w, null))
     let ours   = $derived(lines.filter((l: any) => l.key.startsWith('arrive.')))
     let others = $derived(lines.filter((l: any) => !l.key.startsWith('arrive.')))
     let loud   = $derived(others.filter((l: any) => l.tone === 'bad').length)

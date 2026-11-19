@@ -1,0 +1,51 @@
+Snap:H
+  H:AtheRadioDial,Run
+    A:AtheRadioDial
+      self,round=14	{"mung":["age"]}
+      w:AtheRadioDial
+        self,round=14	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Decided:aim~grav skip
+        Decided:aim~grav
+        Decided:own~on skip
+        Decided:flip go
+        Decided:own~off aim~any skip
+        Decided:aim~inko skip
+        Shown:Take:aim~inko Take:skip,commits
+    A:Chooser
+      TheAAttend:run
+      A:Dial
+        w:Dial
+          TheAIO:press,keep=32,heard=7,takes=6
+            TheAHeard:1,take,press:aim,pub:grav,state:playing,gat
+            TheAHeard:2,take=2,press:aim,pub:grav,state:playing,gat,aim:grav
+            TheAHeard:3,take=3,press:own,state:playing,gat,aim:grav
+            TheAHeard:4,take=4,press:pool,state:off
+            TheAHeard:5,take=4,press:pool,state:off,pool
+            TheAHeard:6,take=5,press:any,state:playing,gat,own
+            TheAHeard:7,take=6,press:aim,pub:inko,state:playing,gat,aim:grav
+          TheASynapse:press,sum:count
+            TheAWoke,count=7,pulses=7
+          TheASeem:takes,dip,says,walks
+            TheAKind:Take
+            TheASay:pub
+            TheASay:any
+            TheASay:on
+            TheASay:off
+            TheATrace:Take,of:aim,pub:inko
+              Dip:seem,value:takes_1
+            TheATrace:Take,of:skip
+              Dip:seem,value:takes_2
+            Dip:seem,value:takes,i=2
+            TheAWalk:1
+              TheANeu:Take,of:aim
+              TheANeu:Take,of:skip
+          TheAView:takes,commits,dige:274c66caee91a25d
+          Take:aim,pub:inko
+          Take:skip
+      self,round=13	{"mung":["age"]}
+      TheARun,rounds,quiet
+        TheARound:1
+          TheAWent:Dial
+      w:Chooser
+        self,round=12	{"mung":["age"]}

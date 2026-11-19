@@ -10,7 +10,7 @@ import RadioPageFace from "$lib/O/ui/RadioPageFace.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_RadioPage(): string { return 'c9dd542c967b6c5b~g1' },
+    Ghostmeta_Ghost_M_RadioPage(): string { return '65450b3054d1f3ca~g1' },
 
 // RadioPage.g — the Radio as a page: /Radio, which is /Desk?I=<who>&G=Radio (spec/AtheoryArrive_todo.md §5).  Ground/Radio's Main is Radio, so Auto
 //  stands A:Radio/w:Radio on Mundo and its think is Radio(A,w) below — the music page with no Book under it.  On / the same organs
@@ -40,6 +40,7 @@ Radio(A, w) {
     }
     // the page's arrival is decided by a compartment this A holds (THE ARRIVAL ON ROWS, below); the spine is met by standing at all
     A.oai({ TheAAttend: 'run' })
+    if (this.Dial_aw) this.Dial_aw(A)
     w.oai({ Arrived: 'spine' })
     this.Radio_ensure(w)
     let st = this.Stoker_ensure(w)
@@ -283,17 +284,39 @@ RadioPage_sense(w) {
     return heard
 
 },
-// RadioPage_clock — the page's one timer: a reading a second while the page is arriving (the stoker and the friends tell nobody yet —
-//  each that learns to poke the compartment itself takes a reason off this clock).  After that the pulse senses, every 2.5s
+// RadioPage_clock — time arrives when someone waits for it.  While the page is arriving, the next reading is taken AT the move's %Wake
+//  (its deadline — 8s with no friends, 20s for an expected one), or within 5s whatever happens: a net under what doesn't yet tell (the
+//   relay opening).  What does tell calls RadioPage_news: the stoker (Radio.g Stoker_told), a chunk or a friend's catalog landing
+//    (Radio_nudge — Repli's repli_on_land calls it), the radio's state (Radio_state), a presence answer (Presence.g Presence_take).
+//     Once in, the pulse senses every 2.5s instead
 RadioPage_clock(w) {
     if (w.c.clock) return
     let aw = this.RadioPage_aw(this.top_House().o({ A: 'Radio' })[0])
     if (aw && aw.o({ Arrived: 'music' }).length && this.top_House().c.humdinger) return
+    let wake = aw ? +(aw.o({ Wake: 1 })[0]?.sc.ms || 0) : 0
+    let ms = wake ? Math.max(50, Math.min(5000, wake - Math.round(performance.now()))) : 5000
     w.c.clock = setTimeout(() => {
         w.c.clock = null
         this.RadioPage_sense(w)
         this.RadioPage_clock(w)
-    }, 1000)
+    }, ms)
+
+},
+// RadioPage_news — something the arrival reads may have moved: sense soon (100ms — a burst of landed chunks is one reading).  Only for
+//  the page's own radio world: a Book's, or no page at all, is no one's news
+RadioPage_news(w) {
+    let pw = this.Page_w ? this.Page_w() : null
+    if (!pw || (w && w !== pw) || pw.c.news_soon) return
+    pw.c.news_soon = setTimeout(() => {
+        pw.c.news_soon = null
+        this.RadioPage_sense(pw)
+        // a reading may have set a nearer %Wake than the clock is waiting for
+        if (pw.c.clock) {
+            clearTimeout(pw.c.clock)
+            pw.c.clock = null
+        }
+        this.RadioPage_clock(pw)
+    }, 100)
 
 },
 // Arrive_woken — THE MOVE.  From the newest reading alone (the pulse), decide again from scratch: the notches (met once, a moot that comes
@@ -375,15 +398,23 @@ Arrive_listen(w, s) {
     if (w.o({ Alone: 1 }).length) w.i({ Take: 'press', why: 'a friend came' })
 
 },
-// Radio_ran — THE EDGE ACTS (Theory TheA_edge, after each run of A:Radio's compartments): does what the Takes say and drops each one done.
+// Radio_ran — THE EDGE ACTS (Theory TheA_edge, after each run of A:Radio's compartments — the dial's and the arrival's): does what the
+//  Takes say and drops each one done.
 //  What it changes (pressed, crossed) is read back by the next sense — the edge never decides, the move never acts.  Off a page (a Book
 //   stands A:Radio with no w:Radio) there is nothing to act on and the Takes stay, for the Book to read
 Radio_ran(P, run) {
     let w = P.o({ w: 'Radio' })[0]
-    let aw = P.o({ A: 'Arrive' })[0]?.o({ w: 'Arrive' })[0]
-    if (!w || !aw) return
-    let radio = w.o({ Radio: 1 })[0]
+    let radio = w ? w.o({ Radio: 1 })[0] : null
     if (!radio) return
+    // the dial's Takes first (a choice pressed — Radio.g THE DIAL ON ROWS), in the order they were decided
+    let dw = P.o({ A: 'Dial' })[0]?.o({ w: 'Dial' })[0]
+    if (dw && this.Dial_do) {
+        let takes = dw.o({ Take: 1 })
+        for (const t of takes) dw.drop(t)
+        this.Dial_do(radio, takes.map((t) => t.sc))
+    }
+    let aw = P.o({ A: 'Arrive' })[0]?.o({ w: 'Arrive' })[0]
+    if (!aw) return
     for (const t of aw.o({ Take: 1 })) {
         aw.drop(t)
         if (t.sc.Take === 'press' && !radio.c.auto_pressed) {
@@ -402,6 +433,42 @@ Radio_ran(P, run) {
         }
     }
     this.RadioPage_sense(w)
+
+},
+// ── WHAT THE AUDIO DID (2026-11-19, AtheoryArrive_todo §7 rung 4, first slice — observation only).  Every move of the radio's state word
+//  (Radio.g Radio_state: off · digging · playing · starved · paused) is taped on A:Radio > A:Sound as it happens, with the page clock and
+//   the track — so a page keeps the true story of its sound, which the state word alone overwrites.  The move only keeps the newest as
+//    %Sounding; nothing decides from it yet.  Read it: runner_ask minisnap 'mundo>A:Radio>A:Sound' --depth=3 --player=<pub>
+//
+//      A:Radio > A:Sound / w:Sound
+//        %TheAIO:sound,heard,takes,keep:64
+//          %TheAHeard:12,take:12,ms:48211,state:starved,was:playing,id:3f2a…
+//        %TheASynapse:sound,sum:count
+//        %Sounding:playing,ms:51003,id:3f2a…
+RadioPage_heard_sound(radio, state, was) {
+    let A = this.top_House().o({ A: 'Radio' })[0]
+    if (!A || !this.TheA_io || !radio.c.w || A.o({ w: 'Radio' })[0] !== radio.c.w) return
+    let B = A.o({ A: 'Sound' })[0]
+    if (!B) {
+        B = A.oai({ A: 'Sound' })
+        let sw = B.oai({ w: 'Sound' })
+        sw.oai({ TheAIO: 'sound' }, { keep: 64 })
+        sw.oai({ TheASynapse: 'sound' }, { sum: 'count' })
+    }
+    let sc = { ms: Math.round(performance.now()), state: String(state), was: String(was || 'none') }
+    let id = radio.c.rec && radio.c.rec.sc ? String(radio.c.rec.sc.id || '').slice(0, 8) : ''
+    if (id) sc.id = id
+    this.TheA_io(B, 'sound', sc)
+    this.knock?.('sound', 'Radio')
+
+},
+// Sound_woken — the move: the newest observation, kept
+Sound_woken(w, synapse, pulse) {
+    let s = pulse.sc
+    for (const row of w.o({ Sounding: 1 })) w.drop(row)
+    let sc = { Sounding: String(s.state), ms: s.ms }
+    if (s.id) sc.id = s.id
+    w.i(sc)
 
 },
 // ── THE PAGE'S NAVIGATION (2026-11-07) — what a face asks of the page: make a cell the main one, open the Link cell, open a friend's.

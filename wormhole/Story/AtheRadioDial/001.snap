@@ -1,0 +1,13 @@
+Snap:H
+  H:AtheRadioDial,Run
+    A:AtheRadioDial
+      self,round	{"mung":["age"]}
+      w:AtheRadioDial
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok
+    A:Chooser
+      TheAAttend:run
+      A:Dial
+        w:Dial
+          TheAIO:press,keep=32
+          TheASynapse:press,sum:count

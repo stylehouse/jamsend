@@ -8,42 +8,22 @@
     //     In   — walked through the door (Stuffica_door: UItime) only when something it walked MOVED.  An old House runs no Atheory
     //             run, so nothing says who moved; the particles' own version counters do (Stuffica_stirred — reading counters, no walk,
     //              no lock), asked twice a second.  A walk that changed nothing shown commits nothing.
-    //     Show — the template reads one counter (look.v) and the plain tree built after it.
+    //     Show — the template reads one counter (the Screen's, screen.svelte.ts) and the plain tree built after it.
     //     Out  — a click names points by path and ARRIVES (Stuffica_arrive): open, shut, pin.  Opening every row of a group is one
     //             burst, one take, one walk.  The arrivals are the screen's tape (%TheAIO:screen) — what you asked to see more of; a shut
     //              keeps what was open inside it, so opening again shows it as it was.
     //  Colour: each mainkey's ground from Matstyle's palette (matstyle_ground — a hue from the name), so a kind looks the same
     //   here as on the glass.
     import { untrack } from 'svelte'
-    import { TheC } from '$lib/Stuff.svelte'
+    import { Screen } from '$lib/O/ui/screen.svelte'
 
     let { H, stuff, every = 500 }: { H: any, stuff: any, every?: number } = $props()
 
-    class Look { v = $state(0); commit() { this.v++ } }
-    const look = new Look()
-    const Wv = new TheC({ c: {}, sc: { w: 'Stuffmush' } })
     const NAME = 'mush'
-    let stood = false
-
-    const loaded = () => typeof H?.Stuffica_stirred === 'function' && typeof H?.Stuffmush_tree === 'function'
+    const screen = new Screen(() => H, 'Stuffmush', [{ name: NAME, kinds: ['*'], opts: { deep: 1, open: 1, auto: ['H', 'A', 'w'] } }], ['Stuffica_stirred', 'Stuffmush_tree'])
 
     // In: point the view at the pile and walk it, through the door — only when it stirred
-    let busy = false
-    function refresh() {
-        if (busy || !loaded() || document.hidden) return
-        if (!stood) {
-            stood = true
-            H.Stuffica_view(Wv, NAME, ['*'], look, { deep: 1, open: 1, auto: ['H', 'A', 'w'] })
-        }
-        const pile = untrack(() => stuff)
-        const seem = Wv.o({ TheASeem: NAME })[0]
-        if (seem?.c.from === pile && !H.Stuffica_stirred(Wv, NAME)) return
-        busy = true
-        H.Stuffica_door(Wv, 'refresh', () => {
-            H.Stuffica_from(Wv, NAME, pile)
-            return H.Stuffica_refresh(Wv, [NAME])
-        }).catch((e: any) => console.warn('Stuffmush refresh', e)).finally(() => { busy = false })
-    }
+    const refresh = () => screen.seat(NAME, untrack(() => stuff), true)
     $effect(() => {
         void stuff
         refresh()
@@ -52,13 +32,10 @@
     })
 
     // Show: one counter, then the plain tree
-    let tree = $derived.by(() => {
-        void look.v
-        return untrack(() => (loaded() ? H.Stuffmush_tree(Wv, NAME) : []))
-    })
+    let tree = $derived.by(() => screen.read(() => H.Stuffmush_tree(screen.w, NAME), []))
 
     // Out: everything a click does is an arrival
-    const arrive = (sc: Record<string, string>) => H.Stuffica_arrive(Wv, { view: NAME, ...sc })
+    const arrive = (sc: Record<string, string>) => screen.arrive(NAME, sc)
     const toggle = (row: any) => arrive(row.open ? { shut: row.at } : { open: row.at })
     const pin = (row: any) => arrive(row.pin ? { unpin: row.at } : { pin: row.at })
     // a group's rows that hold something: open them all, or shut them all if they're all open — one burst, one take

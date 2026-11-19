@@ -1,8 +1,8 @@
 Credulation,of_Book:Swarmation
-  run=0,at=1794910657.225,ok,ok_pct,mode:check
-    TheACode:Ground/Core,dige:2682d56be9e219ea
+  run=0,at=1795051539.873,ok,ok_pct,mode:check
+    TheACode:Ground/Core,dige:83c324005b85656c
     TheACode:Ground/Story,dige:eeae0a8324ad76e5
-    uses:Ghost_A_Theory,dige:bc1f5fad74703498~g1
+    uses:Ghost_A_Theory,dige:9ca760e0f6c50a78~g1
     uses:Ghost_A_Stuffica,dige:a6371235df378ec7~g1
-    uses:Ghost_A_Ground,dige:470a1c17b0c9fb46~g1
+    uses:Ghost_A_Ground,dige:f1fcfd0131cf6131~g1
     uses:Ghost_O_Supervisor,dige:1321f637bc8c032f~g1
