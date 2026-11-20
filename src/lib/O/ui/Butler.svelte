@@ -314,6 +314,7 @@
             return n
         } catch { return 0 }
     })
+    let climb_unlocked = $derived.by(() => { void tick; try { const tc: any = (H as any)?.top_House?.()?.c; return !!(tc?.musu_gat || (H as any)?.c?.musu_gat)?.AC_ready } catch { return false } })
     let climb_self = $derived.by(() => { void tick; try { return (H as any)?.Swarm_live_self?.() ?? null } catch { return null } })
     // the arrival's ladder, one line per rung: done ✓, the current one spinning, the rest not yet drawn
     let climb = $derived.by(() => {
@@ -322,17 +323,28 @@
         const st = String(inv_state?.state || '')
         const sealed = st === 'sealed'
         const named = !!climb_self?.sc?.friendly
-        const rungs: { text: string, done: boolean }[] = []
+        const rungs: { text: string, done: boolean, play?: boolean }[] = []
         // (no rung before the identity stands — the panel above already spins "making you an identity…")
         // (and none while the name is owed: the panel above is asking for it, and a spinner under it waits on the person, not the machine)
         if (named) rungs.push({ text: 'you are ' + climb_self.sc.friendly, done: true })
         if (named) rungs.push({ text: st === 'redeeming' || sealed ? 'hello sent to ' + from : 'saying hello to ' + from + '…', done: st === 'redeeming' || sealed })
         if (st === 'redeeming' || sealed) rungs.push({ text: sealed ? from + ' answered — you are friends' : 'waiting for ' + from + ' to answer…', done: sealed })
         if (sealed) rungs.push({ text: climb_pool ? from + "'s music is here — " + climb_pool + (climb_pool === 1 ? ' track' : ' tracks') : from + "'s music is on its way…", done: climb_pool > 0 })
-        if (sealed && climb_pool) rungs.push({ text: climb_playing ? '♪ ' + climb_radio.sc.title + (climb_radio.sc.artist ? ' — ' + climb_radio.sc.artist : '') : 'starting the radio…', done: climb_playing })
+        // a LOCKED AudioContext never autoplays (the effect below waits on AC_ready), so the rung asks for the tap instead of
+        //  spinning out its 25s (2026-11-20, a phone that never played) — any tap unlocks it (Auto keep_awake_acquire)
+        if (sealed && climb_pool) rungs.push({ text: climb_playing ? '♪ ' + climb_radio.sc.title + (climb_radio.sc.artist ? ' — ' + climb_radio.sc.artist : '') + (ios_mutable ? ' · no sound? check the silent switch' : '') : climb_unlocked ? 'starting the radio…' : 'press play', done: climb_playing, play: !climb_unlocked && !climb_playing })
         return rungs
     })
     $effect(() => { if (inv_state?.state === 'sealed' && !sealed_at) sealed_at = Date.now() })
+    // AN iOS WITHOUT audioSession (Audio.svelte.ts sets it) still mutes Web Audio on the silent switch, and nothing can tell us
+    //  it did — so the playing rung says where to look.  Newer iOS (and everything else) never sees this.
+    const ios_mutable = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/.test(navigator.userAgent) && !(navigator as any).audioSession
+    // the rung's own ▶ — this tap IS the gesture: unlock the context inside it, then start the radio as autoplay would
+    async function climb_play() {
+        try { await (H as any)?.keep_awake_acquire?.() } catch {}
+        autoplayed = true
+        try { void (H as any)?.Radio_go?.(climb_radio, null) } catch {}
+    }
     // AUTOPLAY ON ARRIVAL (owner 2026-10-26) — once per tab, the moment it can honestly work: sealed, the friend's tracks
     //  are here, the radio is idle, and the AudioContext is already unlocked (the OPEN SHARE / OK tap).  Never without
     //   that unlock: Radio_go on a locked context sits in 'digging' forever (its own header note), which is worse than
@@ -631,7 +643,7 @@
                         {#if landing && !is_mycave && !invite_failed}
                             <ol class="climb">
                                 {#each climb as r, i (i)}
-                                    <li class:done={r.done}>{#if r.done}<span class="climb-tick">✓</span>{:else}<span class="climb-spin" aria-hidden="true"></span>{/if}{r.text}</li>
+                                    <li class:done={r.done}>{#if r.play}<button class="orange climb-play" onclick={climb_play}>▶ {r.text}</button>{:else}{#if r.done}<span class="climb-tick">✓</span>{:else}<span class="climb-spin" aria-hidden="true"></span>{/if}{r.text}{/if}</li>
                                 {/each}
                             </ol>
                         {/if}
@@ -944,6 +956,7 @@
     .climb { list-style: none; margin: .7rem 0 .2rem; padding: 0; font-size: .92rem; line-height: 1.6; text-align: left; }
     .climb li { display: flex; align-items: center; gap: .5em; opacity: .95; }
     .climb li.done { opacity: .7; }
+    .climb-play { font-size: 1rem; padding: .3em .9em; }
     .climb-tick { width: 1em; text-align: center; color: #9fe09a; }
     .climb-spin { width: .8em; height: .8em; margin: 0 .1em; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent;
         animation: climb-spin .8s linear infinite; }

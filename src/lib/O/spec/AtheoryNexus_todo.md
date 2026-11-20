@@ -19,7 +19,7 @@
 | **Atheory: rows, not signals** (frontiers A–F below) | A door ✓ · B disk drains itself ✓ · C first part ✓ · D Jobs ✓ · E slices 1–3a ✓ · F not started.  Two outside arrivals now RUN on it: code moved (A:Codes, AtheCodePin) and /Radio's arrival (A:Radio>A:Arrive, AtheRadioArrive); Theory's holder edge (`TheA_edge`) does what a move decided and commits views | C (Story waits by news) and F (reqs — the owner: "might want a bunch of rethinking since pulses happen") are the old country's biggest leftovers; mine to do unmanaged | §0.0 below, Coding_guide |
 | **/Radio onto Atheory + Stuffica** | on a Ground since 11-07; rung 1 (the arrival as a compartment) built 11-19; the stoker tells it (rung 2, first part); rung 2 done (the stoker, chunks, presence and the radio's state tell; the clock wakes at deadlines); rung 3a the source choices as a compartment (A:Dial, AtheRadioDial) — uncommitted, owner press owed; rung 4 first slice (A:Sound tapes what the audio did); THE CURSOR: `tapes` reads every compartment on any tab (Land `:ask tapes`) | rung 2 rest (friends + catalog tell) → 3 a press is an arrival → 4 the radio's state on rows → 5 faces as views | AtheoryArrive_todo §7 |
 | **Stuffica** | views + door built (Aprac §0); real runs commit views (proven: AtheRadioDial step 7); every face stands on one `Screen` (O/ui/screen.svelte.ts — ArriveFace, Stuffmush, Storica; uncommitted) | the door becomes TheA_io once screen worlds stand in the loop | AtheoryArrive_todo §7, Aprac_todo |
-| **The land** (code legible) | Atlas, Electrode, /Desk?G=Land, panes, `:ask`, code push + content names | writing on the Land page (a pane that edits + `:compile` on the editor seat) | §0.00 here, Wordland_todo |
+| **The land** (code legible) | Atlas, Electrode, /Desk?G=Land, panes, `:ask`, code push + content names | writing on the Land page (a pane that edits + `:compile` on the editor seat); THE NEXUS — the organs as one dependency graph in a Waft, edges typed, meanings as betweens (idea, 11-20) | §0.00 + §3.14 here, Wordland_todo |
 | **Jamsend** (the music) | /Radio tuned live 11-10; pile built, owner-unseen | owner's look at /Desk?G=Pile; Musu `cid:` re-record (owner's go) | Pile_todo, Radio_todo |
 | **Identity + the socket** | first peel (Jamsend.g) ✓, one-socket carrier dark, every Desk page is someone ✓ | parked by the owner (wallet, appliance) | Wallet_todo, Social_demarcation_todo §0.5 |
 | **Further off** | the language (Cstructures), the glass, Emotion | — | DocIndex |
@@ -843,6 +843,154 @@ R1 holding, R2 refs, R3 nearness are built (`Atheory_design.md` §1.15, Book `At
      axons, not its code: swap a pocket (another layout, a test puppet, a remote screen) and nothing behind it changes.  Storica's
       `A:Strip` (§0 item 3) is the first pocket; the arena would hold pockets, not components.  Open: is a pocket a kind of A (a mark,
        `%TheAPocket`?) or just any A that a UI reads; does one pocket serve many screens (a turf question, §3.11).
+
+### 3.14 The nexus — the Land's deeper meanings, kept as a Waft
+*Owner 2026-11-20, after `tapes` read as loose figures and a drawn mock-up of A:Arrive "given a voice" missed:* "what you're going for
+ is some nexus or society of properties that we might construct to attach further code to … various parts of the code want to be
+  related together, presented as surface or a row or the space between two things.  that's another artifact we want to build in Waft
+   space, tracking the Land's deeper meanings, which turn out to be the upper levels of the model of reality we have."
+- **The miss it corrects:** a voice per compartment (`Voice:Arrive`, `Says:` per row kind) put the meaning INSIDE one compartment.  The
+   meaning is wider than any one: "is the page in yet" is said by the sense (`RadioPage_aw`), decided by the move (`Arrive_woken`), acted
+    on by the edge (`Radio_ran`), drawn by a face (ArriveFace), sworn by a Book (AtheRadioArrive), and claimed by the Supervisor's Health
+     watches — six places, no home.  The home is a Waft row they all hang off.
+- **Fits the vocabulary already:** Waft › What › Doc › Point is how the area Wafts map the code.  A meaning is a `What` whose Points
+   cross Docs and kinds (a sense, a move, an edge, a face, an oath, a claim).  What is new is **how the meaning presents**:
+    as a **surface** (a face draws it), a **row** (one line in a listing — the cursor, the Health log), or a **between** (the space
+     between two things: a tape is the space between the sense and the move; a Take between the move and the edge; a Seat between
+      two tabs).  A between needs two ends, so it names two Points.
+- **Why "upper levels":** these rows are the model of reality the code serves — arrival, aim, presence, a friend — above any one
+   ghost.  Further code ATTACHES to a row (a reader draws it, a Book swears it, a watch claims it) instead of re-saying it; `tapes`
+    would then read a compartment through the meanings it serves, not as `TheAHeard:5,take:5`.
+- **Its scope is the whole project** (owner, same day): "it needs to scope across this whole project... so the README kind of
+   breaks that down, but also like App has Jamsend instantiating it, and App has social things Jamsend uses etc..."  So the top
+    of the nexus is the project's layers, and its first rows are the relations BETWEEN layers:
+    - three breakdowns exist and none of them relates: the README tells it as a story (the bet in the guise of music piracy; the arms
+       stho, Atheory, Vyto, Story; Music), DocIndex as four sections of topics (metaphysics · app foundation · Jamsend · the visual end),
+        Waft:Everything as areas of code.  Each lists; none says how one part stands on another.
+    - the relations are verbs between layers: Jamsend **instantiates** the App (a person becomes a listener; a body becomes a
+       Cave with a folder); Jamsend **uses** the App's social (presence, crew, trust); the App **stands on** Atheory (an arrival is a
+        compartment); Story **proves** all of it; the glass **draws** all of it; the Land **reads** all of it.
+    - the concrete meanings sit at the joints, as betweens: "a friend is online" is between the App (Presence) and Jamsend (Arrive
+       crossing to them); "a Heist lands on the computer" is between Jamsend (Heist) and the App (crew, Link Device); "is the page in
+        yet" is between the App's arrival and the Radio.  So a between is not a third kind beside surface and row; it is what the nexus
+         is mostly made of.
+- **It is the dependency graph of the organs** (owner, same day): "it's all becoming a bit of a dependency graph, for to make the
+   one big map of all the organs."  `Organs_todo.md` already has one row per organ (what it is FOR, debt, murk, dark); the
+    area Wafts list each organ's methods; neither has edges.  The nexus is those organs as nodes and the relations above as typed
+     edges (instantiates · uses · stands on · proves · draws · reads), each edge carrying the meanings that cross it as its betweens.
+      One map, so the Land can draw it, a Book can swear an edge, and an organ's trouble can be read along what depends on it.
+- **BUILT 2026-11-20 (first slice):** `wormhole/Ghost/Land/Nexus/toc.snap` — 8 Organs in 4 layer Whats (the app foundation · jamsend ·
+   atheory · story) and the 8 Edges /Radio's arrival crosses under `What:the arrival`.  `src/lib/L/wafts_keep.js` reads it beside the
+    areas (`NEXUS`, `nexus_check`): both ends are Organs, `as:` is one of `EDGE_AS` (instantiates · uses · tells · stands on · acts on ·
+     reads · draws · proves · claims), each end has a Point in its Organ's Doc; it claims no file for coverage and wears no Ground.
+      Everything points at it with a plain What (no FromWhat, so land_map's areas don't pick it up).  Found on the way: ArriveFace draws
+       the SUPERVISOR's watches, and Ground/Radio's `Arrive:…,says:…` rows are already the arrival's sentences — the voice was there.
+        Nothing draws the graph yet (owner: wary of "can draw the whole map").  Next: more meanings' edges; layer edges (Jamsend
+         instantiates the App) derived from organ edges, not authored.
+- **The keeper belongs in an A — the Gardener** (owner, same day): "I'd like to keep the entire process in A rather than random scripts
+   that don't decode the Lines properly (see Text.svelte? obviously we should be standards compliant always?) … that all needs to hang
+    off the Gardener, who uses the Land to present Organs nicely."  Today the map is kept by `wafts_keep.js` with two hosts (the
+     floor script `scripts/wafts_everything.mjs`, and Lagoon.g's `everything` verb on the editor terminal), and BOTH parse a toc by
+      hand — split on `,` then `:` (`wafts_parse`), not Text's `deL`/`deWaft`.  So a JSON-fallback line (what `enLine` writes when a
+       value holds a comma), a tab-carried objectie or a blockquote body would be misread — the policy "no commas in a desc" exists only
+        to protect that parser.  The plan: an `A:Gardener` stands on the land page; it reads Everything, the area Wafts and the Nexus
+         with `deWaft` into a live C tree (Organs and Edges as particles), checks them as a move, writes the derived tocs by `enWaft`, and
+          the Land presents Organs from its rows.  The script retires to `runner_ask everything` (verbs pass through the CLI), giving up
+           a no-tab check.
+- **The Gardener is a duty, taken up when ready** (owner, same day): "it'd be a role you took on when ready, a lot of hackers shall
+   just be looking at code for something else, not wanting to be the main person|agent doing things canonically.  it may need a level
+    of awakeness concept… and manage a derived set of information like all this code-bridging scene drawing we're talking about
+     commissioning into being as a natural part of the hacker machine's operations."
+    - so not a role stamped at boot (`runner` · `player` · `hacker` · `editor`): a hacker room is a reader by default, and one tab
+       TAKES UP the Gardener — the canonical keeper of the derived map — the way the editor holds the write duty (`Verb_run` refuses
+        a writing verb where writing is not the tab's duty).  One holder at a time; the rest read what it keeps.
+    - **awakeness**: how much the Gardener does — asleep (holds nothing) · dozing (re-checks the map when a toc or a source changes,
+       by the docindex push) · awake (derives and commissions: the Organ scenes, the code-bridging drawings, the tocs it writes).  §3.2
+        (each level says which loop it wants) and `Emotion_todo.md` (the will drives the work) are its kin.
+    - **what it keeps** is derived, never authored: Organs and Edges read off the hand-kept Wafts, every reference in prose resolved
+       to the thing it names (NOTATION "References"), the scenes the Land draws.
+- **The competing standards** (owner: "there are almost some competing standards amongst all these Waft we might keep a higher level
+   of meaning on top of the code with").  Each maps the program a different way and names its parts differently:
+
+   | map | what it lists | its parts are called | kept |
+   |---|---|---|---|
+   | `Waft:Ghost/Everything` + the area Wafts | where code lives — areas › Docs › main Points | areas (the wire, the swarm, the music …) | by hand |
+   | the Grounds (`Ground:<Name>`) | what loads with what — `stands:` is a dependency graph already | Grounds (Wire, Swarm, Music …) | derived from Everything's tags |
+   | `Waft:Credence` | every Book, grouped | Whats by subject | by hand |
+   | `Waft:Ghost/Land/Nexus` | what leans on what — Organs and typed Edges | Organs | by hand |
+   | `DocIndex` | the docs — four sections, 21 topics | topics, sections I–IV | by hand, markdown |
+   | `Organs_todo` | each organ's trouble — debt, murk, dark | organs (rows by ghost family) | by hand, markdown |
+   | a Ground's `Arrive:` rows, the Supervisor's `claim:` | what a page expects to be true, in sentences | watches | by hand in the Ground |
+
+   Four of them name the program's parts (areas, Grounds, topics, organs) and none joins to another except by sharing a Doc path
+    (`land_map.ts` joins Everything to DocIndex that way).  The higher level the owner wants is the **constellation of top-level
+     limbs** — the bet, then I metaphysics · II the app foundation · III Jamsend · IV the visual end (DocIndex's sections, which the
+      README tells as a story) — with every area, Ground, topic and Organ joined to one limb, and the Nexus's layer Whats being those
+       limbs.  Open: which map becomes the one the others are derived from (the Gardener's to keep), and which stay hand-kept.
+- **WHERE IT'S HEADING — the illustration and structure of the program's guts** (owner, same day): "the main thing Gardener should
+   be able to do is look at each computation, and commission a runner to interrupt there.  it should also be able to target C**
+    surrounding it to isolate certain occasions, since some code is visited thousands of times but only once with a certain something
+     you want to actually see.  the Story of the code is sitting nearby, with its demonstrations pointing to parts of the code, showing
+      them … a light impression of the code involved beside the Story's illustration (of the C** that most matter?) … a lot of
+       Stuffmush rapid-growth tree genetics, but we talking about regions and classes and defs."
+    - **a catch**, the Gardener's main act: a commission to a runner — at `Organ:X`'s `fn()`, WHEN the C** around the call matches a
+       query (an arg, or what it holds: `w` holding `%Take:cross`) — to stop there and keep that ONE occasion: the matched C** as a snap,
+        the caller chain, the step it fell in.  "Interrupt" in this paradigm is capture, not a frozen tab (a paused tab stops the House and
+         every Book on it); a catch may also HOLD the run (a `%TheAWait`) while someone looks, and let it go.
+    - **what exists for it:** `Electrode_coat()` already wraps every ghost method on an armed runner and sees its args and caller —
+       the catch is one test inside that wrapper; Electrode's Hacky flavour keeps the caller across an await; a Book's `Exercise/` lists
+        the code a Book touches (`Flow,of:<callee>,from:<caller>`), per Book not yet per step; Atlas keeps every doc's `%Map` (regions,
+         classes, defs); Story keeps the C** of every step; Stuffmush grows a tree fast.
+    - **what's missing:** the catch itself (`:catch fn --when=<query>` on Electrode, rows `%Caught` on the runner, read back like
+       `:tapes`); Exercise per STEP, so a step's illustration knows its code; the light impression — the step's code drawn small from
+        Atlas's Map (region › class › def, sized by how much of it ran) beside the step's C**; the Gardener to commission catches and keep
+         what came back.
+    - *First move when it's time:* `:catch` — one method, one query, the first N occasions kept, on a runner running a Book.
+- *The first move as planned:* a hand-kept `Waft:Ghost/Land/Nexus` (or the owner's name) under Everything: one row per organ, keyed
+   like Organs_todo's, and one row per edge between two of them (`as:between`, two ends, the relation, the meanings that cross it).
+    Start with the edges /Radio's arrival crosses (App arrival → Radio; Presence → Arrive; Stoker → Arrive; A:Arrive → ArriveFace;
+     AtheRadioArrive proves A:Arrive; Supervisor claims it).  `wafts_keep.js` taught the edge row (both ends exist); then TapesFace
+      reads a compartment through its edges.  Open: whether Organs_todo's rows move INTO the Waft (the trouble lines riding on the
+       organ node) or stay prose and point at it; whether the Supervisor's `claim:` watches become edges.
+
+### 3.15 The frame — where a name is said from and where an IOing's rows land are one A
+*Owner 2026-11-20:* "I think there's some tissue to connect between findable|look-up-able names in Atheory somewhere, relativity or so,
+ and Sunpit.  IOing brings rows in... does it create an A to do its job?  have a really good think."
+- **What /Radio's arrival shows (built 11-19/20, read 11-20).**  `RadioPage_reading()` is a Sunpit written by hand: one function that
+   reads eight sources and lands one reading on A:Arrive's tape.  Every source is found by a different hand lookup — `w.o({Stoker})`
+    (local), `top_House().c.humdinger`, `RadioPage_piers()`, `RadioPage_relay_open()`, `Swarm_station_world()` — none by `_A_near()`.
+     And nothing wakes it by itself: each source TELLS it by hand (`Presence_take()` → `RadioPage_news()`, `Stoker_told()` → the same,
+      `Radio_state()` → `RadioPage_news()` AND `RadioPage_heard_sound()` — one change told twice to two compartments).  On the far side,
+       the Supervisor reads what the move decided through its OWN walker (`Ground_arrive_A()`, breadth-first, not `_A_near()`) plus a
+        special case (`Ground_arrive_row()` looks "one A down when the A holds compartments").  So each relation is written three times —
+         the read, the tell, and now the Nexus Edge (`Waft:Ghost/Land/Nexus` `as:tells`, `as:reads`).
+- **The tissue: an A is a FRAME.**  The same A does three jobs that look separate:
+   1. **vantage** — a name means something only FROM somewhere: R3 resolves the nearest A called it, counted from the asker (§3.7, §3.9).
+       A Sunpit's `@`s resolve from its home.
+   2. **landing** — an IOing's rows need a place that is theirs: a tape (`%TheAHeard`), a turn, a version, a view (Stuffica), an Aip
+       (§3.10).  Rows landed anywhere else are just more clutter in someone's w.
+   3. **time** — the tape is what makes an occasion replayable and catchable (§3.14's `:catch` keeps "the C** around the call" — inside a
+       compartment that is simply the tape at that turn).
+   That is the relativity: a reading is relative to a frame the way a name is, and the frame is the same A.
+- **So does IOing create an A?  No — a QUESTION does, and its IOings are its senses.**  A:Arrive was stood because "is the page in yet"
+   needed rows of its own (`%Arrived`, `%Alone`, `%Wake`, `%Take`), not because it reads eight things.  Many `S` reads feed one question;
+    one question, one compartment.  An `S` homes to the nearest A|w|J enclosing its definition (§3.8, ruled) and lands there; it stands
+     a compartment of its own only when what it lands is a decision that wants its own tape, turn and view.  Lean, to test.  (In the
+      zoom ladder, Sunpit ⊂ J ⊂ A: a Sunpit becomes a J when it is given a question.)
+- **And the reverse — a frame is a SOURCE others name.**  Presence is read by the arrival and, soon, by the dial and the pile: as a J its
+   Sunpits are its API (§3.8) — "friends online" published once, each reader's `@Presence/%Pier` a subscription, where today each reader
+    hand-reads and Presence hand-tells each.
+- **The one move this predicts:** an `@` in an `S` is the read, the tell and the edge at once.  Resolved from the home frame (R3), it says
+   where to read; inverted, it is the subscription the source must wake (the tell, generated — no `RadioPage_news()` call sites); and when
+    it resolves OUTSIDE the home frame it is a Nexus Edge, derivable by the Gardener from code instead of hand-kept (§3.14).  The hand
+     Nexus becomes the check on the derived one until they agree.
+- *Small steps it gives, in order:*
+   1. `Ground_arrive_A()` → `_A_near()` (a run-marked holder's As are already findable, Housing `attends`), so `Ground_arrive_row()` loses
+       its special case and Ground/Radio's rows say `of:Arrive`.  One resolver, not two.
+   2. `RadioPage_reading()`'s lookups through one named-read helper (`TheA_read(frame, '@Presence/%Pier')`-ish) that also records the
+       read on the frame — the watch list, observed, before stho can say it lexically.
+   3. From the recorded watch list, the tells: a source change wakes every frame that read it (Theory's boundary), and the hand tells go.
+   4. The Gardener derives Edges from the watch lists; the hand Nexus is diffed against them.
 
 ## 4. Parked — moved out, with where
 - **A Story's runs as a collection** → `Story_future.md` "Open / deferred".  Owner: "might be useful eventually but is Story_future."

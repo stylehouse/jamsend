@@ -894,8 +894,9 @@
                      came here to hear someone else's music, and that half is not what FSA gates.  It
                      would be wrong to put a warning between them and the one act they arrived to do —
                      but wrong too to let them find out only when their own sharing silently never works. -->
+                <!-- the ONE folder line on this screen (owner 2026-11-20): named, not linked — this is a FaceSucker getting a name -->
                 {#if no_fsa}
-                    <span class="ip-note ip-warn">⚠ sharing your own music back needs Chrome — this browser can’t open a music folder</span>
+                    <span class="ip-note ip-warn">⚠ to share your own music, use Link Device (in Door) with Chrome on a computer</span>
                 {/if}
             {:else}
                 <span class="ip-note">{iz_err}</span>

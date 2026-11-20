@@ -21,6 +21,13 @@ export const COVER_SKIP  = /(^|\/)(node_modules|gen|history|shelved|ulative)(\/|
 export const UNSORTED    = 'Ghost/Rest/Unsorted'
 // the front door's own key — it lives beside the area Wafts it maps, as ./Ghost/ holds the .g (owner, 2026-10-21)
 export const EVERYTHING  = 'Ghost/Everything'
+// THE NEXUS (owner 2026-11-20, spec/AtheoryNexus_todo.md §3.14 — "a bit of a dependency graph, for to make the one big map of all the
+//  organs").  Not an area: a hand-kept Waft of `Organ:<Name>` rows (each under the What of the layer it belongs to, with the Doc it
+//   lives in) and `Edge:<from>,to:<Organ>,as:<relation>,desc:<the meaning that crosses it>` rows, each citing the Points at both ends.
+//    Read beside the areas, validated here (both ends are Organs, the relation is a known one, each end has a Point), but it claims no
+//     file for coverage and wears no Ground — the areas still say where a thing lives; this says what it leans on.
+export const NEXUS       = 'Ghost/Land/Nexus'
+export const EDGE_AS     = ['instantiates', 'uses', 'tells', 'stands on', 'acts on', 'reads', 'draws', 'proves', 'claims']
 // what wafts_build adds to Everything on every run — stripped on read so a re-run never doubles them
 // THE HACKY TWINS (owner 2026-11-09, spec/Electrode_todo.md §0).  Every tagged Ground gets a twin, Ground/Hacky/<Name>: the same Load:
 //  rows (sources, repo-root paths — the loader derives which build), plus `Flavour:electrode`, so the floor loads each from
@@ -64,9 +71,11 @@ export function wafts_parse(text) {
         if (r.head === 'Funkcion:Storying') { if (r.kv.of_Book) books.push(r.kv.of_Book); continue }
         while (stack.length > 1 && stack[stack.length - 1].depth >= r.depth) stack.pop()
         const parent = stack[stack.length - 1].node
-        if (r.head.startsWith('What:')) {
+        if (/^(What|Organ|Edge):/.test(r.head)) {
             const node = [r.head]
             if (r.kv.desc) node.push(r.kv.desc)
+            if (r.kv.to) node.push('To:' + r.kv.to)
+            if (r.kv.as) node.push('As:' + r.kv.as)
             if (r.kv.FromWhat) node.push('FromWhat:' + r.kv.FromWhat)
             if (r.kv.ground) node.push('Ground:' + r.kv.ground)
             for (const s of (r.kv.stands ? r.kv.stands.split('|') : [])) node.push('Stands:' + s)
@@ -98,6 +107,8 @@ export async function wafts_read(host) {
         if (!area) { problems.push(`${EVERYTHING}: ${what[0]} points at Waft:${key} — no toc`); continue }
         W.push(area)
     }
+    const nexus = wafts_parse(await host.toc(NEXUS))
+    if (nexus) W.push(nexus)
     W.push(every)
     return { W, problems }
 }
@@ -111,7 +122,7 @@ export async function wafts_build(W, host) {
     //    goes into one generated Waft, grouped by directory, and Everything cites it WITH THE COUNT.
     const cited = new Set()
     const scan = (node) => { for (const c of node) { if (Array.isArray(c)) scan(c); else if (typeof c === 'string' && c.startsWith('Doc:')) cited.add(c.slice(4)) } }
-    for (const [, , , tree] of W) for (const w of tree) scan(w)
+    for (const [key, , , tree] of W) if (key !== NEXUS) for (const w of tree) scan(w)
     const files = (await host.files()).filter(f => COVER_EXT.test(f) && !COVER_SKIP.test(f)).sort()
     const rest = files.filter(f => !cited.has(f))
     const byDir = new Map()
@@ -162,10 +173,10 @@ export async function wafts_build(W, host) {
             const from = (typeof rest_[0] === 'string' && rest_[0].startsWith('FromWhat:')) ? rest_.shift().slice(9) : null
             const m = ground_marks(node)
             if (/,/.test(desc || '') || /,/.test(head)) problems.push(`${name}: comma in ${head}`)
-            lines.push(`${pad}${head}${desc ? ',desc:' + desc : ''}${from ? ',FromWhat:' + from : ''}${m.ground ? ',ground:' + m.ground : ''}${m.stands.length ? ',stands:' + m.stands.join('|') : ''}${m.main ? ',main:' + m.main : ''}${m.role ? ',role:' + m.role : ''}`)
+            lines.push(`${pad}${head}${m.to ? ',to:' + m.to : ''}${m.as ? ',as:' + m.as : ''}${desc ? ',desc:' + desc : ''}${from ? ',FromWhat:' + from : ''}${m.ground ? ',ground:' + m.ground : ''}${m.stands.length ? ',stands:' + m.stands.join('|') : ''}${m.main ? ',main:' + m.main : ''}${m.role ? ',role:' + m.role : ''}`)
             for (const c of rest_) {
                 if (Array.isArray(c)) { await emit(c, depth + 1); continue }
-                if (/^(Ground|Stands|Main|Role):/.test(c)) continue
+                if (/^(Ground|Stands|Main|Role|To|As):/.test(c)) continue
                 if (c.startsWith('Doc:')) {
                     lastDoc = c.slice(4)
                     if (!(await host.exists(lastDoc))) problems.push(`${name}: missing ${lastDoc}`)
@@ -179,6 +190,7 @@ export async function wafts_build(W, host) {
             }
         }
         for (const w of tree) await emit(w, 1)
+        if (name === NEXUS) nexus_check(tree, problems)
         out.push([name, lines.join('\n') + '\n'])
     }
     const twins = hacky_twins(grounds.list)
@@ -197,18 +209,56 @@ export async function wafts_build(W, host) {
 //   from it with no wormhole, and a prod tab with no wormhole tree reads it too).
 export const GROUND_CORE     = 'Core'
 export const GROUND_MANIFEST = 'src/lib/A/grounds.gen.js'
-const MARK_RE = /^(Doc:|Point:|FromWhat:|Ground:|Stands:|Main:|Role:)/
+const MARK_RE = /^(Doc:|Point:|FromWhat:|Ground:|Stands:|Main:|Role:|To:|As:)/
 
 export function ground_marks(node) {
-    const m = { ground: null, stands: [], main: null, role: null }
+    const m = { ground: null, stands: [], main: null, role: null, to: null, as: null }
     for (const c of node.slice(1)) {
         if (typeof c !== 'string') continue
         if (c.startsWith('Ground:')) m.ground = c.slice(7)
         else if (c.startsWith('Main:')) m.main = c.slice(5)
         else if (c.startsWith('Role:')) m.role = c.slice(5)
         else if (c.startsWith('Stands:')) m.stands.push(c.slice(7))
+        else if (c.startsWith('To:')) m.to = c.slice(3)
+        else if (c.startsWith('As:')) m.as = c.slice(3)
     }
     return m
+}
+
+// nexus_check — the graph's own law, beside the row checks every Waft gets: an Organ is named once and lives in a Doc; an Edge
+//  joins two Organs by a known relation and cites a Point in a Doc of EACH end, so every edge is anchored in code at both sides
+export function nexus_check(tree, problems) {
+    const organs = new Map()
+    const edges = []
+    const walk = (node) => {
+        if (node[0].startsWith('Organ:')) {
+            const n = node[0].slice(6)
+            if (organs.has(n)) problems.push(`${NEXUS}: Organ ${n} twice`)
+            organs.set(n, node.filter(c => typeof c === 'string' && c.startsWith('Doc:')).map(c => c.slice(4)))
+            if (!organs.get(n).length) problems.push(`${NEXUS}: Organ ${n} lives in no Doc`)
+        }
+        if (node[0].startsWith('Edge:')) edges.push(node)
+        for (const c of node) if (Array.isArray(c)) walk(c)
+    }
+    for (const w of tree) walk(w)
+    for (const e of edges) {
+        const m = ground_marks(e)
+        const from = e[0].slice(5)
+        const at = `${NEXUS}: Edge ${from} → ${m.to || '?'}`
+        if (!EDGE_AS.includes(m.as)) problems.push(`${at} — as:${m.as || ''} is not one of ${EDGE_AS.join(' · ')}`)
+        // the Docs this edge points INTO, each one followed by a Point
+        const pointed = new Set()
+        let doc = null
+        for (const c of e) {
+            if (typeof c !== 'string') continue
+            if (c.startsWith('Doc:')) doc = c.slice(4)
+            else if (c.startsWith('Point:') && doc) pointed.add(doc)
+        }
+        for (const end of [from, m.to]) {
+            if (!organs.has(end)) { problems.push(`${at} — ${end || 'no to:'} is no Organ`); continue }
+            if (!organs.get(end).some(d => pointed.has(d))) problems.push(`${at} — no Point in ${end}'s code`)
+        }
+    }
 }
 
 export function grounds_derive(W, files, problems) {

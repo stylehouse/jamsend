@@ -127,7 +127,8 @@
         {#if disk_gated && !gate.fsa_advice}
             <p class="bg-welcome">You should open a folder to save music in, or link another device to do so later.</p>
         {:else if phone_welcome}
-            <p class="bg-welcome">No folder access. In Door you may link a device to download to. You can still play.</p>
+            <!-- no folder: say what is still possible, and name SoundPooling for later (owner 2026-11-20: mention it, don't open it) -->
+            <p class="bg-welcome bg-pool">No folder here, but you can still play.<br><span class="bg-small">🏊 SoundPooling can keep music on this phone for offline.</span></p>
         {/if}
         {#if disk_gated && explain}
             <p class="bg-explain">this device keeps your music &amp; account in a folder you pick, so they survive across visits and stay on YOUR disk — not a server. or listen without one and it pools in browser storage.</p>
@@ -157,6 +158,9 @@
         color: #f4ead6;
         font-family: Arial, Helvetica, sans-serif;
     }
+    .bg-pool { padding: .6rem 1rem; border-radius: .7rem;
+        background: rgba(20, 30, 45, .72); border: 1px solid rgba(120, 190, 255, .25); }
+    .bg-small { font-size: .9em; opacity: .85; }
     .bg-row { display: flex; align-items: center; gap: .5rem; }
     /* THE UNIFORM ORANGE (owner: "the uniform orange one we have now everywhere"). */
     .bg-open {

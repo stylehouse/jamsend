@@ -26,6 +26,9 @@ Waft:Ghost/Everything,desc:READ THIS FIRST — one Waft per area of the program 
     Doc:Ghost/L/Lagoon.g
     Doc:src/lib/L/BigWordland.svelte
     Doc:src/lib/O/spec/Wordland_todo.md
+  What:the nexus,desc:Ghost/Land/Nexus — the organs as one graph — Organ rows by layer and Edge rows between them each carrying the meaning that crosses it — read beside the areas
+    Doc:src/lib/L/wafts_keep.js
+    Doc:src/lib/O/spec/AtheoryNexus_todo.md
   What:the theory,desc:Ghost/Atheory/Theory — Theory Stuffica Ground — the code an A runs — the Seem — the Ground — the base every tab stands on,FromWhat:Waft:Ghost/Atheory/Theory,ground:Core
     Doc:Ghost/A/Theory.g
     Doc:Ghost/A/Ground.g

@@ -6,6 +6,7 @@
     import InvitePanel from './InvitePanel.svelte'
     import { folder_capable, open_folder_again } from './boot_gate.svelte.ts'
     import { invite_pending, invite_pending_clear } from '$lib/boot'
+    import { concap_read } from '$lib/O/sockcap'
     import { pier_marks } from './pier_marks'
     import DeleteX from './micro/DeleteX.svelte'   // the confirmey delete (arm → "forget?" → confirm)
     // DoorFace — WHO AM I and WHO'S WITH ME, floating in the glass: the identity + front-door
@@ -507,6 +508,20 @@
     let pose = $derived.by(() => { void H?.version; void tick; return String(n?.c?.pose ?? 'big') })
     // A LINK IN FLIGHT — the Door's "🔗 Link Device" becomes the way BACK to it (owner 2026-09-29: "it's hard to get
     //  back to Link from Door, it should be more like '[Link] in progress'").  Read-only probes, ticked like pose.
+    // SEND LOG (2026-11-20, a friend's phone played nothing and left nothing to read) — the always-on console ring, POSTed
+    //  to the server that sent the page; it lands as wormhole/_trace/drop-<pub8>-<time>.txt (server/log_drop.ts)
+    let log_sent = $state('')
+    async function log_send() {
+        log_sent = 'sending…'
+        try {
+            const pad = (n: number, w = 2) => String(n).padStart(w, '0')
+            const at = (t: number) => { const d = new Date(t); return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()) + '.' + pad(d.getMilliseconds(), 3) }
+            const head = ['who ' + (face.name ?? '') + ' ' + (face.prepub ?? ''), 'url ' + location.href, 'ua ' + navigator.userAgent, 'at ' + new Date().toString(), '']
+            const body = head.concat(concap_read().map(c => at(c.t) + ' ' + c.lv + ' ' + c.line)).join('\n')
+            const r = await fetch('/__log?pub=' + encodeURIComponent(String(face.prepub ?? 'anon')), { method: 'POST', body: body.slice(-250000) })
+            log_sent = r.ok ? '✓ sent' : '✗ ' + r.status
+        } catch (e: any) { log_sent = '✗ ' + (e?.message || e) }
+    }
     // this browser has no folder picker (Safari, a phone) — it can listen, never share its own music
     const no_fsa = typeof window !== 'undefined' && !('showDirectoryPicker' in window)
     let link_live = $derived.by(() => {
@@ -723,6 +738,8 @@
                     {/if}
                 {/if}
             </div>
+            <div class="df-ourrow"><button class="df-linkdev" onclick={log_send} disabled={log_sent === 'sending…'}
+                title="send this tab's console log to the server, for whoever is helping you">📤 send log</button>{#if log_sent}<span class="df-note">{log_sent}</span>{/if}</div>
             <!-- NO FOLDER HERE (owner 2026-11-19: the warning "should be inside YOU") — said beside the Link Device that answers it -->
             {#if no_fsa}<div class="df-note">⚠ this browser can’t open a music folder — to share your own music, 🔗 Link Device to a computer running Chrome</div>{/if}
             {#if face.family.length}

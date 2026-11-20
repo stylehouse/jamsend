@@ -14,6 +14,30 @@
 
 ## 0. What to get on with next
 
+**◇ 2026-11-20 — the hacker room as a place you're let further into (owner, not built).**  *"what's the hacker room then, where I
+ point kids to try read about this and maybe hack some code... I guess central control tower grants them escallating powers? and
+  escallating consciousness... it should start a simple editor and we should progressively switch on more a more of the environment...
+   and it needs to be able to look at how each line compiles, and the bunch of Sunpit IOing that happens. that's codemirror decorations
+    or something."* — and: *"it should have a ferny feel. I'll pop a moss background in later."*
+- **Today there are two rooms and no ladder:** /BigWordland (`Book:Hackarium`: docks, the cave, the Workshop's `:watch Garden` —
+   `Ghost/Play/Garden.g` is already written for a newcomer) and /Desk?G=Land (read-only `:pane` CodeMirrors, `:tapes`, the censuses).
+    Both are `role:hacker`: read everything, write nothing; the only writer is the editor.
+- **The ladder** — rungs a tab is GRANTED (a `%Grant` from the control tower, the owner's editor terminal), each switching on more of
+   the environment; the rung is also the room's awakeness (AtheoryNexus_todo §3.14, the Gardener's asleep · dozing · awake):
+   1. **read** — a simple editor: one pane, one file, its prose; the decorations off.
+   2. **see** — the decorations on: each line's compile, its IOing sites, a Point's oath.
+   3. **play** — write and compile ONE creation of your own under `Ghost/Play/` (the Workshop's :make), on a scoped seat.
+   4. **catch** — commission a runner (`:catch`, §3.14), `:tapes` other tabs.
+   5. **garden** — keep the derived map canonically (the Gardener).
+   6. **edit** — write anywhere; today's editor.
+- **The decorations are CodeMirror marks off rows that already exist:** Atlas's `%Map` per doc carries `def call region controlflow
+   elvisto mint proves` with lines, and `IOexpr_todo §0` rules one word for every IO site (`%ioing,input|output,mainkey,via`) — the
+    Sunpit IOing a newcomer sees.  "How each line compiles" is a gutter beside the `.g` line showing its `.go` line (the compiler pads
+     the script so offsets keep line numbers — check how far that holds per method before promising it).
+- **The look: ferny.**  Fronds unrolling as a rung opens (more environment uncurls); the owner brings a moss background.  Kin of
+   Stuffmush's rapid-growth tree, and of the Garden.
+- *First move when it's time:* rung 1→2 on /Desk?G=Land's `:pane` — a decoration layer from the doc's `%Map` rows, toggled.
+
 **✓ /Desk?G=Land — the land as a page (2026-11-09).**  Waft:Everything's land What wears `main:Land,role:hacker`; wafts_keep carries
  those into the derived Ground/Land as `Main:Land` + `Role:hacker` (any area may: a Ground that is also a page).  Auto stands A:Land on
   Mundo; its think (Ghost/L/LandPage.g) loads Ground/Land with its Glass, stands Atlas · Electrode · Lagoon on the top House (Lagoon's face

@@ -3,6 +3,7 @@ import { defineConfig, loadEnv, type PluginOption } from 'vite';
 import { attachRelay } from './src/lib/server/relay';
 import { serve_diges, write_status_waft } from './src/lib/server/dige';
 import { serve_wormhole } from './src/lib/server/wormhole_serve';
+import { serve_log_drop } from './src/lib/server/log_drop';
 import { gen_store_new, gen_store_sync, gen_store_gc } from './src/lib/server/gen_store';
 import { readFileSync } from 'node:fs';
 
@@ -88,6 +89,8 @@ function digePlugin(): PluginOption {
 				// the app tree, read-only, for pages with no repo folder (wormhole_serve.ts says why; a production
 				//  node server mounts the same function beside its relay)
 				try { if (serve_wormhole(process.cwd(), req, res)) return } catch { /* fall through to vite */ }
+				// a tab's console, posted by the Door's "send log" (log_drop.ts) — the only way a phone's log reaches this box
+				try { if (serve_log_drop(process.cwd(), req, res)) return } catch { /* fall through to vite */ }
 				next();
 			});
 

@@ -214,7 +214,7 @@
         <p class="pf-sentence">
             <span class="pf-line pf-title"><b>SoundPooling</b>
             <input class="pf-on" type="checkbox" checked={consent} onchange={(e) => set_on((e.currentTarget as HTMLInputElement).checked)}
-                title={consent ? 'on — untick to stop and delete everything pooled (the space comes back)' : 'off — tick to start keeping music in this browser'} /></span>
+                title={consent ? 'on — untick to stop and delete everything pooled (the space comes back)' : 'off — tick to start keeping music in this browser'} />{#if !consent} <span class="pf-dim pf-nb">← tick to enable</span>{/if}</span>
             <span class="pf-line">keeps rolling <span class="pf-nb"><b class="pf-cur" title={cur_est ? 'roughly — some tracks have no size recorded' : 'pooled now'}>{consent ? (cur_est ? '~' : '') + cur_mb : 0} MB</b> /
             <input class="pf-mb" type="number" min="1" step="100" value={draft} onchange={(e) => set_mb(num(e))} title="megabytes of music to keep at most" /></span>
             <span class="pf-nb">MB of music</span></span>

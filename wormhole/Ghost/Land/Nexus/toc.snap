@@ -1,0 +1,67 @@
+Waft:Ghost/Land/Nexus,desc:the organs as one graph — an Organ per row in the layer it belongs to — an Edge between two of them carrying the meaning that crosses it — spec/AtheoryNexus_todo.md §3.14
+  What:the app foundation,desc:DocIndex II — a person and their bodies and friends and the wire between them — what any app on the engine gets
+    Organ:Presence,desc:who of your friends is online — asked and answered over the wire
+      Doc:Ghost/N/Presence.g
+    Organ:Supervisor,desc:knowing whether the tab is well — watches each with a sentence and a verdict — and when to give up and reload
+      Doc:Ghost/O/Supervisor.g
+    Organ:ArriveFace,desc:the splash a page shows while it arrives
+      Doc:src/lib/O/ui/ArriveFace.svelte
+  What:jamsend,desc:DocIndex III — this app — music between friends
+    Organ:Radio,desc:the radio — the stoker the dial and the sound
+      Doc:Ghost/M/Radio.g
+    Organ:RadioPage,desc:the music page as a Main — its arrival and its dial as compartments
+      Doc:Ghost/M/RadioPage.g
+  What:atheory,desc:DocIndex I — the rebuild — compartments that sense then decide then act — and the Grounds a tab stands on
+    Organ:Theory,desc:the code an A runs — its tapes and moves and the holder edge
+      Doc:Ghost/A/Theory.g
+    Organ:Ground,desc:what a tab loads and what it expects to arrive — read into the Supervisor's watches
+      Doc:Ghost/A/Ground.g
+  What:story,desc:DocIndex I — Books that prove the rest by snaps and sworn oaths
+    Organ:AtheTesting,desc:the Atheory Books — AtheRadioArrive AtheRadioDial AtheCodePin
+      Doc:Ghost/A/AtheTesting.g
+  What:the arrival,desc:is the page in yet — and should the radio start by itself — the edges /Radio's arrival crosses
+    Edge:Presence,to:RadioPage,as:tells,desc:a friend came online — the arrival looks again
+      Doc:Ghost/N/Presence.g
+      Point,method:Presence_take,desc:a presence answer lands
+      Doc:Ghost/M/RadioPage.g
+      Point,method:RadioPage_news,desc:news to the arrival — coalesced
+    Edge:Radio,to:RadioPage,as:tells,desc:your shelf has music — the stoker came to rest
+      Doc:Ghost/M/Radio.g
+      Point,method:Stoker_told,desc:a changed state or count
+      Doc:Ghost/M/RadioPage.g
+      Point,method:RadioPage_news,desc:news to the arrival — coalesced
+    Edge:RadioPage,to:Theory,as:stands on,desc:the arrival is a compartment — sensed then decided then done
+      Doc:Ghost/M/RadioPage.g
+      Point,method:Radio,desc:the page holds A:Arrive and A:Dial and A:Sound
+      Point,method:Arrive_woken,desc:the move — decides the Arrived rows
+      Doc:Ghost/A/Theory.g
+      Point,method:TheA_attend_runs,desc:a holder runs its compartments
+      Point,method:TheA_edge,desc:after a run — commit the views and act
+    Edge:RadioPage,to:Radio,as:acts on,desc:pressed play with no friend to wait for — or crossed to one
+      Doc:Ghost/M/RadioPage.g
+      Point,method:Arrive_listen,desc:decides Take press or cross
+      Point,method:Radio_ran,desc:does the Takes
+      Doc:Ghost/M/Radio.g
+      Point,method:Radio_go,desc:play
+    Edge:Ground,to:Supervisor,as:tells,desc:each Arrive row a Ground expects becomes a watch with its sentence
+      Doc:Ghost/A/Ground.g
+      Point,method:Ground_arrive,desc:the Ground's Arrive rows as watches
+      Doc:Ghost/O/Supervisor.g
+      Point,method:Supervisor_watch,desc:one watch — a key and a sentence
+    Edge:Ground,to:RadioPage,as:reads,desc:a watch is met by an Arrived row the compartment decided
+      Doc:Ghost/A/Ground.g
+      Point,method:Ground_arrive_probe,desc:one watch read
+      Point,method:Ground_arrive_row,desc:the row that meets it — one A down when the A holds compartments
+      Doc:Ghost/M/RadioPage.g
+      Point,method:Arrive_woken,desc:where the Arrived rows are decided
+    Edge:ArriveFace,to:Supervisor,as:draws,desc:the splash — each watch's sentence with its verdict
+      Doc:src/lib/O/ui/ArriveFace.svelte
+      Point,method:refresh,desc:seat the view on the Supervisor's world
+      Doc:Ghost/O/Supervisor.g
+      Point,method:Supervisor_line,desc:one watch as a line
+    Edge:AtheTesting,to:RadioPage,as:proves,desc:Book AtheRadioArrive swears the arrival on rows
+      Doc:Ghost/A/AtheTesting.g
+      Point,method:AtheRadioArrive,desc:the Book
+      Point,method:AtheRadioArrive_moves,desc:the moves it steps through
+      Doc:Ghost/M/RadioPage.g
+      Point,method:Arrive_woken,desc:the move it proves

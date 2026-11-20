@@ -144,7 +144,7 @@
     //          so a human explicitly resolves it — paste the real key, or Generate a new identity.
     async Clustation_ensure_identity(this: House, H?: House): Promise<boolean> {
         H = (H ?? this) as House
-        const param = boot_param('I')
+        let param = boot_param('I')
         if (!param) return true                       // no identity layer requested — done
         // The Thangs persistence helpers are deposited by a sibling ghost; if the boot tick beat
         //  that mount, report not-done so the caller retries next pass (don't latch).
@@ -158,6 +158,41 @@
             const stored = await (H as any).Clustation_mint_named(H, A, wT)
             console.log(`🪪 Identity minted ${cluster_name(stored.prepub)} (${stored.prepub})`)
             return true
+        }
+
+        // A SHORT ?I= FINDS ITS ACCOUNT (owner 2026-11-20: "can I only give a tiny bit like ?I=950f … or even names!").  It is
+        //  matched against the account dirs in the granted folder (Swarm_account_list): a friendly name off the roster
+         //   (identities/toc.snap, any case) or the cluster_name, else hex as a prefix, else anywhere in the prepub.  ONE match
+          //   rewrites the bar to the full prepub, so every later boot_param('I') reads the real key's name.
+        //  None or several: say so and leave it short, which arrests into the IdHatch like any unknown ?I=.  Waits for the disk
+        //   on the seed path's own clock below (identity_seed_since), so a folder that never comes still reaches the hatch.
+        if (!/^[0-9a-f]{16}$/.test(param) && param.length >= 1 && typeof location !== 'undefined') {
+            const topS = ((H as any).top_House?.() ?? H) as House
+            const nav = typeof (H as any).Crate_nav === 'function' ? (H as any).Crate_nav() : null
+            if (!nav || typeof (H as any).Swarm_account_list !== 'function') {
+                const t0 = (topS.c as any).identity_seed_since ??= Date.now()
+                if (Date.now() - t0 < 5000) return false
+            } else if (!(topS.c as any).identity_short_tried) {
+                ;(topS.c as any).identity_short_tried = 1
+                const all: string[] = (nav as any).atime_async ? [] : await (H as any).Swarm_account_list(nav, '')
+                const want = param.toLowerCase()
+                let named: string[] = []
+                try {
+                    const roster = await (H as any).Swarm_roster_open(nav, '')
+                    const friendly = new Map((roster?.o({ Identity: 1 }) ?? []).map((r: any) => [String(r.sc.Identity), String(r.sc.friendly ?? '').toLowerCase()]))
+                    named = all.filter(p => friendly.get(p) === want || cluster_name(p).toLowerCase() === want)
+                } catch {}
+                const hex = /^[0-9a-f]{3,}$/.test(want)
+                const pre = hex ? all.filter(p => p.startsWith(want)) : []
+                const hits = named.length ? named : pre.length ? pre : hex ? all.filter(p => p.includes(want)) : []
+                if (hits.length === 1) {
+                    const u = new URL(location.href); u.searchParams.set('I', hits[0])
+                    try { const { replaceState } = await import("$app/navigation"); replaceState(u.pathname + u.search + u.hash, {}) }
+                    catch { history.replaceState(history.state, '', u) }
+                    console.log(`🪪 ?I=${param} → ${hits[0]} (${APP_DATA_DIR}/account)`)
+                    param = hits[0]
+                } else console.warn(`🪪 ?I=${param} matches ${hits.length ? hits.join(', ') : 'no account'} in ${APP_DATA_DIR}/account`)
+            }
         }
 
         // ALREADY BEING IT IS DONE (2026-10-03, Inko lost its crew).  boot_param reads the LIVE bar, and a ceremony

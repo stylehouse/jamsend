@@ -94,6 +94,16 @@
 - Unsurveyed.  Known from memory and not yet written down here: the begun-wedge (about 8% of Book starts stick at
    `begun`; a watchdog covers it; the root re-arm fix is owed).
 
+### The fullscreen asks (FaceSuckers): BootGate, Butler, the Link cell, IdHatch (`src/lib/O/ui/`)
+- **Front door:** `Arrival_todo.md`; the authority is `Sounditron_screen` (Ghost/Story/Sounditron.g, `top.c.screen.dominant`).
+- **Debt: no single manager.**  Sounditron's screen authority picks one dominant (ceremony > thin|arrival|gaveup > glass), but only
+   BigSoundland's splash reads it, and the Atheory /Radio page (ArriveSplash) not at all.  Every other ask stands down for the
+    others pair by pair (BootGate for a link ceremony, the Butler for a device link, …), so a new ask must learn every old one.
+- **Owed before `/` points at /Radio:** /Radio (Otro) mounts only BootGate and ArriveSplash: no Butler (so no invite
+   arrival, no name, no climb), no screen decision, no share hold.  Invites still land on `/` (BigSoundland), which has all of it.
+- **Owed (owner 2026-11-20):** knowing there is no folder (a phone) should never hold the load back, and should quiet the asks
+   that only a folder can answer.  The phone's first-boot bar now mentions SoundPooling.
+
 ### Atheory (`Ghost/A/`), the land (`Ghost/L/`), the glass (`Ghost/V/`), Play (`Ghost/Play/`)
 - **Front doors:** `Atheory_todo.md` §0.0, `Wordland_todo.md`, `Glassbeast_todo.md` §0.
 - Unsurveyed.  The Atheory session is rebuilding /Radio's arrival as compartments.  Its join to cluster, presence, swarm and crew is

@@ -38,6 +38,25 @@ become its header comment instead of a standalone file.
   `e_<Target>_<name>()` — `e:dock_content` → `e_Lang_dock_content()`.
 - `UI:Name` — a **Svelte component / mounted face**: `UI:CreduFunk`, `UI:Liesui`.
 
+## References — naming a thing so a reader (and the Land) can find it (owner, 2026-11-20)
+
+*"I'm keen to get your references to documents and things very standardised and usable to see what we're talking about in the
+ text."*  One form per kind of thing, in backticks.  Where a form is `Kind:name` it is the head of a snap line, so a reference in
+  prose decodes (Text `deL`) into a referring particle — the same rule as the code: a reference is its own kind, carrying the id.
+
+| a… | write | e.g. |
+|---|---|---|
+| doc under `spec/` | its basename, no `.md`, then `§` and the section number as headed | `AtheoryNexus_todo §3.14` |
+| any other file | the repo path | `Ghost/M/RadioPage.g` |
+| a line in it (volatile — for a terminal click, not for a doc that lasts) | `path:line` | `Ghost/M/RadioPage.g:376` |
+| a method | its name with parens (above); its file before it when the name is not unique | `Radio_ran()`, `RadioPage.g Radio_ran()` |
+| a particle | `%` and its mainkey, as above | `%Arrived:shelf` |
+| a place in a live tree | the minisnap address — `>` steps down a LIVE tree (`/` stays the shape of a structure) | `A:Radio>A:Arrive>w:Arrive` |
+| a Book · a Ground · a Waft · an Organ | `Kind:name` | `Book:AtheRadioArrive` · `Ground:Radio` · `Waft:Ghost/Land/Nexus` · `Organ:RadioPage` |
+| a verb | `:` and its name | `:tapes` |
+
+A doc found missing under `spec/` is almost certainly in `spec/history/` (CLAUDE.md).
+
 ## Compound type names — `|` and `/`
 
 In a compound proper-noun **type name**:
