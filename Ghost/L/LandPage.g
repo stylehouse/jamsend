@@ -36,8 +36,9 @@ IMPORT()
     const LAND_ERUPT_K = 3
     // how many of an area's docs open when it is pressed (the ones holding most of its main functions)
     const LAND_AREA_K = 4
-    // what a hacker page may ask a runner (Land_ask): reading, and running a Book ON THE RUNNER — never accept|reload|declare|poke
-    const LAND_ASK_OPS = ['ping', 'state', 'steps', 'run', 'snap', 'minisnap', 'console', 'rungos', 'tapes']
+    // what a hacker page may ask a runner (Land_ask): reading, running a Book ON THE RUNNER, and a catch there (Electrode's — capture
+    //  on the runner, written nowhere; the Gardener commissions it) — never accept|reload|declare|poke
+    const LAND_ASK_OPS = ['ping', 'state', 'steps', 'run', 'snap', 'minisnap', 'console', 'rungos', 'tapes', 'sees', 'catch']
     const LAND_ASK_MS = 20000
 
 // Land — the page's think: the face once, the land's Ground once (with what it stands on — the cave wants the glass), then the rows
@@ -79,7 +80,7 @@ Land_wire():
 //  reader's face on this page.  Then read what the Books measured, once
 e_Land_grounded(A, w, e):
     let top = this.top_House()
-    for (const name of ['Atlas', 'Electrode', 'Lagoon']) {
+    for (const name of ['Atlas', 'Electrode', 'Lagoon', 'Gardener']) {
         if (!top.Lies_ghost_get('Ghost/L/' + name + '.g')) continue
         let gw = top.oai({ A: name }).oai({ w: name })
         // the reader stands FACELESS here: LandFace draws its seek and opens hits as panes (Lagui is the pre-Stuffica
@@ -207,7 +208,7 @@ verbs_Land():
           desc: 'panes — docs side by side as members (their objects) or CodeMirror (code n) · wires between them · weave <Book> colours the wires by its Exercise',
           read: (w, a) => H.Land_pane_read(a),
           land: (w, a, got) => H.Land_pane_land(a, got) },
-        { name: 'ask', where: 'terminal', writes: 0, args: 'ping|state|steps|run|snap|minisnap|console|rungos|tapes [Book|n|path] [--to=<pub>] [--depth=n] [--tail=n] [--grep=re] [--n=k]',
+        { name: 'ask', where: 'terminal', writes: 0, args: 'ping|state|steps|run|snap|minisnap|console|rungos|tapes|sees|catch [Book|n|path|fn] [--to=<pub>] [--depth=n] [--tail=n] [--grep=re] [--n=k]',
           desc: 'ask a runner over this page’s wire, as runner_ask does — the relay lets it through only once this tab proved a cluster flock key; run drives the RUNNER, never this page',
           run: (w, a) => H.Land_ask(a) },
         { name: 'slice', where: 'terminal', writes: 0, args: 'cut|merge|split|go <k> [act]',
@@ -239,6 +240,13 @@ async Land_ask(a):
     if (a.grep) ask.grep = String(a.grep)
     // tapes (Theory.g, the cursor): how many arrivals per tape
     if (a.n) ask.n = Number(a.n)
+    // catch (Electrode.g): the method, the query its C** must match, how many occasions, or --off
+    if (op === 'catch') {
+        if (arg) ask.name = arg
+        if (a.when) ask.when = String(a.when)
+        if (a.k) ask.k = Number(a.k)
+        if (a.off) ask.off = 1
+    }
     let to = a.to ? String(a.to) : 'runner'
     let corr = 'land-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7)
     let hooks = (wire.c.on_control_list ??= [])

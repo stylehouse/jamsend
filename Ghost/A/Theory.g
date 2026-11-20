@@ -799,6 +799,20 @@ TheA_poke(synapse, sc):
 //            %TheAHeard:3,take:2,ms:900
 //          %TheASynapse:outside,wake:hear,sum:count
 
+// TheA_named — an edge reads the world BY NAME, from where its compartment stands (AtheoryNexus_todo §3.15: a frame is where names
+//  resolve AND where rows land).  The A called name nearest the compartment (Housing _A_near, R3 — as a Sunpit's @name will), and
+//   the read said once on the compartment's w as %TheASees:<name> — the watch list, observed: who this frame reads, so a source can be
+//    known to wake it and the Nexus Edge from it be derived, before anything declares either.  Null while that A hasn't stood
+//
+//      A:Radio / A:Arrive / w:Arrive
+//        %TheASees:Radio                ← w:Radio — the stoker, the radio, the lineup
+//        %TheASees:Clustation           ← the live self, its friends, the station socket
+TheA_named(A, name):
+    let w = A?.o({ w: 1 })[0]
+    let found = A ? this._A_near(A, name)?.A : null
+    if (found && w && !w.o({ TheASees: name }).length) w.i({ TheASees: name })
+    return found || null
+
 // TheA_io — the outside says something to a compartment's IO synapse (the A by ref, Aip or name).  Returns the Heard, or
 //  nothing if that A declares no such IO
 TheA_io(name, io, sc):
@@ -1394,6 +1408,9 @@ verbs_Theory():
         { name: 'tapes', where: 'terminal', writes: 0, args: '[--n=3] [--grep=<A or w name>]',
           desc: 'every Atheory compartment on this tab — what arrived on its tapes and what its move decided',
           run: (w, a) => H.TheA_tapes(a) },
+        { name: 'sees', where: 'terminal', writes: 0, args: '[--grep=<A or w name>]',
+          desc: 'who each compartment reads by name — its TheASees rows resolved from where it stands — and the file each side came from',
+          run: (w, a) => H.TheA_sees(a) },
     ]
 
 // TheA_tapes — { tab, compartments: [{ at, ios: [{ io, heard, takes, last: [lines] }], woke, rows: [lines] }] } — every w holding a %TheAIO,
@@ -1417,6 +1434,53 @@ TheA_tapes(a):
     for (const h of houses) walk(h, 'H:' + h.sc.H)
     return { tab: String(this.top_House().sc.H || ''), compartments: out }
 
+// TheA_sees — { tab, frames: [{ at, A, doc, sees: [{ name, at, doc }] }] } — every compartment that has read another A by name
+//  (TheA_named's %TheASees rows), each name resolved again from that frame (R3, a pure read — nothing lands), and the file each end's
+//   code came from (TheA_doc_of).  The Gardener's derived Edges are these pairs (AtheoryNexus_todo §3.15 step 4): a frame whose file
+//    and its named A's file are two Organs is an Edge the Nexus either has or lacks.  Read only.
+TheA_sees(a):
+    let grep = a?.grep ? String(a.grep) : ''
+    let out = []
+    let where = new Map()
+    let walk = (C, at) => {
+        for (const A of C.o({ A: 1 })) {
+            let here = at + '>A:' + A.sc.A
+            where.set(A, here)
+            walk(A, here)
+        }
+    }
+    let houses = this.every_House ? this.every_House() : [this]
+    for (const h of houses) walk(h, 'H:' + h.sc.H)
+    for (const [A, here] of where) {
+        for (const w of A.o({ w: 1 })) {
+            let rows = w.o({ TheASees: 1 })
+            if (!rows.length) continue
+            let path = here + '>w:' + w.sc.w
+            if (grep && !path.includes(grep)) continue
+            let sees = rows.map((r) => {
+                let name = String(r.sc.TheASees)
+                let got = this._A_near(A, name)?.A
+                return { name: name, at: got ? (where.get(got) || null) : null, doc: this.TheA_doc_of(name) }
+            })
+            out.push({ at: path, A: String(A.sc.A), doc: this.TheA_doc_of(String(A.sc.A)), sees: sees })
+        }
+    }
+    return { tab: String(this.top_House().sc.H || ''), frames: out }
+
+// …the file an A's code came from, off Housing's ghost_origin (method → the Ghostmeta_* of the file that last defined it): the A's own
+//  method (A:Radio → Radio), else its move (A:Arrive → Arrive_woken), else any method under its name.  Null when no method wears the
+//   name — an A stood by another's code (A:Clustation is Swarm's oai) has no file of its own to say, and that is worth seeing
+TheA_doc_of(name):
+    let top = this.top_House()
+    let origin = top.ghost_origin || {}
+    let meta = origin[name] || origin[name + '_woken']
+    if (!meta) {
+        let k = Object.keys(origin).find((m) => m.indexOf(name + '_') === 0)
+        meta = k ? origin[k] : null
+    }
+    if (!meta) return null
+    let path = String(meta).replace(/^Ghostmeta_/, '').replace(/_/g, '/') + '.g'
+    return path
 // …a row as notation: %Built:gen/A/Theory.go,dige:… — the mainkey WITH its value (TheA_row_say drops it: it says a point, whose
 //  value is its of=), a yes as the bare key
 TheA_cursor_say(row):

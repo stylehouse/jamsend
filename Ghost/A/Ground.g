@@ -373,20 +373,14 @@ Ground_arrive_clock(watch, A, said, got):
     }
     return got
 
-// …the A named, breadth-first through the As standing in As (A:Desk/A:Story), bounded
+// …the A named, nearest from that House (Housing _A_near, R3 — the one resolver), kept inside it and walking into every A held in an
+//  A (A:Desk/A:Story, A:Radio/A:Arrive): a row says the A that decides it (`of:Arrive`), never the one that holds it
 Ground_arrive_A(H, name):
-    let q = [...H.o({ A: 1 })]
-    for (let i = 0; i < q.length && i < 64; i++) {
-        if (q[i].sc.A === name) return q[i]
-        q.push(...q[i].o({ A: 1 }))
-    }
-    return null
+    return this._A_near(H, name, { house: H, every: true })?.A || null
 
-// …the row that meets it, on the A or one of its ws — or a compartment it holds (A:Radio %TheAAttend:run > A:Arrive/w:Arrive decides
-//  the page's arrival as a move, so its %Arrived rows live one A down)
+// …the row that meets it, on the A or one of its ws
 Ground_arrive_row(A, by, val):
-    let held = A.o({ TheAAttend: 'run' }).length ? A.o({ A: 1 }).flatMap((B) => B.o({ w: 1 })) : []
-    for (const n of [A, ...A.o({ w: 1 }), ...held]) {
+    for (const n of [A, ...A.o({ w: 1 })]) {
         let row = n.o({ [by]: val })[0]
         if (row) return row
     }

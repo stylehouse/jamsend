@@ -48,7 +48,7 @@ export function hacky_twins(list) {
         stands: new Set([...g.stands].map(twin)), load: g.load, beside: [], advice: [],
     }))
 }
-const DERIVED_WHATS = ['What:the unsorted', 'What:the groundless', 'What:every file has a home', 'What:every .g has a Ground']
+export const DERIVED_WHATS = ['What:the unsorted', 'What:the groundless', 'What:every file has a home', 'What:every .g has a Ground']
 
 // wafts_parse — one Waft toc back into the map's node shape: [key, desc, [Book…], [What-node…]], a What-node being
 //  [head, desc?, 'FromWhat:…'?, 'Ground:X'?, 'Stands:Y'…, then 'Doc:p' | 'Point:m|d' | What-node children in order].

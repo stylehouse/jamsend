@@ -1,4 +1,4 @@
-Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 230 of 431 — one What per directory — give each a home in its area and re-run
+Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 234 of 437 — one What per directory — give each a home in its area and re-run
   What:Ghost/A,desc:2 files with no area
     Doc:Ghost/A/AtheAside.g
     Doc:Ghost/A/Store.g
@@ -33,6 +33,8 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 230 o
     Doc:src/lib/boot.ts
     Doc:src/lib/cluster_name.ts
     Doc:src/lib/dexie_safe.ts
+  What:src/lib/L,desc:1 file with no area
+    Doc:src/lib/L/TapesFace.svelte
   What:src/lib/O,desc:20 files with no area
     Doc:src/lib/O/Audio.svelte.ts
     Doc:src/lib/O/BigQualand.svelte.ts
@@ -83,7 +85,7 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 230 o
     Doc:src/lib/O/lang/grammars/tsstho/index.ts
   What:src/lib/O/lang,desc:1 file with no area
     Doc:src/lib/O/lang/registry.ts
-  What:src/lib/O/spec,desc:65 files with no area
+  What:src/lib/O/spec,desc:66 files with no area
     Doc:src/lib/O/spec/App_todo.md
     Doc:src/lib/O/spec/Arrival_todo.md
     Doc:src/lib/O/spec/AtheoryArrive_todo.md
@@ -117,6 +119,7 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 230 o
     Doc:src/lib/O/spec/LinkDevice_leak_todo.md
     Doc:src/lib/O/spec/Love_todo.md
     Doc:src/lib/O/spec/Netsitu_todo.md
+    Doc:src/lib/O/spec/Organs_todo.md
     Doc:src/lib/O/spec/Peeroleum_handover.md
     Doc:src/lib/O/spec/Perf_todo.md
     Doc:src/lib/O/spec/Persistence_todo.md
@@ -172,7 +175,7 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 230 o
     Doc:src/lib/O/test/Understandication.svelte
     Doc:src/lib/O/test/Understandity.svelte
     Doc:src/lib/O/test/Understandium.svelte
-  What:src/lib/O/ui,desc:48 files with no area
+  What:src/lib/O/ui,desc:49 files with no area
     Doc:src/lib/O/ui/Actions.svelte
     Doc:src/lib/O/ui/ArriveFace.svelte
     Doc:src/lib/O/ui/ArriveSplash.svelte
@@ -220,6 +223,7 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 230 o
     Doc:src/lib/O/ui/calm.ts
     Doc:src/lib/O/ui/page_nav.ts
     Doc:src/lib/O/ui/pier_marks.ts
+    Doc:src/lib/O/ui/screen.svelte.ts
     Doc:src/lib/O/ui/yay_fly.ts
   What:src/lib/O/ui/micro,desc:6 files with no area
     Doc:src/lib/O/ui/micro/Bandwidth.svelte
@@ -235,8 +239,9 @@ Waft:Ghost/Rest/Unsorted,desc:every source file no area Waft cites yet — 230 o
     Doc:src/lib/data/Stuffusion.svelte
     Doc:src/lib/data/Stuffziad.svelte
     Doc:src/lib/data/Stuffzipper.svelte
-  What:src/lib/server,desc:3 files with no area
+  What:src/lib/server,desc:4 files with no area
     Doc:src/lib/server/gen_store.ts
+    Doc:src/lib/server/log_drop.ts
     Doc:src/lib/server/watch.ts
     Doc:src/lib/server/wormhole_serve.ts
   What:src/routes,desc:2 files with no area

@@ -7,7 +7,7 @@
     parked it leaves for the doc named.  Older lists it gathers: `Atheory_design.md` §1.15 "Remaining conceptualisations" and §3
      "Where it's heading".*
 
-## WHERE WE ARE — one row per country (kept current at every handoff; last 2026-11-19)
+## WHERE WE ARE — one row per country (kept current at every handoff; last 2026-11-20)
 
 *Owner 2026-11-19: "I'm failing to be informed of where we're at enough, when I wander along."  This table is the answer: read it
  first, then the doc its row names.  Update the row you moved, in the same change.  Its twin is `Organs_todo.md` (the
@@ -19,7 +19,7 @@
 | **Atheory: rows, not signals** (frontiers A–F below) | A door ✓ · B disk drains itself ✓ · C first part ✓ · D Jobs ✓ · E slices 1–3a ✓ · F not started.  Two outside arrivals now RUN on it: code moved (A:Codes, AtheCodePin) and /Radio's arrival (A:Radio>A:Arrive, AtheRadioArrive); Theory's holder edge (`TheA_edge`) does what a move decided and commits views | C (Story waits by news) and F (reqs — the owner: "might want a bunch of rethinking since pulses happen") are the old country's biggest leftovers; mine to do unmanaged | §0.0 below, Coding_guide |
 | **/Radio onto Atheory + Stuffica** | on a Ground since 11-07; rung 1 (the arrival as a compartment) built 11-19; the stoker tells it (rung 2, first part); rung 2 done (the stoker, chunks, presence and the radio's state tell; the clock wakes at deadlines); rung 3a the source choices as a compartment (A:Dial, AtheRadioDial) — uncommitted, owner press owed; rung 4 first slice (A:Sound tapes what the audio did); THE CURSOR: `tapes` reads every compartment on any tab (Land `:ask tapes`) | rung 2 rest (friends + catalog tell) → 3 a press is an arrival → 4 the radio's state on rows → 5 faces as views | AtheoryArrive_todo §7 |
 | **Stuffica** | views + door built (Aprac §0); real runs commit views (proven: AtheRadioDial step 7); every face stands on one `Screen` (O/ui/screen.svelte.ts — ArriveFace, Stuffmush, Storica; uncommitted) | the door becomes TheA_io once screen worlds stand in the loop | AtheoryArrive_todo §7, Aprac_todo |
-| **The land** (code legible) | Atlas, Electrode, /Desk?G=Land, panes, `:ask`, code push + content names | writing on the Land page (a pane that edits + `:compile` on the editor seat); THE NEXUS — the organs as one dependency graph in a Waft, edges typed, meanings as betweens (idea, 11-20) | §0.00 + §3.14 here, Wordland_todo |
+| **The land** (code legible) | Atlas, Electrode, /Desk?G=Land, panes, `:ask`, code push + content names; THE NEXUS hand-kept (8 Organs, 8 Edges); **`:catch`** (Electrode — one method, one query, the first N occasions kept) and **A:Gardener** (Ghost/L/Gardener.g — the duty with its awakeness, the map read by deWaft, `sees` → Edges, catches commissioned; Book:GardenerStaple) built 11-20 | the Land page stands the Gardener once the derived Ground/Land carries it (owner runs `wafts_everything.mjs`); then a home for A:Clustation; the Gardener writing the derived tocs (the script retires); Exercise per step; writing on the Land page | §3.14–3.15 here, Wordland_todo |
 | **Jamsend** (the music) | /Radio tuned live 11-10; pile built, owner-unseen | owner's look at /Desk?G=Pile; Musu `cid:` re-record (owner's go) | Pile_todo, Radio_todo |
 | **Identity + the socket** | first peel (Jamsend.g) ✓, one-socket carrier dark, every Desk page is someone ✓ | parked by the owner (wallet, appliance) | Wallet_todo, Social_demarcation_todo §0.5 |
 | **Further off** | the language (Cstructures), the glass, Emotion | — | DocIndex |
@@ -946,6 +946,25 @@ R1 holding, R2 refs, R3 nearness are built (`Atheory_design.md` §1.15, Book `At
         Atlas's Map (region › class › def, sized by how much of it ran) beside the step's C**; the Gardener to commission catches and keep
          what came back.
     - *First move when it's time:* `:catch` — one method, one query, the first N occasions kept, on a runner running a Book.
+    - **✓ BUILT 2026-11-20 — the catch.**  `catch <fn> --when=<path> [--k=N]` (Electrode.g "the catch"; `--off` ends one or all).
+       It coats that ONE method on every House (a Book's Grounds haunt its Run House with a bag of their own, so the top's coat
+        never reached the code a Book runs — the first try saw 0 calls; a 250ms sweep re-coats while a commission stands).  The test
+         runs inside the coat, synchronously, before the raw call: an arg that is a particle, or what it holds two levels down,
+          must start the path (`w:Arrive/Take:press` — NOTATION's form, `k` the presence wildcard).  A hit keeps: which arg,
+           the matched line, the matched node said two levels deep (Text's enLine), the caller chain (coated frames, else the JS
+            stack's ghost-shaped names), the Book step (`AtheRadioArrive:3`) and any tape turn.  Rows:
+             `w:Electrode/%Catch:<fn>,when,k,kept,seen` › `%Caught:<i>,from,arg,step,heard` (the said lines on `.c`).
+       First real catch: `catch TheA_edge --when=w:Arrive/Take:press --k=3` during AtheRadioArrive kept 3 of 6 edges, each with
+        A:Arrive's whole tape at that turn (A:Lone step 1 `why:arrived` · A:Waiting step 3 `why:the latest friend` · A:Late
+         step 4).  Found on the way: in that Book the holder is A:Waiting/A:Lone/A:Late, not A:Radio, so `Radio_ran` never runs
+          there — the catch said so (seen 0) before anyone had to read the Book.
+    - **✓ BUILT 2026-11-20 — A:Gardener** (`Ghost/L/Gardener.g`, one verb `gardener`; Book:GardenerStaple, 6 steps, 10 oaths).
+       The duty: `take [--awake=dozing|awake]` / `drop`, a `%Duty:Gardener,awake` row; asleep refuses everything, dozing reads,
+        awake commissions.  The levels GATE the acts; scheduling by level (dozing re-reads on a docindex push) is the next rung, and
+         one holder across tabs (a relay lease) is owed.  `map` reads Everything, the areas and the Nexus with `deWaft`, lands
+          Organs and Edges as rows, and compares Docs and Points with `wafts_parse` toc by toc: today they agree everywhere (the
+           script's skip of the derived Whats is by design — `DERIVED_WHATS` now exported so both skip them).  `sees --to=<pub>`
+            (Land_ask) and `catch --to=<pub>` reach another tab.  The script still WRITES; retiring it behind the Gardener is next.
 - *The first move as planned:* a hand-kept `Waft:Ghost/Land/Nexus` (or the owner's name) under Everything: one row per organ, keyed
    like Organs_todo's, and one row per edge between two of them (`as:between`, two ends, the relation, the meanings that cross it).
     Start with the edges /Radio's arrival crosses (App arrival → Radio; Presence → Arrive; Stoker → Arrive; A:Arrive → ArriveFace;
@@ -985,12 +1004,34 @@ R1 holding, R2 refs, R3 nearness are built (`Atheory_design.md` §1.15, Book `At
     it resolves OUTSIDE the home frame it is a Nexus Edge, derivable by the Gardener from code instead of hand-kept (§3.14).  The hand
      Nexus becomes the check on the derived one until they agree.
 - *Small steps it gives, in order:*
-   1. `Ground_arrive_A()` → `_A_near()` (a run-marked holder's As are already findable, Housing `attends`), so `Ground_arrive_row()` loses
-       its special case and Ground/Radio's rows say `of:Arrive`.  One resolver, not two.
-   2. `RadioPage_reading()`'s lookups through one named-read helper (`TheA_read(frame, '@Presence/%Pier')`-ish) that also records the
-       read on the frame — the watch list, observed, before stho can say it lexically.
-   3. From the recorded watch list, the tells: a source change wakes every frame that read it (Theory's boundary), and the hand tells go.
-   4. The Gardener derives Edges from the watch lists; the hand Nexus is diffed against them.
+   1. ✓ BUILT 2026-11-20.  `Ground_arrive_A()` is `_A_near(H, name, { house: H, every: true })` (kept inside that House, into every A
+       held in an A); `Ground_arrive_row()` lost its one-A-down special case; Ground/Radio's six decided rows say `of:Arrive` (spine and
+        who unchanged).  One resolver, not two.  Seen: a fresh headless newcomer on /Radio — all eight watches met or moot through it.
+   2. ✓ BUILT 2026-11-20.  `TheA_named(A, name)` (Theory.g): the A called name nearest the compartment, and the read said once on its w as
+       `%TheASees:<name>`.  `RadioPage_reading(B, aw)` names its sources from A:Arrive — `TheASees:Radio` (w:Radio: stoker, radio, lineup)
+        and `TheASees:Clustation` (the live self, its friends, the station socket; `RadioPage_relay_open(A)` / `RadioPage_piers(A)` take
+         it).  Still by hand: Presence (`top.c.presence_w` — a handle, not a name) and `top.c.humdinger`.  Seen live on /Radio.  So yes —
+          **looking for "such" means the nearest A:such** (R3); the frame a name is said from decides which one.
+   3. ⏸ NOT for the app as written (owner 2026-11-20): generated tells belong to a CLASS of execution environment — toys where the code is
+       synthesized (stho, a Sunpit's `S`) and the edge can be generated with it.  Hand ghosts have versions (a .go swaps under a running
+        tab), so a wake-list derived from one version's reads is a claim about that version only.  The observed `%TheASees` is the
+         record; it does not wire anything.
+   4. ✓ BUILT 2026-11-20 (the derive; the live leg owed).  Theory's `sees` verb says every compartment's `%TheASees` rows, each
+       name resolved again from its frame, and the file each end came from (`TheA_doc_of`: the A's own method, else its move,
+        else any method under its name, off Housing's `ghost_origin`).  Both live /Radio tabs answer: A:Arrive (RadioPage.g) reads
+         A:Radio (RadioPage.g — inside one Organ, no Edge) and A:Clustation (no file).  `Gardener_sees_land()` turns that into
+          `%Seen:<organ>,to,nexus:<as>|lacks` / `%Unhomed` / `%Unmapped`.  **The predicted first diff came out differently:** not
+           "RadioPage → Clustation lacking", but **A:Clustation has no home** — Swarm.g and Radio.g each `oai` it, no method wears
+            its name, so no Organ can be named for it.  Deciding its Organ (Swarm? a Station organ?) is the owner's naming call.
+       The live leg — the Land page's Gardener asking a music page — waits on the derived Ground/Land carrying Gardener.g
+        (`node scripts/wafts_everything.mjs`, no editor tab up; it rewrites grounds.gen.js, which reloads every tab).
+   5. **The public namespace** (owner 2026-11-20: "some kind of big public `o %Pier:suchid` namespace system").  Read with this
+       section, it is "a frame is a SOURCE others name" made literal: Presence publishes one row per friend (`%Pier:<pub>,here`)
+        on a frame anyone finds by name, and a reader's `@Presence/%Pier:<pub>` replaces `Presence_here(pub)` — that read IS a
+         `%TheASees:Presence` row, which the Gardener turns into an Edge (GardenerStaple step 4 swears exactly that shape: a frame
+          reading Presence by name is an Edge the hand Nexus lacks — today's Nexus has only Presence → RadioPage `tells`).  So the
+           namespace is the set of names resolvable from where you stand; "public" means a frame that publishes rows, not functions.
+            First slice when it's time: A:Presence standing (it is a handle today, `top.c.presence_w`), its `%Seen` rows read by name.
 
 ## 4. Parked — moved out, with where
 - **A Story's runs as a collection** → `Story_future.md` "Open / deferred".  Owner: "might be useful eventually but is Story_future."

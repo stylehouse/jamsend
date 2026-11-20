@@ -15,6 +15,12 @@ A **capture doc, not yet a plan** (the `Atheory_todo`/`Trust_todo` pattern — a
 
 ## 0. What to get on with next
 
+**☀ 2026-11-20 — THE CATCH.**  `catch <fn> --when=<path> [--k=N]` · `catch` (read) · `catch [<fn>] --off` — one method, one query on
+ the C** around its call, the first N occasions kept as `w:Electrode/%Catch:<fn>` › `%Caught:<i>` rows.  It needs no `arm`: it coats just
+  that method on every House (a Book's Run House has a bag of its own) and re-sweeps every 250ms while it stands.  The test is synchronous
+   and reads only.  Commissioned by A:Gardener (Ghost/L/Gardener.g), carried to another tab by Land_ask.  Design, first catch and what it
+    found: AtheoryNexus_todo §3.14.  Owed: a catch that HOLDS the run (`%TheAWait`) while someone looks; per-step Exercise.
+
 **☀ 2026-11-09 — the tap moves a little: a Book's EXERCISE, and the Hacky flavour designed.  START HERE.**
 - **Built:** the `exercise <Book>` verb (`Electrode_exercise`, writes:1 so a hacker room refuses it) keeps the tally since the last
    reset as `wormhole/Story/<Book>/Exercise/toc.snap`: one `Flow,of:<callee>,from:<caller>` row per pair that ran, sorted, NO counts.

@@ -2,6 +2,7 @@ Waft:Ghost/Land/Wordland,desc:the land — the bet turned on the code itself —
   Funkcion:CreduFunk
     Funkcion:Storying,of_Book:AtlasStaple
     Funkcion:Storying,of_Book:ElectrodeStaple
+    Funkcion:Storying,of_Book:GardenerStaple
     Funkcion:Storying,of_Book:LagoonStaple
     Funkcion:Storying,of_Book:LagoonCave
     Funkcion:Storying,of_Book:WorkshopStaple
@@ -24,6 +25,8 @@ Waft:Ghost/Land/Wordland,desc:the land — the bet turned on the code itself —
     Point,method:Electrode_exercise,desc:a Book reach kept beside it — caller-callee pairs sorted with no counts
     Point,method:Electrode_hangs,desc:calls that never returned
     Point,method:Electrode_film,desc:the film strip
+    Point,method:Electrode_verb_catch,desc:a catch — one method and one query — the first N calls whose C** matches kept as rows
+    Point,method:Electrode_catch_test,desc:the test inside the coat — synchronous and bounded — reads and never mints
     Doc:src/lib/L/flavour_electrode.ts
     Point,method:flavour_electrode_go,desc:the measuring build of a ghost — the caller survives an await
   What:the reader,desc:Lagoon asks and Atlas keeps — seek callers defs families mentions rot — the errands off the Aside
@@ -67,6 +70,14 @@ Waft:Ghost/Land/Wordland,desc:the land — the bet turned on the code itself —
     Point,method:Pond_heron,desc:comes when the pond is full — eats — leaves when it is thin
     Doc:Ghost/L/WorkshopTesting.g
     Point,method:WorkshopStaple,desc:the proof — step by hand and swear what happened
+  What:the keeper,desc:the Gardener — a duty a tab takes up with an awakeness — keeps the derived map and commissions catches
+    Doc:Ghost/L/Gardener.g
+    Point,method:Gardener_verb,desc:take drop map sees catch caught — the duty's acts gated by how awake it is
+    Point,method:Gardener_map,desc:the map read by deWaft — and where the script's parser reads it differently
+    Point,method:Gardener_sees_land,desc:Edges the code says — a frame naming an A in another Organ — against the hand Nexus
+    Point,method:Gardener_catch,desc:a catch commissioned here or on another tab and kept as rows
+    Doc:Ghost/L/GardenerTesting.g
+    Point,method:GardenerStaple,desc:the proof — the duty asleep and awake — the map read twice — who reads whom — one call in five caught
   What:the rooms,desc:BigWordland is the room — the Hackarium the Clerkdesk the Educarium — /Desk?G=Land is the land as a page
     Doc:Ghost/L/LandPage.g
     Point,method:Land,desc:the page's think — stands the land and says it

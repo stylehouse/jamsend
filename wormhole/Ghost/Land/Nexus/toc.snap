@@ -51,7 +51,7 @@ Waft:Ghost/Land/Nexus,desc:the organs as one graph — an Organ per row in the l
     Edge:Ground,to:RadioPage,as:reads,desc:a watch is met by an Arrived row the compartment decided
       Doc:Ghost/A/Ground.g
       Point,method:Ground_arrive_probe,desc:one watch read
-      Point,method:Ground_arrive_row,desc:the row that meets it — one A down when the A holds compartments
+      Point,method:Ground_arrive_row,desc:the row that meets it — on the A or one of its ws — the A found by _A_near
       Doc:Ghost/M/RadioPage.g
       Point,method:Arrive_woken,desc:where the Arrived rows are decided
     Edge:ArriveFace,to:Supervisor,as:draws,desc:the splash — each watch's sentence with its verdict

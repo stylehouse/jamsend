@@ -1,0 +1,9 @@
+Snap:H
+  H:GardenerStaple,Run
+    A:GardenerStaple
+      self,round=3	{"mung":["age"]}
+      w:GardenerStaple
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        req:stand_wait,finished
+        Saw:duty,awake:awake

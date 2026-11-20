@@ -8,6 +8,7 @@ Ground:Land,desc:the land — the bet turned on the code itself — what the cod
   Load:Ghost/L/Workshop.g
   Load:Ghost/Play/Garden.g
   Load:Ghost/Play/Pond.g
+  Load:Ghost/L/Gardener.g
   Load:Ghost/L/LandPage.g
   Beside:src/lib/server/dige.ts
   Beside:src/lib/O/lang/compile.ts

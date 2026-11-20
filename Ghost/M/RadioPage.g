@@ -11,8 +11,8 @@
 //        %Door:open,face:Door           ← the front door's cell
 //        %Arrived:spine                 ← stood at all ⇒ the spine loaded (Auto stands a Main only after the Creduler)
 //      A:Radio / A:Arrive / w:Arrive    ← the rest of the arrival, decided as a MOVE (THE ARRIVAL ON ROWS, below):
-//        %Arrived:shelf · radio · relay · friend · catalog · music   …each met, or moot with why — the Supervisor finds them one A down
-//         (Ground_arrive_row), and when music settles every notch still open settles with it
+//        %Arrived:shelf · radio · relay · friend · catalog · music   …each met, or moot with why — Ground/Radio's rows say `of:Arrive`, so
+//         the Supervisor finds them by name (Ground_arrive_A), and when music settles every notch still open settles with it
 //  The glass is Cello (O/Cellui.svelte, as on / — port-holes, no voronoi): RadioPageFace mounts it on Mundo, and with no Vyto world
 //   commissioned it casts every faced particle under an A's w — these organs.  Not yet here: the Link cell (DoorFace's "link a
 //    device" asks Sounditron_link_open, absent on this page), the friends' shelves, the Wikipedia cell, the focus a press asks for.
@@ -64,16 +64,18 @@ RadioPage_organs(w):
         this.top_House().bump_version?.()
     }
 
-// the station socket is open (Radio_relay_down's probe, the other way round): A:Clustation > w:Swarm's websocket transport
-RadioPage_relay_open():
-    let A = this.top_House().o({ A: 'Clustation' })[0]
+// the station socket is open (Radio_relay_down's probe, the other way round): A:Clustation > w:Swarm's websocket transport — that A
+//  as named (TheA_named), else the top's
+RadioPage_relay_open(A):
+    A = A || this.top_House().o({ A: 'Clustation' })[0]
     let sw = A ? A.o({ w: 'Swarm' })[0] : null
     let port = sw ? sw.o({ transport: 1, type: 'websocket' })[0]?.c?.port : null
     return !!(port && port.is_open && port.is_open())
 
-// the live self's sealed friends, and whether one was heard in the last 30s (any vouched frame stamps heard_at)
-RadioPage_piers():
-    let ident = this.Swarm_live_self ? this.Swarm_live_self() : null
+// the live self's sealed friends (off A:Clustation as named, else the top's), and whether one was heard in the last 30s (any vouched
+//  frame stamps heard_at)
+RadioPage_piers(A):
+    let ident = A && this.Swarm_active_ident ? this.Swarm_active_ident(A) : (this.Swarm_live_self ? this.Swarm_live_self() : null)
     return ident && this.Swarm_peering ? (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) : []
 RadioPage_online(p):
     if (p.c && p.c.heard_at && (Date.now() - p.c.heard_at) < 30000) return true
@@ -192,6 +194,7 @@ RadioPage_latest(w, radio):
 //          %TheAIO:sense,heard,takes,keep:32
 //            %TheAHeard:7,take:7,ms:5210,stock:12,resting,radio,state:off,relay,piers:2,online:1,expected,stood,known
 //          %TheASynapse:sense,sum:latest     ← a reading is whole: the newest wins
+//          %TheASees:Radio · %TheASees:Clustation   ← what the reading named (TheA_named): the frame's watch list, observed
 //          %Arrived:shelf · %Arrived:friend · %Arrived:music,moot:none of your friends are online …
 //          %Since:music,ms:1180              ← the wait for a friend's music began (page clock, ms)
 //          %Wake,ms:9180                     ← a reading is wanted by then, changed or not
@@ -208,9 +211,16 @@ RadioPage_aw(A):
     return aw
 
 // RadioPage_reading — the world as the move needs it, every fact a plain scalar (a yes rides as 1 or absent).  The edge's read: it may
-//  mint (Radio_lineup_fill inside friend_ready), the move never does.  Once in, only what the radio's next decision needs is read
-RadioPage_reading(w, aw):
+//  mint (Radio_lineup_fill inside friend_ready), the move never does.  Once in, only what the radio's next decision needs is read.
+//   Its sources are NAMED from the compartment (TheA_named, AtheoryNexus_todo §3.15 step 2), so w:Arrive says what it reads as
+//    %TheASees rows: A:Radio (its holder — w:Radio's stoker, radio, lineup) and A:Clustation (the live self, its friends, the station
+//     socket).  Still by hand: Presence (top.c.presence_w — a handle, not a name) and the humdinger flag on the top House
+RadioPage_reading(B, aw):
     let r = {}
+    let RA = this.TheA_named(B, 'Radio')
+    let w = RA ? RA.o({ w: 'Radio' })[0] : null
+    if (!w) return r
+    let CA = this.TheA_named(B, 'Clustation')
     let st = w.o({ Stoker: 1 })[0]
     // the shelf only until it has said: after that the stoker's churn is no news to this move
     if (st && st.sc.stock != null && !aw.o({ Arrived: 'shelf' }).length) {
@@ -229,14 +239,14 @@ RadioPage_reading(w, aw):
     let arriving = !aw.o({ Arrived: 'music' }).length
     let listening = state === 'playing' ? (r.solo && !r.crossed) : (state === 'off' && !r.played)
     if (!arriving && !listening) return r
-    if (this.RadioPage_relay_open()) r.relay = 1
-    let piers = this.RadioPage_piers()
+    if (CA && this.RadioPage_relay_open(CA)) r.relay = 1
+    let piers = CA ? this.RadioPage_piers(CA) : []
     let online = piers.filter((p) => this.RadioPage_online(p))
     r.piers = piers.length
     r.online = online.length
     if (online.length || piers.some((p) => this.RadioPage_recent(String(p.sc.pub)))) r.expected = 1
     if (piers.length && piers.every((p) => this.Presence_offline && this.Presence_offline(String(p.sc.pub)))) r.all_off = 1
-    let sw = this.Swarm_station_world ? this.Swarm_station_world() : null
+    let sw = CA ? CA.o({ w: 'Swarm' })[0] : null
     if (sw && sw.c && sw.c.station_up) r.stood = 1
     let c = this.Radio_pool_census(w, radio)
     if (c.known) r.known = 1
@@ -250,13 +260,14 @@ RadioPage_sense(w):
     let A = this.top_House().o({ A: 'Radio' })[0]
     let aw = this.RadioPage_aw(A)
     if (!aw || !this.TheA_io) return null
-    let r = this.RadioPage_reading(w, aw)
+    let B = A.o({ A: 'Arrive' })[0]
+    let r = this.RadioPage_reading(B, aw)
     let said = JSON.stringify(r)
     let ms = Math.round(performance.now())
     let wake = +(aw.o({ Wake: 1 })[0]?.sc.ms || 0)
     if (said === aw.c.said && !(wake && ms >= wake)) return null
     aw.c.said = said
-    let heard = this.TheA_io(A.o({ A: 'Arrive' })[0], 'sense', { ms, ...r })
+    let heard = this.TheA_io(B, 'sense', { ms, ...r })
     this.knock?.('sense', 'Radio')
     return heard
 

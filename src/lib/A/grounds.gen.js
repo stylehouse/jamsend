@@ -70,6 +70,7 @@ export const GROUNDS = {
    "Ghost/L/Workshop.g",
    "Ghost/Play/Garden.g",
    "Ghost/Play/Pond.g",
+   "Ghost/L/Gardener.g",
    "Ghost/L/LandPage.g"
   ]
  },
@@ -79,6 +80,7 @@ export const GROUNDS = {
   ],
   "load": [
    "Ghost/L/WorkshopTesting.g",
+   "Ghost/L/GardenerTesting.g",
    "Ghost/L/AtlasTesting.g",
    "Ghost/L/ElectrodeTesting.g",
    "Ghost/L/LagoonTesting.g"
@@ -208,6 +210,7 @@ export const GROUNDS = {
    "Ghost/L/Workshop.g",
    "Ghost/Play/Garden.g",
    "Ghost/Play/Pond.g",
+   "Ghost/L/Gardener.g",
    "Ghost/L/LandPage.g"
   ],
   "flavour": "electrode"
@@ -218,6 +221,7 @@ export const GROUNDS = {
   ],
   "load": [
    "Ghost/L/WorkshopTesting.g",
+   "Ghost/L/GardenerTesting.g",
    "Ghost/L/AtlasTesting.g",
    "Ghost/L/ElectrodeTesting.g",
    "Ghost/L/LagoonTesting.g"

@@ -1,0 +1,22 @@
+story:GardenerStaple
+  Styles
+  Plan
+  Opt
+    For
+  Stands:LandTesting
+  step,dige:478cb8b59533b54c
+  step=2,desc:load Ghost/L/Gardener.g on demand — the Gardener stands asleep and refuses to read — taken up awake it will,dige:2502e6bc48597163
+    Assertion:an-untaken-gardener-is,sentence:an untaken Gardener is asleep — it refuses to read the map
+    Assertion:taken-up-awake-the,sentence:taken up awake the Gardener may read and commission
+  step=3,desc:read Everything with its area Wafts and the Nexus through deWaft — the same Docs and Points as the script reads — Organs and Edges as rows,dige:fa6b0f71f56fa98a
+    Assertion:every-toc-reads-the,sentence:every toc reads the same through deWaft as through the script — Docs and Points alike
+    Assertion:the-nexus-organs-and,sentence:the Nexus organs and edges land as rows on the Gardener
+  step=4,desc:a music page says who its frames read — the arrival reading A:Radio stays inside RadioPage — A:Clustation is unhomed — reading Presence by name is an Edge the Nexus lacks,dige:603bf5d36a5943f9
+    Assertion:the-arrival-reading-a,sentence:the arrival reading A:Radio stays inside RadioPage — no Edge
+    Assertion:a-clustation-is-unhomed,sentence:A:Clustation is unhomed — no file wears its name so no Organ is known
+    Assertion:a-frame-reading-presence,sentence:a frame reading Presence by name is an Edge the hand Nexus lacks
+  step=5,desc:commission a catch on a method called five times — only the call whose C** holds Take press is kept — the other four only counted,dige:24fb8a83cc48e1ae
+    Assertion:the-catch-kept-one,sentence:the catch kept one call in five — the one whose C** held Take press
+    Assertion:the-kept-occasion-says,sentence:the kept occasion says the matched row as a snap line
+  step=6,desc:drop the duty — the Gardener sleeps and refuses to commission,dige:0bc7ff6fdc5d6e73
+    Assertion:dropped-the-gardener-sleeps,sentence:dropped the Gardener sleeps and refuses to commission

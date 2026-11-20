@@ -48,6 +48,8 @@ Electrode(A, w):
 Electrode_tick(w):
     let T = this.Electrode_T()
     if (T.armed) this.Electrode_arm(w)
+    if (T.catches && T.catches.size) this.Electrode_catch_coat()
+    this.Electrode_catch_land(w)
     let row = w.oai({ see: 'electrode' })
     if (T.armed) { row.sc.armed = 1 } else { delete row.sc.armed }
 
@@ -120,10 +122,12 @@ Electrode_coat(name, raw):
     let coat = function(...args) {
         let top = (this && typeof this.top_House === 'function') ? this.top_House() : self.top_House()
         let T = top.c.electrode
-        if (!T || !T.armed) return raw.apply(this, args)
+        let k = T && T.catches ? T.catches.get(name) : null
+        if (!T || (!T.armed && !k)) return raw.apply(this, args)
         let from = T.cur ? T.cur.m : null
+        if (k) self.Electrode_catch_test(T, k, args, from)
         T.seq = T.seq + 1
-        let frame = { m: name, id: T.seq, from: from, t0: performance.now(), sync: 1 }
+        let frame = { m: name, id: T.seq, from: from, up: T.cur, t0: performance.now(), sync: 1 }
         self.Electrode_mark(T, { ev: '>', m: name, id: frame.id, from: from })
         T.open.set(frame.id, frame)
         let prev = T.cur
@@ -285,6 +289,9 @@ verbs_Electrode():
         { name: 'electrode', where: 'runner', writes: 0, args: 'top|arm|disarm|reset|reduce|hangs|film|join [--k=N] [--older=ms]',
           desc: 'both ends of every ghost call — arm coats every method; top lists the hottest flows; hangs lists frames never exited',
           run: (w, a) => H.Electrode_verb(w, a) },
+        { name: 'catch', where: 'runner', writes: 0, args: '<fn> [--when=<query>] [--k=N] · catch (list) · catch off [<fn>]',
+          desc: 'keep the first N calls of one ghost method whose C** matches a query — the args, what they hold and the caller, as rows',
+          run: (w, a) => H.Electrode_verb_catch(w, a) },
         // exercise WRITES (wormhole/Story/<Book>/Exercise), so it is its own verb: refused by name in a hacker room or a music page
         { name: 'exercise', where: 'runner', writes: 1, args: '<Book>',
           desc: 'keep what the tap measured since its reset as the Book\'s Exercise — caller-callee pairs bucketed and sorted so a re-run diffs only when a path moved',
@@ -377,4 +384,268 @@ async Electrode_exercise(w, book):
     }
     let methods = new Set(rows.map(r => r.to))
     return { book: book, flows: rows.length, methods: methods.size, armed: T.armed, wrote: wrote, at: dir + '/toc.snap' }
+//#endregion
+
+//#region the catch — one method, one query, the first N occasions kept (AtheoryNexus_todo §3.14: the Gardener's main act, built 2026-11-20)
+// `catch <fn> --when=<query> [--k=N]` — some code runs thousands of times and only once with the thing you want to see.  A catch coats
+//  ONE method (the tap need not be armed) and tests every call of it: does the C** around it match?  The C** is the call's args that are
+//   particles and what they hold, two levels down.  The query is a path in NOTATION's form, `w:Arrive/Take:press` — the first line
+//    matched at or under an arg, each later line a child of the one before; `k` (no value) is the presence wildcard, `k:v` a literal.
+//     No `--when` keeps every call.  A hit keeps the occasion SYNCHRONOUSLY (the hot path takes no await — an await there flakes Books):
+//      which arg, the matched line, the matched node said two levels deep, the caller chain, the Book step it fell in, and the turn of
+//       any tape the arg keeps.  The tick lands them as rows; `catch` with no fn reads them back:
+//    w:Electrode/Catch:<fn>,when:<query>,k,kept,seen           one per commission — seen = calls tested, kept = calls that matched
+//                  Caught:<i>,from:<caller>,arg,step,heard     one per occasion; its said lines ride on .c.lines (runtime, off-snap)
+//  Interrupt here is CAPTURE, not a frozen tab: pausing would stop the House and every Book on it.  `catch <fn> --off` ends one
+//   commission (its rows stay to read), `catch --off` all of them; a reload ends them too (the commission is runtime).
+Electrode_verb_catch(w, a):
+    let ew = this.top_House().o({ A: 'Electrode' })[0]?.o({ w: 'Electrode' })[0]
+    if (!ew) return { error: 'no A:Electrode standing — ghost_load Ghost/L/Electrode.g --stand=Electrode first' }
+    let T = this.Electrode_T()
+    if (!T.catches) T.catches = new Map()
+    if (!T.caught) T.caught = []
+    T.catch_w = w
+    let fn = a.name ? String(a.name) : ''
+    if (a.off) {
+        let ended = fn ? [fn] : [...T.catches.keys()]
+        for (const f of ended) T.catches.delete(f)
+        this.Electrode_catch_coat()
+        this.Electrode_catch_land(ew)
+        return { ended: ended, catches: this.Electrode_catch_said(ew, +(a.n || 3)) }
+    }
+    if (fn) {
+        let bag = this.top_House().ghosts || {}
+        if (typeof bag[fn] !== 'function') return { error: 'catch: no ghost method ' + fn + ' on this tab (its ghost may not be loaded)' }
+        let when = a.when ? String(a.when) : ''
+        let q = this.Electrode_catch_parse(when)
+        if (when && !q.length) return { error: 'catch: --when=' + when + ' says nothing to match' }
+        let k = { fn: fn, when: when, q: q, k: Math.max(1, Math.min(64, +(a.k || 3))), kept: 0, seen: 0, since: Date.now() }
+        T.catches.set(fn, k)
+        let row = ew.o({ Catch: fn })[0]
+        if (row) ew.drop(row)                     // a new commission for the same fn replaces the old one's rows
+        this.Electrode_catch_coat()
+    }
+    this.Electrode_catch_land(ew)
+    return { catches: this.Electrode_catch_said(ew, +(a.n || 3)) }
+
+// …the query path: `w:Arrive/Take:press` → [{w:'Arrive'}, {Take:'press'}] (a bare key or `k:1` is the presence wildcard, as in o())
+Electrode_catch_parse(when):
+    let out = []
+    for (const seg of String(when || '').split('/')) {
+        let m = this.Lies_minisnap_parse_step(seg)
+        if (m) out.push(m)
+    }
+    return out
+
+// …coat each commissioned method wherever a haunt laid it down raw — only those, so a catch costs nothing anywhere else.  Every
+//  House, not just the top's bag: a Book's Grounds haunt its Run House with a bag of their own (ghostsHaunt makes a fresh `ghosts` on
+//   the haunting House and spreads it down from there), so the top's coat never reaches the code the Book runs.  One coat per raw
+//    function, shared by every House holding it.  While a commission stands a 250ms sweep re-coats, so a call landing in the window
+//     between a haunt and the next sweep goes untested — said here rather than hidden; `seen` counts only the calls tested.
+Electrode_catch_coat():
+    let T = this.Electrode_T()
+    if (!T.catches || !T.catches.size) {
+        if (T.catch_timer) clearInterval(T.catch_timer)
+        T.catch_timer = null
+        return 0
+    }
+    if (!T.coats) T.coats = new WeakMap()
+    let coated = 0
+    let houses = this.every_House ? this.every_House() : [this.top_House()]
+    for (const h of houses) {
+        for (const name of T.catches.keys()) {
+            for (const bag of [h, h.ghosts]) {
+                let fn = bag ? bag[name] : null
+                if (typeof fn !== 'function' || fn.__electrode) continue
+                let coat = T.coats.get(fn)
+                if (!coat) {
+                    coat = this.Electrode_coat(name, fn)
+                    T.coats.set(fn, coat)
+                }
+                bag[name] = coat
+                coated = coated + 1
+            }
+        }
+    }
+    if (!T.catch_timer) {
+        let self = this
+        T.catch_timer = setInterval(() => {
+            try { self.Electrode_catch_coat() } catch (e) { console.warn('🛑 electrode catch sweep — ' + String(e?.message || e)) }
+        }, 250)
+    }
+    return coated
+
+// …does this one node wear the pattern (the o() rule, on the node itself)
+Electrode_catch_is(n, m):
+    if (!n || !n.sc) return false
+    for (const [key, v] of Object.entries(m)) {
+        if (!(key in n.sc)) return false
+        if (v !== 1 && String(n.sc[key]) !== String(v)) return false
+    }
+    return true
+
+// …the first node at or under X (two levels) that starts the path and holds the rest of it: { top, last } or null
+Electrode_catch_find(X, q):
+    let hold = (n) => {
+        let here = n
+        for (const m of q.slice(1)) {
+            here = here.o(m)[0]
+            if (!here) return null
+        }
+        return here
+    }
+    let level = [X]
+    for (let d = 0; d < 3 && level.length; d++) {
+        let next = []
+        for (const n of level) {
+            if (this.Electrode_catch_is(n, q[0])) {
+                let last = hold(n)
+                if (last) return { top: n, last: last }
+            }
+            if (d < 2) for (const c of n.o()) next.push(c)
+        }
+        level = next
+    }
+    return null
+
+// …the test, inside the coat, before the raw call.  Synchronous and bounded: it reads, it never mints.
+Electrode_catch_test(T, k, args, from):
+    k.seen = k.seen + 1
+    if (k.kept >= k.k) return
+    let hit = null
+    let at = -1
+    for (let i = 0; i < args.length && !hit; i++) {
+        let x = args[i]
+        if (!x || typeof x !== 'object' || !x.sc || typeof x.o !== 'function') continue
+        if (!k.q.length) { hit = { top: x, last: x }; at = i; break }
+        try { hit = this.Electrode_catch_find(x, k.q) } catch (e) { hit = null }
+        if (hit) at = i
+    }
+    if (!hit && k.q.length) return
+    k.kept = k.kept + 1
+    let chain = []
+    for (let f = T.cur; f && chain.length < 8; f = f.up) chain.push(f.m)
+    if (!chain.length) chain = this.Electrode_catch_stack()
+    let occ = { fn: k.fn, n: k.kept, seen: k.seen, from: from, chain: chain, arg: at, t: Date.now() }
+    occ.args = args.map((x) => this.Electrode_catch_arg(x))
+    if (hit) {
+        occ.matched = this.Electrode_catch_line(hit.last)
+        occ.lines = this.Electrode_catch_lines(hit.top, 2, 60)
+        occ.heard = this.Electrode_catch_heard(hit.top) || this.Electrode_catch_heard(args[at])
+    }
+    try {
+        let sr = T.catch_w ? this.Lies_rungo_record(T.catch_w) : null
+        if (sr && sr.sc.phase !== 'done' && sr.sc.phase !== 'failed') occ.step = sr.sc.Storyrun + (sr.sc.n != null ? ':' + sr.sc.n : '')
+    } catch (e) {
+        occ.step = undefined
+    }
+    T.caught.push(occ)
+    if (T.caught.length > 512) T.caught.splice(0, T.caught.length - 512)
+
+// …the caller chain off the JS stack, when the tap is not armed (no coated frames to walk): the ghost-shaped names, innermost first,
+//  the coat and the catch itself left out.  A stack costs; a catch takes one only on a hit, k times at most.
+Electrode_catch_stack():
+    let out = []
+    let st = String(new Error().stack || '').split('\n')
+    for (const l of st) {
+        let m = /at (?:[\w$]+\.)?([A-Za-z][\w$]*_[\w$]+)\b/.exec(l)
+        if (!m) continue
+        let name = m[1]
+        if (/^Electrode_/.test(name)) continue
+        if (out[out.length - 1] !== name) out.push(name)
+        if (out.length >= 8) break
+    }
+    return out
+
+// …one arg said short: a particle as its line, anything else as its kind
+Electrode_catch_arg(x):
+    if (x == null) return String(x)
+    if (typeof x === 'object' && x.sc) return this.Electrode_catch_line(x).slice(0, 120)
+    if (typeof x === 'string') return JSON.stringify(x.slice(0, 80))
+    if (typeof x === 'number' || typeof x === 'boolean') return String(x)
+    if (typeof x === 'function') return 'fn ' + (x.name || '')
+    if (Array.isArray(x)) return 'array(' + x.length + ')'
+    try { return JSON.stringify(x).slice(0, 120) } catch (e) { return 'object' }
+
+// …a particle as one snap line, Text's own encoder (enLine), so the catch reads like a snap
+Electrode_catch_line(n):
+    try {
+        let lines = this.enLine(n, { d: 0 })
+        if (lines && lines[0] != null) return lines[0]
+    } catch (e) {
+        // fall through to the plain say
+    }
+    return Object.entries(n.sc || {}).map(([k, v]) => (v === 1 || v === '1' ? k : k + ':' + (typeof v === 'object' ? '…' : v))).join(',')
+
+// …the node and what it holds, `depth` levels down, at most `most` lines — a CUT is said, never silent
+Electrode_catch_lines(n, depth, most):
+    let out = []
+    let walk = (c, d) => {
+        if (out.length >= most) return
+        out.push('  '.repeat(d) + this.Electrode_catch_line(c))
+        if (d >= depth) return
+        for (const k of c.o()) {
+            if (out.length >= most) {
+                out.push('  '.repeat(d + 1) + '… ⚠ CUT at ' + most + ' lines')
+                return
+            }
+            walk(k, d + 1)
+        }
+    }
+    walk(n, 0)
+    return out
+
+// …the turn of the tape the arg keeps, if it is a compartment: <io>:<n> of the newest %TheAHeard
+Electrode_catch_heard(x):
+    if (!x || typeof x.o !== 'function') return undefined
+    let io = x.o({ TheAIO: 1 })[0]
+    if (!io) return undefined
+    let heard = io.o({ TheAHeard: 1 })
+    let last = heard[heard.length - 1]
+    return String(io.sc.TheAIO) + ':' + (last ? String(last.sc.TheAHeard) : '0')
+
+// …the kept occasions landed as rows on w:Electrode (the tick and the verb both land, so a read is never behind)
+Electrode_catch_land(w):
+    let T = this.Electrode_T()
+    if (!w) return 0
+    let landed = 0
+    let pending = T.caught || []
+    T.caught = []
+    for (const [fn, k] of (T.catches || new Map())) {
+        let row = w.oai({ Catch: fn })
+        if (k.when) { row.sc.when = k.when } else { delete row.sc.when }
+        row.sc.k = '' + k.k
+        row.sc.kept = '' + k.kept
+        row.sc.seen = '' + k.seen
+        delete row.sc.ended
+    }
+    for (const row of w.o({ Catch: 1 })) {
+        if (!(T.catches || new Map()).has(row.sc.Catch)) row.sc.ended = 1
+    }
+    for (const occ of pending) {
+        let row = w.oai({ Catch: occ.fn })
+        let c = row.i({ Caught: '' + occ.n })
+        if (occ.from) c.sc.from = occ.from
+        if (occ.arg >= 0) c.sc.arg = '' + occ.arg
+        c.sc.seen = '' + occ.seen
+        if (occ.step) c.sc.step = occ.step
+        if (occ.heard) c.sc.heard = occ.heard
+        c.c.occ = occ
+        landed = landed + 1
+    }
+    return landed
+
+// …the commissions said, as `catch` answers: each Catch row and its newest n occasions
+Electrode_catch_said(w, n):
+    let out = []
+    for (const row of w.o({ Catch: 1 })) {
+        let said = { fn: row.sc.Catch, when: row.sc.when || '', k: +row.sc.k, kept: +row.sc.kept, seen: +row.sc.seen, ended: row.sc.ended ? 1 : 0, caught: [] }
+        for (const c of row.o({ Caught: 1 }).slice(-n)) {
+            let o = c.c.occ || {}
+            said.caught.push({ n: +c.sc.Caught, seen: +c.sc.seen, from: c.sc.from || null, chain: o.chain || [], step: c.sc.step || null,
+                heard: c.sc.heard || null, arg: c.sc.arg != null ? +c.sc.arg : null, args: o.args || [], matched: o.matched || null, lines: o.lines || [] })
+        }
+        out.push(said)
+    }
+    return out
 //#endregion

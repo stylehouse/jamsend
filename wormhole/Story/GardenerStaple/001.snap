@@ -1,0 +1,7 @@
+Snap:H
+  H:GardenerStaple,Run
+    A:GardenerStaple
+      self,round	{"mung":["age"]}
+      w:GardenerStaple
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

@@ -1,0 +1,15 @@
+Snap:H
+  H:GardenerStaple,Run
+    A:GardenerStaple
+      self,round=9	{"mung":["age"]}
+      w:GardenerStaple
+        self,round=9	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        req:stand_wait,finished
+        Saw:duty,awake:awake
+        req:map_wait,finished
+        Saw:map,problems:0,organs,edges
+        Saw:sees,inside:1,unhomed:Clustation,RadioPage>Presence:lacks
+        req:catch_wait,finished
+        {"Saw":"catch","kept":"1","seen":"5","matched":"Take:press,why:arrived"}
+        Saw:drop,awake:asleep
