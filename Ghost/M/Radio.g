@@ -1058,6 +1058,9 @@ Radio_start_seq(radio, rec):
 
 Radio_open(radio, rec):
     let w = radio.c.w
+    // THE TRACK BEFORE IT ENDED — tell its source how long it really played (owner 2026-11-21: "the client [should] send
+    //  actually-listened stats up").  Wall time since its open, so a pause counts; the source caps and judges it (Repli_tally).
+    if (radio.c.rec && radio.c.open_at && radio.c.rec !== rec) this.Stoker_tell_listened(w, radio.c.rec, (Date.now() - radio.c.open_at) / 1000)
     this.Ra_term_stream_open(w, rec, {})
     radio.c.rec = rec
     radio.c.open_at = Date.now()
@@ -4032,25 +4035,33 @@ Stoker_has_audience():
 
 // Stoker_tell_listened — the listener's half: a friend's track started here, so tell its source.  Live only (humdinger):
 //  a Book's plays are fixtures.  Fire-and-forget through the station, like every swarm frame.
-Stoker_tell_listened(w, rec):
+//  With `secs` it is the other report: that track has just ended here after `secs` of play (Radio_open, at the next one).
+Stoker_tell_listened(w, rec, secs):
     let M = this.top_House()
     if (!M.c.humdinger || !rec || !rec.sc.id) return 0
     let me = this.Radio_pub(w) || ''
     let pub = this.Ra_pub_of ? String(this.Ra_pub_of(rec) || '') : ''
     if (!pub || pub === me) return 0
-    this.Radio_heard_note(rec.sc.id)
+    let played = secs != null
+    if (!played) this.Radio_heard_note(rec.sc.id)
     let live = this.Swarm_live_self ? this.Swarm_live_self() : null
     let A = M.o({ A: 'Clustation' })[0]
     let sw = A ? A.o({ w: 'Swarm' })[0] : null
     if (!live || !sw || !this.Swarm_deliver) return 0
     if (pub === String(live.sc.prepub || '')) return 0
     try {
-        return this.Swarm_deliver(sw, live, pub, { kind: 'listened', page: this.Swarm_page(live), id: String(rec.sc.id) }) ? 1 : 0
+        let fr = { kind: 'listened', page: this.Swarm_page(live), id: String(rec.sc.id) }
+        if (played) fr.secs = Math.round(+secs || 0)
+        return this.Swarm_deliver(sw, live, pub, fr) ? 1 : 0
     } catch (er) { return 0 }
 
 // Stoker_listened — the source's half (Swarm_listened, a sealed friend only): `who` started our track `id`
-Stoker_listened(who, id):
+//  A report carrying `secs` is the track ENDING there (Stoker_tell_listened): it counts, and leaves the cursor alone.
+Stoker_listened(who, id, secs):
     let w = this.top_House().c.radio_w
+    // the per-friend count (Repli_tally) — every source, not only one keeping the listening cursor
+    if (w && who && id && this.Repli_tally) this.Repli_tally(this.Radio_pub(w) || '', String(who), secs != null ? 'played' : 'heard', String(id), secs)
+    if (secs != null) return 1
     if (!w || !w.c.listening || !who || !id) return 0
     let mag = w.oai({ Mag: 'Listening' })
     let L = mag.oai({ Listener: String(who) }, { at: Date.now() })

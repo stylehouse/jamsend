@@ -39,12 +39,17 @@
 - **Front door:** `Crew_todo.md` (souls and bodies), `Swarm_spec.md`.  Twin tabs: `Identity_persist_todo.md` §0.1.
 - **Debt:** a lost identity (an incognito tab) leaves its pier on every friend for good.  "pier heal … 1 forgotten pier"
    logs every 10 minutes and nothing ever retires it.
+- **Name cards** (2026-11-21): a blotter link has no `From=`, so the landing asks `/__name?p=<prepub>`
+   (`src/lib/server/name_card.ts`) for a name the inviter's Door signed and posted.  Each server keeps its own cards.
 - **Murk:** sibling tabs.  A second tab stands at `<prepub>_N` and must stamp its own frames from that seat.  Each sender has
    to remember to do so (Repli's `repli_want` was missed until 2026-11-13), so the next missed sender will look like a music stall.
 
 ### Repli (`Ghost/N/Repli.g`): the catalog and pages of a friend's music, pulled over the wire
 - **Front door:** `Repli_design.md`.
 - Unsurveyed beyond the sibling-seat fix (`Repli_want_next`).
+- **Tally** (2026-11-21): `Repli_tally` counts per friend into `.jamsend/account/<me>/tally.snap` every 5 minutes:
+   `heard` (their report that a track started), `played`/`secs` (their report that it ended, ≥30s, capped 20 min) and
+    `heisted` (a Heist served to its last chunk).  Owed: a page close loses its last track's `secs`; nothing shows it yet.
 
 ### Peeroleum, Reliable, Presence (`Ghost/N/`)
 - **Front door:** `Peeroleum_spec.md`, `Presence_todo.md`.

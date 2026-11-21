@@ -365,7 +365,8 @@ Swarm_listened(w, ident, frame):
         return
     }
     if (!frame.id || typeof this.Stoker_listened !== 'function') return
-    this.Stoker_listened(String(from), String(frame.id))
+    // `secs`: the track ended there after that long (a newer listener; an older one only says it started)
+    this.Stoker_listened(String(from), String(frame.id), typeof frame.secs === 'number' ? frame.secs : null)
 
 // hear a suggestion: sealed friends only (a stranger's is a %rebuff, nothing lands).  Mint
 //  the same referring shape under MY pier for them, stash it, confirm with suggest_got.

@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Jamsend(): string { return '0718213ec52d3f4a~g1' },
+    Ghostmeta_Ghost_S_Jamsend(): string { return '9be1c291ec4960dc~g1' },
 
 // Jamsend.g — the music between friends, loaded ON TOP of the friends layer (Swarm.g).  Split out of Swarm.g
 //  2026-11-16 (AtheoryNexus_todo §0.0 E, "Identity drawn together" — the owner: an app-indifferent level, "and the
@@ -390,7 +390,8 @@ Swarm_listened(w, ident, frame) {
         return
     }
     if (!frame.id || typeof this.Stoker_listened !== 'function') return
-    this.Stoker_listened(String(from), String(frame.id))
+    // `secs`: the track ended there after that long (a newer listener; an older one only says it started)
+    this.Stoker_listened(String(from), String(frame.id), typeof frame.secs === 'number' ? frame.secs : null)
 
 },
 // hear a suggestion: sealed friends only (a stranger's is a %rebuff, nothing lands).  Mint

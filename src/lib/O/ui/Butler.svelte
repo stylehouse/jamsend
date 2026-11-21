@@ -279,13 +279,26 @@
         if (!pending_iz) return null
         try { return (H as any)?.Swarm_invite_state?.(pending_iz) ?? null } catch { return null }
     })
+    // THE NAME WHEN THE LINK HAS NONE (owner 2026-11-21): a blotter link carries no `From=` (it would grow every sheet QR a
+    //  version), so ask the server for the inviter's signed name card (src/lib/server/name_card.ts).  Once per token.
+    let looked_from = $state('')
+    let looked_for = ''
+    $effect(() => {
+        const iz = pending_iz
+        if (!iz || looked_for === iz || boot_param('From') || invite_pending()?.from) return
+        looked_for = iz
+        let p = ''
+        try { p = String((H as any)?.Swarm_token_parse?.(iz)?.prepub || '') } catch {}
+        if (!/^[0-9a-f]{16}$/.test(p)) return
+        fetch('/__name?p=' + p).then(r => r.ok ? r.json() : null).then(j => { if (j?.name && looked_for === iz) looked_from = String(j.name) }).catch(() => {})
+    })
     // WHO, AND TO WHAT (owner 2026-11-19, watching a phone: under "you were invited" it should "juist say 'by S 7950f3 to Music'")
     //  the inviter's name off the URL (or the reload stash), their short pub off the token, and what the token admits to
     let invite_by = $derived.by(() => {
         if (!pending_iz) return ''
         let t: any = null
         try { t = (H as any)?.Swarm_token_parse?.(pending_iz) } catch {}
-        const from = boot_param('From') || invite_pending()?.from || ''
+        const from = boot_param('From') || invite_pending()?.from || looked_from || ''
         const who = [from, t?.prepub ? String(t.prepub).slice(0, 6) : ''].filter(Boolean).join(' ')
         return who ? 'by ' + who + (t?.to ? ' to ' + t.to : '') : ''
     })
@@ -319,7 +332,7 @@
     // the arrival's ladder, one line per rung: done ✓, the current one spinning, the rest not yet drawn
     let climb = $derived.by(() => {
         void tick
-        const from = boot_param('From') || invite_pending()?.from || 'your friend'
+        const from = boot_param('From') || invite_pending()?.from || looked_from || 'your friend'
         const st = String(inv_state?.state || '')
         const sealed = st === 'sealed'
         const named = !!climb_self?.sc?.friendly

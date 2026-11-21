@@ -25,6 +25,7 @@
     import InviteQR from "$lib/O/ui/micro/InviteQR.svelte"
     import { boot_param, invite_pending_note, invite_pending_clear, invite_dismissed } from "$lib/boot"
     import { replaceState } from "$app/navigation"   // shallow-router bar rewrite — raw history.replaceState warns
+    import { signHeader } from "$lib/cluster_trust"
 
     //  ARRIVAL (2026-08-12) — the THIRD dress, and a display mode for the same reason `inglass` is one
     //   (the owner asked for "a new component just for this purpose"; this file's own rule above says
@@ -334,6 +335,25 @@
     //   it for a tick.  name_save also sets it directly on success (no wait for the next bump).
     let named = $state(false)
     $effect(() => { void H?.version; if (!named && self?.sc?.friendly) named = true })
+
+    // ── MY NAME CARD — so a link with no `From=` (every blotter) can still say "by S" (owner 2026-11-21).
+    //  A tab holding the SOUL key signs {from, pub, name, ts} and POSTs it to the server's /__name
+    //   (src/lib/server/name_card.ts); a landing asks `/__name?p=<prepub>` (Butler).  Once per name per page life.
+    let card_sent = ''
+    $effect(() => {
+        void H?.version
+        const name = String(self?.sc?.friendly || '')
+        if (!name || card_sent === name || typeof H?.Swarm_soul !== 'function') return
+        let soul: any = null
+        try { soul = H.Swarm_soul(self) } catch {}
+        if (!soul?.pub || !soul?.key) return
+        card_sent = name
+        const card: any = { control: 'name', from: String(soul.pub).slice(0, 16), pub: soul.pub, name, ts: Date.now() }
+        signHeader(card, soul.key)
+            .then(sign => fetch('/__name', { method: 'POST', body: JSON.stringify({ ...card, sign }) }))
+            .then(r => { if (!r.ok) console.warn(`📛 name card refused — ${r.status}`) })
+            .catch(e => console.warn('📛 name card failed —', String(e).slice(0, 80)))
+    })
     let name_draft = $state('')
     let name_err = $state('')
     // a name needs one letter or digit, any script — the same rule Clustation_friendly enforces, here so the

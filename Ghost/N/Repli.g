@@ -14,6 +14,7 @@
 IMPORT()
     import { Selection } from "$lib/Selection.svelte"
     import { sha256_hex } from "$lib/Common"
+    import { APP_DATA_DIR } from "$lib/app_data_dir"
 
 //#region repli — the PAGINATED STREAMING C** REPLICATION protocol (shared real software; users: the demo Books in Ghost/Story/MusuTesting.g)
 // ══ A general system for replicating a C** of scalars + buffers from one Pier to another, paginatedly.  You
@@ -980,6 +981,81 @@ Repli_xfer_get():
     if (!top.c.xfer) top.c.xfer = { ts: 0, rx_kbps: 0, tx_kbps: 0, spark: [], pulls: {}, serves: {}, freed: [], drops: 0, last_drop: '', drop_ts: 0, breaches: 0, last_breach: '', breach_ts: 0 }
     return top.c.xfer
 
+// Repli_tally — HOW MUCH EACH FRIEND HAS HAD FROM ME (owner 2026-11-20: "start collecting quantity of listened, quantity
+//  heisted").  Each count is taken where it is TRUE, so it cannot balloon:
+//   heard   — the listener's own report that one of my tracks STARTED playing there (Stoker_listened, the
+//              `listened` frame a sealed friend sends).  Not what I served: previews fetched ahead and skipped tracks
+//               would count, and that over-counts (owner 2026-11-21).
+//   played, secs — the listener's report that the track ENDED there after `secs` (Radio_open, at the next track).
+//              `played` counts the ones that ran 30s or more (the early-skip "meh" is under 20s); `secs` sums them,
+//               each capped at 20 minutes because it is wall time and a pause counts.  This is the real "listened".
+//   heisted — a Heist body served to its LAST chunk (Repli_serve_chunks): a whole track that left for their disk.
+//  Each once per friend+track per page life, so re-asks and repeat reports add nothing.
+//  PER ACCOUNT, NOT ON IT: `.jamsend/account/<me>/tally.snap` beside the account's toc.snap (one
+//   `Tally:<prepub>,heard:N,played:N,secs:N,heisted:N,last:<s>` line per friend).  The toc.snap holds the key and is rewritten whole on
+//    every change, so counts never ride it.  They sit on top.c and are read-add-written every 5 minutes; a restart
+//     loses at most one window.  Only a humdinger counts (a music page or the daemon), so no Book's runner writes one.
+Repli_tally(me, to, kind, id, secs):
+    let top = this.top_House ? this.top_House() : null
+    if (!top || !top.c.humdinger || !me || !to || !kind) return
+    let t = top.c.tally || (top.c.tally = { add: {}, seen: {}, timer: 0 })
+    let m = String(me).slice(0, 16)
+    let k = String(to).slice(0, 16)
+    if (m === k) return
+    let once = kind + ':' + m + ':' + k + ':' + String(id || '')
+    if (t.seen[once]) return
+    t.seen[once] = 1
+    let mine = t.add[m] || (t.add[m] = {})
+    let r = mine[k] || (mine[k] = {})
+    if (kind === 'played') {
+        let s = Math.max(0, Math.min(1200, Math.round(+secs || 0)))
+        r.secs = (r.secs || 0) + s
+        if (s >= 30) r.played = (r.played || 0) + 1
+    } else r[kind] = (r[kind] || 0) + 1
+    r.last = Math.floor(Date.now() / 1000)
+    if (!t.timer) t.timer = setTimeout(() => { t.timer = 0; this.Repli_tally_flush() }, 300000)
+
+// Repli_tally_flush — add this window's counts to each account's file and write it back.  No nav (a phone) keeps them.
+async Repli_tally_flush():
+    let top = this.top_House ? this.top_House() : null
+    let t = top && top.c.tally
+    if (!t || !Object.keys(t.add).length) return 0
+    let nav = this.Crate_nav ? this.Crate_nav() : null
+    if (!nav || !nav.read_file || !nav.write_file || nav.atime_async) return 0
+    let wrote = 0
+    for (const me of Object.keys(t.add)) {
+        let add = t.add[me]
+        delete t.add[me]
+        let dir = APP_DATA_DIR + '/account/' + me
+        let rows = {}
+        let text = null
+        try { text = await nav.read_file(dir, 'tally.snap') } catch (er) { text = null }
+        const KEYS = ['heard', 'played', 'secs', 'heisted']
+        for (const line of String(text || '').split('\n')) {
+            let x = line.match(/^Tally:([0-9a-f]{16})((?:,[a-z]+:\d+)*)/)
+            if (!x) continue
+            let r = rows[x[1]] = {}
+            for (const kv of x[2].split(',').slice(1)) { let [key, v] = kv.split(':'); r[key] = +v }
+        }
+        for (const k of Object.keys(add)) {
+            let r = rows[k] || (rows[k] = {})
+            for (const key of KEYS) if (add[k][key]) r[key] = (r[key] || 0) + add[k][key]
+            r.last = Math.max(r.last || 0, add[k].last || 0)
+        }
+        let out = Object.keys(rows).sort((p, q) => (rows[q].last || 0) - (rows[p].last || 0))
+            .map(k => 'Tally:' + k + KEYS.map(key => ',' + key + ':' + (rows[k][key] || 0)).join('') + ',last:' + (rows[k].last || 0))
+        try { await nav.write_file(dir, 'tally.snap', out.join('\n') + '\n') }
+        catch (er) {
+            let back = t.add[me] || (t.add[me] = {})
+            for (const k of Object.keys(add)) { let r = back[k] || (back[k] = {}); for (const key of KEYS) if (add[k][key]) r[key] = (r[key] || 0) + add[k][key]; r.last = Math.max(r.last || 0, add[k].last || 0) }
+            console.log('🧮⚠ tally not written for ' + me.slice(0, 8) + ' — ' + String(er && er.message || er))
+            continue
+        }
+        wrote = wrote + 1
+        console.log('🧮 tally ' + me.slice(0, 8) + ' — ' + Object.keys(add).length + ' friend(s) this window, ' + out.length + ' in all')
+    }
+    return wrote
+
 // Repli_serve_want — A got a `want id/stream/from_idx`: take the page [from_idx, from_idx+PAGE) of the
 //  Record's chunks, stage the bytes, and ship a lean page fragment (Record identity + a %Stream update whose
 //   have advances and whose objecties.buffer carries the bytes).  drop_next fakes a lost page (the warn test):
@@ -1201,6 +1277,8 @@ async Repli_serve_chunks(w, pier, h, rec):
             xr.ts = now_re
         }
     }
+    // a whole Heist track gone to this friend (per friend: rec.c.sent above is the record's frontier, shared by all)
+    if (end >= total && this.Heist_body_at(rec, from) != null) this.Repli_tally(h.to, h.from, 'heisted', rec.sc.id)
     await this.Repli_send_lines(w, pier, h.to, h.from, out.join('\n'), bufmap)
 
 // ─── receiver (Pier B) ───
