@@ -279,28 +279,19 @@
         if (!pending_iz) return null
         try { return (H as any)?.Swarm_invite_state?.(pending_iz) ?? null } catch { return null }
     })
-    // THE NAME WHEN THE LINK HAS NONE (owner 2026-11-21): a blotter link carries no `From=` (it would grow every sheet QR a
-    //  version), so ask the server for the inviter's signed name card (src/lib/server/name_card.ts).  Once per token.
-    let looked_from = $state('')
-    let looked_for = ''
-    $effect(() => {
-        const iz = pending_iz
-        if (!iz || looked_for === iz || boot_param('From') || invite_pending()?.from) return
-        looked_for = iz
-        let p = ''
-        try { p = String((H as any)?.Swarm_token_parse?.(iz)?.prepub || '') } catch {}
-        if (!/^[0-9a-f]{16}$/.test(p)) return
-        fetch('/__name?p=' + p).then(r => r.ok ? r.json() : null).then(j => { if (j?.name && looked_for === iz) looked_from = String(j.name) }).catch(() => {})
-    })
     // WHO, AND TO WHAT (owner 2026-11-19, watching a phone: under "you were invited" it should "juist say 'by S 7950f3 to Music'")
-    //  the inviter's name off the URL (or the reload stash), their short pub off the token, and what the token admits to
+    //  the inviter's short pub off the token, and what the token admits to.  THE NAME comes from the inviter themself
+    //   (owner 2026-11-21): InvitePanel's peek (Swarm_invite_peek) asks them as soon as our station stands and their answer
+    //    lands on the %Invite row; a link's `From=` (or the reload stash) shows first.  The dot is Door's friend dot: lit when
+    //     they answered, dim while asking (the name a spinner) or when they are quiet (offline, perhaps).
     let invite_by = $derived.by(() => {
-        if (!pending_iz) return ''
+        if (!pending_iz) return null
         let t: any = null
         try { t = (H as any)?.Swarm_token_parse?.(pending_iz) } catch {}
-        const from = boot_param('From') || invite_pending()?.from || looked_from || ''
-        const who = [from, t?.prepub ? String(t.prepub).slice(0, 6) : ''].filter(Boolean).join(' ')
-        return who ? 'by ' + who + (t?.to ? ' to ' + t.to : '') : ''
+        if (!t?.prepub) return null
+        const peek = String(inv_state?.peek || '')
+        const name = String(inv_state?.friendly || boot_param('From') || invite_pending()?.from || '')
+        return { name, peek, short: String(t.prepub).slice(0, 6), to: t.to ? String(t.to) : '' }
     })
     let landing = $derived.by(() => {
         void tick
@@ -332,7 +323,7 @@
     // the arrival's ladder, one line per rung: done ✓, the current one spinning, the rest not yet drawn
     let climb = $derived.by(() => {
         void tick
-        const from = boot_param('From') || invite_pending()?.from || looked_from || 'your friend'
+        const from = invite_by?.name || 'your friend'
         const st = String(inv_state?.state || '')
         const sealed = st === 'sealed'
         const named = !!climb_self?.sc?.friendly
@@ -620,7 +611,7 @@
                          rather than news about a machine with nobody on it. -->
                     {#if landing_seen || stage === 'door'}
                         {#if landing && is_mycave}<h2 class="ask">🪞 linking this device</h2>
-                        {:else if landing}<h2 class="ask">you were invited</h2>{#if invite_by}<p class="by">{invite_by}</p>{/if}
+                        {:else if landing}<h2 class="ask">you were invited</h2>{#if invite_by}<p class="by">by <span class="by-dot" class:here={invite_by.peek === 'here'}>●</span> {#if invite_by.name}{invite_by.name}{:else if invite_by.peek !== 'quiet'}<span class="climb-spin by-spin" aria-label="asking their name"></span>{/if} {invite_by.short}{#if invite_by.to} to {invite_by.to}{/if}</p>{/if}
                         {:else if boot_param('Adopt')}<h2 class="ask">🪞 Link Device</h2>
                         {:else if stage === 'door'}<h2 class="ask">music here is shared with friends</h2>{/if}
                         <!-- `arrival` ONLY while an invite is actually being worked through
@@ -883,6 +874,10 @@
          letter-spacing: .01em; }
     h2.ask { font-size: 1.7rem; font-weight: 300; }
     p.by { margin: -0.4rem 0 0.8rem; opacity: 0.7; font-size: 1rem; }
+    /* Door's friend dot (DoorFace .df-dot): lit = they answered */
+    .by-dot { color: #5a4a5f; font-size: .7em; vertical-align: .15em; }
+    .by-dot.here { color: #7fe8bf; text-shadow: 0 0 4px #7fe8bf; }
+    .by-spin { display: inline-block; vertical-align: -.1em; }
     /* the floor state — quiet on purpose: it is the card admitting the machine has not spoken yet,
        and it must never read louder than a row of real news. */
     h2.dark { opacity: .55; font-weight: 300; }

@@ -25,7 +25,6 @@
     import InviteQR from "$lib/O/ui/micro/InviteQR.svelte"
     import { boot_param, invite_pending_note, invite_pending_clear, invite_dismissed } from "$lib/boot"
     import { replaceState } from "$app/navigation"   // shallow-router bar rewrite — raw history.replaceState warns
-    import { signHeader } from "$lib/cluster_trust"
 
     //  ARRIVAL (2026-08-12) — the THIRD dress, and a display mode for the same reason `inglass` is one
     //   (the owner asked for "a new component just for this purpose"; this file's own rule above says
@@ -335,25 +334,6 @@
     //   it for a tick.  name_save also sets it directly on success (no wait for the next bump).
     let named = $state(false)
     $effect(() => { void H?.version; if (!named && self?.sc?.friendly) named = true })
-
-    // ── MY NAME CARD — so a link with no `From=` (every blotter) can still say "by S" (owner 2026-11-21).
-    //  A tab holding the SOUL key signs {from, pub, name, ts} and POSTs it to the server's /__name
-    //   (src/lib/server/name_card.ts); a landing asks `/__name?p=<prepub>` (Butler).  Once per name per page life.
-    let card_sent = ''
-    $effect(() => {
-        void H?.version
-        const name = String(self?.sc?.friendly || '')
-        if (!name || card_sent === name || typeof H?.Swarm_soul !== 'function') return
-        let soul: any = null
-        try { soul = H.Swarm_soul(self) } catch {}
-        if (!soul?.pub || !soul?.key) return
-        card_sent = name
-        const card: any = { control: 'name', from: String(soul.pub).slice(0, 16), pub: soul.pub, name, ts: Date.now() }
-        signHeader(card, soul.key)
-            .then(sign => fetch('/__name', { method: 'POST', body: JSON.stringify({ ...card, sign }) }))
-            .then(r => { if (!r.ok) console.warn(`📛 name card refused — ${r.status}`) })
-            .catch(e => console.warn('📛 name card failed —', String(e).slice(0, 80)))
-    })
     let name_draft = $state('')
     let name_err = $state('')
     // a name needs one letter or digit, any script — the same rule Clustation_friendly enforces, here so the
@@ -413,6 +393,18 @@
     //   predicate over the conferred-Post shape, so a new Post never falls through to auto-join.
     const device_link = (t: any) => { const f = String(t?.to || ''); return f.startsWith('My') && f.length > 2 }
     let iz_err = $state('')
+    // ── WHO INVITED ME — asked of the inviter as soon as our station stands, while we are still asking the new user's name
+    //  (owner 2026-11-21).  Swarm_invite_peek: their name comes back onto the %Invite row (Butler draws it with a status
+    //   dot); a quiet one (offline, or no answer yet) is asked again every 15s while this landing stands.  Friend invites only.
+    $effect(() => {
+        if (!stood || !iz || iz_err || !invite || device_link(invite) || typeof H?.Swarm_invite_peek !== 'function') return
+        const w = H.Swarm_station_world?.()
+        if (!w) return
+        const ask = () => { try { H.Swarm_invite_peek(w, self, iz) } catch {} }
+        const first = setTimeout(ask, 1500)
+        const again = setInterval(ask, 15000)
+        return () => { clearTimeout(first); clearInterval(again) }
+    })
     let joined = $state('')
     // the join button has been spent — see join().  Separate from `joined` (the progress LINE) because
     //  a failure writes a line AND wants the button back, so one string cannot say both.

@@ -9,6 +9,16 @@ Started 2026-11-04 from the Supervisor talk (`AtheoryNexus_todo.md` E, "NEXT SES
 
 ## 0. What to get on with next
 
+- **2026-11-21 — `/` is still BigSoundland, and /Radio can't take it yet: /Radio does not land an invite.**  Walked headless with
+   daemon-minted invites: `/BigSoundland?Iz=` runs the ceremony ("you were invited by ● S — Music", "that's me →", a name) and sends
+    the hello toward S; `/Radio?Iz=` shows nothing of the invite and sends nothing — the token just sits in the URL.  So pointing `/`
+     at /Radio (owner: "perhaps we should") waits on **the invite landing on /Radio** (the ceremony as an arrival on A:Arrive, or the
+      landing face BigSoundland mounts).  The switch itself is small and was tried: `src/routes/+page.svelte` mounts `<Otro/>` with
+       `boot_default('G','Radio')` unless the URL has `?B=`/`?E=` (runner/editor seats stay on BigSoundland), plus a `+page.ts` with
+        `ssr = false` (only the browser can read the URL to choose).  A plain newcomer at `/` then matched `/Radio` exactly.  Reverted.
+   ⚠ The jamserve daemon (S, 7950f300…) sits on `wss://jamsend.duckdns.org:9999/relay`, not this dev server's, so a local walk can see
+    the ceremony and the hello but never a sealed friendship — a full walk wants a throwaway daemon on the dev relay.
+
 - **2026-11-19 — /Radio's arrival RUNS ON ATHEORY (rung 1 of §7, "Radio on rows").**  The page's decisions — the splash notches, the
    8s/20s deadlines, the autopress, the crossover — are a compartment `A:Radio > A:Arrive`: the edge senses and tapes only news, the move
     decides, `Radio_ran` acts.  Book AtheRadioArrive ×3 green; seen live on a headless stranger and the owner's b8bc page.  Next: §7's rungs.

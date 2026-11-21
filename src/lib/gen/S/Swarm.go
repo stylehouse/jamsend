@@ -17,7 +17,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'd36e23474f634312~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '6e8bc89d7eaadb48~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -722,7 +722,8 @@ Swarm_invite_state(iz) {
     let w = A ? A.o({ w: 'Swarm' })[0] : null
     let inv = w ? w.o({ Invite: String(t.serial), prepub: t.prepub })[0] : null
     if (!inv) return { serial: String(t.serial), prepub: String(t.prepub), state: '' }
-    return { serial: String(t.serial), prepub: String(t.prepub), state: String(inv.sc.state || ''), why: inv.sc.why ? String(inv.sc.why) : '' }
+    return { serial: String(t.serial), prepub: String(t.prepub), state: String(inv.sc.state || ''), why: inv.sc.why ? String(inv.sc.why) : '',
+             peek: String(inv.sc.peek || ''), friendly: inv.sc.friendly ? String(inv.sc.friendly) : '' }
 
 },
 // Swarm_invite_words — a refusal's code, said the way a person would say it.
@@ -2125,6 +2126,8 @@ async Swarm_arm(w) {
         if (frame.header.type === 'swarm_hi') this.Swarm_heard_hi(w2, ident, frame)
         if (frame.header.type === 'suggest') this.Swarm_suggested(w2, ident, frame.swarm)
         if (frame.header.type === 'listened') this.Swarm_listened(w2, ident, frame.swarm)
+        if (frame.header.type === 'invite_peek') await this.Swarm_peeked(w2, ident, frame.swarm)
+        if (frame.header.type === 'invite_peek_ok') this.Swarm_peek_heard(w2, ident, frame.swarm)
         if (frame.header.type === 'borrow') this.Swarm_borrow_heard(w2, ident, frame.swarm, frame.header.from).catch((er) => console.log('⨳ borrow threw —', er))
         if (frame.header.type === 'seat_lost') this.Swarm_seat_lost(w2, ident, frame.swarm, frame.header.from)
         if (frame.header.type === 'borrow_give') this.Swarm_borrow_given(w2, ident, frame.swarm).catch((er) => console.log('⨳ borrow_give threw —', er))
@@ -2361,7 +2364,7 @@ async Swarm_arm(w) {
     // …AND `heard` (2026-10-04, Lump's ♥s that Inko never hauled): the heard-Mag mirror mile (Heard_gossip_beat) sends
     //  over this road and Swarm_heard_mirror was wired in the funnel above, but the kind was never armed here — every
     //   sibling's heard snap died on arrival, so no Cave ever saw its Captain's hearts.  Same shape as reach, above.
-    for (const kind of ['pier_hello', 'pier_accept', 'pier_confirm', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got', 'repli_ready', 'charter', 'roster', 'crew', 'ferry', 'ferry_want', 'ferry_cancel', 'ferry_got', 'ferry_held', 'reach', 'reach_done', 'borrow', 'borrow_give', 'seat_lost', 'heard', 'listened']) w.c.on[kind] = hear
+    for (const kind of ['pier_hello', 'pier_accept', 'pier_confirm', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got', 'repli_ready', 'charter', 'roster', 'crew', 'ferry', 'ferry_want', 'ferry_cancel', 'ferry_got', 'ferry_held', 'reach', 'reach_done', 'borrow', 'borrow_give', 'seat_lost', 'heard', 'listened', 'invite_peek', 'invite_peek_ok']) w.c.on[kind] = hear
 
 },
 // Swarm_voucher_ok — is this voucher a valid proof the sealed friend `from` sent the frame?
@@ -3527,6 +3530,64 @@ async Swarm_redeem(w, ident, iz, advice) {
             serial: String(t.serial || '').slice(0, 8) }) } catch (er) {}
     }
     return t
+
+},
+// Swarm_invite_peek — WHO INVITED ME, before I join (owner 2026-11-21: "the friendly name just needs to come slightly
+//  earlier … as soon as we connect to them").  A blotter link carries no `From=` (it would grow every sheet QR a version),
+//   so the landing asks the issuer itself: an `invite_peek` echoing the token, which the issuer proves like a hello
+//    (Swarm_peeked) WITHOUT spending it, and answers with its name.  Nothing seals and no %Pier is made on either side.
+//  The %Invite row walks `peek`: asking → here (with `friendly`) | quiet (no answer in 12s, or presence says they are
+//   away: they may be offline).  The landing draws it as Door's status dot beside the name, the name spinning while it
+//    asks; a quiet peek may be asked again.  Station-only, like the row itself, so no Book fixture sees it.
+Swarm_invite_peek(w, ident, iz) {
+    if (!w || !w.c || !w.c.station_up || !ident || !iz) return 0
+    let t = this.Swarm_token_parse(iz)
+    if (!t || !t.prepub || String(t.prepub) === String(ident.sc.prepub || '')) return 0
+    let inv = this.Swarm_invite_note(w, iz)
+    if (!inv || inv.sc.peek === 'here' || inv.sc.peek === 'asking') return 0
+    this.Swarm_station_pier(w, ident, t.prepub)
+    let at = Date.now()
+    inv.c.peek_at = at
+    let sent = this.Swarm_deliver(w, ident, t.prepub, { kind: 'invite_peek', iz: iz, page: this.Swarm_page(ident) })
+    inv.sc.peek = sent ? 'asking' : 'quiet'
+    inv.bump()
+    if (sent) {
+        setTimeout(() => {
+            if (inv.c.peek_at !== at || inv.sc.peek !== 'asking') return
+            inv.sc.peek = 'quiet'
+            inv.bump()
+        }, 12000)
+    }
+    return sent ? 1 : 0
+
+},
+// Swarm_peeked — the issuer hears a peek: the same proof as Swarm_hello (our token, a bound page, a serial on our
+//  ledger, the presig regenerates) and then only our name goes back.  Spent or not: the asker holds our link either way,
+//   and a name is what every single-invite URL already carries.  An unproven peek is dropped in silence, like a hello.
+async Swarm_peeked(w, ident, frame) {
+    let from = String(frame && frame.page && frame.page.prepub || '')
+    let t = frame ? this.Swarm_token_parse(frame.iz) : null
+    if (!from || !t || t.prepub !== ident.sc.prepub || !this.Swarm_page_bound(frame.page)) return
+    let f = this.Swarm_iz_find(ident, t.serial, 1)
+    if (!f) return
+    let presig = await this.Swarm_presig(this.Swarm_keys(ident), ident.sc.prepub, f.canon, this.Swarm_token_n(f.to, f.params))
+    if (!presig || presig !== t.presig) return
+    let friendly = String(ident.sc.friendly || this.Swarm_peering(ident)?.sc?.friendly || '')
+    this.Swarm_station_pier(w, ident, from)
+    this.Swarm_deliver(w, ident, from, { kind: 'invite_peek_ok', friendly: friendly, page: this.Swarm_page(ident) })
+    console.log('👋 peek from ' + from.slice(0, 8) + ' (serial ' + String(t.serial) + ') — told them our name')
+
+},
+// Swarm_peek_heard — the landing hears the issuer's answer: their name, on every %Invite of theirs this tab holds.
+Swarm_peek_heard(w, ident, frame) {
+    let from = String(frame && frame.page && frame.page.prepub || '')
+    if (!from || !this.Swarm_page_bound(frame.page)) return
+    for (const inv of w.o({ Invite: 1 })) {
+        if (String(inv.sc.prepub || '') !== from) continue
+        inv.sc.peek = 'here'
+        if (frame.friendly) inv.sc.friendly = String(frame.friendly).slice(0, 40)
+        inv.bump()
+    }
 
 },
 // Swarm_hello — the issuer hears a pier_hello: the old Idzeugnosis seat with the peer its OWN

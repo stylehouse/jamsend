@@ -39,8 +39,9 @@
 - **Front door:** `Crew_todo.md` (souls and bodies), `Swarm_spec.md`.  Twin tabs: `Identity_persist_todo.md` §0.1.
 - **Debt:** a lost identity (an incognito tab) leaves its pier on every friend for good.  "pier heal … 1 forgotten pier"
    logs every 10 minutes and nothing ever retires it.
-- **Name cards** (2026-11-21): a blotter link has no `From=`, so the landing asks `/__name?p=<prepub>`
-   (`src/lib/server/name_card.ts`) for a name the inviter's Door signed and posted.  Each server keeps its own cards.
+- **Who invited me** (2026-11-21): a blotter link has no `From=`, so the landing asks the inviter (`Swarm_invite_peek` →
+   `Swarm_peeked` proves the token without spending it → `invite_peek_ok` with their name onto the %Invite row).  An offline
+    inviter leaves a dim dot and no name until the join.
 - **Murk:** sibling tabs.  A second tab stands at `<prepub>_N` and must stamp its own frames from that seat.  Each sender has
    to remember to do so (Repli's `repli_want` was missed until 2026-11-13), so the next missed sender will look like a music stall.
 
@@ -93,6 +94,16 @@
 - **Front door:** CLAUDE.md "House"; the navs in `Atheory_design.md` §2 (ledger row "A LISTING IS A HINT": the FSA nav's one rule, 2026-11-19).
 - **Murk:** there are four navs (Housing FSA, `WormholeOpfs`, `MountNav`, `RemoteWormholeNav`) plus overlays.  Whether a
    verb behaves the same across them is checked by hand (`nav-verb-three-layers` in memory).
+
+### The stored document: Lines in the Wormhole (`.snap` files)
+- **Murk (owner 2026-11-21, felt, not yet clear enough to move on):** every stored thing is a text of Lines (Text's
+   `enWaft`), and every one is called `.snap` only because the first of them were Story's: a `toc.snap` plus a
+    `001.snap` per step.  Since then `toc.snap` is what any Waft writes, and a file beside it is named for what it
+     holds: `account/<prepub>/tally.snap` (2026-11-21) is the first.  Other stores use other formats again
+      (`radiostock/*.jamsend_radiostock`, `account/*/legacy.json`).
+   The idea that might want clarifying: one unity where a stored document is never named beyond
+    `wormhole/(…)/toc.snap`, i.e. a directory IS the document.  What "it" is, and whether `tally.snap` should be
+     `tally/toc.snap`, is undefined.  Leave new names as they are until it is.
 
 ### Stuff, Story, Lies, Lang, Cyto, Matstyle, Text (`src/lib/O/`)
 - **Front door:** CLAUDE.md; `Coding_guide.md` for the belief loop and ttlilt.
